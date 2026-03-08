@@ -5,36 +5,36 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:8080/api
+- url: http://localhost:8080/api
 
 tags:
-  - name: Restaurants
-  - name: Reviews
-  - name: Reservations
-  - name: Notifications
+- name: Restaurants
+- name: Reviews
+- name: Reservations
+- name: Notifications
 
 paths:
 
   /restaurants:
     get:
       tags:
-        - Restaurants
+      - Restaurants
       summary: Search restaurants
       description: Search for nearby restaurants or perform semantic search
       parameters:
-        - in: query
-          name: query
-          schema:
-            type: string
-          description: Semantic search query
-        - in: query
-          name: latitude
-          schema:
-            type: number
-        - in: query
-          name: longitude
-          schema:
-            type: number
+      - in: query
+        name: query
+        schema:
+          type: string
+        description: Semantic search query
+      - in: query
+        name: latitude
+        schema:
+          type: number
+      - in: query
+        name: longitude
+        schema:
+          type: number
       responses:
         '200':
           description: List of restaurants
@@ -44,20 +44,36 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Restaurant'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /restaurants/{restaurantId}:
     get:
       tags:
-        - Restaurants
+      - Restaurants
       summary: Get restaurant details
       parameters:
-        - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: restaurantId
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           description: Restaurant details
@@ -65,18 +81,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Restaurant'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /restaurants/{restaurantId}/reviews:
     get:
       tags:
-        - Reviews
+      - Reviews
       summary: Get reviews of a restaurant
       parameters:
-        - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: restaurantId
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           description: List of reviews
@@ -86,17 +120,35 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Review'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     post:
       tags:
-        - Reviews
+      - Reviews
       summary: Add a review for a restaurant
       parameters:
-        - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: restaurantId
+        required: true
+        schema:
+          type: string
       requestBody:
         required: true
         content:
@@ -106,23 +158,45 @@ paths:
       responses:
         '201':
           description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /restaurants/{restaurantId}/reviews/{reviewId}:
     put:
       tags:
-        - Reviews
+      - Reviews
       summary: Edit a review for a restaurant
       parameters:
-        - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
-        - in: path
-          name: reviewId
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: restaurantId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: reviewId
+        required: true
+        schema:
+          type: string
       requestBody:
         required: true
         content:
@@ -131,38 +205,78 @@ paths:
               $ref: '#/components/schemas/Review'
       responses:
         '200':
-          description: Review edited
+          description: Review updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Review or restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
-        - Reviews
+      - Reviews
       summary: Delete a review for a restaurant
       parameters:
-        - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
-        - in: path
-          name: reviewId
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: restaurantId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: reviewId
+        required: true
+        schema:
+          type: string
       responses:
-        '200':
+        '204':
           description: Review deleted
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Review or restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /restaurants/{restaurantId}/similar:
     get:
       tags:
-        - Restaurants
+      - Restaurants
       summary: Find similar restaurants
       parameters:
-        - in: path
-          name: restaurantId
-          required: true
-          schema:
-            type: string
+      - in: path
+        name: restaurantId
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           description: Similar restaurants
@@ -172,21 +286,40 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Restaurant'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-# INICIO DE SECÇÃO MARLO REIS
+  # INICIO DE SECÇÃO MARLO REIS
+  # TODO - ver se faz sentido adicionar resposta 401 e register / login
   /restaurants/compare:
     get:
       tags:
-        - Restaurants
+      - Restaurants
       summary: Compare restaurants
       parameters:
-        - in: query
-          name: ids
-          description: List of restaurant IDs
-          schema:
-            type: array
-            items:
-              type: string
+      - in: query
+        name: ids
+        description: List of restaurant IDs
+        schema:
+          type: array
+          items:
+            type: string
       responses:
         '200':
           description: Restaurant comparison
@@ -196,13 +329,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Restaurant'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: One or more restaurants not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-# FIM DE SECÇÃO MARLO REIS
+  # FIM DE SECÇÃO MARLO REIS
 
   /reservations:
     post:
       tags:
-        - Reservations
+      - Reservations
       summary: Book a reservation
       requestBody:
         required: true
@@ -213,17 +364,39 @@ paths:
       responses:
         '201':
           description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /notifications:
     get:
       tags:
-        - Notifications
+      - Notifications
       summary: Get user notifications and discounts
       parameters:
-        - in: query
-          name: userId
-          schema:
-            type: string
+      - in: query
+        name: userId
+        schema:
+          type: string
       responses:
         '200':
           description: List of notifications
@@ -233,6 +406,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Notification'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -308,7 +499,7 @@ components:
           type: number
         address:
           type: string
-    
+
     Error:
       type: object
       properties:
@@ -316,5 +507,3 @@ components:
           type: integer
         message:
           type: string
-
-    
