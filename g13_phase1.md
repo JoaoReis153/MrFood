@@ -25,13 +25,13 @@
 
 ## Use Cases
 
-1. **Review a restaurant**-Eduardo/João
-2. **Users can see the details of a restaurant**-Mário/João
-3. **See reviews of a restaurant**-Gonçalo/Mário
-4. **Search for nearby restaurants**-João/Rodrigo
-5. **Users can do a semantic search for a restaurant**-Mário/Eduardo
-6. **Users can book a reservation**-Rodrigo/Mário
-7. **Users can see the where the restaurant is located**-Gonçalo/Eduardo
-8. **Users can get notification from their preferences with discounts**-Eduardo/Rodrigo
-9. **Users can compare restaurants details**-João/Gonçalo
-10. **Users from a restaurant can search for similar ones**-Rodrigo/Gonçalo
+1. **Review a restaurant**-Eduardo
+2. **Users can see the details of a restaurant**-Mário
+3. **See reviews of a restaurant**-Gonçalo
+4. **Search for nearby restaurants**-João
+5. **Users can do a semantic search for a restaurant**-Mário
+6. **Users can book a reservation**-Rodrigo
+7. **Users can see the where the restaurant is located**-Gonçalo
+8. **Users can get notification from their preferences with discounts**-Eduardo
+9. **Users can compare restaurants details**-João
+10. **Users from a restaurant can search for similar ones**-Rodrigo
