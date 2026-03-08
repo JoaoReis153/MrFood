@@ -1,0 +1,320 @@
+openapi: 3.0.3
+info:
+  title: Restaurant Discovery & Reservation API
+  description: API for searching restaurants, reviewing them, making reservations, and receiving notifications.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api
+
+tags:
+  - name: Restaurants
+  - name: Reviews
+  - name: Reservations
+  - name: Notifications
+
+paths:
+
+  /restaurants:
+    get:
+      tags:
+        - Restaurants
+      summary: Search restaurants
+      description: Search for nearby restaurants or perform semantic search
+      parameters:
+        - in: query
+          name: query
+          schema:
+            type: string
+          description: Semantic search query
+        - in: query
+          name: latitude
+          schema:
+            type: number
+        - in: query
+          name: longitude
+          schema:
+            type: number
+      responses:
+        '200':
+          description: List of restaurants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Restaurant'
+        '500':
+          description: Server Error
+
+  /restaurants/{restaurantId}:
+    get:
+      tags:
+        - Restaurants
+      summary: Get restaurant details
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Restaurant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restaurant'
+
+  /restaurants/{restaurantId}/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get reviews of a restaurant
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+
+    post:
+      tags:
+        - Reviews
+      summary: Add a review for a restaurant
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+      responses:
+        '201':
+          description: Review created
+
+  /restaurants/{restaurantId}/reviews/{reviewId}:
+    put:
+      tags:
+        - Reviews
+      summary: Edit a review for a restaurant
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+      responses:
+        '200':
+          description: Review edited
+
+    delete:
+      tags:
+        - Reviews
+      summary: Delete a review for a restaurant
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Review deleted
+
+  /restaurants/{restaurantId}/similar:
+    get:
+      tags:
+        - Restaurants
+      summary: Find similar restaurants
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Similar restaurants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Restaurant'
+
+# INICIO DE SECÇÃO MARLO REIS
+  /restaurants/compare:
+    get:
+      tags:
+        - Restaurants
+      summary: Compare restaurants
+      parameters:
+        - in: query
+          name: ids
+          description: List of restaurant IDs
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: Restaurant comparison
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Restaurant'
+
+# FIM DE SECÇÃO MARLO REIS
+
+  /reservations:
+    post:
+      tags:
+        - Reservations
+      summary: Book a reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reservation'
+      responses:
+        '201':
+          description: Reservation created
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications and discounts
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+components:
+  schemas:
+
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        cuisine:
+          type: string
+        rating:
+          type: number
+        sponsored:
+          type: boolean
+        location:
+          $ref: '#/components/schemas/Location'
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        restaurantId:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        restaurantId:
+          type: string
+        dateTime:
+          type: string
+          format: date-time
+        numberOfPeople:
+          type: integer
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        message:
+          type: string
+        discount:
+          type: number
+
+    Location:
+      type: object
+      properties:
+        latitude:
+          type: number
+        longitude:
+          type: number
+        address:
+          type: string
+    
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+
+    
