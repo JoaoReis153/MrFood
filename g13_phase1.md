@@ -31,7 +31,7 @@
 4. **Search for nearby restaurants**-João
 5. **Users can do a semantic search for a restaurant**-Mário
 6. **Users can book a reservation**-Rodrigo
-7. **Users can see the where the restaurant is located**-Gonçalo
+7. **Users need to do Authorization**-Gonçalo
 8. **Users can get notification from their preferences with discounts**-Eduardo
 9. **Users can compare restaurants details**-João
 10. **Users from a restaurant can search for similar ones**-Rodrigo
