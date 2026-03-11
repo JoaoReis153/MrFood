@@ -729,10 +729,8 @@ components:
           type: string
           example: "Amazing food and great service!"
         categories:
-          type: array
-          items:
-            type: string
-            example: "Food"
+          type: string
+          example: "Food"
         userId:
           type: string
           example: "user_12345"
