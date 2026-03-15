@@ -13,7 +13,9 @@ CREATE TABLE location(
 
 CREATE TABLE restaurant(
     restaurant_id serial PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(50) NOT NULL UNIQUE,
     tags VARCHAR(50),
     price VARCHAR(50),
     phone VARCHAR(15),
@@ -24,9 +26,9 @@ CREATE TABLE restaurant(
 
 CREATE TABLE app_user(
     user_id serial PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    password VARCHAR(50) NOT NULL,
-    email VARCHAR(50) NOT NULL
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE review(
