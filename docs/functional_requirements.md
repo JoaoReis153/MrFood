@@ -1,56 +1,164 @@
 # FUNCTIONAL REQUIREMENTS
 ## USER CASES
-### 1. REVIEW A RESTAURANT
-- The system should allow authenticated users create,edit or remove a review associated with their own id of a restaurant of their choosing.
-- This review will contain a rating from 1 to 5 and optionally a comment of their choosing.
-- An authenticated can only have one review per restaurant.
-- Each new review will also update the average rating and number of rating of each restaurant.
+### 1. Review a restaurant
+#### Description
+- Authenticated users should be able to create a review associated with their own ID of a restaurant of their choosing.
+#### Parameters
+- Rating from 1 to 5
+- Comment (OPTIONAL)
+#### System logic
+- An authenticated user can only have one review per restaurant.
+- Each new review should update the average rating and number of ratings of the associated restaurant.
 
-### 2. SEE DETAILS OF RESTAURANT
-- The system should allow authenticated users to see the name, location, address, working hours, categories, avg ratings, num of ratings ,and if available media associated with restaurant.
-- Optionally we can show the user if the restaurant is currently using the sponsor system or not.
+### 2. Manage a review
+#### Description
+- Authenticated users should be able to edit and delete their own reviews on any given restaurant.
+#### System logic
+- Each edited/deleted review should update the average rating and number of ratings of the associated restaurant. 
 
-### 3. SEE REVIEWS OF A RESTAURANT
-- The system should allow authenticated users to see a pagination of the reviews that the selected restaurant has.
-- This pagination should have a max limit defined like 30 reviews per page.
-- Each review should contain the rating associated with it and the details of the user that has posted, in this case only its name.
+### 3. See details of a restaurant
+#### Description
+- Authenticated users should be able to see any given restaurant's details.
+#### System logic
+- The user is shown the name, location, address, working hours, categories, average ratings, number of ratings, and, if available, media associated with the restaurant.
+- The user is shown whether the restaurant is currently using the sponsor system or not.
 
-### 4. Search for nearby restaurants
-- Given the current location of the user, the system should give a pagination of the nearest restaurants.
-- Optionally the user should also give some categories to filter those same restaurants.
-- The user should should also be able to put a prefix of the restaurant to get matches.
+### 4. See reviews of a restaurant
+#### Description
+- Authenticated users should be able to see the reviews that any given restaurant possesses.
+#### System logic
+- The response results are shown in pagination format.
+- The pagination should have a maximum limit defined (for example, 30 reviews per page).
+- Each review should contain the rating associated with it and the name of the user that posted it.
 
-### 5. Search for restaurants semantically
-- Authenticated user can search for restaurant given some parameters.
-- Those parameters can  be categories, virtual categories, address.
-- The System should return a pagination response.
+### 5. Search for nearby restaurants
+#### Description
+- The user should be able to get information about the nearest restaurants.
+#### Parameters
+- Restaurant categories (OPTIONAL)
+- Restaurant prefix (OPTIONAL)
+#### System logic
+- The system takes the user's location and performs the search with it.
+- The response results are shown in pagination format.
+- The pagination should have a maximum limit defined (for example, 15 restaurants per page).
+- If input by the user, the system should filter the found restaurants based on restaurant categories.
+- If input by the user, the system should also return only the restaurants whose names match the given prefix.
 
-### 6 Users can see available booking slots
-- Authenticated user can see the available booking slots for a given hour and restaurant.
-- This response should contain number of slots available for that hour, and max number of slots avaible for that restaurant.
-- Users can also search for hours that have a given number of available slots.(ex.. day x number 10 )
+### 6. Search for restaurants semantically
+#### Description
+- Authenticated users can search for restaurants given some parameters.
+#### Parameters
+- Restaurant categories
+- Virtual categories
+- Address
+#### System logic
+- At least one of the specified parameters is mandatory.
+- The system should return a pagination response.
+- The pagination should have a maximum limit defined (for example, 15 restaurants per page).
 
-### 7. Users can book a reservation
-- Authenticated users can book a reservation for a certain hour in a restaurant. 
-- The booking must contain number of people that are going, and this number must be less or equal to the number of available slots for that hour.
+### 7. Users can see available booking slots
+#### Description
+- Authenticated users should be able to see the available booking slots for a given hour and restaurant.
+#### Parameters
+- Date
+- Hour
+#### System logic
+- The response should contain the number of slots available for the input hour and the maximum number of slots avaible for that restaurant.
 
-### 8. Users must authenticate to use our services
-- All paths, excluding the /auth are blocked to unathenticated users.
-- Users must login into an account to authenticate.
-- If a user doesn't have an account, they are allowed to create one by registering.
+### 8. Users can search for available booking hours
+#### Description
+- Authenticated users should be able to search for hours that have a given number of available slots for a given restaurant.
+#### Parameters
+- Date
+- Number of slots
+#### System logic
+- The system returns the available working hours associated with the restaurant that have a number of available slots equal or greater than the input given.
 
-### 9. Users will get notifications if their payments go through or not.
-- All users will get emails from confirmations of payments that go through.
+### 9. Users can book a reservation
+#### Description
+- Authenticated users can book a reservation for a certain hour in a given restaurant.
+#### Parameters
+- Date
+- Hour
+- Number of slots
+#### System logic
+- The number of slots (number of people) must be less or equal to the number of available slots for the given hour.
+- The operation will fail if the user tries to book a reservation for the associated restaurant's non-working hours.
 
-### 10. Users can compare restaurant details
-- Authenticated user
+### 11. Users can create an account
+#### Description
+- Unauthenticated users should be able to create an account to start using the application.
+#### Parameters
+- Username
+- Email
+- Password
+#### System logic
+- Unauthenticated users should not be able to use any of the application's services.
+- All paths (excluding /auth) are blocked to unathenticated users.
 
+### 10. Users can login
+#### Description
+- Unauthenticated users should be able to login to the application.
+#### Parameters
+- Username
+- Password
+#### System logic
+- Unauthenticated users should not be able to use any of the application's services.
+- All paths (excluding /auth) are blocked to unathenticated users.
+- If a user doesn't have an account, they are given an option to create one by registering.
 
+### 10. Users can logout
+#### Description
+- Authenticated users should be able to logout of the application.
+#### System logic
+- Authenticated users that logout become unauthenticated.
+- Unauthenticated users should not be able to use any of the application's services.
+- All paths (excluding /auth) are blocked to unathenticated users.
 
+### 11. Users will get notifications if their payments are validated or not.
+#### Description
+- Authenticated users will get emails from validated or failed (pending?) payments.
 
+### 12. Users can compare restaurant details
+- Authenticated users shoud be able to (ver disto)
 
+### 13. Users can search similar restaurants
+#### Description
+- Authenticated users can search for similar restaurants, based on any given restaurant.
+#### Parameters
+- Restaurant name/ID/details (confirmar)
+#### System logic
+- The system searches for restaurants with similar attributes based on the user's input.
+- The response results are shown in pagination format.
+- The pagination should have a maximum limit defined (for example, 15 restaurants per page).
 
+---
+## BUSINESS USER CASES
+### 1. Create a restaurant
+#### Description
+- Authenticated business users should be able to create a new restaurant entry.
+#### Parameters
+- Name
+- Location
+- Working hours
+- Categories
+- Sponsor details
+- Media URL (OPTIONAL)
+#### System logic
+- If the restaurant is created with any sponsor tier, the system gives it benefits (ver disto).
 
+### 2. Manage a restaurant
+#### Description
+- Authenticated business users should be able to edit or delete their own restaurant entries.
+#### System logic
+- (ver se há cenas para aqui)
 
-
-- The system should also allow the users to see the available booking slots(these booking slots should be only from 1hour)   
+### 3. Sponsor restaurant
+#### Description
+- Authenticated business users should be able to sponsor their own restaurants.
+#### Parameters
+- Sponsor tier
+- Sponsor category (?)
+#### System logic
+- The system must bill the business users monthly for their sponsored restaurants.
+- Sponsored restaurants receive benefits (ver isto).
