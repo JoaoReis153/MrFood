@@ -85,7 +85,7 @@
 - The number of slots (number of people) must be less or equal to the number of available slots for the given hour.
 - The operation will fail if the user tries to book a reservation for the associated restaurant's non-working hours.
 
-### 11. Users can create an account
+### 10. Users can create an account
 #### Description
 - Unauthenticated users should be able to create an account to start using the application.
 #### Parameters
@@ -96,7 +96,7 @@
 - Unauthenticated users should not be able to use any of the application's services.
 - All paths (excluding /auth) are blocked to unathenticated users.
 
-### 10. Users can login
+### 11. Users can login
 #### Description
 - Unauthenticated users should be able to login to the application.
 #### Parameters
@@ -107,7 +107,7 @@
 - All paths (excluding /auth) are blocked to unathenticated users.
 - If a user doesn't have an account, they are given an option to create one by registering.
 
-### 10. Users can logout
+### 12. Users can logout
 #### Description
 - Authenticated users should be able to logout of the application.
 #### System logic
@@ -115,14 +115,14 @@
 - Unauthenticated users should not be able to use any of the application's services.
 - All paths (excluding /auth) are blocked to unathenticated users.
 
-### 11. Users will get notifications if their payments are validated or not.
+### 13. Users will get notifications if their payments are validated or not.
 #### Description
 - Authenticated users will get emails from validated or failed (pending?) payments.
 
-### 12. Users can compare restaurant details
+### 14. Users can compare restaurant details
 - Authenticated users shoud be able to (ver disto)
 
-### 13. Users can search similar restaurants
+### 15. Users can search similar restaurants
 #### Description
 - Authenticated users can search for similar restaurants, based on any given restaurant.
 #### Parameters
@@ -151,14 +151,14 @@
 #### Description
 - Authenticated business users should be able to edit or delete their own restaurant entries.
 #### System logic
-- (ver se há cenas para aqui)
+-The system can only allow changes to the restaurant scheduled to at least one week to not conflict with already existing bookings. 
 
 ### 3. Sponsor restaurant
 #### Description
 - Authenticated business users should be able to sponsor their own restaurants.
 #### Parameters
 - Sponsor tier
-- Sponsor category (?)
+- Sponsor categories[]
 #### System logic
 - The system must bill the business users monthly for their sponsored restaurants.
-- Sponsored restaurants receive benefits (ver isto).
+- Sponsored restaurants receive search benefits of their choosing, they will appear at the top of searches when someones searches for a common prefix or chooses a category that they paid to be sponsored .
