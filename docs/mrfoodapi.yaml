@@ -618,6 +618,114 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+    get:
+      tags:
+      - Reservations
+      summary: Get available booking slots for a given hour
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: dateTime
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of available Booking slots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currentSlots:
+                    type: integer
+                  maxSlots:
+                    type: integer
+                  
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /reservations/minimum:
+    get:
+      tags:
+      - Reservations
+      summary: Get available booking slots for a given hour
+      security:
+      - bearerAuth: []
+      parameters:
+        - in: query
+          name: numberOfPeople
+          required: true
+          schema:
+            type: integer
+          description: Number of people for the reservation
+        
+        - in: query
+          name: day
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Day of the reservation (YYYY-MM-DD)
+        
+      responses:
+        '200':
+          description: List of available Booking slots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hour:
+                    type: string
+                  
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /notifications:
     get:
       tags:
