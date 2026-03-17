@@ -1,27 +1,77 @@
-``` mermaid
-flowchart TB
-    A("User Client") <-- Rest requests --> B("API Gateway
-    - RTT limiting
-    - load balancing
-    - SSL termination")
-    C("Business Client (restaurants)") <-- Rest requests --> B
-    D("Notification Service (PubSub / SSE)") <--> B
-    D --> O[("PostgreSQL Database")]
-    E("Search Service") <-- Use cases: 4, 5, 10 --> B
-    E <--> N[("Elastic search")] & O
-    F("restaurant details review service pagination w/cursor") <-- Use cases: 2,3 --> B
-    F <--> O & G(["REDIS instance (keep trending restaurants in case of (?))"])
-    H("Auth service") <-- (Login, register, logout) --> B
-    H <--> O
-    I("Review service") <-- GET, POST, PUT, DELETE reviews --> B
-    I <-- Each review updates sync, average and number of ratings --> O
-    J("Booking Service") <--> B & M(["REDIS (keep booking details TTL 10min)"]) & K("3rd party service for payments") & K
-    J <-- ACID --> O
-    K <--> L("Business service")
-    O -- Change data capture (CDC) --> N
-    O --> P(("Blob storage"))
-    P <--> Q("Content delivery network CDN")
-    P <-- "Pre-signed URL" --> C
-    Q <-- Download media --> A
-    I <--> J
+```mermaid
+flowchart TD
+    UserClient("User Client")
+    BusinessClient("Business Client restaurants")
+    ApiGateway("API Gateway<br/>- RTT limiting<br/>- load balancing<br/>- SSL termination<br/>- Confirm auth via JWT")
+    AuthService("Auth Service")
+    UserDB[("User DB
+    PosteSQL")]
+    CDN("Content Delivery Network<br/>Google Cloud CDN")
+    BlobStorage[("Blob Storage")]
+    RestaurantsDB[("Restaurants SQL
+    PostgreSQL DB")]
+    ChangeDataCapture("Change Data Capture")
+    ElasticCloud[("ELASTIC cloud")]
+    SearchService("Search service")
+    ReastaurantDetailsService("Restaurant Details Service<br/>pagination with cursor")
+    RedisInstanceTrendingRestaurants[("REDIS/Memory  store  INSTANCE
+    (KEEP TRENDING RESTAURANTS
+    IN CASE OF)
+    TTL 10 min
+    LRU")]
+    ReviewService("Review service")
+    ReviewsDB[("Reviews SQL DB")]
+    BookingService("Booking service")
+    BookingDB[("Booking SQL DB")]
+    RedisInstanceBooking[("REDIS/Memory  store
+    (KEEP BOOKING DETAILS TTL 10 MIN)")]
+    PaymentService("Payment Handler Service")
+    3rdPartyService("3rd party<br/>service for payments")
+    Notifications("NOTIFICATION<br/>SERVICEEMAIL")
+    ReceiptsDB[("Receipts DB")]
+    SponsorService("Sponsor Service")
+    SponsorDB[("Sponsor DB")]
+
+    UserDB <--> AuthService
+    AuthService <-- (LOGIN, REGISTER, LOGOUT) --> ApiGateway
+
+    UserClient <-- "REST REQUESTS" --> ApiGateway
+    UserClient <-- "Download media" --> CDN
+
+    CDN <--> BlobStorage
+    BusinessClient <-- "REST REQUESTS" --> ApiGateway
+    BusinessClient <-- "Pre-signe URL" --> BlobStorage
+
+    ApiGateway <-- "USE CASES -4, -5, -10" --> SearchService
+    ApiGateway <-- "USE CASES -2, -3, -11, -12" --> ReastaurantDetailsService
+    ApiGateway <-- "GET POST PUT DELETE REVIEWS" --> ReviewService
+    ApiGateway <-- "Use cases" --> BookingService
+    ApiGateway <--> SponsorService
+  
+
+    RestaurantsDB --> BlobStorage
+
+    RestaurantsDB --> ChangeDataCapture
+    ChangeDataCapture --> ElasticCloud
+
+    ReastaurantDetailsService --> RestaurantsDB
+    ReastaurantDetailsService <-- "CACHE ASIDE ALG" --> RedisInstanceTrendingRestaurants
+    ReastaurantDetailsService <-- "GET COUNT REVIEWS AND AVG" --> ReviewService
+
+    ElasticCloud <--> SearchService
+
+    ReviewService <-- "EACH REVIEW UPDATES SYNC AVG AND NUM RATINGs" -->  ReviewsDB
+
+    BookingService <--> BookingDB
+    BookingService <--> RedisInstanceBooking
+    BookingService <--> PaymentService
+    BookingService <-- "Get working hours" --> ReastaurantDetailsService
+
+    PaymentService <--> ReceiptsDB
+    PaymentService <--> 3rdPartyService
+    PaymentService <--> Notifications
+    PaymentService <--> SponsorService
+
+    SponsorService <--> SponsorDB
+    SponsorService <--> ReastaurantDetailsService
 ```
