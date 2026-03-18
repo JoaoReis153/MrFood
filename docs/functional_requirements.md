@@ -117,16 +117,11 @@
 
 ### 13. Users will get notifications if their payments are validated or not.
 #### Description
-- Authenticated users will get emails from validated or failed (pending?) payments.
+- Authenticated users will get emails from validated or failed payments.
 
-### 14. Users can compare restaurant details
-- Authenticated users shoud be able to (ver disto)
-
-### 15. Users can search similar restaurants
+### 14. Users can search similar restaurants
 #### Description
 - Authenticated users can search for similar restaurants, based on any given restaurant.
-#### Parameters
-- Restaurant name/ID/details (confirmar)
 #### System logic
 - The system searches for restaurants with similar attributes based on the user's input.
 - The response results are shown in pagination format.
