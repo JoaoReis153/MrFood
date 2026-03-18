@@ -9,26 +9,32 @@ fi
 SERVICES_STRUCTURE="services"
 BASE="$1"
 ROOT="$SERVICES_STRUCTURE/$BASE"
+TEMPLATE_DIR="template/microservice-template"
 
-# Create directories
-mkdir -p $ROOT/{cmd,internal/api/rest/handler,internal/api/rest/router,internal/app,internal/repository,internal/service,pkg,scripts}
+# Check if template directory exists
+if [ ! -d "$TEMPLATE_DIR" ]; then
+  echo "Error: Template directory '$TEMPLATE_DIR' not found!"
+  exit 1
+fi
 
-# Create files
-touch \
-$ROOT/cmd/main.go \
-$ROOT/internal/api/rest/rest.go \
-$ROOT/internal/api/rest/handler/handler.go \
-$ROOT/internal/api/rest/router/router.go \
-$ROOT/internal/app/app.go \
-$ROOT/internal/repository/repository.go \
-$ROOT/internal/service/service.go \
-$ROOT/pkg/models.go \
-$ROOT/pkg/response.go \
-$ROOT/Dockerfile \
-$ROOT/Makefile \
-$ROOT/go.mod \
-$ROOT/go.sum \
-$ROOT/LICENSE \
-$ROOT/README.md
+# Create base directory
+mkdir -p "$ROOT"
+
+# Replace placeholders in template files
+export SERVICE_NAME="$BASE"
+find "$TEMPLATE_DIR" -name "*.tmpl" -type f | while read -r tmpl; do
+  rel_path=${tmpl#"$TEMPLATE_DIR/"}
+  target="$ROOT/${rel_path%.tmpl}"
+  mkdir -p "$(dirname "$target")"
+  
+  awk -v name="$SERVICE_NAME" '{gsub(/\{\{\.ServiceName\}\}/, name); print}' "$tmpl" > "$target"
+  echo "Created $target"
+done
+
+# Fix go.mod and initialize
+cd "$ROOT" || exit 1
+
+go mod tidy
 
 echo "Service '$BASE' created successfully at $ROOT"
+echo "✅ Ready! Run: cd $ROOT && make build"
