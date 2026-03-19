@@ -34,6 +34,13 @@ done
 # Fix go.mod and initialize
 cd "$ROOT" || exit 1
 
+protoc \
+  --go_out=internal/api/grpc/pb \
+  --go-grpc_out=internal/api/grpc/pb \
+  --go_opt=paths=source_relative \
+  --go-grpc_opt=paths=source_relative \
+  internal/api/grpc/proto/protofile.proto
+
 go mod tidy
 
 echo "Service '$BASE' created successfully at $ROOT"
