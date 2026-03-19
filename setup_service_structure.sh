@@ -31,8 +31,13 @@ find "$TEMPLATE_DIR" -name "*.tmpl" -type f | while read -r tmpl; do
   echo "Created $target"
 done
 
-# Fix go.mod and initialize
+set -e
+
 cd "$ROOT" || exit 1
+
+echo "Running protoc in $(pwd)..."
+
+mkdir -p internal/api/grpc/pb
 
 protoc \
   --go_out=internal/api/grpc/pb \
@@ -40,6 +45,8 @@ protoc \
   --go_opt=paths=source_relative \
   --go-grpc_opt=paths=source_relative \
   internal/api/grpc/proto/protofile.proto
+
+echo "Protobuf generation done"
 
 go mod tidy
 
