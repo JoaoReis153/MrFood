@@ -33,20 +33,15 @@ done
 
 set -e
 
-cd "$ROOT" || exit 1
+cd $ROOT/internal/api/grpc
 
 echo "Running protoc in $(pwd)..."
 
-mkdir -p internal/api/grpc/pb
-
-protoc \
-  --go_out=internal/api/grpc/pb \
-  --go-grpc_out=internal/api/grpc/pb \
-  --go_opt=paths=source_relative \
-  --go-grpc_opt=paths=source_relative \
-  internal/api/grpc/proto/protofile.proto
+protoc --go_out=. --go-grpc_out=. proto/protofile.proto
 
 echo "Protobuf generation done"
+
+cd "../../.." || exit 1
 
 go mod tidy
 

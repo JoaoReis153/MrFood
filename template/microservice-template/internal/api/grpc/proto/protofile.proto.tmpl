@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package proto;
 
-option go_package = "{{.ServiceName}}/internal/api/grpc/pb;pb";
+option go_package = "/pb;pb";
 
 service TemplateService {
   rpc PingPong (Ping) returns (Pong);
