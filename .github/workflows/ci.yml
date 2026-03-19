@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: stable    
+          cache: true
+          cache-dependency-path: ./services/auth/go.sum
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
@@ -27,7 +29,13 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: '1.26.1'
-      
+          cache: true
+          cache-dependency-path: ./services/auth/go.sum
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.10
+          working-directory: ./services/auth  
       - name: Build
         working-directory: ./services/auth
         run: go build -v ./...
