@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "{{.ServiceName}}/internal/api/grpc/pb;pb";
+
+service TemplateService {
+  rpc PingPong (Ping) returns (Pong);
+  rpc ManyPings (stream Ping) returns (Pong);
+  rpc ManyPongs (Ping) returns (stream Pong);
+  rpc ManyPingPongs (stream Ping) returns (stream Pong);
+}
+
+message Ping {
+  string name = 1;
+}
+
+message Pong {
+  string message = 1;
+}
