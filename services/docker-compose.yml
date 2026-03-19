@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  auth:
+    build: ./auth
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: auth_db
+      DB_PORT: 5432
+      DB_NAME: mrfood_auth
+      DB_USER: auth
+      DB_PASS: authsecret
+    depends_on:
+      auth_db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  auth_db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: mrfood_auth
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: authsecret
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d mrfood_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  auth_db_data:
