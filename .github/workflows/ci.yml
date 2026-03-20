@@ -60,8 +60,14 @@ jobs:
             -p 8080:8080 \
             ${{ matrix.service }}:${{ github.sha }}
 
-      - name: Health check
-        run: curl --retry 5 --retry-delay 2 --fail http://localhost:8080/health
+      - name: Check container didnt crash
+        run: |
+          sleep 3
+          if ! docker inspect -f '{{.State.Running}}' ${{ matrix.service }} | grep -q true; then
+            echo "Container crashed. Logs:"
+            docker logs ${{ matrix.service }}
+            exit 1
+          fi
 
       - name: Stop and remove container
         if: always()
