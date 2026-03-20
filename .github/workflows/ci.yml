@@ -1,4 +1,4 @@
-name: Lint & Test All Services
+name: Lint & Test & Docker Build & Run All Services
 on:
   push:
     branches: [main]
@@ -17,7 +17,7 @@ jobs:
           SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||' | jq -Rc . | jq -cs .)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-  lint-and-test:
+  lint-and-test-and-docker:
     needs: detect-services
     runs-on: ubuntu-latest
     strategy:
@@ -48,3 +48,22 @@ jobs:
       - name: Test
         working-directory: ./services/${{ matrix.service }}
         run: go test -v -race ./...
+
+      - name: Build Docker image
+        working-directory: ./services/${{ matrix.service }}
+        run: docker build -t ${{ matrix.service }}:${{ github.sha }} .
+
+      - name: Run Docker container
+        run: docker run -d --name ${{ matrix.service }} ${{ matrix.service }}:${{ github.sha }}
+
+      - name: Check container started
+        run: |
+          sleep 3
+          docker logs ${{ matrix.service }}
+          docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }}
+
+      - name: Stop and remove container
+        if: always()
+        run: |
+          docker stop ${{ matrix.service }} || true
+          docker rm ${{ matrix.service }} || true
