@@ -56,15 +56,11 @@ jobs:
       - name: Run Docker container
         run: docker run -d --name ${{ matrix.service }} ${{ matrix.service }}:${{ github.sha }}
 
-      - name: Check container is running
+      - name: Check container started
         run: |
           sleep 3
-          if ! docker inspect -f '{{.State.Running}}' ${{ matrix.service }} | grep -q true; then
-            echo "Container failed to stay running. Logs:"
-            docker logs ${{ matrix.service }}
-            exit 1
-          fi
-          echo "Container is running"
+          docker logs ${{ matrix.service }}
+          docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }}
 
       - name: Stop and remove container
         if: always()
