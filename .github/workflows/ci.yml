@@ -11,10 +11,10 @@ jobs:
     outputs:
       services: ${{ steps.set-services.outputs.services }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: set-services
         run: |
-          SERVICES=$(find ./services -maxdepth 1 -type d \( -name "auth*" -o -name "restaurant*" -o -name "*service*" \) -exec test -f {}/go.mod \; | sed 's|./services/||' | jq -R . | jq -s .)
+          SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||' | jq -R . | jq -s .)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
   lint-and-test:
@@ -25,26 +25,26 @@ jobs:
       matrix:
         service: ${{ fromJson(needs.detect-services.outputs.services) }}
     steps:
-      - uses: actions/checkout@v5
-      
+      - uses: actions/checkout@v6
+
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: 'stable'
           cache: true
           cache-dependency-path: |
             services/${{ matrix.service }}/go.sum
             services/${{ matrix.service }}/go.mod
-      
+
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.61
+          version: latest
           working-directory: ./services/${{ matrix.service }}
-      
+
       - name: Build
         working-directory: ./services/${{ matrix.service }}
         run: go build -v ./...
-      
+
       - name: Test
         working-directory: ./services/${{ matrix.service }}
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: go test -v -race ./...
