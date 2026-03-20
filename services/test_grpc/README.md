@@ -1,4 +1,4 @@
-# {{.ServiceName}} Microservice
+# test_grpc Microservice
 
 ## Quick Start
 

@@ -5,11 +5,11 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /{{.ServiceName}} ./cmd
+RUN CGO_ENABLED=0 GOOS=linux go build -o /test_grpc ./cmd
 
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
-COPY --from=builder /{{.ServiceName}} .
+COPY --from=builder /test_grpc .
 EXPOSE 8080
-CMD ["./{{.ServiceName}}"]
+CMD ["./test_grpc"]

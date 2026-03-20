@@ -31,8 +31,15 @@ find "$TEMPLATE_DIR" -name "*.tmpl" -type f | while read -r tmpl; do
   echo "Created $target"
 done
 
-# Fix go.mod and initialize
-cd "$ROOT" || exit 1
+set -e
+
+cd $ROOT/internal/api/grpc
+
+protoc --go_out=. --go-grpc_out=. proto/protofile.proto
+
+echo "Protobuf generation done"
+
+cd "../../.." || exit 1
 
 go mod tidy
 
