@@ -60,15 +60,16 @@ jobs:
             -p 8080:8080 \
             ${{ matrix.service }}:${{ github.sha }}
 
-      - name: Check container didnt crash
+      - name: Check container ran successfully
         run: |
-          sleep 10
-          if ! docker inspect -f '{{.State.Running}}' ${{ matrix.service }} | grep -q true; then
-            echo "Container crashed. Logs:"
+          docker wait ${{ matrix.service }}
+          exit_code=$(docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }})
+          echo "Container exited with code: $exit_code"
+          if [ "$exit_code" != "0" ]; then
+            echo "Container failed. Logs:"
             docker logs ${{ matrix.service }}
             exit 1
           fi
-
       - name: Stop and remove container
         if: always()
         run: |
