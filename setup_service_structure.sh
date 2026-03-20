@@ -35,8 +35,6 @@ set -e
 
 cd $ROOT/internal/api/grpc
 
-echo "Running protoc in $(pwd)..."
-
 protoc --go_out=. --go-grpc_out=. proto/protofile.proto
 
 echo "Protobuf generation done"
