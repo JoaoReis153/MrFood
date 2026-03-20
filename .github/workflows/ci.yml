@@ -1,4 +1,4 @@
-name: Lint & Test
+name: Lint & Test All Services
 on:
   push:
     branches: [main]
@@ -6,42 +6,45 @@ on:
     branches: [main]
 
 jobs:
-  lint:
+  detect-services:
     runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.set-services.outputs.services }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable    
-          cache: true
-          cache-dependency-path: ./services/auth/go.sum
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.10
-          working-directory: ./services/auth  
+      - uses: actions/checkout@v6
+      - id: set-services
+        run: |
+          SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||' | jq -Rc . | jq -cs .)
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-  build:
+  lint-and-test:
+    needs: detect-services
     runs-on: ubuntu-latest
-    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-services.outputs.services) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
+
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.26.1'
+          go-version: 'stable'
           cache: true
-          cache-dependency-path: ./services/auth/go.sum
-      - name: golangci-lint
+          cache-dependency-path: |
+            services/${{ matrix.service }}/go.sum
+            services/${{ matrix.service }}/go.mod
+
+      - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.10
-          working-directory: ./services/auth  
+          version: latest
+          working-directory: ./services/${{ matrix.service }}
+
       - name: Build
-        working-directory: ./services/auth
+        working-directory: ./services/${{ matrix.service }}
         run: go build -v ./...
 
       - name: Test
-        working-directory: ./services/auth
+        working-directory: ./services/${{ matrix.service }}
         run: go test -v -race ./...
-
-        
