@@ -17,7 +17,7 @@ jobs:
           SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||' | jq -Rc . | jq -cs .)
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
-  lint-and-test:
+  lint-and-test-and-docker:
     needs: detect-services
     runs-on: ubuntu-latest
     strategy:
@@ -48,3 +48,23 @@ jobs:
       - name: Test
         working-directory: ./services/${{ matrix.service }}
         run: go test -v -race ./...
+
+      - name: Build Docker image
+        working-directory: ./services/${{ matrix.service }}
+        run: docker build -t ${{ matrix.service }}:${{ github.sha }} .
+
+      - name: Run Docker container
+        run: |
+          docker run -d \
+            --name ${{ matrix.service }} \
+            -p 8080:8080 \
+            ${{ matrix.service }}:${{ github.sha }}
+
+      - name: Health check
+        run: curl --retry 5 --retry-delay 2 --fail http://localhost:8080/health
+
+      - name: Stop and remove container
+        if: always()
+        run: |
+          docker stop ${{ matrix.service }} || true
+          docker rm ${{ matrix.service }} || true
