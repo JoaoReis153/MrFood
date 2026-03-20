@@ -18,7 +18,11 @@ func RunClient() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Fatal("failed to close grpc connection:", err)
+		}
+	}()
 
 	client := pb.NewTemplateServiceClient(conn)
 
