@@ -62,7 +62,7 @@ jobs:
 
       - name: Check container didnt crash
         run: |
-          sleep 3
+          sleep 10
           if ! docker inspect -f '{{.State.Running}}' ${{ matrix.service }} | grep -q true; then
             echo "Container crashed. Logs:"
             docker logs ${{ matrix.service }}
