@@ -54,22 +54,18 @@ jobs:
         run: docker build -t ${{ matrix.service }}:${{ github.sha }} .
 
       - name: Run Docker container
-        run: |
-          docker run -d \
-            --name ${{ matrix.service }} \
-            -p 8080:8080 \
-            ${{ matrix.service }}:${{ github.sha }}
+        run: docker run -d --name ${{ matrix.service }} ${{ matrix.service }}:${{ github.sha }}
 
-      - name: Check container ran successfully
+      - name: Check container is running
         run: |
-          docker wait ${{ matrix.service }}
-          exit_code=$(docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }})
-          echo "Container exited with code: $exit_code"
-          if [ "$exit_code" != "0" ]; then
-            echo "Container failed. Logs:"
+          sleep 3
+          if ! docker inspect -f '{{.State.Running}}' ${{ matrix.service }} | grep -q true; then
+            echo "Container failed to stay running. Logs:"
             docker logs ${{ matrix.service }}
             exit 1
           fi
+          echo "Container is running"
+
       - name: Stop and remove container
         if: always()
         run: |
