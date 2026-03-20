@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	pb "MrFood/services/{{.ServiceName}}/internal/api/grpc/pb"
+	pb "MrFood/services/test_grpc/internal/api/grpc/pb"
 
 	"google.golang.org/grpc"
 )
