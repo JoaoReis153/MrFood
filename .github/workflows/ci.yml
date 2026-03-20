@@ -1,4 +1,4 @@
-name: Lint & Test All Services
+name: Lint & Test & Docker Build & Run All Services
 on:
   push:
     branches: [main]
