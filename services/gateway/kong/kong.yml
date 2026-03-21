@@ -1,0 +1,9 @@
+_format_version: "3.0"
+
+services:
+  - name: example-service
+    url: https://httpbin.org
+    routes:
+      - name: example-route
+        paths:
+          - /example
