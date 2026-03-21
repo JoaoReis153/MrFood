@@ -24,10 +24,14 @@ message PaginationRequest {
 
 message PaginationResponse {
   repeated Ping data = 1;
-  int32 page = 2;
-  int32 limit = 3;
-  int32 total = 4;
-  int32 pages = 5;
+  Pagination pagination = 2;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 pages = 4;
 }
 
 message Ping {
