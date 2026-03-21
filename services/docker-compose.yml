@@ -37,6 +37,42 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+  review:
+    build: ./review
+    ports:
+      - "50051:50051"
+    environment:
+      DB_HOST: reviews_db
+      DB_PORT: 5432
+      DB_NAME: mrfood_reviews
+      DB_USER: review
+      DB_PASS: reviewsecret
+    depends_on:
+      reviews_db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  reviews_db:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: mrfood_reviews
+      POSTGRES_USER: review
+      POSTGRES_PASSWORD: reviewsecret
+    volumes:
+      - reviews_db_data:/var/lib/postgresql/data
+      - ./review/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U review -d mrfood_reviews"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
 
 networks:
   app-network:
@@ -44,3 +80,4 @@ networks:
 
 volumes:
   auth_db_data:
+  reviews_db_data:
