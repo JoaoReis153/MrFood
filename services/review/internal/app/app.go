@@ -3,6 +3,7 @@ package app
 import (
 	"MrFood/services/review/internal/repository"
 	"MrFood/services/review/internal/service"
+	"database/sql"
 )
 
 type App struct {
@@ -10,11 +11,11 @@ type App struct {
 	Repo    *repository.Repository
 }
 
-func New() *App {
-	repo := repository.New()
+func New(db *sql.DB) *App {
+	repo := repository.New(db)
 	svc := service.New(*repo)
-
 	return &App{
 		Service: svc,
+		Repo:    repo,
 	}
 }

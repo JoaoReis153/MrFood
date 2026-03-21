@@ -17,6 +17,9 @@ type Config struct {
 	Log struct {
 		Level string `yaml:"level"`
 	} `yaml:"log"`
+	Database struct {
+		URL string `yaml:"url"`
+	} `yaml:"database"`
 }
 
 var globalConfig *Config
@@ -39,6 +42,11 @@ func Load() *Config {
 		}{
 			Level: "info",
 		},
+		Database: struct {
+			URL string `yaml:"url"`
+		}{
+			URL: "postgres://user:pass@localhost:5432/reviews",
+		},
 	}
 
 	// Override with ENV vars
@@ -56,6 +64,9 @@ func overrideWithEnv(cfg *Config) {
 
 	// Log config
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+
+	// Database config
+	cfg.Database.URL = getEnv("APP_DATABASE_URL", cfg.Database.URL)
 }
 
 func getEnv(key, defaultValue string) string {
