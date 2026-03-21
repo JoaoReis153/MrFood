@@ -1,0 +1,20 @@
+opencollection: 1.0.0
+info:
+  name: "mrfood-api"
+  type: workspace
+
+collections:
+  - name: "notifications"
+    path: "collections/notifications"
+  - name: "reservations"
+    path: "collections/reservations"
+  - name: "restaurants"
+    path: "collections/restaurants"
+  - name: "reviews"
+    path: "collections/reviews"
+  - name: "users"
+    path: "collections/users"
+
+specs:
+
+docs: ''
