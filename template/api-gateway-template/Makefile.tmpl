@@ -1,9 +1,8 @@
-.PHONY: build test lint docker-build docker-up docker-down clean proto
+.PHONY: build test lint docker-build docker-up docker-down clean
 
 # Config
 SERVICE_NAME := android
 BINARY := bin/server
-PROTO_PATH := internal/api/grpc/
 
 build:
 	go build -o $(BINARY) ./cmd
@@ -32,6 +31,3 @@ docker-down:
 
 clean:
 	rm -rf $(BINARY)
-
-proto:
-	protoc --go_out=$(PROTO_PATH) --go-grpc_out=$(PROTO_PATH) $(PROTO_PATH)/proto/protofile.proto

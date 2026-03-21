@@ -1,7 +1,7 @@
 package main
 
 import (
-	"MrFood/services/{{.ServiceName}}/internal/app"
+	"MrFood/services/test_grpc/internal/app"
 )
 
 func main() {

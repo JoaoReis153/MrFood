@@ -174,7 +174,7 @@ flowchart TD
     ChangeDataCapture("Change Data Capture")
     ElasticCloud[("ELASTIC cloud")]
     SearchService("Search service")
-    ReastaurantDetailsService("Restaurant Details Service<br/>pagination with cursor")
+    RestaurantDetailsService("Restaurant Details Service<br/>pagination with cursor")
     RedisInstanceTrendingRestaurants[("REDIS/Memory  store  INSTANCE
     (KEEP TRENDING RESTAURANTS
     IN CASE OF)
@@ -204,7 +204,7 @@ flowchart TD
     BusinessClient <-- "Pre-signe URL" --> BlobStorage
 
     ApiGateway <-- "USE CASES -4, -5, -10" --> SearchService
-    ApiGateway <-- "USE CASES -2, -3, -11, -12" --> ReastaurantDetailsService
+    ApiGateway <-- "USE CASES -2, -3, -11, -12" --> RestaurantDetailsService
     ApiGateway <-- "GET POST PUT DELETE REVIEWS" --> ReviewService
     ApiGateway <-- "Use cases" --> BookingService
     ApiGateway <--> SponsorService
@@ -215,9 +215,9 @@ flowchart TD
     RestaurantsDB --> ChangeDataCapture
     ChangeDataCapture --> ElasticCloud
 
-    ReastaurantDetailsService --> RestaurantsDB
-    ReastaurantDetailsService <-- "CACHE ASIDE ALG" --> RedisInstanceTrendingRestaurants
-    ReastaurantDetailsService <-- "GET COUNT REVIEWS AND AVG" --> ReviewService
+    RestaurantDetailsService --> RestaurantsDB
+    RestaurantDetailsService <-- "CACHE ASIDE ALG" --> RedisInstanceTrendingRestaurants
+    RestaurantDetailsService <-- "GET COUNT REVIEWS AND AVG" --> ReviewService
 
     ElasticCloud <--> SearchService
 
@@ -226,7 +226,7 @@ flowchart TD
     BookingService <--> BookingDB
     BookingService <--> RedisInstanceBooking
     BookingService <--> PaymentService
-    BookingService <-- "Get working hours" --> ReastaurantDetailsService
+    BookingService <-- "Get working hours" --> RestaurantDetailsService
 
     PaymentService <--> ReceiptsDB
     PaymentService <--> 3rdPartyService
@@ -234,5 +234,5 @@ flowchart TD
     PaymentService <--> SponsorService
 
     SponsorService <--> SponsorDB
-    SponsorService <--> ReastaurantDetailsService
+    SponsorService <--> RestaurantDetailsService
 ```
