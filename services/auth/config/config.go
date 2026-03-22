@@ -17,6 +17,13 @@ type Config struct {
 	Log struct {
 		Level string `yaml:"level"`
 	} `yaml:"log"`
+	DB struct {
+		Host     string `yaml:"host"`
+		Port     int    `yaml:"port"`
+		Name     string `yaml:"name"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+	} `yaml:"db"`
 }
 
 var globalConfig *Config
@@ -39,12 +46,26 @@ func Load() *Config {
 		}{
 			Level: "info",
 		},
+		DB: struct {
+			Host     string `yaml:"host"`
+			Port     int    `yaml:"port"`
+			Name     string `yaml:"name"`
+			User     string `yaml:"user"`
+			Password string `yaml:"password"`
+		}{
+			Host: "localhost",
+			Port: 5432,
+		},
 	}
 
-	// Override with ENV vars
 	overrideWithEnv(cfg)
 
-	log.Printf("Config loaded: Server=%s:%d, Timeout=%v, Log=%s", cfg.Server.Host, cfg.Server.Port, cfg.Server.Timeout, cfg.Log.Level)
+	log.Printf("Config loaded: Server=%s:%d, DB=%s:%d/%s, Log=%s",
+		cfg.Server.Host, cfg.Server.Port,
+		cfg.DB.Host, cfg.DB.Port, cfg.DB.Name,
+		cfg.Log.Level,
+	)
+
 	return cfg
 }
 
@@ -53,8 +74,11 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
 	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
-
-	// Log config
+	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
+	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
+	cfg.DB.Name = getEnv("DB_NAME", cfg.DB.Name)
+	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 }
 

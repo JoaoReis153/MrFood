@@ -1,15 +1,18 @@
 package repository
 
-import models "MrFood/services/auth/pkg"
+import (
+	"context"
 
-type Repository struct{}
+	"github.com/jackc/pgx/v5/pgxpool"
+)
 
-func New() *Repository {
-	return &Repository{}
+type Repository struct {
+	DB *pgxpool.Pool
 }
 
-// Example method - customize based on your data needs
-func (r *Repository) GetExample(id int) (*models.Example, error) {
-	// In-memory example - replace with database/Redis
-	return &models.Example{ID: id, Name: "Example"}, nil
+func New(db *pgxpool.Pool) *Repository {
+	return &Repository{
+		DB: db,
+	}
+}
 }
