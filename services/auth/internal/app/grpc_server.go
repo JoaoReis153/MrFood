@@ -27,6 +27,30 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 	}, nil
 }
 
+func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
+	fmt.Println("Registering " + req.Username)
+
+	user := &models.User{
+		Email:    req.Email,
+		Name:     req.Username,
+		Password: req.Password,
+	}
+
+	newUser, err := s.authService.StoreUser(user)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			return nil, status.Error(codes.AlreadyExists, "username or email already exists")
+		}
+		return nil, status.Error(codes.Internal, "failed to create user")
+	}
+
+	return &pb.RegisterResponse{
+		Id:       newUser.ID,
+		Username: newUser.Name,
+	}, nil
+
+}
+
 func (app *App) RunServer() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

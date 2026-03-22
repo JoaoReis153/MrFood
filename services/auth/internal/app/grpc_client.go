@@ -46,3 +46,13 @@ func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
 	}
 	fmt.Println("Pong", res.Id)
 }
+
+func RegisterProcess(client pb.TemplateServiceClient, ctx context.Context) {
+	res, err := client.RegisterProcess(ctx, &pb.Register{Username: "joao", Email: "joao@gmail.com", Password: "pass_joao"})
+	fmt.Println("Register sent for " + res.Username)
+	if err != nil {
+		log.Println("Register error:", err)
+		return
+	}
+	fmt.Println("Register res", res)
+}
