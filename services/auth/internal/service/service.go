@@ -24,7 +24,7 @@ func New(repo *repository.Repository) *Service {
 
 func (s *Service) StoreUser(ctx context.Context, user *models.User) (*models.User, error) {
 	if !validEmail(user.Email) {
-		slog.Error("invalid email format", "email", email) 
+		slog.Error("invalid email format")
 		return nil, status.Error(codes.InvalidArgument, "invalid email")
 	}
 
@@ -60,7 +60,7 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9.!#$%&'*+/=?^_{|}~-]+@[a-zA-Z0-9
 func (s *Service) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	email = strings.TrimSpace(email)
 	if !validEmail(email) {
-		slog.Error("create user failed", "error", err, "username", user.Username)
+		slog.Error("invalid email format")
 		return nil, fmt.Errorf("invalid email format")
 	}
 
