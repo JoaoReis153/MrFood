@@ -48,7 +48,7 @@ func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
 		slog.Error("failed", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("Pong", res.Id)
+	slog.Info("Pong", "id", res.Id)                    // ✅
 }
 
 func RegisterProcess(client pb.TemplateServiceClient, ctx context.Context) {
@@ -58,5 +58,5 @@ func RegisterProcess(client pb.TemplateServiceClient, ctx context.Context) {
 		log.Println("Register error:", err)
 		return
 	}
-	slog.Info("Register res", res)
+	slog.Info("Register res", "id", res.Id, "username", res.Username)
 }
