@@ -1,7 +1,9 @@
 package config
 
 import (
-	"log"
+	"context"
+	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -24,14 +26,16 @@ type Config struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 	} `yaml:"db"`
+	JWT struct {
+		Secret       string `yaml:"secret"`
+		ExpiresHours int    `yaml:"expires_hours"`
+	} `yaml:"jwt"`
 }
 
 var globalConfig *Config
 
-// Load config from ENV vars only (with sane defaults)
-func Load() *Config {
+func Load(ctx context.Context) *Config {
 	cfg := &Config{
-		// Hardcoded defaults (non-zero!)
 		Server: struct {
 			Host    string        `yaml:"host"`
 			Port    int           `yaml:"port"`
@@ -53,33 +57,69 @@ func Load() *Config {
 			User     string `yaml:"user"`
 			Password string `yaml:"password"`
 		}{
-			Host: "localhost",
-			Port: 5432,
+			Host:     "localhost",
+			Port:     5432,
+			Name:     "mrfood",
+			User:     "postgres",
+			Password: "",
+		},
+		JWT: struct {
+			Secret       string `yaml:"secret"`
+			ExpiresHours int    `yaml:"expires_hours"`
+		}{
+			Secret:       "change-me-in-prod!!",
+			ExpiresHours: 24,
 		},
 	}
 
 	overrideWithEnv(cfg)
 
-	log.Printf("Config loaded: Server=%s:%d, DB=%s:%d/%s, Log=%s",
-		cfg.Server.Host, cfg.Server.Port,
-		cfg.DB.Host, cfg.DB.Port, cfg.DB.Name,
-		cfg.Log.Level,
+	if err := validateConfig(cfg); err != nil {
+		slog.Error("invalid config", "error", err)
+		panic(err)
+	}
+
+	slog.Info("config loaded",
+		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
+		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
+		slog.String("log_level", cfg.Log.Level),
+		slog.Int("jwt_expires_hours", cfg.JWT.ExpiresHours),
 	)
 
 	return cfg
 }
 
 func overrideWithEnv(cfg *Config) {
-	// Server config
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
 	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
+
 	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("DB_NAME", cfg.DB.Name)
 	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
 	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
+
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+
+	cfg.JWT.Secret = getEnv("APP_JWT_SECRET", cfg.JWT.Secret)
+	cfg.JWT.ExpiresHours = getEnvInt("APP_JWT_EXPIRES_HOURS", cfg.JWT.ExpiresHours)
+}
+
+func validateConfig(cfg *Config) error {
+	if cfg.Server.Port < 1 || cfg.Server.Port > 65535 {
+		return fmt.Errorf("server port invalid: %d", cfg.Server.Port)
+	}
+	if cfg.Server.Timeout == 0 {
+		return fmt.Errorf("server timeout required")
+	}
+	if len(cfg.JWT.Secret) < 32 {
+		return fmt.Errorf("JWT secret too short: %d chars", len(cfg.JWT.Secret))
+	}
+	if cfg.DB.Host == "" || cfg.DB.Name == "" {
+		return fmt.Errorf("DB host/name required")
+	}
+	return nil
 }
 
 func getEnv(key, defaultValue string) string {
@@ -104,15 +144,12 @@ func parseDuration(s string) time.Duration {
 	if d, err := time.ParseDuration(s + "s"); err == nil {
 		return d
 	}
-	if seconds, err := strconv.Atoi(s); err == nil {
-		return time.Duration(seconds) * time.Second
-	}
 	return 30 * time.Second
 }
 
-func Get() *Config {
+func Get(ctx context.Context) *Config {
 	if globalConfig == nil {
-		globalConfig = Load()
+		globalConfig = Load(ctx)
 	}
 	return globalConfig
 }

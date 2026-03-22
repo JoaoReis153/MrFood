@@ -7,11 +7,12 @@
 package pb
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -397,7 +398,7 @@ func (x *RegisterResponse) GetUsername() string {
 
 type Login struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=userId,proto3" json:"userId,omitempty"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -433,11 +434,11 @@ func (*Login) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *Login) GetUserId() int32 {
+func (x *Login) GetEmail() string {
 	if x != nil {
-		return x.UserId
+		return x.Email
 	}
-	return 0
+	return ""
 }
 
 func (x *Login) GetPassword() string {
@@ -449,8 +450,8 @@ func (x *Login) GetPassword() string {
 
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -485,16 +486,16 @@ func (*User) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *User) GetId() string {
+func (x *User) GetId() int32 {
 	if x != nil {
 		return x.Id
 	}
-	return ""
+	return 0
 }
 
-func (x *User) GetName() string {
+func (x *User) GetUsername() string {
 	if x != nil {
-		return x.Name
+		return x.Username
 	}
 	return ""
 }
@@ -580,13 +581,13 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\">\n" +
 	"\x10RegisterResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\";\n" +
-	"\x05Login\x12\x16\n" +
-	"\x06userId\x18\x01 \x01(\x05R\x06userId\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"*\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"9\n" +
+	"\x05Login\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"2\n" +
 	"\x04User\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"F\n" +
+	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\"F\n" +
 	"\rLoginResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1f\n" +
 	"\x04user\x18\x02 \x01(\v2\v.proto.UserR\x04user2\xf4\x01\n" +

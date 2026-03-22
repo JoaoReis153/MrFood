@@ -2,8 +2,9 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"log/slog"
+	"os"
 	"time"
 
 	pb "MrFood/services/auth/internal/api/grpc/pb"
@@ -15,11 +16,13 @@ import (
 func (app *App) RunClient() {
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if err := conn.Close(); err != nil {
-			log.Fatal("failed to close grpc connection:", err)
+			slog.Error("failed to close grpc connection:", "error", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -40,19 +43,20 @@ func (app *App) RunClient() {
 
 func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
 	res, err := client.PingPong(ctx, &pb.Ping{Id: 1})
-	fmt.Println("Ping 1")
+	slog.Info("Ping 1")
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed", "error", err)
+		os.Exit(1)
 	}
-	fmt.Println("Pong", res.Id)
+	slog.Info("Pong", "id", res.Id) // ✅
 }
 
 func RegisterProcess(client pb.TemplateServiceClient, ctx context.Context) {
 	res, err := client.RegisterProcess(ctx, &pb.Register{Username: "joao", Email: "joao@gmail.com", Password: "pass_joao"})
-	fmt.Println("Register sent for " + res.Username)
+	slog.Info("Register sent for " + res.Username)
 	if err != nil {
 		log.Println("Register error:", err)
 		return
 	}
-	fmt.Println("Register res", res)
+	slog.Info("Register res", "id", res.Id, "username", res.Username)
 }
