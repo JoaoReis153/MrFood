@@ -29,7 +29,3 @@ func (s *Service) StoreUser(user *models.User) (*models.User, error) {
 
 	return newUser, nil
 }
-
-func (s *Service) GetExample(id int) (*models.Example, error) {
-	return s.repo.GetExample(id)
-}
