@@ -1,6 +1,30 @@
 version: "3.8"
 
 services:
+  kong:
+    image: '${GW_IMAGE:-kong/kong-gateway:3.13.0.2}'
+    container_name: kong
+    restart: on-failure
+    networks:
+      - kong-net
+
+    environment:
+      KONG_DATABASE: "off"                         # Disable database
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # Path to config file
+
+
+      KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001              # Admin API (optional in DB-less)
+
+    volumes:
+      - ./gateway/kong/kong.yml:/etc/kong/kong.yml:Z
+      - ./gateway/kong/proto:/etc/kong/proto:Z
+
+    ports:
+      - "8000:8000"   # Proxy HTTP
+      - "8443:8443"   # Proxy HTTPS
+      - "8001:8001"   # Admin API (read-only in DB-less)
+
   auth:
     build: ./auth
     volumes:
@@ -18,6 +42,7 @@ services:
         condition: service_healthy
     networks:
       - app-network
+      - kong-net
 
   auth_db:
     image: postgres:16
@@ -40,6 +65,8 @@ services:
       - app-network
 
 networks:
+  kong-net:      # Custom bridge network for isolated Kong
+    driver: bridge
   app-network:
     driver: bridge
 

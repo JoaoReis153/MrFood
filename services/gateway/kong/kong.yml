@@ -1,9 +1,20 @@
 _format_version: "3.0"
 
 services:
-  - name: example-service
-    url: https://httpbin.org
+  - name: auth
+    host: auth
+    port: 50051
+    protocol: grpc
+
     routes:
-      - name: example-route
+      - name: auth
+        protocols:
+        - http
+        - https
         paths:
-          - /example
+          - /auth
+
+    plugins:
+      - name: grpc-gateway
+        config:
+          proto: /etc/kong/proto/auth.proto

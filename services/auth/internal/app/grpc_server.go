@@ -23,7 +23,7 @@ type server struct {
 
 func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 	return &pb.Pong{
-		Id: 1,
+		Id: 5,
 	}, nil
 }
 

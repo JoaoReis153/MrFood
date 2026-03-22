@@ -7,10 +7,36 @@ option go_package = "/pb;pb";
 import "google/api/annotations.proto";
 
 service TemplateService {
-  rpc PingPong (Ping) returns (Pong);
-  rpc RegisterProcess (Register) returns (RegisterResponse);
-  rpc LoginProcess (Login) returns (LoginResponse);
-  rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
+  
+  rpc PingPong (Ping) returns (Pong) {
+    option (google.api.http) = {
+      get: "/auth/ping/{id}"
+    };
+  }
+
+  rpc RegisterProcess (Register) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/auth/register"
+      body: "*"
+    };
+  }
+
+  rpc LoginProcess (Login) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/auth/login"
+      body: "*"
+    };
+  }
+
+  rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse) {
+    option (google.api.http) = {
+      get: "/auth/examples"
+    };
+  }
+  //rpc PingPong (Ping) returns (Pong);
+  //rpc RegisterProcess (Register) returns (RegisterResponse);
+  //rpc LoginProcess (Login) returns (LoginResponse);
+  //rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
 }
 //Important repeated = all data comes back in one response
 //Important stream = data comes back in multiple responses, one at a time
