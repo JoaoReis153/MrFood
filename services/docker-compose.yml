@@ -3,8 +3,10 @@ version: "3.8"
 services:
   auth:
     build: ./auth
+    volumes:
+      - ./auth:/app
     ports:
-      - "8080:8080"
+      - "50051:50051"
     environment:
       DB_HOST: auth_db
       DB_PORT: 5432
@@ -14,7 +16,6 @@ services:
     depends_on:
       auth_db:
         condition: service_healthy
-    restart: unless-stopped
     networks:
       - app-network
 
