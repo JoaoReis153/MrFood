@@ -2,72 +2,72 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
-type Config struct {
-	Server struct {
-		Host    string        `yaml:"host"`
-		Port    int           `yaml:"port"`
-		Timeout time.Duration `yaml:"timeout"`
-	} `yaml:"server"`
-	Log struct {
-		Level string `yaml:"level"`
-	} `yaml:"log"`
-	DB struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Name     string `yaml:"name"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-	} `yaml:"db"`
-	JWT struct {
-		Secret       string `yaml:"secret"`
-		ExpiresHours int    `yaml:"expires_hours"`
-	} `yaml:"jwt"`
+type ServerConfig struct {
+	Host    string        `yaml:"host"    validate:"required"`
+	Port    int           `yaml:"port"    validate:"required,min=1,max=65535"`
+	Timeout time.Duration `yaml:"timeout" validate:"required"`
 }
 
-var globalConfig *Config
+type LogConfig struct {
+	Level string `yaml:"level" validate:"required,oneof=debug info warn error"`
+}
 
-func Load(ctx context.Context) *Config {
+type DBConfig struct {
+	Host     string `yaml:"host"     validate:"required"`
+	Port     int    `yaml:"port"     validate:"required,min=1,max=65535"`
+	Name     string `yaml:"name"     validate:"required"`
+	User     string `yaml:"user"     validate:"required"`
+	Password string `yaml:"password"`
+}
+
+type JWTConfig struct {
+	Secret       string `yaml:"secret"        validate:"required,min=32"`
+	ExpiresHours int    `yaml:"expires_hours" validate:"required,min=1,max=8760"`
+}
+
+type Config struct {
+	Server ServerConfig `yaml:"server"`
+	Log    LogConfig    `yaml:"log"`
+	DB     DBConfig     `yaml:"db"`
+	JWT    JWTConfig    `yaml:"jwt"`
+}
+
+var (
+	globalConfig *Config
+	once         sync.Once
+	validate     = validator.New()
+)
+
+func Load(_ context.Context) (*Config, error) {
 	cfg := &Config{
-		Server: struct {
-			Host    string        `yaml:"host"`
-			Port    int           `yaml:"port"`
-			Timeout time.Duration `yaml:"timeout"`
-		}{
+		Server: ServerConfig{
 			Host:    "0.0.0.0",
 			Port:    8080,
 			Timeout: 30 * time.Second,
 		},
-		Log: struct {
-			Level string `yaml:"level"`
-		}{
+		Log: LogConfig{
 			Level: "info",
 		},
-		DB: struct {
-			Host     string `yaml:"host"`
-			Port     int    `yaml:"port"`
-			Name     string `yaml:"name"`
-			User     string `yaml:"user"`
-			Password string `yaml:"password"`
-		}{
-			Host:     "localhost",
-			Port:     5432,
-			Name:     "mrfood",
-			User:     "postgres",
-			Password: "",
+		DB: DBConfig{
+			Host: "localhost",
+			Port: 5432,
+			Name: "mrfood",
+			User: "postgres",
 		},
-		JWT: struct {
-			Secret       string `yaml:"secret"`
-			ExpiresHours int    `yaml:"expires_hours"`
-		}{
-			Secret:       "change-me-in-prod!!",
+		JWT: JWTConfig{
+			Secret:       "to-be-saved",
 			ExpiresHours: 24,
 		},
 	}
@@ -75,8 +75,7 @@ func Load(ctx context.Context) *Config {
 	overrideWithEnv(cfg)
 
 	if err := validateConfig(cfg); err != nil {
-		slog.Error("invalid config", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("config: %w", err)
 	}
 
 	slog.Info("config loaded",
@@ -86,13 +85,25 @@ func Load(ctx context.Context) *Config {
 		slog.Int("jwt_expires_hours", cfg.JWT.ExpiresHours),
 	)
 
-	return cfg
+	return cfg, nil
+}
+
+func Get(ctx context.Context) *Config {
+	once.Do(func() {
+		cfg, err := Load(ctx)
+		if err != nil {
+			slog.Error("invalid config", "error", err)
+			panic(err)
+		}
+		globalConfig = cfg
+	})
+	return globalConfig
 }
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
 	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
-	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
+	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
 	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
@@ -107,17 +118,16 @@ func overrideWithEnv(cfg *Config) {
 }
 
 func validateConfig(cfg *Config) error {
-	if cfg.Server.Port < 1 || cfg.Server.Port > 65535 {
-		return fmt.Errorf("server port invalid: %d", cfg.Server.Port)
-	}
-	if cfg.Server.Timeout == 0 {
-		return fmt.Errorf("server timeout required")
-	}
-	if len(cfg.JWT.Secret) < 32 {
-		return fmt.Errorf("JWT secret too short: %d chars", len(cfg.JWT.Secret))
-	}
-	if cfg.DB.Host == "" || cfg.DB.Name == "" {
-		return fmt.Errorf("DB host/name required")
+	if err := validate.Struct(cfg); err != nil {
+		var errs validator.ValidationErrors
+		if errors.As(err, &errs) {
+			msgs := make([]string, 0, len(errs))
+			for _, e := range errs {
+				msgs = append(msgs, fmt.Sprintf("%s: failed '%s'", e.Field(), e.Tag()))
+			}
+			return fmt.Errorf("validation failed: %s", strings.Join(msgs, "; "))
+		}
+		return err
 	}
 	return nil
 }
@@ -130,26 +140,35 @@ func getEnv(key, defaultValue string) string {
 }
 
 func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
-		}
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
 	}
-	return defaultValue
+	intVal, err := strconv.Atoi(value)
+	if err != nil {
+		slog.Warn("invalid int env var, using default",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.Int("default", defaultValue),
+		)
+		return defaultValue
+	}
+	return intVal
 }
 
-func parseDuration(s string) time.Duration {
-	// Support "30s", "30", "30s" etc.
-	s = strings.TrimSuffix(s, "s")
-	if d, err := time.ParseDuration(s + "s"); err == nil {
-		return d
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
 	}
-	return 30 * time.Second
-}
-
-func Get(ctx context.Context) *Config {
-	if globalConfig == nil {
-		globalConfig = Load(ctx)
+	d, err := time.ParseDuration(value)
+	if err != nil {
+		slog.Warn("invalid duration env var, using default",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.String("default", defaultValue.String()),
+		)
+		return defaultValue
 	}
-	return globalConfig
+	return d
 }
