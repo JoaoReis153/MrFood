@@ -6,6 +6,7 @@ import (
 	"MrFood/services/auth/internal/service"
 	models "MrFood/services/auth/pkg"
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -29,12 +30,18 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 }
 
 func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
-	slog.Info("Registering " + req.Username)
+	slog.Info("registering user", "username", req.Username)
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		slog.Error("hash password failed", "error", err)
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
 
 	user := &models.User{
 		Email:    req.Email,
 		Username: req.Username,
-		Password: req.Password,
+		Password: string(hashedPassword),
 	}
 
 	newUser, err := s.authService.StoreUser(ctx, user)
