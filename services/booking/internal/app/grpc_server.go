@@ -38,7 +38,17 @@ func RunServer() {
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
-	slog.Info("Creating booking", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.BookingRange.TimeStart)
+	// calls client to get available slots
+	res, err := s.bookingService.Client.GetSlots(ctx,
+		&pb.GetSlotsRequest{
+			RestaurantId: req.RestaurantId,
+			TimeStart:    req.BookingRange.TimeStart,
+		})
+
+	if err != nil {
+		slog.Error("Failed to get slots", "error", err)
+		return nil, status.Error(codes.Internal, "failed to get slots")
+	}
 
 	booking := &models.Booking{
 		UserID:       req.UserId,
@@ -48,11 +58,19 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		PeopleCount:  req.Quantity,
 	}
 
-	newBooking, err := s.bookingService.CreateBooking(ctx, booking)
+	slots := &models.HourSlots{
+		MaxSlots:     res.MaxSlots,
+		CurrentSlots: res.CurrentSlots,
+	}
+
+	newBooking, err := s.bookingService.CreateBooking(ctx, booking, slots)
 
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		slog.Error("Failed to get slots", "error", err)
+		return nil, status.Error(codes.Internal, "failed to get slots")
 	}
+
+	slog.Info("Booking created", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.BookingRange.TimeStart)
 
 	return &pb.Booking{
 		Id:           newBooking.ID,
