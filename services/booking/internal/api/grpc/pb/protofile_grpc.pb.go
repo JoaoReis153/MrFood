@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RestaurantService_GetSlots_FullMethodName = "/proto.RestaurantService/GetSlots"
+	RestaurantService_GetWorkingHours_FullMethodName = "/proto.RestaurantService/GetWorkingHours"
 )
 
 // RestaurantServiceClient is the client API for RestaurantService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RestaurantServiceClient interface {
-	GetSlots(ctx context.Context, in *GetSlotsRequest, opts ...grpc.CallOption) (*GetSlotsResponse, error)
+	GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error)
 }
 
 type restaurantServiceClient struct {
@@ -37,10 +37,10 @@ func NewRestaurantServiceClient(cc grpc.ClientConnInterface) RestaurantServiceCl
 	return &restaurantServiceClient{cc}
 }
 
-func (c *restaurantServiceClient) GetSlots(ctx context.Context, in *GetSlotsRequest, opts ...grpc.CallOption) (*GetSlotsResponse, error) {
+func (c *restaurantServiceClient) GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetSlotsResponse)
-	err := c.cc.Invoke(ctx, RestaurantService_GetSlots_FullMethodName, in, out, cOpts...)
+	out := new(WorkingHoursResponse)
+	err := c.cc.Invoke(ctx, RestaurantService_GetWorkingHours_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (c *restaurantServiceClient) GetSlots(ctx context.Context, in *GetSlotsRequ
 // All implementations must embed UnimplementedRestaurantServiceServer
 // for forward compatibility.
 type RestaurantServiceServer interface {
-	GetSlots(context.Context, *GetSlotsRequest) (*GetSlotsResponse, error)
+	GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error)
 	mustEmbedUnimplementedRestaurantServiceServer()
 }
 
@@ -62,8 +62,8 @@ type RestaurantServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRestaurantServiceServer struct{}
 
-func (UnimplementedRestaurantServiceServer) GetSlots(context.Context, *GetSlotsRequest) (*GetSlotsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetSlots not implemented")
+func (UnimplementedRestaurantServiceServer) GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkingHours not implemented")
 }
 func (UnimplementedRestaurantServiceServer) mustEmbedUnimplementedRestaurantServiceServer() {}
 func (UnimplementedRestaurantServiceServer) testEmbeddedByValue()                           {}
@@ -86,20 +86,20 @@ func RegisterRestaurantServiceServer(s grpc.ServiceRegistrar, srv RestaurantServ
 	s.RegisterService(&RestaurantService_ServiceDesc, srv)
 }
 
-func _RestaurantService_GetSlots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSlotsRequest)
+func _RestaurantService_GetWorkingHours_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WorkingHoursRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RestaurantServiceServer).GetSlots(ctx, in)
+		return srv.(RestaurantServiceServer).GetWorkingHours(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RestaurantService_GetSlots_FullMethodName,
+		FullMethod: RestaurantService_GetWorkingHours_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RestaurantServiceServer).GetSlots(ctx, req.(*GetSlotsRequest))
+		return srv.(RestaurantServiceServer).GetWorkingHours(ctx, req.(*WorkingHoursRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +112,8 @@ var RestaurantService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RestaurantServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetSlots",
-			Handler:    _RestaurantService_GetSlots_Handler,
+			MethodName: "GetWorkingHours",
+			Handler:    _RestaurantService_GetWorkingHours_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

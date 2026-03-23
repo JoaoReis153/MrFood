@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type GetSlotsRequest struct {
+type WorkingHoursRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
@@ -30,20 +30,20 @@ type GetSlotsRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetSlotsRequest) Reset() {
-	*x = GetSlotsRequest{}
+func (x *WorkingHoursRequest) Reset() {
+	*x = WorkingHoursRequest{}
 	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetSlotsRequest) String() string {
+func (x *WorkingHoursRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetSlotsRequest) ProtoMessage() {}
+func (*WorkingHoursRequest) ProtoMessage() {}
 
-func (x *GetSlotsRequest) ProtoReflect() protoreflect.Message {
+func (x *WorkingHoursRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,48 +55,47 @@ func (x *GetSlotsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSlotsRequest.ProtoReflect.Descriptor instead.
-func (*GetSlotsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WorkingHoursRequest.ProtoReflect.Descriptor instead.
+func (*WorkingHoursRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *GetSlotsRequest) GetRestaurantId() int32 {
+func (x *WorkingHoursRequest) GetRestaurantId() int32 {
 	if x != nil {
 		return x.RestaurantId
 	}
 	return 0
 }
 
-func (x *GetSlotsRequest) GetTimeStart() *timestamppb.Timestamp {
+func (x *WorkingHoursRequest) GetTimeStart() *timestamppb.Timestamp {
 	if x != nil {
 		return x.TimeStart
 	}
 	return nil
 }
 
-type GetSlotsResponse struct {
+type WorkingHoursResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	MaxSlots      int32                  `protobuf:"varint,2,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
-	CurrentSlots  int32                  `protobuf:"varint,3,opt,name=current_slots,json=currentSlots,proto3" json:"current_slots,omitempty"`
+	WorkingHours  *TimeRange             `protobuf:"bytes,2,opt,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetSlotsResponse) Reset() {
-	*x = GetSlotsResponse{}
+func (x *WorkingHoursResponse) Reset() {
+	*x = WorkingHoursResponse{}
 	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetSlotsResponse) String() string {
+func (x *WorkingHoursResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetSlotsResponse) ProtoMessage() {}
+func (*WorkingHoursResponse) ProtoMessage() {}
 
-func (x *GetSlotsResponse) ProtoReflect() protoreflect.Message {
+func (x *WorkingHoursResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -108,30 +107,23 @@ func (x *GetSlotsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSlotsResponse.ProtoReflect.Descriptor instead.
-func (*GetSlotsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WorkingHoursResponse.ProtoReflect.Descriptor instead.
+func (*WorkingHoursResponse) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetSlotsResponse) GetRestaurantId() int32 {
+func (x *WorkingHoursResponse) GetRestaurantId() int32 {
 	if x != nil {
 		return x.RestaurantId
 	}
 	return 0
 }
 
-func (x *GetSlotsResponse) GetMaxSlots() int32 {
+func (x *WorkingHoursResponse) GetWorkingHours() *TimeRange {
 	if x != nil {
-		return x.MaxSlots
+		return x.WorkingHours
 	}
-	return 0
-}
-
-func (x *GetSlotsResponse) GetCurrentSlots() int32 {
-	if x != nil {
-		return x.CurrentSlots
-	}
-	return 0
+	return nil
 }
 
 type CreateBookingRequest struct {
@@ -139,7 +131,7 @@ type CreateBookingRequest struct {
 	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	RestaurantId  int32                  `protobuf:"varint,2,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	BookingRange  *TimeRange             `protobuf:"bytes,4,opt,name=booking_range,json=bookingRange,proto3" json:"booking_range,omitempty"`
+	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,9 +187,9 @@ func (x *CreateBookingRequest) GetQuantity() int32 {
 	return 0
 }
 
-func (x *CreateBookingRequest) GetBookingRange() *TimeRange {
+func (x *CreateBookingRequest) GetTimeStart() *timestamppb.Timestamp {
 	if x != nil {
-		return x.BookingRange
+		return x.TimeStart
 	}
 	return nil
 }
@@ -208,7 +200,7 @@ type Booking struct {
 	UserId        int32                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	RestaurantId  int32                  `protobuf:"varint,3,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	Quantity      int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	BookingRange  *TimeRange             `protobuf:"bytes,5,opt,name=booking_range,json=bookingRange,proto3" json:"booking_range,omitempty"`
+	WorkingHours  *TimeRange             `protobuf:"bytes,5,opt,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -271,9 +263,9 @@ func (x *Booking) GetQuantity() int32 {
 	return 0
 }
 
-func (x *Booking) GetBookingRange() *TimeRange {
+func (x *Booking) GetWorkingHours() *TimeRange {
 	if x != nil {
-		return x.BookingRange
+		return x.WorkingHours
 	}
 	return nil
 }
@@ -334,32 +326,32 @@ var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"q\n" +
-	"\x0fGetSlotsRequest\x12#\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"u\n" +
+	"\x13WorkingHoursRequest\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
 	"\n" +
-	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"y\n" +
-	"\x10GetSlotsResponse\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x1b\n" +
-	"\tmax_slots\x18\x02 \x01(\x05R\bmaxSlots\x12#\n" +
-	"\rcurrent_slots\x18\x03 \x01(\x05R\fcurrentSlots\"\xa7\x01\n" +
+	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"r\n" +
+	"\x14WorkingHoursResponse\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x125\n" +
+	"\rworking_hours\x18\x02 \x01(\v2\x10.proto.TimeRangeR\fworkingHours\"\xab\x01\n" +
 	"\x14CreateBookingRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12#\n" +
 	"\rrestaurant_id\x18\x02 \x01(\x05R\frestaurantId\x12\x1a\n" +
-	"\bquantity\x18\x03 \x01(\x05R\bquantity\x125\n" +
-	"\rbooking_range\x18\x04 \x01(\v2\x10.proto.TimeRangeR\fbookingRange\"\xaa\x01\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\x129\n" +
+	"\n" +
+	"time_start\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\xaa\x01\n" +
 	"\aBooking\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\x05R\x06userId\x12#\n" +
 	"\rrestaurant_id\x18\x03 \x01(\x05R\frestaurantId\x12\x1a\n" +
 	"\bquantity\x18\x04 \x01(\x05R\bquantity\x125\n" +
-	"\rbooking_range\x18\x05 \x01(\v2\x10.proto.TimeRangeR\fbookingRange\"}\n" +
+	"\rworking_hours\x18\x05 \x01(\v2\x10.proto.TimeRangeR\fworkingHours\"}\n" +
 	"\tTimeRange\x129\n" +
 	"\n" +
 	"time_start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\x125\n" +
-	"\btime_end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd2P\n" +
-	"\x11RestaurantService\x12;\n" +
-	"\bGetSlots\x12\x16.proto.GetSlotsRequest\x1a\x17.proto.GetSlotsResponse2N\n" +
+	"\btime_end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd2_\n" +
+	"\x11RestaurantService\x12J\n" +
+	"\x0fGetWorkingHours\x12\x1a.proto.WorkingHoursRequest\x1a\x1b.proto.WorkingHoursResponse2N\n" +
 	"\x0eBookingService\x12<\n" +
 	"\rCreateBooking\x12\x1b.proto.CreateBookingRequest\x1a\x0e.proto.BookingB\bZ\x06/pb;pbb\x06proto3"
 
@@ -377,28 +369,29 @@ func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
 
 var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
-	(*GetSlotsRequest)(nil),       // 0: proto.GetSlotsRequest
-	(*GetSlotsResponse)(nil),      // 1: proto.GetSlotsResponse
+	(*WorkingHoursRequest)(nil),   // 0: proto.WorkingHoursRequest
+	(*WorkingHoursResponse)(nil),  // 1: proto.WorkingHoursResponse
 	(*CreateBookingRequest)(nil),  // 2: proto.CreateBookingRequest
 	(*Booking)(nil),               // 3: proto.Booking
 	(*TimeRange)(nil),             // 4: proto.TimeRange
 	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
-	5, // 0: proto.GetSlotsRequest.time_start:type_name -> google.protobuf.Timestamp
-	4, // 1: proto.CreateBookingRequest.booking_range:type_name -> proto.TimeRange
-	4, // 2: proto.Booking.booking_range:type_name -> proto.TimeRange
-	5, // 3: proto.TimeRange.time_start:type_name -> google.protobuf.Timestamp
-	5, // 4: proto.TimeRange.time_end:type_name -> google.protobuf.Timestamp
-	0, // 5: proto.RestaurantService.GetSlots:input_type -> proto.GetSlotsRequest
-	2, // 6: proto.BookingService.CreateBooking:input_type -> proto.CreateBookingRequest
-	1, // 7: proto.RestaurantService.GetSlots:output_type -> proto.GetSlotsResponse
-	3, // 8: proto.BookingService.CreateBooking:output_type -> proto.Booking
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 0: proto.WorkingHoursRequest.time_start:type_name -> google.protobuf.Timestamp
+	4, // 1: proto.WorkingHoursResponse.working_hours:type_name -> proto.TimeRange
+	5, // 2: proto.CreateBookingRequest.time_start:type_name -> google.protobuf.Timestamp
+	4, // 3: proto.Booking.working_hours:type_name -> proto.TimeRange
+	5, // 4: proto.TimeRange.time_start:type_name -> google.protobuf.Timestamp
+	5, // 5: proto.TimeRange.time_end:type_name -> google.protobuf.Timestamp
+	0, // 6: proto.RestaurantService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
+	2, // 7: proto.BookingService.CreateBooking:input_type -> proto.CreateBookingRequest
+	1, // 8: proto.RestaurantService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
+	3, // 9: proto.BookingService.CreateBooking:output_type -> proto.Booking
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_internal_api_grpc_proto_protofile_proto_init() }
