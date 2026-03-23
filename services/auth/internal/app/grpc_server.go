@@ -18,7 +18,7 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedTemplateServiceServer
+	pb.UnimplementedAuthServiceServer
 	authService    *service.Service
 	authentication *auth.Auth
 }
@@ -58,6 +58,7 @@ func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 
 func (s *server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResponse, error) {
 	//get user of the email
+	slog.Info("EMAIL: " + req.Email)
 	user, err := s.authService.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
@@ -96,7 +97,7 @@ func (app *App) RunServer() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &server{
+	pb.RegisterAuthServiceServer(s, &server{
 		authService:    app.Service,
 		authentication: authInstance,
 	})

@@ -6,7 +6,7 @@ option go_package = "/pb;pb";
 
 import "google/api/annotations.proto";
 
-service TemplateService {
+service AuthService {
   
   rpc PingPong (Ping) returns (Pong) {
     option (google.api.http) = {
@@ -81,13 +81,13 @@ message RegisterResponse {
 }
 
 message Login {
-  int32 userId = 1;
+  string email = 1;
   string password = 2;
 }
 
 message User {
-  string id = 1;
-  string name = 2;
+  int32 id = 1;
+  string username = 2;
 }
 
 message LoginResponse {

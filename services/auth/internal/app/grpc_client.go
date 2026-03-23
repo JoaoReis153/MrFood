@@ -26,7 +26,7 @@ func (app *App) RunClient() {
 		}
 	}()
 
-	client := pb.NewTemplateServiceClient(conn)
+	client := pb.NewAuthServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -41,7 +41,7 @@ func (app *App) RunClient() {
 	}
 }
 
-func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
+func SinglePing(client pb.AuthServiceClient, ctx context.Context) {
 	res, err := client.PingPong(ctx, &pb.Ping{Id: 1})
 	slog.Info("Ping 1")
 	if err != nil {
@@ -51,7 +51,7 @@ func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
 	slog.Info("Pong", "id", res.Id) // ✅
 }
 
-func RegisterProcess(client pb.TemplateServiceClient, ctx context.Context) {
+func RegisterProcess(client pb.AuthServiceClient, ctx context.Context) {
 	res, err := client.RegisterProcess(ctx, &pb.Register{Username: "joao", Email: "joao@gmail.com", Password: "pass_joao"})
 	slog.Info("Register sent for " + res.Username)
 	if err != nil {
