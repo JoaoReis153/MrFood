@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -24,13 +22,7 @@ func (s *Service) StoreUser(ctx context.Context, user *pkg.User) (*pkg.User, err
 		return nil, fmt.Errorf("user validation failed: %w", err)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	if err != nil {
-		slog.Error("hash password failed", "error", err)
-		return nil, fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	userId, returnedUsername, err := s.repo.CreateUser(ctx, user.Username, string(hashedPassword), user.Email)
+	userId, returnedUsername, err := s.repo.CreateUser(ctx, user.Username, user.Password, user.Email)
 	if err != nil {
 		slog.Error("create user failed", "error", err)
 		return nil, fmt.Errorf("failed to create user: %w", err)
