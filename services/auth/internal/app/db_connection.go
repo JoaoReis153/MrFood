@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/url" // ← ADD THIS
+	"net/url"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

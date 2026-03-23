@@ -37,6 +37,7 @@ services:
       DB_NAME: mrfood_auth
       DB_USER: auth
       DB_PASS: authsecret
+      APP_LOG_LEVEL: debug
       APP_JWT_SECRET: Z3Vlc3R3aG9zdHdvcmxkZm9yZXZlcmNoYW5nZXN3b3JkMTIzNDU2
     depends_on:
       auth_db:
