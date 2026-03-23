@@ -16,10 +16,14 @@ func New(repo *repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) StoreUser(ctx context.Context, user *pkg.User) (*pkg.User, error) {
-	if err := pkg.ValidateUser(*user); err != nil {
-		slog.Error(err.Error())
-		return nil, fmt.Errorf("user validation failed: %w", err)
+func (s *Service) StoreUser(ctx context.Context, user *models.User) (*models.User, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	if !validEmail(user.Email) {
+		slog.Error("invalid email format")
+		return nil, status.Error(codes.InvalidArgument, "invalid email")
 	}
 
 	userId, returnedUsername, err := s.repo.CreateUser(ctx, user.Username, user.Password, user.Email)
