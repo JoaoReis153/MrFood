@@ -19,15 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RestaurantService_GetWorkingHours_FullMethodName = "/proto.RestaurantService/GetWorkingHours"
-	RestaurantService_GetSlots_FullMethodName        = "/proto.RestaurantService/GetSlots"
+	RestaurantService_GetSlots_FullMethodName = "/proto.RestaurantService/GetSlots"
 )
 
 // RestaurantServiceClient is the client API for RestaurantService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RestaurantServiceClient interface {
-	GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error)
 	GetSlots(ctx context.Context, in *GetSlotsRequest, opts ...grpc.CallOption) (*GetSlotsResponse, error)
 }
 
@@ -37,16 +35,6 @@ type restaurantServiceClient struct {
 
 func NewRestaurantServiceClient(cc grpc.ClientConnInterface) RestaurantServiceClient {
 	return &restaurantServiceClient{cc}
-}
-
-func (c *restaurantServiceClient) GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(WorkingHoursResponse)
-	err := c.cc.Invoke(ctx, RestaurantService_GetWorkingHours_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *restaurantServiceClient) GetSlots(ctx context.Context, in *GetSlotsRequest, opts ...grpc.CallOption) (*GetSlotsResponse, error) {
@@ -63,7 +51,6 @@ func (c *restaurantServiceClient) GetSlots(ctx context.Context, in *GetSlotsRequ
 // All implementations must embed UnimplementedRestaurantServiceServer
 // for forward compatibility.
 type RestaurantServiceServer interface {
-	GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error)
 	GetSlots(context.Context, *GetSlotsRequest) (*GetSlotsResponse, error)
 	mustEmbedUnimplementedRestaurantServiceServer()
 }
@@ -75,9 +62,6 @@ type RestaurantServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedRestaurantServiceServer struct{}
 
-func (UnimplementedRestaurantServiceServer) GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetWorkingHours not implemented")
-}
 func (UnimplementedRestaurantServiceServer) GetSlots(context.Context, *GetSlotsRequest) (*GetSlotsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSlots not implemented")
 }
@@ -100,24 +84,6 @@ func RegisterRestaurantServiceServer(s grpc.ServiceRegistrar, srv RestaurantServ
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&RestaurantService_ServiceDesc, srv)
-}
-
-func _RestaurantService_GetWorkingHours_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WorkingHoursRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RestaurantServiceServer).GetWorkingHours(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RestaurantService_GetWorkingHours_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RestaurantServiceServer).GetWorkingHours(ctx, req.(*WorkingHoursRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _RestaurantService_GetSlots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -145,10 +111,6 @@ var RestaurantService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.RestaurantService",
 	HandlerType: (*RestaurantServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetWorkingHours",
-			Handler:    _RestaurantService_GetWorkingHours_Handler,
-		},
 		{
 			MethodName: "GetSlots",
 			Handler:    _RestaurantService_GetSlots_Handler,

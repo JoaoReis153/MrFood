@@ -6,23 +6,16 @@ package proto;
 
 option go_package = "/pb;pb";
 
+// sends the restaurant_id and desired booking starting timestamp
+// on the restaurant service's server side, verify if timestamp corresponds to working hour:
+//  - if not, return an error
+//  - if so, return GetSlotsResponse
 service RestaurantService {
-  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
   rpc GetSlots (GetSlotsRequest) returns (GetSlotsResponse);
 }
 
 service BookingService {
   rpc CreateBooking (CreateBookingRequest) returns (Booking);
-}
-
-message WorkingHoursRequest {
-  int32 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
-}
-
-message WorkingHoursResponse {
-  int32 restaurant_id = 1;
-  TimeRange working_range = 2;
 }
 
 message GetSlotsRequest {

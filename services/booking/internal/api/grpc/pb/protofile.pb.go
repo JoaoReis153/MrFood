@@ -22,110 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type WorkingHoursRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WorkingHoursRequest) Reset() {
-	*x = WorkingHoursRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WorkingHoursRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WorkingHoursRequest) ProtoMessage() {}
-
-func (x *WorkingHoursRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WorkingHoursRequest.ProtoReflect.Descriptor instead.
-func (*WorkingHoursRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *WorkingHoursRequest) GetRestaurantId() int32 {
-	if x != nil {
-		return x.RestaurantId
-	}
-	return 0
-}
-
-func (x *WorkingHoursRequest) GetTimeStart() *timestamppb.Timestamp {
-	if x != nil {
-		return x.TimeStart
-	}
-	return nil
-}
-
-type WorkingHoursResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	WorkingRange  *TimeRange             `protobuf:"bytes,2,opt,name=working_range,json=workingRange,proto3" json:"working_range,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *WorkingHoursResponse) Reset() {
-	*x = WorkingHoursResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *WorkingHoursResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*WorkingHoursResponse) ProtoMessage() {}
-
-func (x *WorkingHoursResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use WorkingHoursResponse.ProtoReflect.Descriptor instead.
-func (*WorkingHoursResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *WorkingHoursResponse) GetRestaurantId() int32 {
-	if x != nil {
-		return x.RestaurantId
-	}
-	return 0
-}
-
-func (x *WorkingHoursResponse) GetWorkingRange() *TimeRange {
-	if x != nil {
-		return x.WorkingRange
-	}
-	return nil
-}
-
 type GetSlotsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
@@ -136,7 +32,7 @@ type GetSlotsRequest struct {
 
 func (x *GetSlotsRequest) Reset() {
 	*x = GetSlotsRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[2]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -148,7 +44,7 @@ func (x *GetSlotsRequest) String() string {
 func (*GetSlotsRequest) ProtoMessage() {}
 
 func (x *GetSlotsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[2]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -161,7 +57,7 @@ func (x *GetSlotsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSlotsRequest.ProtoReflect.Descriptor instead.
 func (*GetSlotsRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{2}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetSlotsRequest) GetRestaurantId() int32 {
@@ -189,7 +85,7 @@ type GetSlotsResponse struct {
 
 func (x *GetSlotsResponse) Reset() {
 	*x = GetSlotsResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[3]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +97,7 @@ func (x *GetSlotsResponse) String() string {
 func (*GetSlotsResponse) ProtoMessage() {}
 
 func (x *GetSlotsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[3]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +110,7 @@ func (x *GetSlotsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSlotsResponse.ProtoReflect.Descriptor instead.
 func (*GetSlotsResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{3}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetSlotsResponse) GetRestaurantId() int32 {
@@ -250,7 +146,7 @@ type CreateBookingRequest struct {
 
 func (x *CreateBookingRequest) Reset() {
 	*x = CreateBookingRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[4]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -262,7 +158,7 @@ func (x *CreateBookingRequest) String() string {
 func (*CreateBookingRequest) ProtoMessage() {}
 
 func (x *CreateBookingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[4]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -275,7 +171,7 @@ func (x *CreateBookingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBookingRequest.ProtoReflect.Descriptor instead.
 func (*CreateBookingRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateBookingRequest) GetUserId() int32 {
@@ -319,7 +215,7 @@ type Booking struct {
 
 func (x *Booking) Reset() {
 	*x = Booking{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +227,7 @@ func (x *Booking) String() string {
 func (*Booking) ProtoMessage() {}
 
 func (x *Booking) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +240,7 @@ func (x *Booking) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Booking.ProtoReflect.Descriptor instead.
 func (*Booking) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{5}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Booking) GetId() int32 {
@@ -392,7 +288,7 @@ type TimeRange struct {
 
 func (x *TimeRange) Reset() {
 	*x = TimeRange{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +300,7 @@ func (x *TimeRange) String() string {
 func (*TimeRange) ProtoMessage() {}
 
 func (x *TimeRange) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +313,7 @@ func (x *TimeRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeRange.ProtoReflect.Descriptor instead.
 func (*TimeRange) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{6}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TimeRange) GetTimeStart() *timestamppb.Timestamp {
@@ -438,14 +334,7 @@ var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"u\n" +
-	"\x13WorkingHoursRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
-	"\n" +
-	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"r\n" +
-	"\x14WorkingHoursResponse\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x125\n" +
-	"\rworking_range\x18\x02 \x01(\v2\x10.proto.TimeRangeR\fworkingRange\"q\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"q\n" +
 	"\x0fGetSlotsRequest\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
 	"\n" +
@@ -468,9 +357,8 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\tTimeRange\x129\n" +
 	"\n" +
 	"time_start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\x125\n" +
-	"\btime_end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd2\x9c\x01\n" +
-	"\x11RestaurantService\x12J\n" +
-	"\x0fGetWorkingHours\x12\x1a.proto.WorkingHoursRequest\x1a\x1b.proto.WorkingHoursResponse\x12;\n" +
+	"\btime_end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd2P\n" +
+	"\x11RestaurantService\x12;\n" +
 	"\bGetSlots\x12\x16.proto.GetSlotsRequest\x1a\x17.proto.GetSlotsResponse2N\n" +
 	"\x0eBookingService\x12<\n" +
 	"\rCreateBooking\x12\x1b.proto.CreateBookingRequest\x1a\x0e.proto.BookingB\bZ\x06/pb;pbb\x06proto3"
@@ -487,36 +375,30 @@ func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescData
 }
 
-var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
-	(*WorkingHoursRequest)(nil),   // 0: proto.WorkingHoursRequest
-	(*WorkingHoursResponse)(nil),  // 1: proto.WorkingHoursResponse
-	(*GetSlotsRequest)(nil),       // 2: proto.GetSlotsRequest
-	(*GetSlotsResponse)(nil),      // 3: proto.GetSlotsResponse
-	(*CreateBookingRequest)(nil),  // 4: proto.CreateBookingRequest
-	(*Booking)(nil),               // 5: proto.Booking
-	(*TimeRange)(nil),             // 6: proto.TimeRange
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(*GetSlotsRequest)(nil),       // 0: proto.GetSlotsRequest
+	(*GetSlotsResponse)(nil),      // 1: proto.GetSlotsResponse
+	(*CreateBookingRequest)(nil),  // 2: proto.CreateBookingRequest
+	(*Booking)(nil),               // 3: proto.Booking
+	(*TimeRange)(nil),             // 4: proto.TimeRange
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
-	7,  // 0: proto.WorkingHoursRequest.time_start:type_name -> google.protobuf.Timestamp
-	6,  // 1: proto.WorkingHoursResponse.working_range:type_name -> proto.TimeRange
-	7,  // 2: proto.GetSlotsRequest.time_start:type_name -> google.protobuf.Timestamp
-	6,  // 3: proto.CreateBookingRequest.booking_range:type_name -> proto.TimeRange
-	6,  // 4: proto.Booking.booking_range:type_name -> proto.TimeRange
-	7,  // 5: proto.TimeRange.time_start:type_name -> google.protobuf.Timestamp
-	7,  // 6: proto.TimeRange.time_end:type_name -> google.protobuf.Timestamp
-	0,  // 7: proto.RestaurantService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
-	2,  // 8: proto.RestaurantService.GetSlots:input_type -> proto.GetSlotsRequest
-	4,  // 9: proto.BookingService.CreateBooking:input_type -> proto.CreateBookingRequest
-	1,  // 10: proto.RestaurantService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
-	3,  // 11: proto.RestaurantService.GetSlots:output_type -> proto.GetSlotsResponse
-	5,  // 12: proto.BookingService.CreateBooking:output_type -> proto.Booking
-	10, // [10:13] is the sub-list for method output_type
-	7,  // [7:10] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	5, // 0: proto.GetSlotsRequest.time_start:type_name -> google.protobuf.Timestamp
+	4, // 1: proto.CreateBookingRequest.booking_range:type_name -> proto.TimeRange
+	4, // 2: proto.Booking.booking_range:type_name -> proto.TimeRange
+	5, // 3: proto.TimeRange.time_start:type_name -> google.protobuf.Timestamp
+	5, // 4: proto.TimeRange.time_end:type_name -> google.protobuf.Timestamp
+	0, // 5: proto.RestaurantService.GetSlots:input_type -> proto.GetSlotsRequest
+	2, // 6: proto.BookingService.CreateBooking:input_type -> proto.CreateBookingRequest
+	1, // 7: proto.RestaurantService.GetSlots:output_type -> proto.GetSlotsResponse
+	3, // 8: proto.BookingService.CreateBooking:output_type -> proto.Booking
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_internal_api_grpc_proto_protofile_proto_init() }
@@ -530,7 +412,7 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   2,
 		},
