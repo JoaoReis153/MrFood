@@ -23,6 +23,10 @@ func New(repo *repository.Repository) *Service {
 }
 
 func (s *Service) StoreUser(ctx context.Context, user *models.User) (*models.User, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	if !validEmail(user.Email) {
 		slog.Error("invalid email format")
 		return nil, status.Error(codes.InvalidArgument, "invalid email")
