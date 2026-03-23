@@ -10,3 +10,8 @@ type Booking struct {
 	TimeEnd      time.Time `json:"time_end"`
 	PeopleCount  int32     `json:"people_count"`
 }
+
+type HourSlots struct {
+	MaxSlots     int32
+	CurrentSlots int32
+}
