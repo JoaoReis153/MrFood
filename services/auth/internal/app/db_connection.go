@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net/url" // ← ADD THIS
+	"net/url"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -13,8 +13,7 @@ import (
 func (app *App) ConnectDb() error {
 	cfg := config.Get(context.Background())
 
-	// DEBUG: Verify config loads
-	slog.Info("db config loaded",
+	slog.Debug("db config loaded",
 		"host", cfg.DB.Host,
 		"port", cfg.DB.Port,
 		"user", cfg.DB.User,
@@ -30,7 +29,7 @@ func (app *App) ConnectDb() error {
 		cfg.DB.Name,
 	)
 
-	slog.Info("db connecting", "connstr", connStr) // ← See exact string
+	slog.Debug("db connecting", "connstr", connStr)
 
 	pool, err := pgxpool.New(context.Background(), connStr)
 	if err != nil {
@@ -46,6 +45,6 @@ func (app *App) ConnectDb() error {
 	}
 
 	app.DB = pool
-	slog.Info("db connected successfully")
+	slog.Debug("db connected successfully")
 	return nil
 }
