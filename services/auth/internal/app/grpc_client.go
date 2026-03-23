@@ -48,15 +48,15 @@ func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
 		slog.Error("failed", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("Pong", "id", res.Id) // ✅
+	slog.Info("Pong", "id", res.Id)
 }
 
 func RegisterProcess(client pb.TemplateServiceClient, ctx context.Context) {
 	res, err := client.RegisterProcess(ctx, &pb.Register{Username: "joao", Email: "joao@gmail.com", Password: "pass_joao"})
-	slog.Info("Register sent for " + res.Username)
+
+	slog.Debug("Register process sent for " + res.Username)
 	if err != nil {
 		log.Println("Register error:", err)
 		return
 	}
-	slog.Info("Register res", "id", res.Id, "username", res.Username)
 }

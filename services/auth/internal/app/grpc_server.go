@@ -30,7 +30,7 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 }
 
 func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
-	slog.Info("registering user", "username", req.Username)
+	slog.Debug("register process", "username", req.Username, "email", req.Email, "password", req.Password)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -57,7 +57,8 @@ func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 }
 
 func (s *server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResponse, error) {
-	//get user of the email
+	slog.Debug("login process", "email", req.Email, "password", req.Password)
+
 	user, err := s.authService.GetUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, err.Error())
