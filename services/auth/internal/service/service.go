@@ -2,16 +2,12 @@ package service
 
 import (
 	"MrFood/services/auth/internal/repository"
-	models "MrFood/services/auth/pkg"
+	"MrFood/services/auth/pkg"
 	"context"
 	"fmt"
 	"log/slog"
-	"regexp"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Service struct {
@@ -22,10 +18,10 @@ func New(repo *repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) StoreUser(ctx context.Context, user *models.User) (*models.User, error) {
-	if !validEmail(user.Email) {
-		slog.Error("invalid email format")
-		return nil, status.Error(codes.InvalidArgument, "invalid email")
+func (s *Service) StoreUser(ctx context.Context, user *pkg.User) (*pkg.User, error) {
+	if err := pkg.ValidateUser(*user); err != nil {
+		slog.Error(err.Error())
+		return nil, fmt.Errorf("user validation failed: %w", err)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -40,7 +36,7 @@ func (s *Service) StoreUser(ctx context.Context, user *models.User) (*models.Use
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	newUser := &models.User{
+	newUser := &pkg.User{
 		ID:       userId,
 		Username: returnedUsername,
 	}
@@ -48,22 +44,7 @@ func (s *Service) StoreUser(ctx context.Context, user *models.User) (*models.Use
 	return newUser, nil
 }
 
-func validEmail(email string) bool {
-	if email == "" || len(email) > 254 || !emailRegex.MatchString(email) {
-		return false
-	}
-	return true
-}
-
-var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9.!#$%&'*+/=?^_{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$`)
-
-func (s *Service) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	email = strings.TrimSpace(email)
-	if !validEmail(email) {
-		slog.Error("invalid email format")
-		return nil, fmt.Errorf("invalid email format")
-	}
-
+func (s *Service) GetUserByEmail(ctx context.Context, email string) (*pkg.User, error) {
 	user, err := s.repo.GetUser(ctx, email)
 	if err != nil {
 		slog.Error("user not found", "error", err)
