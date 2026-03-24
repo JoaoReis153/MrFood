@@ -13,6 +13,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -39,6 +40,20 @@ func RunServer(service *service.Service) {
 	if err := s.Serve(lis); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func NewClient() (pb.RestaurantServiceClient, func(), error) {
+	conn, err := grpc.NewClient(
+		"localhost:50051",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cleanup := func() { conn.Close() }
+
+	return pb.NewRestaurantServiceClient(conn), cleanup, nil
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
