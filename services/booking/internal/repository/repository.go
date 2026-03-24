@@ -53,3 +53,23 @@ func (r *Repository) CheckBooking(ctx context.Context, restaurant_id int, time_s
 
 	return count, nil
 }
+
+func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start time.Time) (int32, int32, error) {
+	query := `
+		SELECT max_slots, current_slots
+		FROM restaurant_slots
+		WHERE restaurant_id = $1
+		AND time_start = $2;
+	`
+
+	var max_slots, current_slots int32
+
+	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&max_slots, current_slots)
+
+	if err != nil {
+		slog.Error("Failed to search for slots", "error", err)
+		return 0, 0, fmt.Errorf("Failed to create slots: %w", err)
+	}
+
+	return max_slots, current_slots, nil
+}
