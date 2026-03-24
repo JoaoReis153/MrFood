@@ -41,7 +41,7 @@ services:
   booking:
     build: ./booking
     ports:
-      - "8081:8080"
+      - "50051:50051"
     environment:
       DB_HOST: booking_db
       DB_PORT: 5432
