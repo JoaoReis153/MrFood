@@ -18,7 +18,11 @@ type Config struct {
 		Level string `yaml:"level"`
 	} `yaml:"log"`
 	Database struct {
-		URL string `yaml:"url"`
+		Host string `yaml:"host"`
+		Port int    `yaml:"port"`
+		Name string `yaml:"name"`
+		User string `yaml:"user"`
+		Pass string `yaml:"pass"`
 	} `yaml:"database"`
 }
 
@@ -43,9 +47,17 @@ func Load() *Config {
 			Level: "info",
 		},
 		Database: struct {
-			URL string `yaml:"url"`
+			Host string `yaml:"host"`
+			Port int    `yaml:"port"`
+			Name string `yaml:"name"`
+			User string `yaml:"user"`
+			Pass string `yaml:"pass"`
 		}{
-			URL: "postgres://user:pass@localhost:5432/reviews",
+			Host: "localhost",
+			Port: 5432,
+			Name: "mrfood_reviews",
+			User: "review",
+			Pass: "reviewsecret",
 		},
 	}
 
@@ -66,7 +78,11 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
 	// Database config
-	cfg.Database.URL = getEnv("APP_DATABASE_URL", cfg.Database.URL)
+	cfg.Database.Host = getEnv("DB_HOST", cfg.Database.Host)
+	cfg.Database.Port = getEnvInt("DB_PORT", cfg.Database.Port)
+	cfg.Database.Name = getEnv("DB_NAME", cfg.Database.Name)
+	cfg.Database.User = getEnv("DB_USER", cfg.Database.User)
+	cfg.Database.Pass = getEnv("DB_PASS", cfg.Database.Pass)
 }
 
 func getEnv(key, defaultValue string) string {
