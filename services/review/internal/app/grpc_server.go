@@ -2,74 +2,163 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 
 	pb "MrFood/services/review/internal/api/grpc/pb"
+	"MrFood/services/review/internal/service"
+	models "MrFood/services/review/pkg"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type server struct {
-	pb.UnimplementedTemplateServiceServer
+	pb.UnimplementedReviewServiceServer
+	pb.UnimplementedReviewToDetailsServiceServer
+	svc *service.Service
 }
 
-func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
-	return &pb.Pong{
-		Id: 1,
+func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb.GetReviewsResponse, error) {
+	page, limit := int(req.GetPage()), int(req.GetLimit())
+	if page == 0 {
+		page = 1
+	}
+	if limit == 0 {
+		limit = 10
+	}
+	results, err := s.svc.GetReviews(ctx, int(req.GetRestaurantId()), page, limit)
+	if err != nil {
+		return nil, mapToGRPCError(err)
+	}
+	pbReviews := make([]*pb.Review, len(results.Reviews))
+	for i, r := range results.Reviews {
+		pbReviews[i] = &pb.Review{
+			ReviewId:     int32(r.ReviewID),
+			RestaurantId: int32(r.RestaurantID),
+			UserId:       int32(r.UserID),
+			Rating:       int32(r.Rating),
+			Comment:      r.Comment,
+			CreatedAt:    timestamppb.New(r.CreatedAt),
+		}
+	}
+	return &pb.GetReviewsResponse{
+		Reviews: pbReviews,
+		Pagination: &pb.Pagination{
+			Page:  int32(results.Pagination.Page),
+			Limit: int32(results.Pagination.Limit),
+			Total: int32(results.Pagination.Total),
+			Pages: int32(results.Pagination.Pages),
+		},
 	}, nil
 }
 
-func (s *server) ManyPings(stream pb.TemplateService_ManyPingsServer) error {
-	var lastID int32
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			break
-		}
-		lastID = req.Id
+func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.CreateReviewResponse, error) {
+	review := models.Review{
+		RestaurantID: int(req.GetRestaurantId()),
+		UserID:       int(req.GetUserId()),
+		Rating:       int(req.GetRating()),
+		Comment:      req.GetComment(),
 	}
-
-	return stream.SendAndClose(&pb.Pong{Id: lastID})
+	review, err := s.svc.CreateReview(ctx, review)
+	if err != nil {
+		return nil, mapToGRPCError(err)
+	}
+	return &pb.CreateReviewResponse{
+		Review: &pb.Review{
+			ReviewId:     int32(review.ReviewID),
+			RestaurantId: int32(review.RestaurantID),
+			UserId:       int32(review.UserID),
+			Rating:       int32(review.Rating),
+			Comment:      review.Comment,
+			CreatedAt:    timestamppb.New(review.CreatedAt),
+		},
+	}, nil
 }
 
-func (s *server) ManyPongs(req *pb.Ping, stream pb.TemplateService_ManyPongsServer) error {
-	for i := 0; i < 5; i++ {
-		err := stream.Send(&pb.Pong{Id: req.Id + int32(i)})
-		if err != nil {
-			return err
-		}
+func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*pb.UpdateReviewResponse, error) {
+	review := models.UpdateReview{
+		ReviewID: int(req.GetReviewId()),
 	}
-	return nil
+	if req.Comment != nil {
+		comment := req.GetComment()
+		review.Comment = &comment
+	}
+	if req.Rating != nil {
+		rating := int(req.GetRating())
+		review.Rating = &rating
+	}
+	updated, err := s.svc.UpdateReview(ctx, review)
+	if err != nil {
+		return nil, mapToGRPCError(err)
+	}
+
+	return &pb.UpdateReviewResponse{
+		Review: &pb.Review{
+			ReviewId:     int32(updated.ReviewID),
+			RestaurantId: int32(updated.RestaurantID),
+			UserId:       int32(updated.UserID),
+			Rating:       int32(updated.Rating),
+			Comment:      updated.Comment,
+			CreatedAt:    timestamppb.New(updated.CreatedAt),
+		},
+	}, nil
 }
 
-func (s *server) ManyPingPongs(stream pb.TemplateService_ManyPingPongsServer) error {
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			break
-		}
-		err = stream.Send(&pb.Pong{Id: req.Id})
-		if err != nil {
-			return err
-		}
+func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) (*pb.DeleteReviewResponse, error) {
+	err := s.svc.DeleteReview(ctx, int(req.GetReviewId()))
+	if err != nil {
+		return nil, mapToGRPCError(err)
 	}
-	return nil
+	return &pb.DeleteReviewResponse{}, nil
 }
 
-func RunServer() {
+func (s *server) GetRestaurantStats(ctx context.Context, req *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
+	stats, err := s.svc.GetRestaurantStats(ctx, int(req.GetRestaurantId()))
+	if err != nil {
+		return nil, mapToGRPCError(err)
+	}
+	return &pb.GetRestaurantStatsResponse{
+		RestaurantStats: &pb.RestaurantStats{
+			RestaurantId:  int32(stats.RestaurantID),
+			AverageRating: float64(stats.AverageRating),
+			ReviewCount:   int32(stats.ReviewCount),
+		},
+	}, nil
+}
+
+func RunServer(svc *service.Service) {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &server{})
+	pb.RegisterReviewServiceServer(s, &server{svc: svc})
+	pb.RegisterReviewToDetailsServiceServer(s, &server{svc: svc})
+	reflection.Register(s)
 
 	fmt.Println("Server running on :50051")
 	if err := s.Serve(lis); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func mapToGRPCError(err error) error {
+	switch {
+	case errors.Is(err, models.ErrInvalidRating), errors.Is(err, models.ErrInvalidComment), errors.Is(err, models.ErrInvalidRestaurantID),
+		errors.Is(err, models.ErrInvalidUserID), errors.Is(err, models.ErrInvalidReviewID), errors.Is(err, models.ErrLimitTooLarge):
+		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, models.ErrReviewAlreadyExists):
+		return status.Error(codes.AlreadyExists, err.Error())
+	case errors.Is(err, models.ErrRestaurantNotFound), errors.Is(err, models.ErrReviewNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	default:
+		return status.Error(codes.Internal, "Internal server error")
 	}
 }
