@@ -38,11 +38,10 @@ func RunServer() {
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
-	// calls client to get available slots
-	res, err := s.bookingService.Client.GetSlots(ctx,
-		&pb.GetSlotsRequest{
+	res, err := s.bookingService.Client.GetWorkingHours(ctx,
+		&pb.WorkingHoursRequest{
 			RestaurantId: req.RestaurantId,
-			TimeStart:    req.BookingRange.TimeStart,
+			TimeStart:    req.TimeStart,
 		})
 
 	if err != nil {
@@ -53,31 +52,31 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 	booking := &models.Booking{
 		UserID:       req.UserId,
 		RestaurantID: req.RestaurantId,
-		TimeStart:    req.BookingRange.TimeStart.AsTime(),
-		TimeEnd:      req.BookingRange.TimeEnd.AsTime(),
+		TimeStart:    req.TimeStart.AsTime(),
 		PeopleCount:  req.Quantity,
 	}
 
-	slots := &models.HourSlots{
-		MaxSlots:     res.MaxSlots,
-		CurrentSlots: res.CurrentSlots,
+	working_hours := &models.WorkingHours{
+		RestaurantID: res.RestaurantId,
+		TimeStart:    res.WorkingHours.TimeStart.AsTime(),
+		TimeEnd:      res.WorkingHours.TimeEnd.AsTime(),
 	}
 
-	newBooking, err := s.bookingService.CreateBooking(ctx, booking, slots)
+	newBooking, err := s.bookingService.CreateBooking(ctx, booking, working_hours)
 
 	if err != nil {
-		slog.Error("Failed to get slots", "error", err)
-		return nil, status.Error(codes.Internal, "failed to get slots")
+		slog.Error("Internal service error", "error", err)
+		return nil, status.Error(codes.Internal, "internal service error")
 	}
 
-	slog.Info("Booking created", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.BookingRange.TimeStart)
+	slog.Info("Booking created", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
 
 	return &pb.Booking{
 		Id:           newBooking.ID,
 		UserId:       newBooking.UserID,
 		RestaurantId: newBooking.RestaurantID,
 		Quantity:     newBooking.PeopleCount,
-		BookingRange: &pb.TimeRange{
+		WorkingHours: &pb.TimeRange{
 			TimeStart: timestamppb.New(newBooking.TimeStart),
 			TimeEnd:   timestamppb.New(newBooking.TimeEnd),
 		},
