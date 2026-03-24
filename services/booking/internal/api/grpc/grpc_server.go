@@ -77,6 +77,15 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		PeopleCount:  req.Quantity,
 	}
 
+	// Mock response from gRPC
+	// res := &pb.WorkingHoursResponse{
+	// 	RestaurantId: 1,
+	// 	WorkingHours: &pb.TimeRange{
+	// 		TimeStart: timestamppb.New(time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
+	// 		TimeEnd:   timestamppb.New(time.Date(2026, 3, 24, 18, 0, 0, 0, time.UTC)), // 6:00 PM
+	// 	},
+	// }
+
 	working_hours := &models.WorkingHours{
 		RestaurantID: res.RestaurantId,
 		TimeStart:    res.WorkingHours.TimeStart.AsTime(),
