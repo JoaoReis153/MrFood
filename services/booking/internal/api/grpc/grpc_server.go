@@ -13,6 +13,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -32,6 +33,7 @@ func RunServer(service *service.Service) {
 	pb.RegisterBookingServiceServer(s, &server{
 		bookingService: service,
 	})
+	reflection.Register(s)
 
 	fmt.Println("Server running on :50051")
 	if err := s.Serve(lis); err != nil {
