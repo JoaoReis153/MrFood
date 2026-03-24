@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -35,34 +36,40 @@ func (r *Repository) CreateBooking(ctx context.Context, user_id, restaurant_id, 
 	return booking_id, nil
 }
 
-func (r *Repository) CheckBooking(ctx context.Context, restaurant_id int, time_start time.Time) (int32, error) {
+func (r *Repository) CheckBooking(ctx context.Context, user_id, restaurant_id int, time_start time.Time) (int32, error) {
 	query := `
 		SELECT 1
-		FROM bookings
+		FROM booking
 		WHERE restaurant_id = $1
 		AND time_start >= $2
 		AND time_start < $2 + interval '1 second'
+		AND user_id = $3
 		LIMIT 1;
 	`
+
 	var exists int32
 
-	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&exists)
+	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start, user_id).Scan(&exists)
 
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return exists, nil
+		}
+
 		slog.Error("Failed to search for booking", "error", err)
-		return 0, fmt.Errorf("Failed to create booking: %w", err)
+		return 0, fmt.Errorf("failed to search for booking: %w", err)
 	}
 
 	return exists, nil
 }
 
-func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start time.Time) (int32, int32, error) {
+func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start time.Time) (bool, int32, int32, error) {
 	query := `
 		SELECT max_slots, current_slots
 		FROM restaurant_slots
 		WHERE restaurant_id = $1
 		AND time_start >= $2
-		AND time_start < $2 + interval '1 second'
+		AND time_start < $2 + interval '1 second';
 	`
 
 	var max_slots, current_slots int32
@@ -70,11 +77,32 @@ func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start
 	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&max_slots, &current_slots)
 
 	if err != nil {
-		slog.Error("Failed to search for slots", "error", err)
-		return 0, 0, fmt.Errorf("Failed to create slots: %w", err)
+		if err == pgx.ErrNoRows {
+			return false, 0, 0, nil
+		}
+
+		slog.Error("Failed to search for booking", "error", err)
+		return false, 0, 0, fmt.Errorf("failed to search for booking: %w", err)
 	}
 
-	return max_slots, current_slots, nil
+	return true, max_slots, current_slots, nil
+}
+
+func (r *Repository) CreateSlots(ctx context.Context, user_id, restaurant_id, max_slots, current_slots int, time_start, time_end time.Time) error {
+	query := `
+		INSERT INTO restaurant_slots
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`
+
+	_, err := r.DB.Exec(ctx, query, user_id, restaurant_id, time_start, time_end, max_slots, current_slots)
+
+	if err != nil {
+		slog.Error("Failed to create slots", "error", err)
+		return fmt.Errorf("Failed to create slots: %w", err)
+	}
+
+	return nil
+
 }
 
 func (r *Repository) UpdateSlots(ctx context.Context, restaurant_id, current_slots int, time_start time.Time) error {
@@ -83,7 +111,7 @@ func (r *Repository) UpdateSlots(ctx context.Context, restaurant_id, current_slo
 		SET current_slots = $1
 		WHERE restaurant_id = $2
 		AND time_start >= $3
-		AND time_start < $3 + interval '1 second'
+		AND time_start < $3 + interval '1 second';
 	`
 
 	cmdTag, err := r.DB.Exec(ctx, query, current_slots, restaurant_id, time_start)
