@@ -1,0 +1,20 @@
+info:
+  name: test
+  type: grpc
+  seq: 4
+
+grpc:
+  url: localhost:50051
+  method: /proto.RestaurantService/GetWorkingHours
+  methodType: unary
+  protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "restaurant_id": 1,
+      "restaurant_id": 1,
+      "time_start": {
+        "seconds": 1711187400,
+        "nanos": 0
+      }
+    }
+  auth: inherit
