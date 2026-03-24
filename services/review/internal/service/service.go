@@ -2,33 +2,38 @@ package service
 
 import (
 	models "MrFood/services/review/pkg"
-	"errors"
+	"context"
 )
 
 type ReviewRepository interface {
-	GetReviews(restaurantID, page, limit int) ([]models.Review, int, error)
-	CreateReview(review models.Review) (int, error)
-	UpdateReview(review models.Review) error
-	DeleteReview(reviewID int) error
+	GetReviews(ctx context.Context, restaurantID, page, limit int) ([]models.Review, int, error)
+	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
+	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
+	DeleteReview(ctx context.Context, reviewID int) error
+}
+
+type ReviewStatsRepository interface {
+	GetRestaurantStats(ctx context.Context, restaurantID int) (models.RestaurantStats, error)
 }
 
 type Service struct {
-	repo ReviewRepository
+	repo      ReviewRepository
+	statsRepo ReviewStatsRepository
 }
 
-func New(repo ReviewRepository) *Service {
-	return &Service{repo: repo}
+func New(repo ReviewRepository, statsRepo ReviewStatsRepository) *Service {
+	return &Service{repo: repo, statsRepo: statsRepo}
 }
 
-func (s *Service) GetReviews(restaurantID, page, limit int) (models.ReviewsPage, error) {
-	if limit <= 0 || limit > 100 {
-		return models.ReviewsPage{}, errors.New("limit must be between 1 and 100")
+func (s *Service) GetReviews(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error) {
+	if restaurantID <= 0 {
+		return models.ReviewsPage{}, models.ErrInvalidRestaurantID
 	}
-	if page <= 0 {
-		return models.ReviewsPage{}, errors.New("page must be greater than 0")
+	if limit > 100 {
+		return models.ReviewsPage{}, models.ErrLimitTooLarge
 	}
 
-	reviews, total, err := s.repo.GetReviews(restaurantID, page, limit)
+	reviews, total, err := s.repo.GetReviews(ctx, restaurantID, page, limit)
 	if err != nil {
 		return models.ReviewsPage{}, err
 	}
@@ -44,30 +49,45 @@ func (s *Service) GetReviews(restaurantID, page, limit int) (models.ReviewsPage,
 	}, nil
 }
 
-func (s *Service) CreateReview(review models.Review) (int, error) {
+func (s *Service) CreateReview(ctx context.Context, review models.Review) (models.Review, error) {
 	if review.Rating < 1 || review.Rating > 5 {
-		err := "rating must be between 1 and 5"
-		return 0, errors.New(err)
+		return models.Review{}, models.ErrInvalidRating
 	}
-	if review.Comment != "" && len(review.Comment) > 100 {
-		err := "comment must be less than 100 characters"
-		return 0, errors.New(err)
+	if review.Comment == "" || len(review.Comment) > 100 {
+		return models.Review{}, models.ErrInvalidComment
 	}
-	return s.repo.CreateReview(review)
+	if review.RestaurantID <= 0 {
+		return models.Review{}, models.ErrInvalidRestaurantID
+	}
+	if review.UserID <= 0 {
+		return models.Review{}, models.ErrInvalidUserID
+	}
+	return s.repo.CreateReview(ctx, review)
 }
 
-func (s *Service) UpdateReview(review models.Review) error {
-	if review.Rating < 1 || review.Rating > 5 {
-		err := "rating must be between 1 and 5"
-		return errors.New(err)
+func (s *Service) UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error) {
+	if review.Rating != nil && (*review.Rating < 1 || *review.Rating > 5) {
+		return models.Review{}, models.ErrInvalidRating
 	}
-	if review.Comment != "" && len(review.Comment) > 100 {
-		err := "comment must be less than 100 characters"
-		return errors.New(err)
+	if review.Comment != nil && (*review.Comment == "" || len(*review.Comment) > 100) {
+		return models.Review{}, models.ErrInvalidComment
 	}
-	return s.repo.UpdateReview(review)
+	if review.ReviewID <= 0 {
+		return models.Review{}, models.ErrInvalidReviewID
+	}
+	return s.repo.UpdateReview(ctx, review)
 }
 
-func (s *Service) DeleteReview(reviewID int) error {
-	return s.repo.DeleteReview(reviewID)
+func (s *Service) DeleteReview(ctx context.Context, reviewID int) error {
+	if reviewID <= 0 {
+		return models.ErrInvalidReviewID
+	}
+	return s.repo.DeleteReview(ctx, reviewID)
+}
+
+func (s *Service) GetRestaurantStats(ctx context.Context, restaurantID int) (models.RestaurantStats, error) {
+	if restaurantID <= 0 {
+		return models.RestaurantStats{}, models.ErrInvalidRestaurantID
+	}
+	return s.statsRepo.GetRestaurantStats(ctx, restaurantID)
 }
