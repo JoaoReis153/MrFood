@@ -21,7 +21,7 @@ services:
   auth_db:
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: mrfood_auth
       POSTGRES_USER: auth
@@ -37,6 +37,43 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+  
+  booking:
+    build: ./booking
+    ports:
+      - "8081:8080"
+    environment:
+      DB_HOST: booking_db
+      DB_PORT: 5432
+      DB_NAME: mrfood_booking
+      DB_USER: booking
+      DB_PASS: bookingsecret
+    depends_on:
+      booking_db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  booking_db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: mrfood_booking
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: bookingsecret
+    volumes:
+      - booking_db_data:/var/lib/postgresql/data
+      - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d mrfood_booking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
 
 networks:
   app-network:
@@ -44,3 +81,4 @@ networks:
 
 volumes:
   auth_db_data:
+  booking_db_data:
