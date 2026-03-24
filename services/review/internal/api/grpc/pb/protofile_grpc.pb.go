@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v3.21.12
-// source: proto/protofile.proto
+// source: internal/api/grpc/proto/protofile.proto
 
 package pb
 
@@ -19,208 +19,338 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TemplateService_PingPong_FullMethodName      = "/proto.TemplateService/PingPong"
-	TemplateService_ManyPings_FullMethodName     = "/proto.TemplateService/ManyPings"
-	TemplateService_ManyPongs_FullMethodName     = "/proto.TemplateService/ManyPongs"
-	TemplateService_ManyPingPongs_FullMethodName = "/proto.TemplateService/ManyPingPongs"
+	ReviewService_GetReviews_FullMethodName   = "/proto.ReviewService/GetReviews"
+	ReviewService_CreateReview_FullMethodName = "/proto.ReviewService/CreateReview"
+	ReviewService_UpdateReview_FullMethodName = "/proto.ReviewService/UpdateReview"
+	ReviewService_DeleteReview_FullMethodName = "/proto.ReviewService/DeleteReview"
 )
 
-// TemplateServiceClient is the client API for TemplateService service.
+// ReviewServiceClient is the client API for ReviewService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type TemplateServiceClient interface {
-	PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error)
-	ManyPings(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Ping, Pong], error)
-	ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Pong], error)
-	ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Ping, Pong], error)
+//
+// ReviewService defines the gRPC service for handling review-related operations.
+type ReviewServiceClient interface {
+	// Get reviews for a specific restaurant with optional pagination
+	GetReviews(ctx context.Context, in *GetReviewsRequest, opts ...grpc.CallOption) (*GetReviewsResponse, error)
+	// Create a new review for a restaurant
+	CreateReview(ctx context.Context, in *CreateReviewRequest, opts ...grpc.CallOption) (*CreateReviewResponse, error)
+	// Update an existing review
+	UpdateReview(ctx context.Context, in *UpdateReviewRequest, opts ...grpc.CallOption) (*UpdateReviewResponse, error)
+	// Delete a review by its ID
+	DeleteReview(ctx context.Context, in *DeleteReviewRequest, opts ...grpc.CallOption) (*DeleteReviewResponse, error)
 }
 
-type templateServiceClient struct {
+type reviewServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTemplateServiceClient(cc grpc.ClientConnInterface) TemplateServiceClient {
-	return &templateServiceClient{cc}
+func NewReviewServiceClient(cc grpc.ClientConnInterface) ReviewServiceClient {
+	return &reviewServiceClient{cc}
 }
 
-func (c *templateServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
+func (c *reviewServiceClient) GetReviews(ctx context.Context, in *GetReviewsRequest, opts ...grpc.CallOption) (*GetReviewsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Pong)
-	err := c.cc.Invoke(ctx, TemplateService_PingPong_FullMethodName, in, out, cOpts...)
+	out := new(GetReviewsResponse)
+	err := c.cc.Invoke(ctx, ReviewService_GetReviews_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *templateServiceClient) ManyPings(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Ping, Pong], error) {
+func (c *reviewServiceClient) CreateReview(ctx context.Context, in *CreateReviewRequest, opts ...grpc.CallOption) (*CreateReviewResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TemplateService_ServiceDesc.Streams[0], TemplateService_ManyPings_FullMethodName, cOpts...)
+	out := new(CreateReviewResponse)
+	err := c.cc.Invoke(ctx, ReviewService_CreateReview_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[Ping, Pong]{ClientStream: stream}
-	return x, nil
+	return out, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TemplateService_ManyPingsClient = grpc.ClientStreamingClient[Ping, Pong]
-
-func (c *templateServiceClient) ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Pong], error) {
+func (c *reviewServiceClient) UpdateReview(ctx context.Context, in *UpdateReviewRequest, opts ...grpc.CallOption) (*UpdateReviewResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TemplateService_ServiceDesc.Streams[1], TemplateService_ManyPongs_FullMethodName, cOpts...)
+	out := new(UpdateReviewResponse)
+	err := c.cc.Invoke(ctx, ReviewService_UpdateReview_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[Ping, Pong]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
+	return out, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TemplateService_ManyPongsClient = grpc.ServerStreamingClient[Pong]
-
-func (c *templateServiceClient) ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[Ping, Pong], error) {
+func (c *reviewServiceClient) DeleteReview(ctx context.Context, in *DeleteReviewRequest, opts ...grpc.CallOption) (*DeleteReviewResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TemplateService_ServiceDesc.Streams[2], TemplateService_ManyPingPongs_FullMethodName, cOpts...)
+	out := new(DeleteReviewResponse)
+	err := c.cc.Invoke(ctx, ReviewService_DeleteReview_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[Ping, Pong]{ClientStream: stream}
-	return x, nil
+	return out, nil
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TemplateService_ManyPingPongsClient = grpc.BidiStreamingClient[Ping, Pong]
-
-// TemplateServiceServer is the server API for TemplateService service.
-// All implementations must embed UnimplementedTemplateServiceServer
+// ReviewServiceServer is the server API for ReviewService service.
+// All implementations must embed UnimplementedReviewServiceServer
 // for forward compatibility.
-type TemplateServiceServer interface {
-	PingPong(context.Context, *Ping) (*Pong, error)
-	ManyPings(grpc.ClientStreamingServer[Ping, Pong]) error
-	ManyPongs(*Ping, grpc.ServerStreamingServer[Pong]) error
-	ManyPingPongs(grpc.BidiStreamingServer[Ping, Pong]) error
-	mustEmbedUnimplementedTemplateServiceServer()
+//
+// ReviewService defines the gRPC service for handling review-related operations.
+type ReviewServiceServer interface {
+	// Get reviews for a specific restaurant with optional pagination
+	GetReviews(context.Context, *GetReviewsRequest) (*GetReviewsResponse, error)
+	// Create a new review for a restaurant
+	CreateReview(context.Context, *CreateReviewRequest) (*CreateReviewResponse, error)
+	// Update an existing review
+	UpdateReview(context.Context, *UpdateReviewRequest) (*UpdateReviewResponse, error)
+	// Delete a review by its ID
+	DeleteReview(context.Context, *DeleteReviewRequest) (*DeleteReviewResponse, error)
+	mustEmbedUnimplementedReviewServiceServer()
 }
 
-// UnimplementedTemplateServiceServer must be embedded to have
+// UnimplementedReviewServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedTemplateServiceServer struct{}
+type UnimplementedReviewServiceServer struct{}
 
-func (UnimplementedTemplateServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
-	return nil, status.Error(codes.Unimplemented, "method PingPong not implemented")
+func (UnimplementedReviewServiceServer) GetReviews(context.Context, *GetReviewsRequest) (*GetReviewsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReviews not implemented")
 }
-func (UnimplementedTemplateServiceServer) ManyPings(grpc.ClientStreamingServer[Ping, Pong]) error {
-	return status.Error(codes.Unimplemented, "method ManyPings not implemented")
+func (UnimplementedReviewServiceServer) CreateReview(context.Context, *CreateReviewRequest) (*CreateReviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateReview not implemented")
 }
-func (UnimplementedTemplateServiceServer) ManyPongs(*Ping, grpc.ServerStreamingServer[Pong]) error {
-	return status.Error(codes.Unimplemented, "method ManyPongs not implemented")
+func (UnimplementedReviewServiceServer) UpdateReview(context.Context, *UpdateReviewRequest) (*UpdateReviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateReview not implemented")
 }
-func (UnimplementedTemplateServiceServer) ManyPingPongs(grpc.BidiStreamingServer[Ping, Pong]) error {
-	return status.Error(codes.Unimplemented, "method ManyPingPongs not implemented")
+func (UnimplementedReviewServiceServer) DeleteReview(context.Context, *DeleteReviewRequest) (*DeleteReviewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteReview not implemented")
 }
-func (UnimplementedTemplateServiceServer) mustEmbedUnimplementedTemplateServiceServer() {}
-func (UnimplementedTemplateServiceServer) testEmbeddedByValue()                         {}
+func (UnimplementedReviewServiceServer) mustEmbedUnimplementedReviewServiceServer() {}
+func (UnimplementedReviewServiceServer) testEmbeddedByValue()                       {}
 
-// UnsafeTemplateServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to TemplateServiceServer will
+// UnsafeReviewServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ReviewServiceServer will
 // result in compilation errors.
-type UnsafeTemplateServiceServer interface {
-	mustEmbedUnimplementedTemplateServiceServer()
+type UnsafeReviewServiceServer interface {
+	mustEmbedUnimplementedReviewServiceServer()
 }
 
-func RegisterTemplateServiceServer(s grpc.ServiceRegistrar, srv TemplateServiceServer) {
-	// If the following call panics, it indicates UnimplementedTemplateServiceServer was
+func RegisterReviewServiceServer(s grpc.ServiceRegistrar, srv ReviewServiceServer) {
+	// If the following call panics, it indicates UnimplementedReviewServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&TemplateService_ServiceDesc, srv)
+	s.RegisterService(&ReviewService_ServiceDesc, srv)
 }
 
-func _TemplateService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Ping)
+func _ReviewService_GetReviews_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReviewsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).PingPong(ctx, in)
+		return srv.(ReviewServiceServer).GetReviews(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_PingPong_FullMethodName,
+		FullMethod: ReviewService_GetReviews_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).PingPong(ctx, req.(*Ping))
+		return srv.(ReviewServiceServer).GetReviews(ctx, req.(*GetReviewsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TemplateService_ManyPings_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(TemplateServiceServer).ManyPings(&grpc.GenericServerStream[Ping, Pong]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TemplateService_ManyPingsServer = grpc.ClientStreamingServer[Ping, Pong]
-
-func _TemplateService_ManyPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Ping)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _ReviewService_CreateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(TemplateServiceServer).ManyPongs(m, &grpc.GenericServerStream[Ping, Pong]{ServerStream: stream})
+	if interceptor == nil {
+		return srv.(ReviewServiceServer).CreateReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewService_CreateReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewServiceServer).CreateReview(ctx, req.(*CreateReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TemplateService_ManyPongsServer = grpc.ServerStreamingServer[Pong]
-
-func _TemplateService_ManyPingPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(TemplateServiceServer).ManyPingPongs(&grpc.GenericServerStream[Ping, Pong]{ServerStream: stream})
+func _ReviewService_UpdateReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewServiceServer).UpdateReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewService_UpdateReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewServiceServer).UpdateReview(ctx, req.(*UpdateReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type TemplateService_ManyPingPongsServer = grpc.BidiStreamingServer[Ping, Pong]
+func _ReviewService_DeleteReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewServiceServer).DeleteReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewService_DeleteReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewServiceServer).DeleteReview(ctx, req.(*DeleteReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
 
-// TemplateService_ServiceDesc is the grpc.ServiceDesc for TemplateService service.
+// ReviewService_ServiceDesc is the grpc.ServiceDesc for ReviewService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var TemplateService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.TemplateService",
-	HandlerType: (*TemplateServiceServer)(nil),
+var ReviewService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ReviewService",
+	HandlerType: (*ReviewServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "PingPong",
-			Handler:    _TemplateService_PingPong_Handler,
+			MethodName: "GetReviews",
+			Handler:    _ReviewService_GetReviews_Handler,
+		},
+		{
+			MethodName: "CreateReview",
+			Handler:    _ReviewService_CreateReview_Handler,
+		},
+		{
+			MethodName: "UpdateReview",
+			Handler:    _ReviewService_UpdateReview_Handler,
+		},
+		{
+			MethodName: "DeleteReview",
+			Handler:    _ReviewService_DeleteReview_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	ReviewToDetailsService_GetRestaurantStats_FullMethodName = "/proto.ReviewToDetailsService/GetRestaurantStats"
+)
+
+// ReviewToDetailsServiceClient is the client API for ReviewToDetailsService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ReviewToDetailsService defines the gRPC service for fetching restaurant details related to reviews.
+type ReviewToDetailsServiceClient interface {
+	// Get restaurant stats such as average rating and review count
+	GetRestaurantStats(ctx context.Context, in *GetRestaurantStatsRequest, opts ...grpc.CallOption) (*GetRestaurantStatsResponse, error)
+}
+
+type reviewToDetailsServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewReviewToDetailsServiceClient(cc grpc.ClientConnInterface) ReviewToDetailsServiceClient {
+	return &reviewToDetailsServiceClient{cc}
+}
+
+func (c *reviewToDetailsServiceClient) GetRestaurantStats(ctx context.Context, in *GetRestaurantStatsRequest, opts ...grpc.CallOption) (*GetRestaurantStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRestaurantStatsResponse)
+	err := c.cc.Invoke(ctx, ReviewToDetailsService_GetRestaurantStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ReviewToDetailsServiceServer is the server API for ReviewToDetailsService service.
+// All implementations must embed UnimplementedReviewToDetailsServiceServer
+// for forward compatibility.
+//
+// ReviewToDetailsService defines the gRPC service for fetching restaurant details related to reviews.
+type ReviewToDetailsServiceServer interface {
+	// Get restaurant stats such as average rating and review count
+	GetRestaurantStats(context.Context, *GetRestaurantStatsRequest) (*GetRestaurantStatsResponse, error)
+	mustEmbedUnimplementedReviewToDetailsServiceServer()
+}
+
+// UnimplementedReviewToDetailsServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedReviewToDetailsServiceServer struct{}
+
+func (UnimplementedReviewToDetailsServiceServer) GetRestaurantStats(context.Context, *GetRestaurantStatsRequest) (*GetRestaurantStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRestaurantStats not implemented")
+}
+func (UnimplementedReviewToDetailsServiceServer) mustEmbedUnimplementedReviewToDetailsServiceServer() {
+}
+func (UnimplementedReviewToDetailsServiceServer) testEmbeddedByValue() {}
+
+// UnsafeReviewToDetailsServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ReviewToDetailsServiceServer will
+// result in compilation errors.
+type UnsafeReviewToDetailsServiceServer interface {
+	mustEmbedUnimplementedReviewToDetailsServiceServer()
+}
+
+func RegisterReviewToDetailsServiceServer(s grpc.ServiceRegistrar, srv ReviewToDetailsServiceServer) {
+	// If the following call panics, it indicates UnimplementedReviewToDetailsServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ReviewToDetailsService_ServiceDesc, srv)
+}
+
+func _ReviewToDetailsService_GetRestaurantStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewToDetailsServiceServer).GetRestaurantStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewToDetailsService_GetRestaurantStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewToDetailsServiceServer).GetRestaurantStats(ctx, req.(*GetRestaurantStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ReviewToDetailsService_ServiceDesc is the grpc.ServiceDesc for ReviewToDetailsService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ReviewToDetailsService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ReviewToDetailsService",
+	HandlerType: (*ReviewToDetailsServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
 		{
-			StreamName:    "ManyPings",
-			Handler:       _TemplateService_ManyPings_Handler,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "ManyPongs",
-			Handler:       _TemplateService_ManyPongs_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "ManyPingPongs",
-			Handler:       _TemplateService_ManyPingPongs_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
+			MethodName: "GetRestaurantStats",
+			Handler:    _ReviewToDetailsService_GetRestaurantStats_Handler,
 		},
 	},
-	Metadata: "proto/protofile.proto",
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
 }

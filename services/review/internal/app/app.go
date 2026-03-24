@@ -13,7 +13,7 @@ type App struct {
 
 func New(db *sql.DB) *App {
 	repo := repository.New(db)
-	svc := service.New(repo)
+	svc := service.New(repo, repo)
 	return &App{
 		Service: svc,
 		Repo:    repo,
