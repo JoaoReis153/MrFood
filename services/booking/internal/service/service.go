@@ -29,15 +29,15 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking, wo
 	}
 
 	// check if booking already exists
-	count, err := s.repo.CheckBooking(ctx, int(working_hours.RestaurantID), working_hours.TimeStart)
+	exists, err := s.repo.CheckBooking(ctx, int(working_hours.RestaurantID), working_hours.TimeStart)
 
 	if err != nil {
 		slog.Error("Internal database error")
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if count > 0 {
-		slog.Error("Booking already exists", "count", count)
+	if exists > 0 {
+		slog.Error("Booking already exists")
 		return nil, status.Error(codes.InvalidArgument, "booking already exists")
 	}
 
