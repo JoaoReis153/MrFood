@@ -12,64 +12,53 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedTemplateServiceServer
+	pb.UnimplementedRestaurantServiceServer
 }
 
-func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
-	return &pb.Pong{
-		Id: 1,
+func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurantDetailsRequest) (*pb.GetRestaurantDetailsResponse, error) {
+	log.Printf("Fetching details for restaurant ID: %d", req.GetId())
+
+	return &pb.GetRestaurantDetailsResponse{
+		Restaurant: &pb.RestaurantDetails{
+			Id:   req.GetId(),
+			Name: "The Tasty Gopher",
+		},
 	}, nil
 }
 
-func (s *server) ManyPings(stream pb.TemplateService_ManyPingsServer) error {
-	var lastID int32
+func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantRequest) (*pb.CreateRestaurantResponse, error) {
+	log.Printf("Creating restaurant: %s", req.GetName())
 
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			break
-		}
-		lastID = req.Id
-	}
-
-	return stream.SendAndClose(&pb.Pong{Id: lastID})
+	return &pb.CreateRestaurantResponse{
+		RestaurantId: 101,
+		PresignedUrl: nil,
+	}, nil
 }
 
-func (s *server) ManyPongs(req *pb.Ping, stream pb.TemplateService_ManyPongsServer) error {
-	for i := 0; i < 5; i++ {
-		err := stream.Send(&pb.Pong{Id: req.Id + int32(i)})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantRequest) (*pb.UpdateRestaurantResponse, error) {
+	return &pb.UpdateRestaurantResponse{}, nil
 }
 
-func (s *server) ManyPingPongs(stream pb.TemplateService_ManyPingPongsServer) error {
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			break
-		}
-		err = stream.Send(&pb.Pong{Id: req.Id})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (s *server) CompareRestaurantDetails(ctx context.Context, req *pb.CompareRestaurantDetailsRequest) (*pb.CompareRestaurantDetailsResponse, error) {
+	return &pb.CompareRestaurantDetailsResponse{
+		Restaurant1: &pb.RestaurantDetails{Id: req.RestaurantId_1},
+		Restaurant2: &pb.RestaurantDetails{Id: req.RestaurantId_2},
+	}, nil
 }
 
 func RunServer() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &server{})
 
-	fmt.Println("Server running on :50051")
+	// Register the correct service
+	pb.RegisterRestaurantServiceServer(s, &server{})
+
+	fmt.Println("Restaurant gRPC Server running on :50051")
 	if err := s.Serve(lis); err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
