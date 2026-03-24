@@ -1,0 +1,17 @@
+info:
+  name: GetReviews
+  type: grpc
+  seq: 5
+
+grpc:
+  url: localhost:50051
+  method: /proto.ReviewService/GetReviews
+  methodType: unary
+  protoFilePath: ../../../../services/review/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "restaurant_id": 11,
+      "limit": 1,
+      "page": 5
+    }
+  auth: inherit

@@ -1,0 +1,14 @@
+info:
+  name: DeleteReview
+  type: grpc
+  seq: 8
+
+grpc:
+  url: localhost:50051
+  method: /proto.ReviewService/DeleteReview
+  methodType: unary
+  message: |-
+    {
+      "review_id": 3
+    }
+  auth: inherit
