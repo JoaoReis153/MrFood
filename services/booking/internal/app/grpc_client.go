@@ -31,15 +31,15 @@ func NewClient() (pb.RestaurantServiceClient, func(), error) {
 }
 
 // called by the server whenever a booking request is received - gets available slots if time_start is within a working hour
-func GetSlots(client pb.RestaurantServiceClient, ctx context.Context, restaurant_id int32, time_start time.Time) (*pb.GetSlotsResponse, error) {
-	res, err := client.GetSlots(ctx,
-		&pb.GetSlotsRequest{
+func GetWorkingHours(client pb.RestaurantServiceClient, ctx context.Context, restaurant_id int32, time_start time.Time) (*pb.WorkingHoursResponse, error) {
+	res, err := client.GetWorkingHours(ctx,
+		&pb.WorkingHoursRequest{
 			RestaurantId: restaurant_id,
 			TimeStart:    timestamppb.New(time_start),
 		})
 	if err != nil {
-		slog.Error("Unable to get slots", "error", err)
-		return nil, status.Error(codes.Internal, "failed to get slots")
+		slog.Error("Unable to get working hours", "error", err)
+		return nil, status.Error(codes.Internal, "failed to get working hours")
 	}
 
 	return res, nil
