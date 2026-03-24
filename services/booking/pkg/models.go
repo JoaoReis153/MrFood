@@ -11,7 +11,18 @@ type Booking struct {
 	TimeEnd      time.Time `json:"time_end"`
 }
 
-type HourSlots struct {
-	MaxSlots     int32
-	CurrentSlots int32
+type RestaurantSlots struct {
+	ID           int32     `json:"id"`
+	RestaurantID int32     `json:"restaurant_id"`
+	WeekDay      int32     `json:"week_day"`
+	MaxSlots     int32     `json:"max_slots"`
+	CurrentSlots int32     `json:"current_slots"`
+	TimeStart    time.Time `json:"time_start"`
+	TimeEnd      time.Time `json:"time_end"`
+}
+
+type WorkingHours struct {
+	RestaurantID int32     `json:"restaurant_id"`
+	TimeStart    time.Time `json:"time_start"`
+	TimeEnd      time.Time `json:"time_end"`
 }
