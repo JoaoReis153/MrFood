@@ -37,21 +37,23 @@ func (r *Repository) CreateBooking(ctx context.Context, user_id, restaurant_id, 
 
 func (r *Repository) CheckBooking(ctx context.Context, restaurant_id int, time_start time.Time) (int32, error) {
 	query := `
-		SELECT COUNT(*)
+		SELECT 1
 		FROM bookings
 		WHERE restaurant_id = $1
-		AND time_start = $2;
+		AND time_start >= $2
+		AND time_start < $2 + interval '1 second'
+		LIMIT 1;
 	`
-	var count int32
+	var exists int32
 
-	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&count)
+	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&exists)
 
 	if err != nil {
 		slog.Error("Failed to search for booking", "error", err)
 		return 0, fmt.Errorf("Failed to create booking: %w", err)
 	}
 
-	return count, nil
+	return exists, nil
 }
 
 func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start time.Time) (int32, int32, error) {
@@ -59,12 +61,13 @@ func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start
 		SELECT max_slots, current_slots
 		FROM restaurant_slots
 		WHERE restaurant_id = $1
-		AND time_start = $2;
+		AND time_start >= $2
+		AND time_start < $2 + interval '1 second'
 	`
 
 	var max_slots, current_slots int32
 
-	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&max_slots, current_slots)
+	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&max_slots, &current_slots)
 
 	if err != nil {
 		slog.Error("Failed to search for slots", "error", err)
@@ -72,4 +75,27 @@ func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start
 	}
 
 	return max_slots, current_slots, nil
+}
+
+func (r *Repository) UpdateSlots(ctx context.Context, restaurant_id, current_slots int, time_start time.Time) error {
+	query := `
+		UPDATE restaurant_slots
+		SET current_slots = $1
+		WHERE restaurant_id = $2
+		AND time_start >= $3
+		AND time_start < $3 + interval '1 second'
+	`
+
+	cmdTag, err := r.DB.Exec(ctx, query, current_slots, restaurant_id, time_start)
+
+	if err != nil {
+		slog.Error("Failed to search for slots", "error", err)
+		return fmt.Errorf("Failed to create slots: %w", err)
+	}
+
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("no slots found to update")
+	}
+
+	return nil
 }
