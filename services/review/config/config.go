@@ -1,7 +1,9 @@
 package config
 
 import (
-	"log"
+	"context"
+	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -17,21 +19,19 @@ type Config struct {
 	Log struct {
 		Level string `yaml:"level"`
 	} `yaml:"log"`
-	Database struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
-		Name string `yaml:"name"`
-		User string `yaml:"user"`
-		Pass string `yaml:"pass"`
-	} `yaml:"database"`
+	DB struct {
+		Host     string `yaml:"host"`
+		Port     int    `yaml:"port"`
+		Name     string `yaml:"name"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+	} `yaml:"db"`
 }
 
 var globalConfig *Config
 
-// Load config from ENV vars only (with sane defaults)
-func Load() *Config {
+func Load(ctx context.Context) *Config {
 	cfg := &Config{
-		// Hardcoded defaults (non-zero!)
 		Server: struct {
 			Host    string        `yaml:"host"`
 			Port    int           `yaml:"port"`
@@ -46,25 +46,35 @@ func Load() *Config {
 		}{
 			Level: "info",
 		},
-		Database: struct {
-			Host string `yaml:"host"`
-			Port int    `yaml:"port"`
-			Name string `yaml:"name"`
-			User string `yaml:"user"`
-			Pass string `yaml:"pass"`
+		DB: struct {
+			Host     string `yaml:"host"`
+			Port     int    `yaml:"port"`
+			Name     string `yaml:"name"`
+			User     string `yaml:"user"`
+			Password string `yaml:"password"`
 		}{
-			Host: "localhost",
-			Port: 5432,
-			Name: "mrfood_reviews",
-			User: "review",
-			Pass: "reviewsecret",
+			Host:     "localhost",
+			Port:     5432,
+			Name:     "mrfood",
+			User:     "postgres",
+			Password: "",
 		},
 	}
 
 	// Override with ENV vars
 	overrideWithEnv(cfg)
 
-	log.Printf("Config loaded: Server=%s:%d, Timeout=%v, Log=%s", cfg.Server.Host, cfg.Server.Port, cfg.Server.Timeout, cfg.Log.Level)
+	if err := validateConfig(cfg); err != nil {
+		slog.Error("invalid config", "error", err)
+		panic(err)
+	}
+
+	slog.Info("config loaded",
+		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
+		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
+		slog.String("log_level", cfg.Log.Level),
+	)
+
 	return cfg
 }
 
@@ -78,11 +88,24 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
 	// Database config
-	cfg.Database.Host = getEnv("DB_HOST", cfg.Database.Host)
-	cfg.Database.Port = getEnvInt("DB_PORT", cfg.Database.Port)
-	cfg.Database.Name = getEnv("DB_NAME", cfg.Database.Name)
-	cfg.Database.User = getEnv("DB_USER", cfg.Database.User)
-	cfg.Database.Pass = getEnv("DB_PASS", cfg.Database.Pass)
+	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
+	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
+	cfg.DB.Name = getEnv("DB_NAME", cfg.DB.Name)
+	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("DB_PASSWORD", cfg.DB.Password)
+}
+
+func validateConfig(cfg *Config) error {
+	if cfg.Server.Port < 1 || cfg.Server.Port > 65535 {
+		return fmt.Errorf("server port invalid: %d", cfg.Server.Port)
+	}
+	if cfg.Server.Timeout == 0 {
+		return fmt.Errorf("server timeout required")
+	}
+	if cfg.DB.Host == "" || cfg.DB.Name == "" {
+		return fmt.Errorf("DB host/name required")
+	}
+	return nil
 }
 
 func getEnv(key, defaultValue string) string {
@@ -113,9 +136,9 @@ func parseDuration(s string) time.Duration {
 	return 30 * time.Second
 }
 
-func Get() *Config {
+func Get(ctx context.Context) *Config {
 	if globalConfig == nil {
-		globalConfig = Load()
+		globalConfig = Load(ctx)
 	}
 	return globalConfig
 }

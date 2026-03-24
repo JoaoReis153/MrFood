@@ -1,10 +1,11 @@
-package app
+package grpc
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 
 	pb "MrFood/services/review/internal/api/grpc/pb"
@@ -25,6 +26,7 @@ type server struct {
 }
 
 func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb.GetReviewsResponse, error) {
+	slog.Info("Received GetReviews request", "restaurantID", req.GetRestaurantId(), "page", req.GetPage(), "limit", req.GetLimit())
 	page, limit := int(req.GetPage()), int(req.GetLimit())
 	if page == 0 {
 		page = 1
@@ -47,6 +49,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 			CreatedAt:    timestamppb.New(r.CreatedAt),
 		}
 	}
+	slog.Info("GetReviews request successful", "restaurantID", req.GetRestaurantId(), "page", page, "limit", limit, "totalReviews", results.Pagination.Total)
 	return &pb.GetReviewsResponse{
 		Reviews: pbReviews,
 		Pagination: &pb.Pagination{
@@ -59,6 +62,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 }
 
 func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.CreateReviewResponse, error) {
+	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", req.GetUserId(), "rating", req.GetRating())
 	review := models.Review{
 		RestaurantID: int(req.GetRestaurantId()),
 		UserID:       int(req.GetUserId()),
@@ -69,6 +73,8 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
+
+	slog.Info("CreateReview request successful", "reviewID", review.ReviewID, "restaurantID", review.RestaurantID, "userID", review.UserID)
 	return &pb.CreateReviewResponse{
 		Review: &pb.Review{
 			ReviewId:     int32(review.ReviewID),
@@ -82,6 +88,7 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 }
 
 func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*pb.UpdateReviewResponse, error) {
+	slog.Info("Received UpdateReview request", "reviewID", req.GetReviewId())
 	review := models.UpdateReview{
 		ReviewID: int(req.GetReviewId()),
 	}
@@ -98,6 +105,7 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
+	slog.Info("UpdateReview request successful", "reviewID", updated.ReviewID, "restaurantID", updated.RestaurantID, "userID", updated.UserID)
 	return &pb.UpdateReviewResponse{
 		Review: &pb.Review{
 			ReviewId:     int32(updated.ReviewID),
@@ -111,18 +119,24 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 }
 
 func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) (*pb.DeleteReviewResponse, error) {
+	slog.Info("Received DeleteReview request", "reviewID", req.GetReviewId())
 	err := s.svc.DeleteReview(ctx, int(req.GetReviewId()))
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
+
+	slog.Info("DeleteReview request successful", "reviewID", req.GetReviewId())
 	return &pb.DeleteReviewResponse{}, nil
 }
 
 func (s *server) GetRestaurantStats(ctx context.Context, req *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
+	slog.Info("Received GetRestaurantStats request", "restaurantID", req.GetRestaurantId())
 	stats, err := s.svc.GetRestaurantStats(ctx, int(req.GetRestaurantId()))
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
+
+	slog.Info("GetRestaurantStats request successful", "restaurantID", req.GetRestaurantId(), "averageRating", stats.AverageRating, "reviewCount", stats.ReviewCount)
 	return &pb.GetRestaurantStatsResponse{
 		RestaurantStats: &pb.RestaurantStats{
 			RestaurantId:  int32(stats.RestaurantID),
@@ -150,6 +164,7 @@ func RunServer(svc *service.Service) {
 }
 
 func mapToGRPCError(err error) error {
+	slog.Error("gRPC Operation Failed", "error", err)
 	switch {
 	case errors.Is(err, models.ErrInvalidRating), errors.Is(err, models.ErrInvalidComment), errors.Is(err, models.ErrInvalidRestaurantID),
 		errors.Is(err, models.ErrInvalidUserID), errors.Is(err, models.ErrInvalidReviewID), errors.Is(err, models.ErrLimitTooLarge):

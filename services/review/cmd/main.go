@@ -2,24 +2,48 @@ package main
 
 import (
 	"MrFood/services/review/config"
+	"MrFood/services/review/internal/api/grpc"
 	"MrFood/services/review/internal/app"
-	"MrFood/services/review/internal/db"
-	"MrFood/services/review/internal/repository"
-	"MrFood/services/review/internal/service"
+	"context"
 	"log"
+	"log/slog"
+	"os"
+	"strings"
 )
 
 func main() {
-	cfg := config.Load()
+	setupLogger(config.Get(context.Background()).Log.Level)
+	config.Get(context.Background())
+	application := app.New()
 
-	database, err := db.New(cfg)
+	err := application.ConnectDb()
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalf("DB connection failed: %v", err)
 	}
-	defer database.Close()
+	defer application.DB.Close()
+	application.InitDependencies()
+	grpc.RunServer(application.Service)
+}
 
-	repo := repository.New(database)
-	svc := service.New(repo, repo)
+func setupLogger(logLevel string) {
+	level := slog.LevelInfo // Default
 
-	app.RunServer(svc)
+	switch strings.ToLower(logLevel) {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	case "info":
+		level = slog.LevelInfo
+	}
+
+	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level:     level,
+		AddSource: true, // file:line numbers
+	})
+
+	slog.SetDefault(slog.New(handler))
+	slog.Info("logger initialized", "level", logLevel)
 }
