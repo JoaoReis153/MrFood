@@ -21,3 +21,4 @@ CREATE TABLE restaurant_slots(
 );
 
 CREATE INDEX idx_already_booked ON booking (restaurant_id, time_start);
+CREATE INDEX idx_restaurant_slots ON restaurant_slots (restaurant_id, time_start);
