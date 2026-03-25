@@ -20,6 +20,10 @@ func New(db *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) CreateUser(ctx context.Context, username, password, email string) (int32, string, error) {
+	if ctx.Err() != nil {
+		return 0, "", ctx.Err()
+	}
+
 	query := `
 		INSERT INTO app_user (username, password, email)
 		VALUES ($1, $2, $3)
