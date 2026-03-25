@@ -40,10 +40,11 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 }
 
 func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantRequest) (*pb.CreateRestaurantResponse, error) {
-	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", req.GetOwnerId())
+	requesterOwnerID, err := ownerIDFromMetadata(ctx)
+	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwnerID)
 
 	restaurant := &models.Restaurant{
-		OwnerID:      req.GetOwnerId(),
+		OwnerID:      requesterOwnerID,
 		Name:         req.GetName(),
 		Address:      req.GetAddress(),
 		WorkingHours: req.GetWorkingHours(),
@@ -133,7 +134,7 @@ func ownerIDFromMetadata(ctx context.Context) (int32, error) {
 
 	ownerIDs := md.Get("x-user-id")
 	if len(ownerIDs) == 0 {
-		return 0, errors.New("missing x-user-id metadata")
+		return 0, errors.New("missing x-user-id maetadata")
 	}
 
 	ownerID := strings.TrimSpace(ownerIDs[0])

@@ -119,8 +119,7 @@ type CreateRestaurantRequest struct {
 	WorkingHours  []string               `protobuf:"bytes,5,rep,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
 	Categories    []string               `protobuf:"bytes,6,rep,name=categories,proto3" json:"categories,omitempty"`
 	MaxSlots      int32                  `protobuf:"varint,7,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
-	OwnerId       int32                  `protobuf:"varint,8,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	HasMedia      bool                   `protobuf:"varint,9,opt,name=has_media,json=hasMedia,proto3" json:"has_media,omitempty"`
+	HasMedia      bool                   `protobuf:"varint,8,opt,name=has_media,json=hasMedia,proto3" json:"has_media,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -200,13 +199,6 @@ func (x *CreateRestaurantRequest) GetCategories() []string {
 func (x *CreateRestaurantRequest) GetMaxSlots() int32 {
 	if x != nil {
 		return x.MaxSlots
-	}
-	return 0
-}
-
-func (x *CreateRestaurantRequest) GetOwnerId() int32 {
-	if x != nil {
-		return x.OwnerId
 	}
 	return 0
 }
@@ -660,7 +652,7 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x1cGetRestaurantDetailsResponse\x128\n" +
 	"\n" +
 	"restaurant\x18\x01 \x01(\v2\x18.proto.RestaurantDetailsR\n" +
-	"restaurant\"\x9b\x02\n" +
+	"restaurant\"\x80\x02\n" +
 	"\x17CreateRestaurantRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\blatitude\x18\x02 \x01(\x01R\blatitude\x12\x1c\n" +
@@ -670,9 +662,8 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
 	"categories\x18\x06 \x03(\tR\n" +
 	"categories\x12\x1b\n" +
-	"\tmax_slots\x18\a \x01(\x05R\bmaxSlots\x12\x19\n" +
-	"\bowner_id\x18\b \x01(\x05R\aownerId\x12\x1b\n" +
-	"\thas_media\x18\t \x01(\bR\bhasMedia\"{\n" +
+	"\tmax_slots\x18\a \x01(\x05R\bmaxSlots\x12\x1b\n" +
+	"\thas_media\x18\b \x01(\bR\bhasMedia\"{\n" +
 	"\x18CreateRestaurantResponse\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12(\n" +
 	"\rpresigned_url\x18\x02 \x01(\tH\x00R\fpresignedUrl\x88\x01\x01B\x10\n" +

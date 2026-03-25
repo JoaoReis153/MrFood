@@ -31,8 +31,7 @@ message CreateRestaurantRequest {
   repeated string working_hours = 5;
   repeated string categories = 6;
   int32 max_slots = 7;
-  int32 owner_id = 8;
-  bool has_media = 9;
+  bool has_media = 8;
 }
 
 message CreateRestaurantResponse {

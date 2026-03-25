@@ -6,7 +6,7 @@ services:
     volumes:
       - ./auth:/app
     ports:
-      - "50051:50051"
+      - "8080:8080"
     environment:
       DB_HOST: auth_db
       DB_PORT: 5432
@@ -23,7 +23,7 @@ services:
   auth_db:
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: mrfood_auth
       POSTGRES_USER: auth
@@ -40,6 +40,45 @@ services:
     command: postgres -c ssl=off -c log_statement=all
     networks:
       - app-network
+  restaurant:
+    build: ./restaurant
+    volumes:
+      - ./restaurant:/app
+    ports:
+      - "50051:50051"
+    environment:
+      DB_HOST: restaurant_db
+      DB_PORT: 5432
+      DB_NAME: mrfood_restaurant
+      DB_USER: restaurant
+      DB_PASS: restaurantsecret
+    depends_on:
+      restaurant_db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  restaurant_db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: mrfood_restaurant
+      POSTGRES_USER: restaurant
+      POSTGRES_PASSWORD: restaurantsecret
+    volumes:
+      - restaurant_db_data:/var/lib/postgresql/data
+      - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U restaurant -d mrfood_restaurant" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: postgres -c ssl=off -c log_statement=all
+    networks:
+      - app-network
+
 
 networks:
   app-network:
@@ -47,3 +86,4 @@ networks:
 
 volumes:
   auth_db_data:
+  restaurant_db_data:
