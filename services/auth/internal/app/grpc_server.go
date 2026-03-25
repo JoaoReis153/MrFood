@@ -163,10 +163,20 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
 
 	g, ctx := errgroup.WithContext(ctx)
+
+	// start the gRPC server
 	g.Go(func() error {
 		if err := s.Serve(lis); err != nil && err != grpc.ErrServerStopped {
 			return fmt.Errorf("serve: %w", err)
 		}
+		return nil
+	})
+
+	// listen for context cancellation to shut down the server
+	g.Go(func() error {
+		<-ctx.Done() // Wait for the context to be canceled
+		slog.Info("shutting down gRPC server...")
+		s.GracefulStop()
 		return nil
 	})
 
