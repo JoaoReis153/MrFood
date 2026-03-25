@@ -18,3 +18,26 @@ services:
       - name: grpc-gateway
         config:
           proto: /etc/kong/proto/auth.proto
+
+  # mister example for later
+  # - name: protected-api
+  #   host: my-api
+  #   port: 8080
+
+  #   routes:
+  #     - name: protected-api
+  #       paths:
+  #         - /api
+
+  #   plugins:
+  #     - name: jwt
+  #       config:
+  #         claims_to_verify:
+  #           - exp
+
+consumers:
+  - username: my-client
+    jwt_secrets:
+      - key: my-client-issuer
+        secret: this-is-a-temporary-secret-that-we-should-probably-change
+        algorithm: HS256

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"MrFood/services/auth/config"
+
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -42,6 +43,7 @@ func (a *Auth) CreateToken(userID, username string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "my-client-issuer",
 		},
 	}
 

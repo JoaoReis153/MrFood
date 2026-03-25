@@ -67,7 +67,7 @@ func Load(_ context.Context) (*Config, error) {
 			User: "postgres",
 		},
 		JWT: JWTConfig{
-			Secret:       "to-be-saved",
+			Secret:       "this-is-a-temporary-secret-that-we-should-probably-change",
 			ExpiresHours: 24,
 		},
 	}
