@@ -20,7 +20,7 @@ import (
 )
 
 type Server struct {
-	pb.UnimplementedTemplateServiceServer
+	pb.UnimplementedAuthServiceServer
 	authService authService
 	jwtService  jwtService
 }
@@ -155,7 +155,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	jwtServiceInstance := auth.NewJWTService(&cfg.JWT, app.Repo)
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &Server{
+	pb.RegisterAuthServiceServer(s, &Server{
 		authService: app.Service,
 		jwtService:  jwtServiceInstance,
 	})

@@ -4,7 +4,7 @@ package proto;
 
 option go_package = "/pb;pb";
 
-service TemplateService {
+service AuthService {
   rpc PingPong (Ping) returns (Pong);
   rpc RegisterProcess (Register) returns (RegisterResponse);
   rpc LoginProcess (Login) returns (LoginResponse);

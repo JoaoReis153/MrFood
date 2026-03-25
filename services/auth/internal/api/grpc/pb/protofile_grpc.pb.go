@@ -19,17 +19,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TemplateService_PingPong_FullMethodName            = "/proto.TemplateService/PingPong"
-	TemplateService_RegisterProcess_FullMethodName     = "/proto.TemplateService/RegisterProcess"
-	TemplateService_LoginProcess_FullMethodName        = "/proto.TemplateService/LoginProcess"
-	TemplateService_RefreshTokenProcess_FullMethodName = "/proto.TemplateService/RefreshTokenProcess"
-	TemplateService_LogoutProcess_FullMethodName       = "/proto.TemplateService/LogoutProcess"
+	AuthService_PingPong_FullMethodName            = "/proto.AuthService/PingPong"
+	AuthService_RegisterProcess_FullMethodName     = "/proto.AuthService/RegisterProcess"
+	AuthService_LoginProcess_FullMethodName        = "/proto.AuthService/LoginProcess"
+	AuthService_RefreshTokenProcess_FullMethodName = "/proto.AuthService/RefreshTokenProcess"
+	AuthService_LogoutProcess_FullMethodName       = "/proto.AuthService/LogoutProcess"
 )
 
-// TemplateServiceClient is the client API for TemplateService service.
+// AuthServiceClient is the client API for AuthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type TemplateServiceClient interface {
+type AuthServiceClient interface {
 	PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error)
 	RegisterProcess(ctx context.Context, in *Register, opts ...grpc.CallOption) (*RegisterResponse, error)
 	LoginProcess(ctx context.Context, in *Login, opts ...grpc.CallOption) (*LoginResponse, error)
@@ -37,235 +37,235 @@ type TemplateServiceClient interface {
 	LogoutProcess(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 }
 
-type templateServiceClient struct {
+type authServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTemplateServiceClient(cc grpc.ClientConnInterface) TemplateServiceClient {
-	return &templateServiceClient{cc}
+func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
+	return &authServiceClient{cc}
 }
 
-func (c *templateServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
+func (c *authServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Pong)
-	err := c.cc.Invoke(ctx, TemplateService_PingPong_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_PingPong_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *templateServiceClient) RegisterProcess(ctx context.Context, in *Register, opts ...grpc.CallOption) (*RegisterResponse, error) {
+func (c *authServiceClient) RegisterProcess(ctx context.Context, in *Register, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RegisterResponse)
-	err := c.cc.Invoke(ctx, TemplateService_RegisterProcess_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_RegisterProcess_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *templateServiceClient) LoginProcess(ctx context.Context, in *Login, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *authServiceClient) LoginProcess(ctx context.Context, in *Login, opts ...grpc.CallOption) (*LoginResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, TemplateService_LoginProcess_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_LoginProcess_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *templateServiceClient) RefreshTokenProcess(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error) {
+func (c *authServiceClient) RefreshTokenProcess(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RefreshResponse)
-	err := c.cc.Invoke(ctx, TemplateService_RefreshTokenProcess_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_RefreshTokenProcess_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *templateServiceClient) LogoutProcess(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
+func (c *authServiceClient) LogoutProcess(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LogoutResponse)
-	err := c.cc.Invoke(ctx, TemplateService_LogoutProcess_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthService_LogoutProcess_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TemplateServiceServer is the server API for TemplateService service.
-// All implementations must embed UnimplementedTemplateServiceServer
+// AuthServiceServer is the server API for AuthService service.
+// All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
-type TemplateServiceServer interface {
+type AuthServiceServer interface {
 	PingPong(context.Context, *Ping) (*Pong, error)
 	RegisterProcess(context.Context, *Register) (*RegisterResponse, error)
 	LoginProcess(context.Context, *Login) (*LoginResponse, error)
 	RefreshTokenProcess(context.Context, *RefreshRequest) (*RefreshResponse, error)
 	LogoutProcess(context.Context, *LogoutRequest) (*LogoutResponse, error)
-	mustEmbedUnimplementedTemplateServiceServer()
+	mustEmbedUnimplementedAuthServiceServer()
 }
 
-// UnimplementedTemplateServiceServer must be embedded to have
+// UnimplementedAuthServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedTemplateServiceServer struct{}
+type UnimplementedAuthServiceServer struct{}
 
-func (UnimplementedTemplateServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
+func (UnimplementedAuthServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
 	return nil, status.Error(codes.Unimplemented, "method PingPong not implemented")
 }
-func (UnimplementedTemplateServiceServer) RegisterProcess(context.Context, *Register) (*RegisterResponse, error) {
+func (UnimplementedAuthServiceServer) RegisterProcess(context.Context, *Register) (*RegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RegisterProcess not implemented")
 }
-func (UnimplementedTemplateServiceServer) LoginProcess(context.Context, *Login) (*LoginResponse, error) {
+func (UnimplementedAuthServiceServer) LoginProcess(context.Context, *Login) (*LoginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LoginProcess not implemented")
 }
-func (UnimplementedTemplateServiceServer) RefreshTokenProcess(context.Context, *RefreshRequest) (*RefreshResponse, error) {
+func (UnimplementedAuthServiceServer) RefreshTokenProcess(context.Context, *RefreshRequest) (*RefreshResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshTokenProcess not implemented")
 }
-func (UnimplementedTemplateServiceServer) LogoutProcess(context.Context, *LogoutRequest) (*LogoutResponse, error) {
+func (UnimplementedAuthServiceServer) LogoutProcess(context.Context, *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method LogoutProcess not implemented")
 }
-func (UnimplementedTemplateServiceServer) mustEmbedUnimplementedTemplateServiceServer() {}
-func (UnimplementedTemplateServiceServer) testEmbeddedByValue()                         {}
+func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
+func (UnimplementedAuthServiceServer) testEmbeddedByValue()                     {}
 
-// UnsafeTemplateServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to TemplateServiceServer will
+// UnsafeAuthServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthServiceServer will
 // result in compilation errors.
-type UnsafeTemplateServiceServer interface {
-	mustEmbedUnimplementedTemplateServiceServer()
+type UnsafeAuthServiceServer interface {
+	mustEmbedUnimplementedAuthServiceServer()
 }
 
-func RegisterTemplateServiceServer(s grpc.ServiceRegistrar, srv TemplateServiceServer) {
-	// If the following call panics, it indicates UnimplementedTemplateServiceServer was
+func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
+	// If the following call panics, it indicates UnimplementedAuthServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&TemplateService_ServiceDesc, srv)
+	s.RegisterService(&AuthService_ServiceDesc, srv)
 }
 
-func _TemplateService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Ping)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).PingPong(ctx, in)
+		return srv.(AuthServiceServer).PingPong(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_PingPong_FullMethodName,
+		FullMethod: AuthService_PingPong_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).PingPong(ctx, req.(*Ping))
+		return srv.(AuthServiceServer).PingPong(ctx, req.(*Ping))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TemplateService_RegisterProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_RegisterProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Register)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).RegisterProcess(ctx, in)
+		return srv.(AuthServiceServer).RegisterProcess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_RegisterProcess_FullMethodName,
+		FullMethod: AuthService_RegisterProcess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).RegisterProcess(ctx, req.(*Register))
+		return srv.(AuthServiceServer).RegisterProcess(ctx, req.(*Register))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TemplateService_LoginProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_LoginProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Login)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).LoginProcess(ctx, in)
+		return srv.(AuthServiceServer).LoginProcess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_LoginProcess_FullMethodName,
+		FullMethod: AuthService_LoginProcess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).LoginProcess(ctx, req.(*Login))
+		return srv.(AuthServiceServer).LoginProcess(ctx, req.(*Login))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TemplateService_RefreshTokenProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_RefreshTokenProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RefreshRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).RefreshTokenProcess(ctx, in)
+		return srv.(AuthServiceServer).RefreshTokenProcess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_RefreshTokenProcess_FullMethodName,
+		FullMethod: AuthService_RefreshTokenProcess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).RefreshTokenProcess(ctx, req.(*RefreshRequest))
+		return srv.(AuthServiceServer).RefreshTokenProcess(ctx, req.(*RefreshRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TemplateService_LogoutProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_LogoutProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LogoutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).LogoutProcess(ctx, in)
+		return srv.(AuthServiceServer).LogoutProcess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_LogoutProcess_FullMethodName,
+		FullMethod: AuthService_LogoutProcess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).LogoutProcess(ctx, req.(*LogoutRequest))
+		return srv.(AuthServiceServer).LogoutProcess(ctx, req.(*LogoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// TemplateService_ServiceDesc is the grpc.ServiceDesc for TemplateService service.
+// AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var TemplateService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.TemplateService",
-	HandlerType: (*TemplateServiceServer)(nil),
+var AuthService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.AuthService",
+	HandlerType: (*AuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "PingPong",
-			Handler:    _TemplateService_PingPong_Handler,
+			Handler:    _AuthService_PingPong_Handler,
 		},
 		{
 			MethodName: "RegisterProcess",
-			Handler:    _TemplateService_RegisterProcess_Handler,
+			Handler:    _AuthService_RegisterProcess_Handler,
 		},
 		{
 			MethodName: "LoginProcess",
-			Handler:    _TemplateService_LoginProcess_Handler,
+			Handler:    _AuthService_LoginProcess_Handler,
 		},
 		{
 			MethodName: "RefreshTokenProcess",
-			Handler:    _TemplateService_RefreshTokenProcess_Handler,
+			Handler:    _AuthService_RefreshTokenProcess_Handler,
 		},
 		{
 			MethodName: "LogoutProcess",
-			Handler:    _TemplateService_LogoutProcess_Handler,
+			Handler:    _AuthService_LogoutProcess_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

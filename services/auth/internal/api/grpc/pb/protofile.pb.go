@@ -594,8 +594,8 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x0eLogoutResponse\"2\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername2\xac\x02\n" +
-	"\x0fTemplateService\x12$\n" +
+	"\busername\x18\x02 \x01(\tR\busername2\xa8\x02\n" +
+	"\vAuthService\x12$\n" +
 	"\bPingPong\x12\v.proto.Ping\x1a\v.proto.Pong\x12;\n" +
 	"\x0fRegisterProcess\x12\x0f.proto.Register\x1a\x17.proto.RegisterResponse\x122\n" +
 	"\fLoginProcess\x12\f.proto.Login\x1a\x14.proto.LoginResponse\x12D\n" +
@@ -630,16 +630,16 @@ var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	10, // 0: proto.LoginResponse.user:type_name -> proto.User
-	0,  // 1: proto.TemplateService.PingPong:input_type -> proto.Ping
-	2,  // 2: proto.TemplateService.RegisterProcess:input_type -> proto.Register
-	4,  // 3: proto.TemplateService.LoginProcess:input_type -> proto.Login
-	6,  // 4: proto.TemplateService.RefreshTokenProcess:input_type -> proto.RefreshRequest
-	8,  // 5: proto.TemplateService.LogoutProcess:input_type -> proto.LogoutRequest
-	1,  // 6: proto.TemplateService.PingPong:output_type -> proto.Pong
-	3,  // 7: proto.TemplateService.RegisterProcess:output_type -> proto.RegisterResponse
-	5,  // 8: proto.TemplateService.LoginProcess:output_type -> proto.LoginResponse
-	7,  // 9: proto.TemplateService.RefreshTokenProcess:output_type -> proto.RefreshResponse
-	9,  // 10: proto.TemplateService.LogoutProcess:output_type -> proto.LogoutResponse
+	0,  // 1: proto.AuthService.PingPong:input_type -> proto.Ping
+	2,  // 2: proto.AuthService.RegisterProcess:input_type -> proto.Register
+	4,  // 3: proto.AuthService.LoginProcess:input_type -> proto.Login
+	6,  // 4: proto.AuthService.RefreshTokenProcess:input_type -> proto.RefreshRequest
+	8,  // 5: proto.AuthService.LogoutProcess:input_type -> proto.LogoutRequest
+	1,  // 6: proto.AuthService.PingPong:output_type -> proto.Pong
+	3,  // 7: proto.AuthService.RegisterProcess:output_type -> proto.RegisterResponse
+	5,  // 8: proto.AuthService.LoginProcess:output_type -> proto.LoginResponse
+	7,  // 9: proto.AuthService.RefreshTokenProcess:output_type -> proto.RefreshResponse
+	9,  // 10: proto.AuthService.LogoutProcess:output_type -> proto.LogoutResponse
 	6,  // [6:11] is the sub-list for method output_type
 	1,  // [1:6] is the sub-list for method input_type
 	1,  // [1:1] is the sub-list for extension type_name
