@@ -5,7 +5,8 @@ info:
 
 grpc:
   url: localhost:50051
-  method: ""
+  method: /proto.TemplateService/RegisterProcess
+  methodType: unary
   protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
   message: |
     {

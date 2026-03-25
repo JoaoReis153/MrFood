@@ -5,7 +5,12 @@ info:
 
 grpc:
   url: localhost:50055
-  method: ""
+  method: /proto.SponsorService/Sponsor
+  methodType: unary
   protoFilePath: ../../../../services/sponsor/internal/api/grpc/proto/protofile.proto
-  message: "{}"
+  message: |-
+    {
+      "id": "3578",
+      "tier":"7"
+    }
   auth: inherit
