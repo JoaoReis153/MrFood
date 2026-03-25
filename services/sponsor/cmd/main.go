@@ -6,8 +6,9 @@ import (
 
 func main() {
 
-	go app.RunServer()
+	// go
+	app.RunServer()
 
-	app.RunClient()
+	// app.RunClient()
 
 }

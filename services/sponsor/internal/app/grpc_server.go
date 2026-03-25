@@ -1,18 +1,19 @@
 package app
 
 import (
+	pb "MrFood/services/sponsor/internal/api/grpc/pb"
+	"MrFood/services/sponsor/internal/service"
 	"context"
 	"fmt"
 	"log"
 	"net"
-
-	pb "MrFood/services/sponsor/internal/api/grpc/pb"
 
 	"google.golang.org/grpc"
 )
 
 type server struct {
 	pb.UnimplementedTemplateServiceServer
+	sponsorService *service.Service
 }
 
 func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
@@ -60,7 +61,7 @@ func (s *server) ManyPingPongs(stream pb.TemplateService_ManyPingPongsServer) er
 }
 
 func RunServer() {
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":50055")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,7 +69,7 @@ func RunServer() {
 	s := grpc.NewServer()
 	pb.RegisterTemplateServiceServer(s, &server{})
 
-	fmt.Println("Server running on :50051")
+	fmt.Println("Server running on :50055")
 	if err := s.Serve(lis); err != nil {
 		log.Fatal(err)
 	}

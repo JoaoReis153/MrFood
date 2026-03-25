@@ -14,7 +14,7 @@ import (
 )
 
 func RunClient() {
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:50055", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,14 +32,14 @@ func RunClient() {
 	// Example 1: 1 Ping and 1 Pong
 	SinglePing(client, ctx)
 
-	// Example 2: 5 Pings and 1 Pong
-	MultiplePings(client, ctx)
+	// // Example 2: 5 Pings and 1 Pong
+	// MultiplePings(client, ctx)
 
-	// Example 3: 1 Ping and 5 Pongs
-	MultiplePongs(client, ctx)
+	// // Example 3: 1 Ping and 5 Pongs
+	// MultiplePongs(client, ctx)
 
-	// Example 4: 5 Ping and 5 Pongs
-	MultiplePingPongs(client, ctx)
+	// // Example 4: 5 Ping and 5 Pongs
+	// MultiplePingPongs(client, ctx)
 }
 
 func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {

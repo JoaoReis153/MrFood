@@ -11,5 +11,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /sponsor .
-EXPOSE 8080
+EXPOSE 5055
 CMD ["./sponsor"]

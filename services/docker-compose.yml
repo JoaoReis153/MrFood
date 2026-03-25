@@ -41,9 +41,51 @@ services:
     networks:
       - app-network
 
+
+  sponsor:
+    build: ./sponsor
+    volumes:
+      - ./sponsor:/app
+    ports:
+      - "50055:50055"
+    environment:
+      DB_HOST: sponsor_db
+      DB_PORT: 5435
+      DB_NAME: mrfood_sponsor
+      DB_USER: sponsor
+      DB_PASS: sponsorsecret
+      APP_JWT_SECRET: Z3Vlc3R3aG9zdHdvcmxkZm9yZXZlcmNoYW5nZXN3b3JkMTIzNDU2
+    depends_on:
+      sponsor_db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  sponsor_db:
+    image: postgres:16
+    ports:
+      - "5435:5435"
+    environment:
+      POSTGRES_DB: mrfood_sponsor
+      POSTGRES_USER: sponsor
+      POSTGRES_PASSWORD: sponsorsecret
+    volumes:
+      - sponsor_db_data:/var/lib/postgresql/data
+      - ./sponsor/sponsor_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sponsor -d mrfood_sponsor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: postgres -c ssl=off -c log_statement=all
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   auth_db_data:
+  sponsor_db_data:
