@@ -1,11 +1,40 @@
 name: Lint & Test & Docker Build & Run All Services
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ROOT_TEST_CMD: go test -v -race ./services/auth/... ./services/restaurant/... ./services/test_grpc/...
 
 jobs:
+  test-workspace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+          cache: true
+          cache-dependency-path: |
+            services/auth/go.sum
+            services/restaurant/go.sum
+            services/test_grpc/go.sum
+
+      - name: Test workspace modules
+        run: ${{ env.ROOT_TEST_CMD }}
+
   detect-services:
     runs-on: ubuntu-latest
     outputs:
@@ -18,7 +47,7 @@ jobs:
           echo "services=$SERVICES" >> $GITHUB_OUTPUT
 
   lint-and-test-and-docker:
-    needs: detect-services
+    needs: [test-workspace, detect-services]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -49,21 +78,76 @@ jobs:
         working-directory: ./services/${{ matrix.service }}
         run: go test -v -race ./...
 
+      - name: Prepare CI env file
+        if: matrix.service == 'auth'
+        run: |
+          ACCESS_SECRET="${{ secrets.APP_JWT_ACCESS_TOKEN_SECRET }}"
+          REFRESH_SECRET="${{ secrets.APP_JWT_REFRESH_TOKEN_SECRET }}"
+
+          # For forks or missing secrets, generate temporary random secrets
+          if [ -z "$ACCESS_SECRET" ]; then
+            echo "INFO: Using temporary access secret for fork/test"
+            ACCESS_SECRET=$(openssl rand -base64 32)
+          fi
+
+          if [ -z "$REFRESH_SECRET" ]; then
+            echo "INFO: Using temporary refresh secret for fork/test"
+            REFRESH_SECRET=$(openssl rand -base64 32)
+          fi
+
+          cat > .env.ci << EOF
+          DB_NAME=mrfood_auth
+          DB_USER=auth
+          DB_PASS=testpass
+          DB_PORT=5432
+          REDIS_PORT=6379
+          REDIS_PASS=
+          REDIS_DB=0
+          AUTH_PORT=50051
+          APP_LOG_LEVEL=debug
+          DB_MIN_CONNS=4
+          DB_MAX_CONNS=20
+          DB_MAX_CONN_LIFETIME=15m
+          DB_HEALTH_CHECK_PERIOD=1m
+          APP_JWT_ACCESS_TOKEN_SECRET=$ACCESS_SECRET
+          APP_JWT_REFRESH_TOKEN_SECRET=$REFRESH_SECRET
+          EOF
+          
       - name: Build Docker image
+        if: github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
         working-directory: ./services/${{ matrix.service }}
         run: docker build -t ${{ matrix.service }}:${{ github.sha }} .
 
-      - name: Run Docker container
+      - name: Run Docker container (stateless services)
+        if: matrix.service != 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
         run: docker run -d --name ${{ matrix.service }} ${{ matrix.service }}:${{ github.sha }}
 
-      - name: Check container started
+      - name: Run auth stack via docker compose
+        if: matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
+        run: docker compose --env-file .env.ci -f services/docker-compose.yml up -d auth auth_db redis
+
+      - name: Check container started (stateless services)
+        if: matrix.service != 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
         run: |
           sleep 3
           docker logs ${{ matrix.service }}
           docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }}
 
+      - name: Check auth stack started
+        if: matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
+        run: |
+          sleep 10
+          docker compose --env-file .env.ci -f services/docker-compose.yml ps
+          docker compose --env-file .env.ci -f services/docker-compose.yml logs auth || true
+          docker compose --env-file .env.ci -f services/docker-compose.yml logs auth_db || true
+          docker compose --env-file .env.ci -f services/docker-compose.yml logs redis || true
+
       - name: Stop and remove container
-        if: always()
+        if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
         run: |
           docker stop ${{ matrix.service }} || true
           docker rm ${{ matrix.service }} || true
+
+      - name: Stop auth compose stack
+        if: always() && matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
+        run: docker compose --env-file .env.ci -f services/docker-compose.yml down -v || true

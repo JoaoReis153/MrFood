@@ -4,27 +4,24 @@ services:
     volumes:
       - ./auth:/app
     ports:
-      - "50051:50051"
+      - "${AUTH_PORT:-50051}:50051" 
     environment:
       DB_HOST: auth_db
-      DB_PORT: 5432
-      DB_NAME: mrfood_auth
-      DB_USER: auth
-      DB_PASS: authsecret
-      APP_LOG_LEVEL: debug
-      DB_MIN_CONNS: 4
-      DB_MAX_CONNS: 20
-      DB_MAX_CONN_LIFETIME: 15m
-      DB_HEALTH_CHECK_PERIOD: 1m
-
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-mrfood_auth}
+      DB_USER: ${DB_USER:-auth}
+      DB_PASS: ${DB_PASS}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-debug}
+      DB_MIN_CONNS: ${DB_MIN_CONNS:-4}
+      DB_MAX_CONNS: ${DB_MAX_CONNS:-20}
+      DB_MAX_CONN_LIFETIME: ${DB_MAX_CONN_LIFETIME:-15m}
+      DB_HEALTH_CHECK_PERIOD: ${DB_HEALTH_CHECK_PERIOD:-1m}
       REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASS: ""
-      REDIS_DB: 0
-      
-      APP_JWT_ACCESS_TOKEN_SECRET: szG+8Ln4uULN2zqDSYA4G73XVoJvWroDqtRII2K2jlM=
-      APP_JWT_REFRESH_TOKEN_SECRET: c2VjcmV0dG9rZW5mb3JhdXRoYXV0aGVudGljYXRpb24zNDU2Nzg5MDEyMzQ1
-
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASS: ${REDIS_PASS}
+      REDIS_DB: ${REDIS_DB:-0}
+      APP_JWT_ACCESS_TOKEN_SECRET: ${APP_JWT_ACCESS_TOKEN_SECRET}
+      APP_JWT_REFRESH_TOKEN_SECRET: ${APP_JWT_REFRESH_TOKEN_SECRET}
     depends_on:
       auth_db:
         condition: service_healthy
@@ -34,16 +31,16 @@ services:
   auth_db:
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:${DB_PORT:-5432}"
     environment:
-      POSTGRES_DB: mrfood_auth
-      POSTGRES_USER: auth
-      POSTGRES_PASSWORD: authsecret
+      POSTGRES_DB: ${DB_NAME:-mrfood_auth}
+      POSTGRES_USER: ${DB_USER:-auth}
+      POSTGRES_PASSWORD: ${DB_PASS}
     volumes:
       - auth_db_data:/var/lib/postgresql/data
       - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U auth -d mrfood_auth"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-auth} -d ${DB_NAME:-mrfood_auth}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -55,11 +52,12 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     command: redis-server --save "" --appendonly no
     restart: unless-stopped
     networks:
       - app-network
+
 networks:
   app-network:
     driver: bridge
