@@ -8,30 +8,11 @@ service TemplateService {
   rpc PingPong (Ping) returns (Pong);
   rpc RegisterProcess (Register) returns (RegisterResponse);
   rpc LoginProcess (Login) returns (LoginResponse);
-  rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
+  rpc RefreshTokenProcess (RefreshRequest) returns (RefreshResponse);
+  rpc LogoutProcess (LogoutRequest) returns (LogoutResponse);
 }
 //Important repeated = all data comes back in one response
 //Important stream = data comes back in multiple responses, one at a time
-
-message PaginationRequest {
-    //if you want to implement using cursor instead use
-    //something like string page_token = 1; instead of page
-  int32 page = 1;
-  int32 limit = 2;
-
-}
-
-message PaginationResponse {
-  repeated Ping data = 1;
-  Pagination pagination = 2;
-}
-
-message Pagination {
-  int32 page = 1;
-  int32 limit = 2;
-  int32 total = 3;
-  int32 pages = 4;
-}
 
 message Ping {
   int32 id = 1;
@@ -48,7 +29,7 @@ message Register {
 }
 
 message RegisterResponse {
-  int32 id = 1;
+  int64 id = 1;
   string username = 2;
 }
 
@@ -57,13 +38,32 @@ message Login {
   string password = 2;
 }
 
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  User user = 3;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string token = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {
+}
+
 message User {
-  int32 id = 1;
+  int64 id = 1;
   string username = 2;
 }
 
-message LoginResponse {
-  string token = 1;
-  User user = 2;
-}
 
