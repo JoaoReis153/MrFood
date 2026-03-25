@@ -65,7 +65,7 @@ services:
       POSTGRES_PASSWORD: bookingsecret
     volumes:
       - booking_db_data:/var/lib/postgresql/data
-      - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U booking -d mrfood_booking"]
       interval: 5s
