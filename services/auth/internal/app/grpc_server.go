@@ -1,6 +1,7 @@
 package app
 
 import (
+	"MrFood/services/auth/config"
 	pb "MrFood/services/auth/internal/api/grpc/pb"
 	"MrFood/services/auth/internal/auth"
 	"MrFood/services/auth/internal/service"
@@ -10,26 +11,28 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type server struct {
+type Server struct {
 	pb.UnimplementedTemplateServiceServer
-	authService    *service.Service
-	authentication *auth.Auth
+	authService *service.Service
+	jwtService  *auth.JWTService
 }
 
-func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
+func (s *Server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 	return &pb.Pong{
 		Id: 1,
 	}, nil
 }
 
-func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
+func (s *Server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
 	slog.Info("registering user", "username", req.Username)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -46,6 +49,7 @@ func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 
 	newUser, err := s.authService.StoreUser(ctx, user)
 	if err != nil {
+		slog.Error("failed to store user", "error", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -56,54 +60,103 @@ func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 
 }
 
-func (s *server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResponse, error) {
-	//get user of the email
+func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResponse, error) {
 	user, err := s.authService.GetUserByEmail(ctx, req.Email)
 	if err != nil {
+		slog.Error("failed to get user", "error", err)
 		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
+	if user == nil {
+		slog.Error("user not found", "email", req.Email)
+		return nil, status.Error(codes.NotFound, "user not found")
+	}
+
+	userID := strconv.FormatInt(int64(user.ID), 10)
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		slog.Error("invalid password", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid password")
 	}
 
-	token, err := s.authentication.CreateToken(string(user.ID), user.Username)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to generate token")
+	if err := s.jwtService.RevokeAllUserTokens(ctx, userID); err != nil {
+		slog.Error("failed to revoke all user tokens", "error", err)
+		return nil, status.Error(codes.Internal, "failed to revoke all user tokens")
 	}
 
-	// TODO: store redis session
+	tokenPair, err := s.jwtService.GenerateTokenPair(ctx, userID, user.Username)
+	if err != nil {
+		slog.Error("failed to generate token pair", "error", err)
+		return nil, status.Error(codes.Internal, "failed to generate token pair")
+	}
+
 	return &pb.LoginResponse{
-		Token: token,
+		AccessToken:  tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
 		User: &pb.User{
-			Id:       user.ID,
+			Id:       int64(user.ID),
 			Username: user.Username,
 		},
 	}, nil
 }
 
-func (app *App) RunServer() {
-	lis, err := net.Listen("tcp", ":50051")
+func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest) (*pb.RefreshResponse, error) {
+	tokenPair, err := s.jwtService.RefreshTokens(ctx, req.RefreshToken)
+	if err != nil {
+		slog.Error("failed to refresh token", "error", err)
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	return &pb.RefreshResponse{
+		Token:        tokenPair.AccessToken,
+		RefreshToken: tokenPair.RefreshToken,
+	}, nil
+}
+
+func (s *Server) LogoutProcess(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
+	claims, err := s.jwtService.ValidateAccessToken(ctx, req.Token)
+	if err != nil {
+		slog.Error("failed to validate access token", "error", err)
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	if err := s.jwtService.RevokeAccessToken(ctx, req.Token); err != nil {
+		slog.Error("failed to revoke access token", "error", err)
+		return nil, status.Error(codes.Internal, "failed to revoke access token")
+	}
+
+	if err := s.jwtService.RevokeAllUserTokens(ctx, claims.UserID); err != nil {
+		slog.Error("failed to revoke user tokens", "error", err)
+		return nil, status.Error(codes.Internal, "failed to revoke user tokens")
+	}
+
+	return &pb.LogoutResponse{}, nil
+}
+
+func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
+	lis, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Server.Port))
 	if err != nil {
 		slog.Error("failed", "error", err)
 		os.Exit(1)
 	}
 
-	authInstance, err := auth.New(context.Background())
-	if err != nil {
-		slog.Error("failed to create auth", "error", err)
-		os.Exit(1)
-	}
+	jwtServiceInstance := auth.NewJWTService(&cfg.JWT, app.Repo)
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &server{
-		authService:    app.Service,
-		authentication: authInstance,
+	pb.RegisterTemplateServiceServer(s, &Server{
+		authService: app.Service,
+		jwtService:  jwtServiceInstance,
 	})
 
-	slog.Info("Server running on :50051")
-	if err := s.Serve(lis); err != nil {
-		slog.Error("failed", "error", err)
-		os.Exit(1)
-	}
+	slog.Info("gRPC server listening", "port", cfg.Server.Port)
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		if err := s.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+			return fmt.Errorf("serve: %w", err)
+		}
+		return nil
+	})
+
+	return g.Wait()
 }
