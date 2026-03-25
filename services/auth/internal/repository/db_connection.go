@@ -75,7 +75,9 @@ func NewRedisClient(ctx context.Context, cfg *config.Config) (*redis.Client, err
 
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		slog.Error("redis ping failed", "error", err)
-		rdb.Close()
+		if err := rdb.Close(); err != nil {
+			slog.Error("failed to close Redis connection", "error", err)
+		}
 		return nil, fmt.Errorf("redis ping: %w", err)
 	}
 
