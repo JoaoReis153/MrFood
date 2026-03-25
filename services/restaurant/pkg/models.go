@@ -14,3 +14,14 @@ type Restaurant struct {
 	WorkingHours []string `json:"working_hours" validate:"len=7"`
 	Categories   []string `json:"categories"`
 }
+
+type RestaurantCreateRequest struct {
+	OwnerID      int32    `json:"owner_id"`
+	MaxSlots     int32    `json:"max_slots"`
+	Longitude    float64  `json:"longitude"`
+	Latitude     float64  `json:"latitude"`
+	Address      string   `json:"address"`
+	Name         string   `json:"name"`
+	WorkingHours []string `json:"working_hours" validate:"len=7"`
+	Categories   []string `json:"categories"`
+}

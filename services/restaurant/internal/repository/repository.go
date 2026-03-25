@@ -106,6 +106,25 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 	return restaurant, nil
 }
 
+func (r *Repository) GetRestaurantByName(ctx context.Context, name string) (*models.Restaurant, error) {
+	if r.DB == nil {
+		return nil, ErrDatabaseNotSet
+	}
+
+	query := `
+		SELECT id
+		FROM restaurants
+		WHERE LOWER(name) = LOWER($1)
+	`
+
+	restaurant := &models.Restaurant{}
+	if err := r.DB.QueryRow(ctx, query, strings.TrimSpace(name)).Scan(&restaurant.ID); err != nil {
+		return nil, ErrRestaurantNotFound
+	}
+
+	return restaurant, nil
+}
+
 func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error) {
 	if restaurant == nil || strings.TrimSpace(restaurant.Name) == "" {
 		return 0, ErrInvalidRestaurant

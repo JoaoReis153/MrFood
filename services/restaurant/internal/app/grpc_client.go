@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"time"
 
@@ -24,111 +23,48 @@ func RunClient() {
 		}
 	}()
 
-	client := pb.NewTemplateServiceClient(conn)
+	client := pb.NewRestaurantServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// Example 1: 1 Ping and 1 Pong
-	SinglePing(client, ctx)
-
-	// Example 2: 5 Pings and 1 Pong
-	MultiplePings(client, ctx)
-
-	// Example 3: 1 Ping and 5 Pongs
-	MultiplePongs(client, ctx)
-
-	// Example 4: 5 Ping and 5 Pongs
-	MultiplePingPongs(client, ctx)
+	GetRestaurant(client, ctx, 1)
+	CompareRestaurants(client, ctx, 1, 2)
 }
 
-func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
-	fmt.Println("\n### Single ping single pong example ###")
-	res, err := client.PingPong(ctx, &pb.Ping{Id: 1})
-	fmt.Println("Ping 1")
+func GetRestaurant(client pb.RestaurantServiceClient, ctx context.Context, id int32) {
+	fmt.Println("\n### Get restaurant details ###")
+	res, err := client.GetRestaurantDetails(ctx, &pb.GetRestaurantDetailsRequest{Id: id})
 	if err != nil {
-		log.Fatal(err)
+		log.Println("GetRestaurantDetails failed:", err)
+		return
 	}
-	fmt.Println("Pong", res.Id)
+
+	restaurant := res.GetRestaurant()
+	if restaurant == nil {
+		fmt.Println("Restaurant not found")
+		return
+	}
+
+	fmt.Printf("Restaurant #%d: %s\n", restaurant.GetId(), restaurant.GetName())
 }
 
-func MultiplePings(client pb.TemplateServiceClient, ctx context.Context) {
-	fmt.Println("\n### Multiple pings single pong example ###")
-	stream, err := client.ManyPings(ctx)
+func CompareRestaurants(client pb.RestaurantServiceClient, ctx context.Context, id1, id2 int32) {
+	fmt.Println("\n### Compare restaurants ###")
+	res, err := client.CompareRestaurantDetails(ctx, &pb.CompareRestaurantDetailsRequest{
+		RestaurantId_1: id1,
+		RestaurantId_2: id2,
+	})
 	if err != nil {
-		log.Fatal(err)
+		log.Println("CompareRestaurantDetails failed:", err)
+		return
 	}
 
-	// Send pings
-	for i := 0; i < 5; i++ {
-		if err := stream.Send(&pb.Ping{Id: int32(i)}); err != nil {
-			log.Fatal(err)
-		}
+	r1, r2 := res.GetRestaurant1(), res.GetRestaurant2()
+	if r1 != nil {
+		fmt.Printf("Restaurant 1 -> id=%d name=%s\n", r1.GetId(), r1.GetName())
 	}
-
-	// Close the stream and receive response
-	res, err := stream.CloseAndRecv()
-	if err != nil {
-		log.Fatal(err)
+	if r2 != nil {
+		fmt.Printf("Restaurant 2 -> id=%d name=%s\n", r2.GetId(), r2.GetName())
 	}
-
-	fmt.Println("ManyPings response:", res.Id)
-}
-
-func MultiplePongs(client pb.TemplateServiceClient, ctx context.Context) {
-	fmt.Println("\n### Single ping multiple pongs example ###")
-	stream, err := client.ManyPongs(ctx, &pb.Ping{Id: 1})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("ManyPongs received:", msg.Id)
-	}
-}
-
-func MultiplePingPongs(client pb.TemplateServiceClient, ctx context.Context) {
-	fmt.Println("\n### Multiple ping multiple pongs example ###")
-	stream, err := client.ManyPingPongs(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	waitc := make(chan struct{})
-
-	// Send pings
-	go func() {
-		for i := 0; i < 5; i++ {
-			if err := stream.Send(&pb.Ping{Id: int32(i)}); err != nil {
-				log.Fatal(err)
-			}
-		}
-		// Close the send stream
-		err = stream.CloseSend()
-	}()
-
-	// Receive pongs
-	go func() {
-		for {
-			msg, err := stream.Recv()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Println("Pongs received:", msg.Id)
-		}
-		close(waitc)
-	}()
-
-	// Wait for the receiving goroutine to finish
-	<-waitc
 }
