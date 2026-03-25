@@ -1,0 +1,21 @@
+DB_NAME= #mrfood_auth
+DB_USER= #ex: auth
+DB_PASS= #secret
+DB_PORT= #ex: 5432
+
+# Redis
+REDIS_PORT= #ex: 6379
+REDIS_PASS= #secret
+REDIS_DB= #ex: 0
+
+# Auth App
+AUTH_PORT= #ex: 50051
+APP_LOG_LEVEL= #ex: debug
+DB_MIN_CONNS= #ex: 4
+DB_MAX_CONNS= #ex: 20
+DB_MAX_CONN_LIFETIME= #ex: 15m
+DB_HEALTH_CHECK_PERIOD= #ex: 1m
+
+# JWT Secrets (generate your own in prod!)
+APP_JWT_ACCESS_TOKEN_SECRET= #secret
+APP_JWT_REFRESH_TOKEN_SECRET= #secret
