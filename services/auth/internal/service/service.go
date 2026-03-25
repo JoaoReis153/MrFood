@@ -11,8 +11,13 @@ import (
 )
 
 type Service struct {
-	repo       *repository.Repository
+	repo       userStore
 	jwtService *auth.JWTService
+}
+
+type userStore interface {
+	CreateUser(ctx context.Context, username, password, email string) (int64, string, error)
+	GetUser(ctx context.Context, email string) (*pkg.User, error)
 }
 
 func New(repo *repository.Repository) *Service {

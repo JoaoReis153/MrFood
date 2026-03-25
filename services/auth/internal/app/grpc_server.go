@@ -4,7 +4,6 @@ import (
 	"MrFood/services/auth/config"
 	pb "MrFood/services/auth/internal/api/grpc/pb"
 	"MrFood/services/auth/internal/auth"
-	"MrFood/services/auth/internal/service"
 	models "MrFood/services/auth/pkg"
 	"context"
 	"fmt"
@@ -22,8 +21,21 @@ import (
 
 type Server struct {
 	pb.UnimplementedTemplateServiceServer
-	authService *service.Service
-	jwtService  *auth.JWTService
+	authService authService
+	jwtService  jwtService
+}
+
+type authService interface {
+	StoreUser(ctx context.Context, user *models.User) (*models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+}
+
+type jwtService interface {
+	RevokeAllUserTokens(ctx context.Context, userID string) error
+	GenerateTokenPair(ctx context.Context, userID, username string) (*auth.TokenPair, error)
+	RefreshTokens(ctx context.Context, tokenStr string) (*auth.TokenPair, error)
+	ValidateAccessToken(ctx context.Context, tokenString string) (*auth.Claims, error)
+	RevokeAccessToken(ctx context.Context, tokenString string) error
 }
 
 func (s *Server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
