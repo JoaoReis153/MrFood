@@ -1,71 +1,38 @@
 package repository
 
 import (
-	models "MrFood/services/auth/pkg"
 	"context"
 	"fmt"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type Repository struct {
-	DB *pgxpool.Pool
+	DB    *pgxpool.Pool
+	Redis *redis.Client
 }
 
-func New(db *pgxpool.Pool) *Repository {
-	return &Repository{
-		DB: db,
+func New(db *pgxpool.Pool, redis *redis.Client) *Repository {
+	if db == nil || redis == nil {
+		panic("nil db or redis")
 	}
+
+	return &Repository{DB: db, Redis: redis}
 }
 
-func (r *Repository) CreateUser(ctx context.Context, username, password, email string) (int32, string, error) {
-	if ctx.Err() != nil {
-		return 0, "", ctx.Err()
+func (r *Repository) Close(ctx context.Context) error {
+	var errs []error
+	if r.DB != nil {
+		r.DB.Close()
 	}
-
-	query := `
-		INSERT INTO app_user (username, password, email)
-		VALUES ($1, $2, $3)
-		RETURNING user_id, username
-	`
-
-	var userId int32
-	var returnedUsername string
-
-	err := r.DB.QueryRow(ctx, query, username, password, email).Scan(&userId, &returnedUsername)
-
-	if err != nil {
-		slog.Error("failed to create user", "error", err)
-		return 0, "", fmt.Errorf("failed to create user: %w", err)
+	if r.Redis != nil {
+		if err := r.Redis.Close(); err != nil {
+			errs = append(errs, err)
+		}
 	}
-
-	return userId, returnedUsername, nil
-}
-
-func (r *Repository) GetUser(ctx context.Context, email string) (*models.User, error) {
-	query := `
-		SELECT user_id, username, password
-		FROM app_user
-		WHERE email = $1
-	`
-
-	var userId int32
-	var username string
-	var password string
-
-	err := r.DB.QueryRow(ctx, query, email).Scan(&userId, &username, &password)
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
+	if len(errs) > 0 {
+		return fmt.Errorf("close errors: %v", errs)
 	}
-
-	user := &models.User{
-		ID:       userId,
-		Username: username,
-		Email:    email,
-		Password: password,
-	}
-
-	return user, err
+	return nil
 }
