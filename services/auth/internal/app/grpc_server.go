@@ -30,7 +30,7 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 }
 
 func (s *server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
-	slog.Debug("register process", "username", req.Username, "email", req.Email, "password", req.Password)
+	slog.Info("registering user", "username", req.Username)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {

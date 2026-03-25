@@ -37,7 +37,6 @@ func (s *Service) StoreUser(ctx context.Context, user *pkg.User) (*pkg.User, err
 }
 
 func (s *Service) GetUserByEmail(ctx context.Context, email string) (*pkg.User, error) {
-	slog.Debug("looking for user", "email", email)
 	user, err := s.repo.GetUser(ctx, email)
 	if err != nil {
 		slog.Error("user "+email+" not found", "error", err)
