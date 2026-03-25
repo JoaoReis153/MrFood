@@ -13,6 +13,6 @@ func New(repo repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetExample(id int) (*models.Example, error) {
+func (s *Service) GetExample(id int) (*models.Sponsorship, error) {
 	return s.repo.GetExample(id)
 }

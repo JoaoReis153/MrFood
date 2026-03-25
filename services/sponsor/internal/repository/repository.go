@@ -9,7 +9,7 @@ func New() *Repository {
 }
 
 // Example method - customize based on your data needs
-func (r *Repository) GetExample(id int) (*models.Example, error) {
+func (r *Repository) GetExample(id int) (*models.Sponsorship, error) {
 	// In-memory example - replace with database/Redis
-	return &models.Example{ID: id, Name: "Example"}, nil
+	return &models.Sponsorship{ID: id, Tier: 3}, nil
 }
