@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   auth:
     build: ./auth
@@ -13,7 +11,20 @@ services:
       DB_NAME: mrfood_auth
       DB_USER: auth
       DB_PASS: authsecret
-      APP_JWT_SECRET: Z3Vlc3R3aG9zdHdvcmxkZm9yZXZlcmNoYW5nZXN3b3JkMTIzNDU2
+      APP_LOG_LEVEL: debug
+      DB_MIN_CONNS: 4
+      DB_MAX_CONNS: 20
+      DB_MAX_CONN_LIFETIME: 15m
+      DB_HEALTH_CHECK_PERIOD: 1m
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASS: ""
+      REDIS_DB: 0
+      
+      APP_JWT_ACCESS_TOKEN_SECRET: szG+8Ln4uULN2zqDSYA4G73XVoJvWroDqtRII2K2jlM=
+      APP_JWT_REFRESH_TOKEN_SECRET: c2VjcmV0dG9rZW5mb3JhdXRoYXV0aGVudGljYXRpb24zNDU2Nzg5MDEyMzQ1
+
     depends_on:
       auth_db:
         condition: service_healthy
@@ -41,6 +52,14 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --save "" --appendonly no
+    restart: unless-stopped
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge
