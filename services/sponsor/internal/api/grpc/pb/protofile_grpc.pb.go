@@ -19,67 +19,69 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	TemplateService_PingPong_FullMethodName            = "/proto.TemplateService/PingPong"
-	TemplateService_ManyPings_FullMethodName           = "/proto.TemplateService/ManyPings"
-	TemplateService_ManyPongs_FullMethodName           = "/proto.TemplateService/ManyPongs"
-	TemplateService_ManyPingPongs_FullMethodName       = "/proto.TemplateService/ManyPingPongs"
-	TemplateService_GetPaginatedExample_FullMethodName = "/proto.TemplateService/GetPaginatedExample"
+	SponsorService_PingPong_FullMethodName            = "/proto.SponsorService/PingPong"
+	SponsorService_ManyPings_FullMethodName           = "/proto.SponsorService/ManyPings"
+	SponsorService_ManyPongs_FullMethodName           = "/proto.SponsorService/ManyPongs"
+	SponsorService_ManyPingPongs_FullMethodName       = "/proto.SponsorService/ManyPingPongs"
+	SponsorService_GetPaginatedExample_FullMethodName = "/proto.SponsorService/GetPaginatedExample"
+	SponsorService_Sponsor_FullMethodName             = "/proto.SponsorService/Sponsor"
 )
 
-// TemplateServiceClient is the client API for TemplateService service.
+// SponsorServiceClient is the client API for SponsorService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type TemplateServiceClient interface {
+type SponsorServiceClient interface {
 	PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error)
-	ManyPings(ctx context.Context, opts ...grpc.CallOption) (TemplateService_ManyPingsClient, error)
-	ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (TemplateService_ManyPongsClient, error)
-	ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (TemplateService_ManyPingPongsClient, error)
+	ManyPings(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingsClient, error)
+	ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (SponsorService_ManyPongsClient, error)
+	ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingPongsClient, error)
 	GetPaginatedExample(ctx context.Context, in *PaginationRequest, opts ...grpc.CallOption) (*PaginationResponse, error)
+	Sponsor(ctx context.Context, in *Sponsorship, opts ...grpc.CallOption) (*SponsorshipResponse, error)
 }
 
-type templateServiceClient struct {
+type sponsorServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTemplateServiceClient(cc grpc.ClientConnInterface) TemplateServiceClient {
-	return &templateServiceClient{cc}
+func NewSponsorServiceClient(cc grpc.ClientConnInterface) SponsorServiceClient {
+	return &sponsorServiceClient{cc}
 }
 
-func (c *templateServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
+func (c *sponsorServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Pong)
-	err := c.cc.Invoke(ctx, TemplateService_PingPong_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SponsorService_PingPong_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *templateServiceClient) ManyPings(ctx context.Context, opts ...grpc.CallOption) (TemplateService_ManyPingsClient, error) {
+func (c *sponsorServiceClient) ManyPings(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingsClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TemplateService_ServiceDesc.Streams[0], TemplateService_ManyPings_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SponsorService_ServiceDesc.Streams[0], SponsorService_ManyPings_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &templateServiceManyPingsClient{ClientStream: stream}
+	x := &sponsorServiceManyPingsClient{ClientStream: stream}
 	return x, nil
 }
 
-type TemplateService_ManyPingsClient interface {
+type SponsorService_ManyPingsClient interface {
 	Send(*Ping) error
 	CloseAndRecv() (*Pong, error)
 	grpc.ClientStream
 }
 
-type templateServiceManyPingsClient struct {
+type sponsorServiceManyPingsClient struct {
 	grpc.ClientStream
 }
 
-func (x *templateServiceManyPingsClient) Send(m *Ping) error {
+func (x *sponsorServiceManyPingsClient) Send(m *Ping) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *templateServiceManyPingsClient) CloseAndRecv() (*Pong, error) {
+func (x *sponsorServiceManyPingsClient) CloseAndRecv() (*Pong, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -90,13 +92,13 @@ func (x *templateServiceManyPingsClient) CloseAndRecv() (*Pong, error) {
 	return m, nil
 }
 
-func (c *templateServiceClient) ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (TemplateService_ManyPongsClient, error) {
+func (c *sponsorServiceClient) ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (SponsorService_ManyPongsClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TemplateService_ServiceDesc.Streams[1], TemplateService_ManyPongs_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SponsorService_ServiceDesc.Streams[1], SponsorService_ManyPongs_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &templateServiceManyPongsClient{ClientStream: stream}
+	x := &sponsorServiceManyPongsClient{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -106,16 +108,16 @@ func (c *templateServiceClient) ManyPongs(ctx context.Context, in *Ping, opts ..
 	return x, nil
 }
 
-type TemplateService_ManyPongsClient interface {
+type SponsorService_ManyPongsClient interface {
 	Recv() (*Pong, error)
 	grpc.ClientStream
 }
 
-type templateServiceManyPongsClient struct {
+type sponsorServiceManyPongsClient struct {
 	grpc.ClientStream
 }
 
-func (x *templateServiceManyPongsClient) Recv() (*Pong, error) {
+func (x *sponsorServiceManyPongsClient) Recv() (*Pong, error) {
 	m := new(Pong)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -123,31 +125,31 @@ func (x *templateServiceManyPongsClient) Recv() (*Pong, error) {
 	return m, nil
 }
 
-func (c *templateServiceClient) ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (TemplateService_ManyPingPongsClient, error) {
+func (c *sponsorServiceClient) ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingPongsClient, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &TemplateService_ServiceDesc.Streams[2], TemplateService_ManyPingPongs_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SponsorService_ServiceDesc.Streams[2], SponsorService_ManyPingPongs_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &templateServiceManyPingPongsClient{ClientStream: stream}
+	x := &sponsorServiceManyPingPongsClient{ClientStream: stream}
 	return x, nil
 }
 
-type TemplateService_ManyPingPongsClient interface {
+type SponsorService_ManyPingPongsClient interface {
 	Send(*Ping) error
 	Recv() (*Pong, error)
 	grpc.ClientStream
 }
 
-type templateServiceManyPingPongsClient struct {
+type sponsorServiceManyPingPongsClient struct {
 	grpc.ClientStream
 }
 
-func (x *templateServiceManyPingPongsClient) Send(m *Ping) error {
+func (x *sponsorServiceManyPingPongsClient) Send(m *Ping) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *templateServiceManyPingPongsClient) Recv() (*Pong, error) {
+func (x *sponsorServiceManyPingPongsClient) Recv() (*Pong, error) {
 	m := new(Pong)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -155,97 +157,111 @@ func (x *templateServiceManyPingPongsClient) Recv() (*Pong, error) {
 	return m, nil
 }
 
-func (c *templateServiceClient) GetPaginatedExample(ctx context.Context, in *PaginationRequest, opts ...grpc.CallOption) (*PaginationResponse, error) {
+func (c *sponsorServiceClient) GetPaginatedExample(ctx context.Context, in *PaginationRequest, opts ...grpc.CallOption) (*PaginationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaginationResponse)
-	err := c.cc.Invoke(ctx, TemplateService_GetPaginatedExample_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SponsorService_GetPaginatedExample_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TemplateServiceServer is the server API for TemplateService service.
-// All implementations must embed UnimplementedTemplateServiceServer
+func (c *sponsorServiceClient) Sponsor(ctx context.Context, in *Sponsorship, opts ...grpc.CallOption) (*SponsorshipResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SponsorshipResponse)
+	err := c.cc.Invoke(ctx, SponsorService_Sponsor_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SponsorServiceServer is the server API for SponsorService service.
+// All implementations must embed UnimplementedSponsorServiceServer
 // for forward compatibility
-type TemplateServiceServer interface {
+type SponsorServiceServer interface {
 	PingPong(context.Context, *Ping) (*Pong, error)
-	ManyPings(TemplateService_ManyPingsServer) error
-	ManyPongs(*Ping, TemplateService_ManyPongsServer) error
-	ManyPingPongs(TemplateService_ManyPingPongsServer) error
+	ManyPings(SponsorService_ManyPingsServer) error
+	ManyPongs(*Ping, SponsorService_ManyPongsServer) error
+	ManyPingPongs(SponsorService_ManyPingPongsServer) error
 	GetPaginatedExample(context.Context, *PaginationRequest) (*PaginationResponse, error)
-	mustEmbedUnimplementedTemplateServiceServer()
+	Sponsor(context.Context, *Sponsorship) (*SponsorshipResponse, error)
+	mustEmbedUnimplementedSponsorServiceServer()
 }
 
-// UnimplementedTemplateServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedTemplateServiceServer struct {
+// UnimplementedSponsorServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedSponsorServiceServer struct {
 }
 
-func (UnimplementedTemplateServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
+func (UnimplementedSponsorServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PingPong not implemented")
 }
-func (UnimplementedTemplateServiceServer) ManyPings(TemplateService_ManyPingsServer) error {
+func (UnimplementedSponsorServiceServer) ManyPings(SponsorService_ManyPingsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ManyPings not implemented")
 }
-func (UnimplementedTemplateServiceServer) ManyPongs(*Ping, TemplateService_ManyPongsServer) error {
+func (UnimplementedSponsorServiceServer) ManyPongs(*Ping, SponsorService_ManyPongsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ManyPongs not implemented")
 }
-func (UnimplementedTemplateServiceServer) ManyPingPongs(TemplateService_ManyPingPongsServer) error {
+func (UnimplementedSponsorServiceServer) ManyPingPongs(SponsorService_ManyPingPongsServer) error {
 	return status.Errorf(codes.Unimplemented, "method ManyPingPongs not implemented")
 }
-func (UnimplementedTemplateServiceServer) GetPaginatedExample(context.Context, *PaginationRequest) (*PaginationResponse, error) {
+func (UnimplementedSponsorServiceServer) GetPaginatedExample(context.Context, *PaginationRequest) (*PaginationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaginatedExample not implemented")
 }
-func (UnimplementedTemplateServiceServer) mustEmbedUnimplementedTemplateServiceServer() {}
+func (UnimplementedSponsorServiceServer) Sponsor(context.Context, *Sponsorship) (*SponsorshipResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Sponsor not implemented")
+}
+func (UnimplementedSponsorServiceServer) mustEmbedUnimplementedSponsorServiceServer() {}
 
-// UnsafeTemplateServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to TemplateServiceServer will
+// UnsafeSponsorServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SponsorServiceServer will
 // result in compilation errors.
-type UnsafeTemplateServiceServer interface {
-	mustEmbedUnimplementedTemplateServiceServer()
+type UnsafeSponsorServiceServer interface {
+	mustEmbedUnimplementedSponsorServiceServer()
 }
 
-func RegisterTemplateServiceServer(s grpc.ServiceRegistrar, srv TemplateServiceServer) {
-	s.RegisterService(&TemplateService_ServiceDesc, srv)
+func RegisterSponsorServiceServer(s grpc.ServiceRegistrar, srv SponsorServiceServer) {
+	s.RegisterService(&SponsorService_ServiceDesc, srv)
 }
 
-func _TemplateService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SponsorService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Ping)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).PingPong(ctx, in)
+		return srv.(SponsorServiceServer).PingPong(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_PingPong_FullMethodName,
+		FullMethod: SponsorService_PingPong_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).PingPong(ctx, req.(*Ping))
+		return srv.(SponsorServiceServer).PingPong(ctx, req.(*Ping))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TemplateService_ManyPings_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(TemplateServiceServer).ManyPings(&templateServiceManyPingsServer{ServerStream: stream})
+func _SponsorService_ManyPings_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SponsorServiceServer).ManyPings(&sponsorServiceManyPingsServer{ServerStream: stream})
 }
 
-type TemplateService_ManyPingsServer interface {
+type SponsorService_ManyPingsServer interface {
 	SendAndClose(*Pong) error
 	Recv() (*Ping, error)
 	grpc.ServerStream
 }
 
-type templateServiceManyPingsServer struct {
+type sponsorServiceManyPingsServer struct {
 	grpc.ServerStream
 }
 
-func (x *templateServiceManyPingsServer) SendAndClose(m *Pong) error {
+func (x *sponsorServiceManyPingsServer) SendAndClose(m *Pong) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *templateServiceManyPingsServer) Recv() (*Ping, error) {
+func (x *sponsorServiceManyPingsServer) Recv() (*Ping, error) {
 	m := new(Ping)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -253,46 +269,46 @@ func (x *templateServiceManyPingsServer) Recv() (*Ping, error) {
 	return m, nil
 }
 
-func _TemplateService_ManyPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _SponsorService_ManyPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Ping)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(TemplateServiceServer).ManyPongs(m, &templateServiceManyPongsServer{ServerStream: stream})
+	return srv.(SponsorServiceServer).ManyPongs(m, &sponsorServiceManyPongsServer{ServerStream: stream})
 }
 
-type TemplateService_ManyPongsServer interface {
+type SponsorService_ManyPongsServer interface {
 	Send(*Pong) error
 	grpc.ServerStream
 }
 
-type templateServiceManyPongsServer struct {
+type sponsorServiceManyPongsServer struct {
 	grpc.ServerStream
 }
 
-func (x *templateServiceManyPongsServer) Send(m *Pong) error {
+func (x *sponsorServiceManyPongsServer) Send(m *Pong) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _TemplateService_ManyPingPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(TemplateServiceServer).ManyPingPongs(&templateServiceManyPingPongsServer{ServerStream: stream})
+func _SponsorService_ManyPingPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SponsorServiceServer).ManyPingPongs(&sponsorServiceManyPingPongsServer{ServerStream: stream})
 }
 
-type TemplateService_ManyPingPongsServer interface {
+type SponsorService_ManyPingPongsServer interface {
 	Send(*Pong) error
 	Recv() (*Ping, error)
 	grpc.ServerStream
 }
 
-type templateServiceManyPingPongsServer struct {
+type sponsorServiceManyPingPongsServer struct {
 	grpc.ServerStream
 }
 
-func (x *templateServiceManyPingPongsServer) Send(m *Pong) error {
+func (x *sponsorServiceManyPingPongsServer) Send(m *Pong) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *templateServiceManyPingPongsServer) Recv() (*Ping, error) {
+func (x *sponsorServiceManyPingPongsServer) Recv() (*Ping, error) {
 	m := new(Ping)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -300,54 +316,76 @@ func (x *templateServiceManyPingPongsServer) Recv() (*Ping, error) {
 	return m, nil
 }
 
-func _TemplateService_GetPaginatedExample_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SponsorService_GetPaginatedExample_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaginationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TemplateServiceServer).GetPaginatedExample(ctx, in)
+		return srv.(SponsorServiceServer).GetPaginatedExample(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: TemplateService_GetPaginatedExample_FullMethodName,
+		FullMethod: SponsorService_GetPaginatedExample_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TemplateServiceServer).GetPaginatedExample(ctx, req.(*PaginationRequest))
+		return srv.(SponsorServiceServer).GetPaginatedExample(ctx, req.(*PaginationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// TemplateService_ServiceDesc is the grpc.ServiceDesc for TemplateService service.
+func _SponsorService_Sponsor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Sponsorship)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SponsorServiceServer).Sponsor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SponsorService_Sponsor_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SponsorServiceServer).Sponsor(ctx, req.(*Sponsorship))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SponsorService_ServiceDesc is the grpc.ServiceDesc for SponsorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var TemplateService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.TemplateService",
-	HandlerType: (*TemplateServiceServer)(nil),
+var SponsorService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.SponsorService",
+	HandlerType: (*SponsorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "PingPong",
-			Handler:    _TemplateService_PingPong_Handler,
+			Handler:    _SponsorService_PingPong_Handler,
 		},
 		{
 			MethodName: "GetPaginatedExample",
-			Handler:    _TemplateService_GetPaginatedExample_Handler,
+			Handler:    _SponsorService_GetPaginatedExample_Handler,
+		},
+		{
+			MethodName: "Sponsor",
+			Handler:    _SponsorService_Sponsor_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "ManyPings",
-			Handler:       _TemplateService_ManyPings_Handler,
+			Handler:       _SponsorService_ManyPings_Handler,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "ManyPongs",
-			Handler:       _TemplateService_ManyPongs_Handler,
+			Handler:       _SponsorService_ManyPongs_Handler,
 			ServerStreams: true,
 		},
 		{
 			StreamName:    "ManyPingPongs",
-			Handler:       _TemplateService_ManyPingPongs_Handler,
+			Handler:       _SponsorService_ManyPingPongs_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

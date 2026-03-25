@@ -12,7 +12,7 @@ import (
 )
 
 type server struct {
-	pb.UnimplementedTemplateServiceServer
+	pb.UnimplementedSponsorServiceServer
 	sponsorService *service.Service
 }
 
@@ -22,7 +22,7 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 	}, nil
 }
 
-func (s *server) ManyPings(stream pb.TemplateService_ManyPingsServer) error {
+func (s *server) ManyPings(stream pb.SponsorService_ManyPingsServer) error {
 	var lastID int32
 
 	for {
@@ -36,7 +36,7 @@ func (s *server) ManyPings(stream pb.TemplateService_ManyPingsServer) error {
 	return stream.SendAndClose(&pb.Pong{Id: lastID})
 }
 
-func (s *server) ManyPongs(req *pb.Ping, stream pb.TemplateService_ManyPongsServer) error {
+func (s *server) ManyPongs(req *pb.Ping, stream pb.SponsorService_ManyPongsServer) error {
 	for i := 0; i < 5; i++ {
 		err := stream.Send(&pb.Pong{Id: req.Id + int32(i)})
 		if err != nil {
@@ -46,7 +46,7 @@ func (s *server) ManyPongs(req *pb.Ping, stream pb.TemplateService_ManyPongsServ
 	return nil
 }
 
-func (s *server) ManyPingPongs(stream pb.TemplateService_ManyPingPongsServer) error {
+func (s *server) ManyPingPongs(stream pb.SponsorService_ManyPingPongsServer) error {
 	for {
 		req, err := stream.Recv()
 		if err != nil {
@@ -60,6 +60,13 @@ func (s *server) ManyPingPongs(stream pb.TemplateService_ManyPingPongsServer) er
 	return nil
 }
 
+func (s *server) Sponsor(ctx context.Context, req *pb.Sponsorship) (*pb.SponsorshipResponse, error) {
+	return &pb.SponsorshipResponse{
+		Id:   req.Id,
+		Tier: req.Tier,
+	}, nil
+}
+
 func RunServer() {
 	lis, err := net.Listen("tcp", ":50055")
 	if err != nil {
@@ -67,7 +74,7 @@ func RunServer() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &server{})
+	pb.RegisterSponsorServiceServer(s, &server{})
 
 	fmt.Println("Server running on :50055")
 	if err := s.Serve(lis); err != nil {

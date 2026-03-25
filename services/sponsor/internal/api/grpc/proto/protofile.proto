@@ -4,15 +4,26 @@ package proto;
 
 option go_package = "/pb;pb";
 
-service TemplateService {
+service SponsorService {
   rpc PingPong (Ping) returns (Pong);
   rpc ManyPings (stream Ping) returns (Pong);
   rpc ManyPongs (Ping) returns (stream Pong);
   rpc ManyPingPongs (stream Ping) returns (stream Pong);
   rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
+  rpc Sponsor (Sponsorship) returns (SponsorshipResponse);
 }
 //Important repeated = all data comes back in one response
 //Important stream = data comes back in multiple responses, one at a time
+
+message Sponsorship {
+  int32 id = 1;
+  int32 tier = 2;
+}
+
+message SponsorshipResponse {
+  int32 id = 1;
+  int32 tier = 2;
+}
 
 message PaginationRequest {
     //if you want to implement using cursor instead use

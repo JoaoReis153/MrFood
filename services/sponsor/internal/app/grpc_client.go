@@ -24,7 +24,7 @@ func RunClient() {
 		}
 	}()
 
-	client := pb.NewTemplateServiceClient(conn)
+	client := pb.NewSponsorServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -42,7 +42,7 @@ func RunClient() {
 	// MultiplePingPongs(client, ctx)
 }
 
-func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
+func SinglePing(client pb.SponsorServiceClient, ctx context.Context) {
 	fmt.Println("\n### Single ping single pong example ###")
 	res, err := client.PingPong(ctx, &pb.Ping{Id: 1})
 	fmt.Println("Ping 1")
@@ -52,7 +52,7 @@ func SinglePing(client pb.TemplateServiceClient, ctx context.Context) {
 	fmt.Println("Pong", res.Id)
 }
 
-func MultiplePings(client pb.TemplateServiceClient, ctx context.Context) {
+func MultiplePings(client pb.SponsorServiceClient, ctx context.Context) {
 	fmt.Println("\n### Multiple pings single pong example ###")
 	stream, err := client.ManyPings(ctx)
 	if err != nil {
@@ -75,7 +75,7 @@ func MultiplePings(client pb.TemplateServiceClient, ctx context.Context) {
 	fmt.Println("ManyPings response:", res.Id)
 }
 
-func MultiplePongs(client pb.TemplateServiceClient, ctx context.Context) {
+func MultiplePongs(client pb.SponsorServiceClient, ctx context.Context) {
 	fmt.Println("\n### Single ping multiple pongs example ###")
 	stream, err := client.ManyPongs(ctx, &pb.Ping{Id: 1})
 	if err != nil {
@@ -94,7 +94,7 @@ func MultiplePongs(client pb.TemplateServiceClient, ctx context.Context) {
 	}
 }
 
-func MultiplePingPongs(client pb.TemplateServiceClient, ctx context.Context) {
+func MultiplePingPongs(client pb.SponsorServiceClient, ctx context.Context) {
 	fmt.Println("\n### Multiple ping multiple pongs example ###")
 	stream, err := client.ManyPingPongs(ctx)
 	if err != nil {
