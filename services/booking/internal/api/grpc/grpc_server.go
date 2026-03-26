@@ -1,4 +1,4 @@
-package app
+package grpc
 
 import (
 	"context"
@@ -13,6 +13,8 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -22,14 +24,17 @@ type server struct {
 	bookingService *service.Service
 }
 
-func RunServer() {
+func RunServer(service *service.Service) {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterBookingServiceServer(s, &server{})
+	pb.RegisterBookingServiceServer(s, &server{
+		bookingService: service,
+	})
+	reflection.Register(s)
 
 	fmt.Println("Server running on :50051")
 	if err := s.Serve(lis); err != nil {
@@ -37,7 +42,23 @@ func RunServer() {
 	}
 }
 
+func NewClient() (pb.RestaurantServiceClient, func(), error) {
+	conn, err := grpc.NewClient(
+		"localhost:50051",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cleanup := func() { conn.Close() }
+
+	return pb.NewRestaurantServiceClient(conn), cleanup, nil
+}
+
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
+	slog.Info("received booking request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
+
 	res, err := s.bookingService.Client.GetWorkingHours(ctx,
 		&pb.WorkingHoursRequest{
 			RestaurantId: req.RestaurantId,
@@ -55,6 +76,15 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		TimeStart:    req.TimeStart.AsTime(),
 		PeopleCount:  req.Quantity,
 	}
+
+	// Mock response from gRPC
+	// res := &pb.WorkingHoursResponse{
+	// 	RestaurantId: 1,
+	// 	WorkingHours: &pb.TimeRange{
+	// 		TimeStart: timestamppb.New(time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
+	// 		TimeEnd:   timestamppb.New(time.Date(2026, 3, 24, 18, 0, 0, 0, time.UTC)), // 6:00 PM
+	// 	},
+	// }
 
 	working_hours := &models.WorkingHours{
 		RestaurantID: res.RestaurantId,

@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const MAX_SLOTS int = 15
+
 type Service struct {
 	repo   *repository.Repository
 	Client pb.RestaurantServiceClient
@@ -23,37 +25,47 @@ func New(repo *repository.Repository, client pb.RestaurantServiceClient) *Servic
 
 func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking, working_hours *models.WorkingHours) (*models.Booking, error) {
 	// check if starting hour is valid
-	if booking.TimeStart.Minute() != 0 || booking.TimeStart.Minute() != 30 {
-		slog.Error("Booking time is not valid: minutes must be either 00 or 30")
+	if booking.TimeStart.Minute() != 0 && booking.TimeStart.Minute() != 30 {
+		slog.Error("Booking time is not valid: minutes must be either 00 or 30", "time_start", booking.TimeStart.Minute())
+		return nil, status.Error(codes.InvalidArgument, "invalid booking start time")
+	}
+
+	if booking.TimeStart.Compare(working_hours.TimeStart) < 0 {
+		slog.Error("Booking time is not valid: must be within working hours", "booking_hour_start", booking.TimeStart, "working_hour_start", working_hours.TimeStart)
 		return nil, status.Error(codes.InvalidArgument, "invalid booking start time")
 	}
 
 	// check if booking already exists
-	exists, err := s.repo.CheckBooking(ctx, int(working_hours.RestaurantID), working_hours.TimeStart)
+	booking_exists, err := s.repo.CheckBooking(ctx, int(booking.UserID), int(booking.RestaurantID), booking.TimeStart)
 
 	if err != nil {
 		slog.Error("Internal database error")
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if exists > 0 {
+	if booking_exists == 1 {
 		slog.Error("Booking already exists")
 		return nil, status.Error(codes.InvalidArgument, "booking already exists")
 	}
 
 	// check if there are sufficient available slots
-	max_slots, current_slots, err := s.repo.GetSlots(ctx, int(booking.RestaurantID), booking.TimeStart)
+	exists, max_slots, current_slots, err := s.repo.GetSlots(ctx, int(booking.RestaurantID), booking.TimeStart)
 
 	if err != nil {
 		slog.Error("Internal database error")
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	available_slots := max_slots - current_slots
-
-	if booking.PeopleCount > available_slots {
-		slog.Error("Not enough slots", "available_slots", available_slots, "people_count", booking.PeopleCount)
-		return nil, status.Error(codes.InvalidArgument, "not enough slots")
+	if exists {
+		if booking.PeopleCount > max_slots-current_slots {
+			slog.Error("Not enough slots", "available_slots", max_slots-current_slots, "people_count", booking.PeopleCount)
+			return nil, status.Error(codes.InvalidArgument, "not enough slots")
+		}
+	} else {
+		if int(booking.PeopleCount) > MAX_SLOTS {
+			slog.Error("Not enough slots", "max_slots", MAX_SLOTS, "people_count", booking.PeopleCount)
+			return nil, status.Error(codes.InvalidArgument, "not enough slots")
+		}
 	}
 
 	// proceed with booking
@@ -68,6 +80,12 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking, wo
 	if err != nil {
 		slog.Error("Internal database error")
 		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if !exists {
+		s.repo.CreateSlots(ctx, int(booking.UserID), int(booking.RestaurantID), MAX_SLOTS, int(booking.PeopleCount), booking.TimeStart, time_end)
+	} else {
+		s.repo.UpdateSlots(ctx, int(booking.RestaurantID), int(current_slots+booking.PeopleCount), booking.TimeStart)
 	}
 
 	booking = &models.Booking{

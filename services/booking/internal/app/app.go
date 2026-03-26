@@ -1,6 +1,7 @@
 package app
 
 import (
+	pb "MrFood/services/booking/internal/api/grpc/pb"
 	"MrFood/services/booking/internal/repository"
 	"MrFood/services/booking/internal/service"
 
@@ -11,15 +12,11 @@ type App struct {
 	Service *service.Service
 	Repo    *repository.Repository
 	DB      *pgxpool.Pool
+	Client  pb.RestaurantServiceClient
 }
 
 func New() *App {
-	repo := repository.New()
-	svc := service.New(repo)
-
-	return &App{
-		Service: svc,
-	}
+	return &App{}
 }
 
 func (app *App) InitDependencies() {
@@ -27,6 +24,10 @@ func (app *App) InitDependencies() {
 		panic("DB not initialized")
 	}
 
+	if app.Client == nil {
+		panic("Client not initialized")
+	}
+
 	app.Repo = repository.New(app.DB)
-	app.Service = service.New(app.Repo)
+	app.Service = service.New(app.Repo, app.Client)
 }

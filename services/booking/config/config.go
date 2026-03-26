@@ -26,10 +26,6 @@ type Config struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 	} `yaml:"db"`
-	JWT struct {
-		Secret       string `yaml:"secret"`
-		ExpiresHours int    `yaml:"expires_hours"`
-	} `yaml:"jwt"`
 }
 
 var globalConfig *Config
@@ -63,13 +59,6 @@ func Load(ctx context.Context) *Config {
 			User:     "postgres",
 			Password: "",
 		},
-		JWT: struct {
-			Secret       string `yaml:"secret"`
-			ExpiresHours int    `yaml:"expires_hours"`
-		}{
-			Secret:       "change-me-in-prod!!",
-			ExpiresHours: 24,
-		},
 	}
 
 	overrideWithEnv(cfg)
@@ -83,7 +72,6 @@ func Load(ctx context.Context) *Config {
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
 		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
 		slog.String("log_level", cfg.Log.Level),
-		slog.Int("jwt_expires_hours", cfg.JWT.ExpiresHours),
 	)
 
 	return cfg
@@ -101,9 +89,6 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
-
-	cfg.JWT.Secret = getEnv("APP_JWT_SECRET", cfg.JWT.Secret)
-	cfg.JWT.ExpiresHours = getEnvInt("APP_JWT_EXPIRES_HOURS", cfg.JWT.ExpiresHours)
 }
 
 func validateConfig(cfg *Config) error {
@@ -112,9 +97,6 @@ func validateConfig(cfg *Config) error {
 	}
 	if cfg.Server.Timeout == 0 {
 		return fmt.Errorf("server timeout required")
-	}
-	if len(cfg.JWT.Secret) < 32 {
-		return fmt.Errorf("JWT secret too short: %d chars", len(cfg.JWT.Secret))
 	}
 	if cfg.DB.Host == "" || cfg.DB.Name == "" {
 		return fmt.Errorf("DB host/name required")
