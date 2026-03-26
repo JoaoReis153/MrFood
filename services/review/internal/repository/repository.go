@@ -11,8 +11,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type pgxPoolInterface interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
 type Repository struct {
-	db *pgxpool.Pool
+	db pgxPoolInterface
 }
 
 func New(db *pgxpool.Pool) *Repository {

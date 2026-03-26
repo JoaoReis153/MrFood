@@ -19,10 +19,18 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type ReviewService interface {
+	GetReviews(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error)
+	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
+	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
+	DeleteReview(ctx context.Context, reviewID int32) error
+	GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
+}
+
 type server struct {
 	pb.UnimplementedReviewServiceServer
 	pb.UnimplementedReviewToDetailsServiceServer
-	svc *service.Service
+	svc ReviewService
 }
 
 func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb.GetReviewsResponse, error) {
