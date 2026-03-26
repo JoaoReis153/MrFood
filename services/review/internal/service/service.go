@@ -10,11 +10,11 @@ type ReviewRepository interface {
 	GetReviews(ctx context.Context, restaurantID, page, limit int) ([]models.Review, int, error)
 	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
-	DeleteReview(ctx context.Context, reviewID int) error
+	DeleteReview(ctx context.Context, reviewID int32) error
 }
 
 type ReviewStatsRepository interface {
-	GetRestaurantStats(ctx context.Context, restaurantID int) (models.RestaurantStats, error)
+	GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
 }
 
 type Service struct {
@@ -88,7 +88,7 @@ func (s *Service) UpdateReview(ctx context.Context, review models.UpdateReview) 
 	return s.repo.UpdateReview(ctx, review)
 }
 
-func (s *Service) DeleteReview(ctx context.Context, reviewID int) error {
+func (s *Service) DeleteReview(ctx context.Context, reviewID int32) error {
 	if reviewID <= 0 {
 		slog.Error("Review ID is not valid: value must be a positive integer", "reviewID", reviewID)
 		return models.ErrInvalidReviewID
@@ -96,7 +96,7 @@ func (s *Service) DeleteReview(ctx context.Context, reviewID int) error {
 	return s.repo.DeleteReview(ctx, reviewID)
 }
 
-func (s *Service) GetRestaurantStats(ctx context.Context, restaurantID int) (models.RestaurantStats, error) {
+func (s *Service) GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
 	if restaurantID <= 0 {
 		slog.Error("Restaurant ID is not valid: value must be a positive integer", "restaurantID", restaurantID)
 		return models.RestaurantStats{}, models.ErrInvalidRestaurantID

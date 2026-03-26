@@ -113,7 +113,7 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 	return updated, nil
 }
 
-func (r *Repository) DeleteReview(ctx context.Context, reviewID int) error {
+func (r *Repository) DeleteReview(ctx context.Context, reviewID int32) error {
 	result, err := r.db.Exec(ctx, "DELETE FROM review WHERE review_id = $1", reviewID)
 	if err != nil {
 		slog.Error("Failed to delete review", "error", err)
@@ -126,7 +126,7 @@ func (r *Repository) DeleteReview(ctx context.Context, reviewID int) error {
 	return nil
 }
 
-func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int) (models.RestaurantStats, error) {
+func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
 	var stats models.RestaurantStats
 	stats.RestaurantID = restaurantID
 	err := r.db.QueryRow(ctx, "SELECT average_rating, review_count FROM restaurant_stats WHERE restaurant_id = $1", restaurantID).

@@ -64,9 +64,9 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.CreateReviewResponse, error) {
 	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", req.GetUserId(), "rating", req.GetRating())
 	review := models.Review{
-		RestaurantID: int(req.GetRestaurantId()),
-		UserID:       int(req.GetUserId()),
-		Rating:       int(req.GetRating()),
+		RestaurantID: int32(req.GetRestaurantId()),
+		UserID:       int32(req.GetUserId()),
+		Rating:       int32(req.GetRating()),
 		Comment:      req.GetComment(),
 	}
 	review, err := s.svc.CreateReview(ctx, review)
@@ -90,14 +90,14 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*pb.UpdateReviewResponse, error) {
 	slog.Info("Received UpdateReview request", "reviewID", req.GetReviewId())
 	review := models.UpdateReview{
-		ReviewID: int(req.GetReviewId()),
+		ReviewID: int32(req.GetReviewId()),
 	}
 	if req.Comment != nil {
 		comment := req.GetComment()
 		review.Comment = &comment
 	}
 	if req.Rating != nil {
-		rating := int(req.GetRating())
+		rating := int32(req.GetRating())
 		review.Rating = &rating
 	}
 	updated, err := s.svc.UpdateReview(ctx, review)
@@ -120,7 +120,7 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 
 func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) (*pb.DeleteReviewResponse, error) {
 	slog.Info("Received DeleteReview request", "reviewID", req.GetReviewId())
-	err := s.svc.DeleteReview(ctx, int(req.GetReviewId()))
+	err := s.svc.DeleteReview(ctx, int32(req.GetReviewId()))
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
@@ -131,7 +131,7 @@ func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) 
 
 func (s *server) GetRestaurantStats(ctx context.Context, req *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
 	slog.Info("Received GetRestaurantStats request", "restaurantID", req.GetRestaurantId())
-	stats, err := s.svc.GetRestaurantStats(ctx, int(req.GetRestaurantId()))
+	stats, err := s.svc.GetRestaurantStats(ctx, int32(req.GetRestaurantId()))
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}

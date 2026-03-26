@@ -18,22 +18,22 @@ var (
 )
 
 type Review struct {
-	ReviewID     int       `json:"id"`
-	RestaurantID int       `json:"restaurant_id"`
-	UserID       int       `json:"user_id"`
-	Rating       int       `json:"rating"`
+	ReviewID     int32     `json:"id"`
+	RestaurantID int32     `json:"restaurant_id"`
+	UserID       int32     `json:"user_id"`
+	Rating       int32     `json:"rating"`
 	Comment      string    `json:"comment"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
 type UpdateReview struct {
-	ReviewID int     `json:"id"`
-	Rating   *int    `json:"rating,omitempty"`
+	ReviewID int32   `json:"id"`
+	Rating   *int32  `json:"rating,omitempty"`
 	Comment  *string `json:"comment,omitempty"`
 }
 
 type RestaurantStats struct {
-	RestaurantID  int     `json:"restaurant_id"`
+	RestaurantID  int32   `json:"restaurant_id"`
 	AverageRating float64 `json:"average_rating"`
 	ReviewCount   int     `json:"review_count"`
 }
