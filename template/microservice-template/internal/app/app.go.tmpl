@@ -1,8 +1,11 @@
 package app
 
 import (
+	"MrFood/services/{{.ServiceName}}/config"
 	"MrFood/services/{{.ServiceName}}/internal/repository"
 	"MrFood/services/{{.ServiceName}}/internal/service"
+	"context"
+	"fmt"
 )
 
 type App struct {
@@ -10,11 +13,23 @@ type App struct {
 	Repo    *repository.Repository
 }
 
-func New() *App {
-	repo := repository.New()
-	svc := service.New(*repo)
+func New(ctx context.Context, cfg *config.Config) (*App, error) {
+	repo, err := repository.New(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("repository: %w", err)
+	}
+
+	svc := service.New(repo)
 
 	return &App{
+		Repo:    repo,
 		Service: svc,
+	}, nil
+}
+
+func (a *App) Close(ctx context.Context) error {
+	if a.Repo == nil {
+		return nil
 	}
+	return a.Repo.Close(ctx)
 }

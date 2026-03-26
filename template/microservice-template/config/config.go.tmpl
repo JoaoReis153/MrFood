@@ -1,61 +1,87 @@
 package config
 
 import (
-	"log"
+	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
-type Config struct {
-	Server struct {
-		Host    string        `yaml:"host"`
-		Port    int           `yaml:"port"`
-		Timeout time.Duration `yaml:"timeout"`
-	} `yaml:"server"`
-	Log struct {
-		Level string `yaml:"level"`
-	} `yaml:"log"`
+type ServerConfig struct {
+	Host    string        `yaml:"host"    validate:"required"`
+	Port    int           `yaml:"port"    validate:"required,min=1,max=65535"`
+	Timeout time.Duration `yaml:"timeout" validate:"required"`
 }
 
-var globalConfig *Config
+type LogConfig struct {
+	Level string `yaml:"level" validate:"required,oneof=debug info warn error"`
+}
 
-// Load config from ENV vars only (with sane defaults)
-func Load() *Config {
+type Config struct {
+	Server ServerConfig `yaml:"server"`
+	Log    LogConfig    `yaml:"log"`
+}
+
+var (
+	globalConfig *Config
+	once         sync.Once
+	validate     = validator.New()
+)
+
+func Load(_ context.Context) (*Config, error) {
 	cfg := &Config{
-		// Hardcoded defaults (non-zero!)
-		Server: struct {
-			Host    string        `yaml:"host"`
-			Port    int           `yaml:"port"`
-			Timeout time.Duration `yaml:"timeout"`
-		}{
+		Server: ServerConfig{
 			Host:    "0.0.0.0",
-			Port:    8080,
+			Port:    50051,
 			Timeout: 30 * time.Second,
 		},
-		Log: struct {
-			Level string `yaml:"level"`
-		}{
+		Log: LogConfig{
 			Level: "info",
 		},
 	}
 
-	// Override with ENV vars
 	overrideWithEnv(cfg)
 
-	log.Printf("Config loaded: Server=%s:%d, Timeout=%v, Log=%s", cfg.Server.Host, cfg.Server.Port, cfg.Server.Timeout, cfg.Log.Level)
-	return cfg
+	if err := validateConfig(cfg); err != nil {
+		return nil, fmt.Errorf("config: %w", err)
+	}
+
+	slog.Info("config loaded",
+		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
+		slog.String("log_level", cfg.Log.Level),
+	)
+
+	return cfg, nil
 }
 
 func overrideWithEnv(cfg *Config) {
-	// Server config
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
 	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
-	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
+	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	// Log config
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+}
+
+func validateConfig(cfg *Config) error {
+	if err := validate.Struct(cfg); err != nil {
+		var errs validator.ValidationErrors
+		if errors.As(err, &errs) {
+			msgs := make([]string, 0, len(errs))
+			for _, e := range errs {
+				msgs = append(msgs, fmt.Sprintf("%s: failed '%s'", e.Namespace(), e.Tag()))
+			}
+			return fmt.Errorf("validation failed: %s", strings.Join(msgs, "; "))
+		}
+		return err
+	}
+	return nil
 }
 
 func getEnv(key, defaultValue string) string {
@@ -66,29 +92,47 @@ func getEnv(key, defaultValue string) string {
 }
 
 func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	intVal, err := strconv.Atoi(value)
+	if err != nil {
+		slog.Warn("invalid int env var, using default",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.Int("default", defaultValue),
+		)
+		return defaultValue
+	}
+	return intVal
+}
+
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	d, err := time.ParseDuration(value)
+	if err != nil {
+		slog.Warn("invalid duration env var, using default",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.String("default", defaultValue.String()),
+		)
+		return defaultValue
+	}
+	return d
+}
+
+func Get(ctx context.Context) *Config {
+	once.Do(func() {
+		cfg, err := Load(ctx)
+		if err != nil {
+			slog.Error("invalid config", "error", err)
+			panic(err)
 		}
-	}
-	return defaultValue
-}
-
-func parseDuration(s string) time.Duration {
-	// Support "30s", "30", "30s" etc.
-	s = strings.TrimSuffix(s, "s")
-	if d, err := time.ParseDuration(s + "s"); err == nil {
-		return d
-	}
-	if seconds, err := strconv.Atoi(s); err == nil {
-		return time.Duration(seconds) * time.Second
-	}
-	return 30 * time.Second
-}
-
-func Get() *Config {
-	if globalConfig == nil {
-		globalConfig = Load()
-	}
+		globalConfig = cfg
+	})
 	return globalConfig
 }

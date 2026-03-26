@@ -1,21 +1,22 @@
 ```mermaid
 flowchart TD
-subgraph Client["🌐 Client"]
-HTTP[HTTP Client]
+subgraph Client["🌐 Client / Other Services"]
+GRPCClient[gRPC Client]
 end
 
     subgraph Microservice["{{.ServiceName}} Microservice"]
         subgraph Entry["cmd/"]
-            Main[main.go]
+            Main[main.go<br/>config + logger + graceful shutdown]
         end
 
-        subgraph API["internal/api/rest/"]
-            Router[router.go<br/>Gin Engine]
-            Handler[handler.go<br/>Health/Ping]
+        subgraph API["internal/api/grpc/"]
+            Proto[proto/protofile.proto]
+            PB[pb/*.pb.go]
         end
 
         subgraph AppLayer["internal/app/"]
-            App[app.go<br/>Dependency Wiring]
+            App[app.go<br/>Dependency Wiring + Lifecycle]
+            GRPCServer[grpc_server.go<br/>Server Registration + Run]
         end
 
         subgraph BusinessLayer["internal/service/"]
@@ -35,21 +36,21 @@ end
     subgraph Infra["🛠 Infrastructure"]
         Docker[Dockerfile]
         Makefile[Makefile]
-        Compose[docker-compose.yml]
     end
 
-    %% Dependency Flow (Service-only pattern)
-    HTTP --> Router
-    Main --> Router
+    %% Dependency Flow (gRPC pattern)
+    GRPCClient --> GRPCServer
     Main --> App
-    Router --> Handler
-    Router --> App
+    Main --> GRPCServer
+    Proto --> PB
+    PB --> GRPCServer
+    Main --> App
     App --> BizService
     BizService --> Repo
-    Handler -.->|uses| Models
-    Handler -.->|uses| Response
+    GRPCServer -.->|uses| Models
     BizService -.->|uses| Models
     Repo -.->|uses| Models
+    GRPCServer -.->|uses| Response
 
     %% Infrastructure
     Microservice -.->|deploys to| Infra
@@ -64,10 +65,10 @@ end
     classDef infra fill:#e0e0e0,stroke:#212121,stroke-width:2px
 
     class Main entry
-    class Router,Handler api
-    class App appLayer
+    class Proto,PB api
+    class App,GRPCServer appLayer
     class BizService businessLayer
     class Repo dataLayer
     class Models,Response shared
-    class Docker,Makefile,Compose infra
+    class Docker,Makefile infra
 ```
