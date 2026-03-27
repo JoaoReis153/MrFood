@@ -145,13 +145,15 @@ func TestMapServiceError(t *testing.T) {
 
 func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	timestamp := "2026-03-27T12:00:00Z"
+	rating := 4.6
+	count := int32(19)
 	model := &models.Restaurant{
 		ID:            1,
 		Name:          "Sushi",
 		MediaURL:      "https://example.com/image.jpg",
 		WorkingHours:  []string{timestamp},
-		AverageRating: 4.6,
-		ReviewCount:   19,
+		AverageRating: &rating,
+		ReviewCount:   &count,
 	}
 
 	pbModel := modelToPB(model)
@@ -166,5 +168,12 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	}
 	if pbModel.GetAverageRating() != 4.6 || pbModel.GetReviewCount() != 19 {
 		t.Fatalf("expected stats to be mapped, got rating=%v count=%v", pbModel.GetAverageRating(), pbModel.GetReviewCount())
+	}
+
+	model.AverageRating = nil
+	model.ReviewCount = nil
+	pbModel = modelToPB(model)
+	if pbModel.AverageRating != nil || pbModel.ReviewCount != nil {
+		t.Fatalf("expected nil optional stats, got rating=%v count=%v", pbModel.AverageRating, pbModel.ReviewCount)
 	}
 }

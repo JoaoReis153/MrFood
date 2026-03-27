@@ -276,12 +276,15 @@ func TestGetRestaurantByIDEnrichesWithReviewStats(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if restaurant.AverageRating != 4.5 || restaurant.ReviewCount != 12 {
+	if restaurant.AverageRating == nil || restaurant.ReviewCount == nil {
+		t.Fatalf("expected review stats to be set: %+v", restaurant)
+	}
+	if *restaurant.AverageRating != 4.5 || *restaurant.ReviewCount != 12 {
 		t.Fatalf("unexpected enriched restaurant: %+v", restaurant)
 	}
 }
 
-func TestGetRestaurantByIDPropagatesReviewStatsError(t *testing.T) {
+func TestGetRestaurantByIDIgnoresReviewStatsError(t *testing.T) {
 	wantErr := errors.New("reviews unavailable")
 	svc := &Service{repo: &mockRepo{
 		getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
@@ -293,8 +296,11 @@ func TestGetRestaurantByIDPropagatesReviewStatsError(t *testing.T) {
 		},
 	}}
 
-	_, err := svc.GetRestaurantByID(context.Background(), 2)
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("expected %v, got %v", wantErr, err)
+	restaurant, err := svc.GetRestaurantByID(context.Background(), 2)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if restaurant.AverageRating != nil || restaurant.ReviewCount != nil {
+		t.Fatalf("expected nil stats when review service fails: %+v", restaurant)
 	}
 }

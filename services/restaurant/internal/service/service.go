@@ -157,14 +157,14 @@ func (s *Service) enrichWithReviewStats(ctx context.Context, restaurant *models.
 
 	stats, err := s.reviewStats.GetRestaurantStats(ctx, restaurant.ID)
 	if err != nil {
-		return nil, err
+		return restaurant, nil
 	}
 	if stats == nil {
 		return restaurant, nil
 	}
 
-	restaurant.AverageRating = stats.AverageRating
-	restaurant.ReviewCount = stats.ReviewCount
+	restaurant.AverageRating = &stats.AverageRating
+	restaurant.ReviewCount = &stats.ReviewCount
 
 	return restaurant, nil
 }

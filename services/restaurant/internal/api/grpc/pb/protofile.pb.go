@@ -724,8 +724,8 @@ type RestaurantDetails struct {
 	OwnerId       int32                    `protobuf:"varint,10,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
 	OwnerName     string                   `protobuf:"bytes,11,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
 	SponsorTier   int32                    `protobuf:"varint,12,opt,name=sponsor_tier,json=sponsorTier,proto3" json:"sponsor_tier,omitempty"`
-	AverageRating float64                  `protobuf:"fixed64,13,opt,name=average_rating,json=averageRating,proto3" json:"average_rating,omitempty"`
-	ReviewCount   int32                    `protobuf:"varint,14,opt,name=review_count,json=reviewCount,proto3" json:"review_count,omitempty"`
+	AverageRating *float64                 `protobuf:"fixed64,13,opt,name=average_rating,json=averageRating,proto3,oneof" json:"average_rating,omitempty"`
+	ReviewCount   *int32                   `protobuf:"varint,14,opt,name=review_count,json=reviewCount,proto3,oneof" json:"review_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -845,15 +845,15 @@ func (x *RestaurantDetails) GetSponsorTier() int32 {
 }
 
 func (x *RestaurantDetails) GetAverageRating() float64 {
-	if x != nil {
-		return x.AverageRating
+	if x != nil && x.AverageRating != nil {
+		return *x.AverageRating
 	}
 	return 0
 }
 
 func (x *RestaurantDetails) GetReviewCount() int32 {
-	if x != nil {
-		return x.ReviewCount
+	if x != nil && x.ReviewCount != nil {
+		return *x.ReviewCount
 	}
 	return 0
 }
@@ -1021,7 +1021,7 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x18UpdateRestaurantResponse\x128\n" +
 	"\n" +
 	"restaurant\x18\x01 \x01(\v2\x18.proto.RestaurantDetailsR\n" +
-	"restaurant\"\xe0\x03\n" +
+	"restaurant\"\x8e\x04\n" +
 	"\x11RestaurantDetails\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
@@ -1038,11 +1038,13 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	" \x01(\x05R\aownerId\x12\x1d\n" +
 	"\n" +
 	"owner_name\x18\v \x01(\tR\townerName\x12!\n" +
-	"\fsponsor_tier\x18\f \x01(\x05R\vsponsorTier\x12%\n" +
-	"\x0eaverage_rating\x18\r \x01(\x01R\raverageRating\x12!\n" +
-	"\freview_count\x18\x0e \x01(\x05R\vreviewCountB\f\n" +
+	"\fsponsor_tier\x18\f \x01(\x05R\vsponsorTier\x12*\n" +
+	"\x0eaverage_rating\x18\r \x01(\x01H\x01R\raverageRating\x88\x01\x01\x12&\n" +
+	"\freview_count\x18\x0e \x01(\x05H\x02R\vreviewCount\x88\x01\x01B\f\n" +
 	"\n" +
-	"_media_url\"q\n" +
+	"_media_urlB\x11\n" +
+	"\x0f_average_ratingB\x0f\n" +
+	"\r_review_count\"q\n" +
 	"\x1fCompareRestaurantDetailsRequest\x12&\n" +
 	"\x0frestaurant_id_1\x18\x01 \x01(\x05R\rrestaurantId1\x12&\n" +
 	"\x0frestaurant_id_2\x18\x02 \x01(\x05R\rrestaurantId2\"\x9a\x01\n" +
