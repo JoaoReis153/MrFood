@@ -49,7 +49,7 @@ jobs:
           fi
 
   lint-test:
-    needs: [test-workspace, detect-changed-services]
+    needs: [detect-changed-services]
     runs-on: ubuntu-latest
     if: needs.detect-changed-services.outputs.has-changes == 'true'
     strategy:
