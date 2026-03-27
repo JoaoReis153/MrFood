@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"MrFood/services/restaurant/internal/repository"
 	models "MrFood/services/restaurant/pkg"
@@ -26,6 +27,8 @@ type restaurantRepository interface {
 	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
 	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
 	UpdateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error)
+	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error)
+	GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error)
 }
 
 func New(repo *repository.Repository) *Service {
@@ -122,4 +125,36 @@ func (s *Service) CompareRestaurants(ctx context.Context, id1, id2 int32) (*mode
 	}
 
 	return r1, r2, nil
+}
+
+func (s *Service) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+	if restaurantID <= 0 {
+		return nil, ErrInvalidRestaurant
+	}
+
+	workingHours, err := s.repo.GetWorkingHours(ctx, restaurantID, timeStart)
+	if err != nil {
+		if errors.Is(err, repository.ErrRestaurantNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return workingHours, nil
+}
+
+func (s *Service) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
+	if restaurantID <= 0 {
+		return nil, ErrInvalidRestaurant
+	}
+
+	stats, err := s.repo.GetRestaurantStats(ctx, restaurantID)
+	if err != nil {
+		if errors.Is(err, repository.ErrRestaurantNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return stats, nil
 }

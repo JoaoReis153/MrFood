@@ -14,6 +14,48 @@ service RestaurantService {
 
   rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse);
 }
+  // Get restaurant stats such as average rating and review count
+
+service RestaurantToBookingService {
+  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
+}
+
+service RestaurantToReviewService {
+  rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
+}
+
+
+message RestaurantStats {
+  int32 restaurant_id = 1;
+  double average_rating = 2;
+  int32 review_count = 3;
+}
+
+message GetRestaurantStatsRequest {
+  int32 restaurant_id = 1;
+}
+
+message GetRestaurantStatsResponse {
+  RestaurantStats restaurant_stats = 1;
+}
+
+
+
+
+message WorkingHoursRequest {
+  int32 restaurant_id = 1;
+  google.protobuf.Timestamp time_start = 2;
+}
+
+message WorkingHoursResponse {
+  int32 restaurant_id = 1;
+  TimeRange working_hours = 2;
+}
+
+message TimeRange {
+  google.protobuf.Timestamp time_start = 1;
+  google.protobuf.Timestamp time_end = 2;
+}
 
 message GetRestaurantDetailsRequest {
   int32 id = 1;

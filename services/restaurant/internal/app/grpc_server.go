@@ -23,7 +23,18 @@ import (
 
 type server struct {
 	pb.UnimplementedRestaurantServiceServer
-	restaurantService *service.Service
+	pb.UnimplementedRestaurantToBookingServiceServer
+	pb.UnimplementedRestaurantToReviewServiceServer
+	restaurantService restaurantService
+}
+
+type restaurantService interface {
+	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
+	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
+	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error)
+	CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error)
+	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error)
+	GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error)
 }
 
 func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurantDetailsRequest) (*pb.GetRestaurantDetailsResponse, error) {
@@ -41,6 +52,9 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 
 func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantRequest) (*pb.CreateRestaurantResponse, error) {
 	requesterOwnerID, err := ownerIDFromMetadata(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
 	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwnerID)
 
 	restaurant := &models.Restaurant{
@@ -107,6 +121,41 @@ func (s *server) CompareRestaurantDetails(ctx context.Context, req *pb.CompareRe
 	}, nil
 }
 
+func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursRequest) (*pb.WorkingHoursResponse, error) {
+	var requestedAt time.Time
+	if req.GetTimeStart() != nil {
+		requestedAt = req.GetTimeStart().AsTime().UTC()
+	}
+
+	workingHours, err := s.restaurantService.GetWorkingHours(ctx, req.GetRestaurantId(), requestedAt)
+	if err != nil {
+		return nil, mapServiceError(err)
+	}
+
+	return &pb.WorkingHoursResponse{
+		RestaurantId: req.GetRestaurantId(),
+		WorkingHours: &pb.TimeRange{
+			TimeStart: timestamppb.New(workingHours.TimeStart),
+			TimeEnd:   timestamppb.New(workingHours.TimeEnd),
+		},
+	}, nil
+}
+
+func (s *server) GetRestaurantStats(ctx context.Context, req *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
+	stats, err := s.restaurantService.GetRestaurantStats(ctx, req.GetRestaurantId())
+	if err != nil {
+		return nil, mapServiceError(err)
+	}
+
+	return &pb.GetRestaurantStatsResponse{
+		RestaurantStats: &pb.RestaurantStats{
+			RestaurantId:  stats.RestaurantID,
+			AverageRating: stats.AverageRating,
+			ReviewCount:   stats.ReviewCount,
+		},
+	}, nil
+}
+
 func (app *App) RunServer() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -115,9 +164,13 @@ func (app *App) RunServer() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterRestaurantServiceServer(s, &server{
+	srv := &server{
 		restaurantService: app.Service,
-	})
+	}
+
+	pb.RegisterRestaurantServiceServer(s, srv)
+	pb.RegisterRestaurantToBookingServiceServer(s, srv)
+	pb.RegisterRestaurantToReviewServiceServer(s, srv)
 
 	slog.Info("Server running on :50051")
 	if err := s.Serve(lis); err != nil {

@@ -330,6 +330,118 @@ func (r *Repository) CompareRestaurants(ctx context.Context, id1, id2 int32) (*m
 	return restaurant1, restaurant2, nil
 }
 
+func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+	if r.DB == nil {
+		return nil, ErrDatabaseNotSet
+	}
+
+	exists, err := r.restaurantExists(ctx, restaurantID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, ErrRestaurantNotFound
+	}
+
+	rows, err := r.DB.Query(ctx, `
+		SELECT working_hour
+		FROM restaurant_working_hours
+		WHERE restaurant_id = $1 AND working_hour >= $2
+		ORDER BY working_hour
+		LIMIT 2
+	`, restaurantID, timeStart.UTC())
+	if err != nil {
+		return nil, fmt.Errorf("query working hours from timestamp: %w", err)
+	}
+
+	hours, err := scanWorkingHours(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(hours) == 0 {
+		rows, err = r.DB.Query(ctx, `
+			SELECT working_hour
+			FROM restaurant_working_hours
+			WHERE restaurant_id = $1
+			ORDER BY working_hour
+			LIMIT 2
+		`, restaurantID)
+		if err != nil {
+			return nil, fmt.Errorf("query working hours fallback: %w", err)
+		}
+
+		hours, err = scanWorkingHours(rows)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(hours) == 0 {
+		return nil, ErrRestaurantNotFound
+	}
+
+	response := &models.TimeRange{TimeStart: hours[0], TimeEnd: hours[0]}
+	if len(hours) > 1 {
+		response.TimeEnd = hours[1]
+	}
+
+	return response, nil
+}
+
+func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
+	if r.DB == nil {
+		return nil, ErrDatabaseNotSet
+	}
+
+	exists, err := r.restaurantExists(ctx, restaurantID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, ErrRestaurantNotFound
+	}
+
+	// Stats are owned by the reviews domain; restaurant currently exposes a zeroed placeholder payload.
+	return &models.RestaurantStats{
+		RestaurantID:  restaurantID,
+		AverageRating: 0,
+		ReviewCount:   0,
+	}, nil
+}
+
+func (r *Repository) restaurantExists(ctx context.Context, restaurantID int32) (bool, error) {
+	var exists bool
+	if err := r.DB.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurantID).Scan(&exists); err != nil {
+		return false, fmt.Errorf("check restaurant: %w", err)
+	}
+	return exists, nil
+}
+
+func scanWorkingHours(rows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
+	Close()
+}) ([]time.Time, error) {
+	defer rows.Close()
+
+	workingHours := make([]time.Time, 0, 2)
+	for rows.Next() {
+		var value time.Time
+		if err := rows.Scan(&value); err != nil {
+			return nil, fmt.Errorf("scan working hour: %w", err)
+		}
+		workingHours = append(workingHours, value.UTC())
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate working hours: %w", err)
+	}
+
+	return workingHours, nil
+}
+
 func nullableString(value string) *string {
 	if strings.TrimSpace(value) == "" {
 		return nil
