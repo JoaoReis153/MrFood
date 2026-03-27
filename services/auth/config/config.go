@@ -197,24 +197,6 @@ func getEnvInt(key string, defaultValue int) int {
 	return intVal
 }
 
-func getEnvIntAny(defaultValue int, keys ...string) int {
-	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
-			intVal, err := strconv.Atoi(value)
-			if err != nil {
-				slog.Warn("invalid int env var, using default",
-					slog.String("key", key),
-					slog.String("value", value),
-					slog.Int("default", defaultValue),
-				)
-				return defaultValue
-			}
-			return intVal
-		}
-	}
-	return defaultValue
-}
-
 func getEnvInt32(key string, defaultValue int32) int32 {
 	value := os.Getenv(key)
 	if value == "" {
