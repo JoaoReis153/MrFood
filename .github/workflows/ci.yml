@@ -117,7 +117,7 @@ jobs:
 
       - name: Run auth stack via docker compose
         if: matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: docker compose --env-file .env.ci -f services/docker-compose.yml up -d auth auth_db redis
+        run: docker compose --env-file .env.ci -f services/docker-compose.yml up -d auth auth_db auth_redis
 
       - name: Check container started (stateless services)
         if: matrix.service != 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
@@ -133,7 +133,7 @@ jobs:
           docker compose --env-file .env.ci -f services/docker-compose.yml ps
           docker compose --env-file .env.ci -f services/docker-compose.yml logs auth || true
           docker compose --env-file .env.ci -f services/docker-compose.yml logs auth_db || true
-          docker compose --env-file .env.ci -f services/docker-compose.yml logs redis || true
+          docker compose --env-file .env.ci -f services/docker-compose.yml logs auth_redis || true
 
       - name: Stop and remove container
         if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
