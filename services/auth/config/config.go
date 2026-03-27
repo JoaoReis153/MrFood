@@ -128,11 +128,9 @@ func Get(ctx context.Context) *Config {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
 	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST")
-	cfg.DB.Port = getEnvIntAny(cfg.DB.Port, "DB_PORT")
 	cfg.DB.Name = getEnvAny(cfg.DB.Name, "POSTGRES_DB")
 	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER")
 	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD")
@@ -142,7 +140,6 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Redis.Host = getEnvAny(cfg.Redis.Host, "REDIS_HOST", "AUTH_REDIS_HOST")
-	cfg.Redis.Port = getEnvIntAny(cfg.Redis.Port, "REDIS_PORT", "AUTH_REDIS_PORT")
 	cfg.Redis.Password = getEnvAny(cfg.Redis.Password, "REDIS_PASS", "AUTH_REDIS_PASS")
 	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
