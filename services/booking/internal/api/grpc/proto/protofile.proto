@@ -12,6 +12,7 @@ service RestaurantService {
 
 service BookingService {
   rpc CreateBooking (CreateBookingRequest) returns (Booking);
+  rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse);
 }
 
 message WorkingHoursRequest {
@@ -30,6 +31,14 @@ message CreateBookingRequest {
   int32 quantity = 3;
   google.protobuf.Timestamp time_start = 4;
 }
+
+message DeleteBookingRequest {
+  int32 user_id = 1;
+  int32 restaurant_id = 2;
+  google.protobuf.Timestamp time_start = 3;
+}
+
+message DeleteBookingResponse {}
 
 message Booking {
   int32 id = 1;

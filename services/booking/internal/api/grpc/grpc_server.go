@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"time"
 
 	pb "MrFood/services/booking/internal/api/grpc/pb"
 	"MrFood/services/booking/internal/service"
@@ -57,18 +58,18 @@ func NewClient() (pb.RestaurantServiceClient, func(), error) {
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
-	slog.Info("received booking request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
+	slog.Info("received booking CREATION request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
-	res, err := s.bookingService.Client.GetWorkingHours(ctx,
-		&pb.WorkingHoursRequest{
-			RestaurantId: req.RestaurantId,
-			TimeStart:    req.TimeStart,
-		})
+	// res, err := s.bookingService.Client.GetWorkingHours(ctx,
+	// 	&pb.WorkingHoursRequest{
+	// 		RestaurantId: req.RestaurantId,
+	// 		TimeStart:    req.TimeStart,
+	// 	})
 
-	if err != nil {
-		slog.Error("Failed to get slots", "error", err)
-		return nil, status.Error(codes.Internal, "failed to get slots")
-	}
+	// if err != nil {
+	// 	slog.Error("Failed to get slots", "error", err)
+	// 	return nil, status.Error(codes.Internal, "failed to get slots")
+	// }
 
 	booking := &models.Booking{
 		UserID:       req.UserId,
@@ -78,13 +79,13 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 	}
 
 	// Mock response from gRPC
-	// res := &pb.WorkingHoursResponse{
-	// 	RestaurantId: 1,
-	// 	WorkingHours: &pb.TimeRange{
-	// 		TimeStart: timestamppb.New(time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
-	// 		TimeEnd:   timestamppb.New(time.Date(2026, 3, 24, 18, 0, 0, 0, time.UTC)), // 6:00 PM
-	// 	},
-	// }
+	res := &pb.WorkingHoursResponse{
+		RestaurantId: 1,
+		WorkingHours: &pb.TimeRange{
+			TimeStart: timestamppb.New(time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
+			TimeEnd:   timestamppb.New(time.Date(2026, 3, 24, 18, 0, 0, 0, time.UTC)), // 6:00 PM
+		},
+	}
 
 	working_hours := &models.WorkingHours{
 		RestaurantID: res.RestaurantId,
@@ -111,4 +112,23 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 			TimeEnd:   timestamppb.New(newBooking.TimeEnd),
 		},
 	}, nil
+}
+
+func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest) (*pb.DeleteBookingResponse, error) {
+	slog.Info("received booking DELETION request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
+
+	booking := &models.Booking{
+		UserID:       req.UserId,
+		RestaurantID: req.RestaurantId,
+		TimeStart:    req.TimeStart.AsTime(),
+	}
+
+	err := s.bookingService.DeleteBooking(ctx, booking)
+
+	if err != nil {
+		slog.Error("Internal service error", "error", err)
+		return nil, status.Error(codes.Internal, "internal service error")
+	}
+
+	return &pb.DeleteBookingResponse{}, nil
 }
