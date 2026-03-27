@@ -13,9 +13,6 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  ROOT_TEST_CMD: go test -v -race ./services/auth/... ./services/restaurant/... ./services/test_grpc/...
-
 jobs:
   test-workspace:
     runs-on: ubuntu-latest
@@ -28,13 +25,10 @@ jobs:
         with:
           go-version: 'stable'
           cache: true
-          cache-dependency-path: |
-            services/auth/go.sum
-            services/restaurant/go.sum
-            services/test_grpc/go.sum
+          cache-dependency-path: 'services/**/go.sum'
 
       - name: Test workspace
-        run: ${{ env.ROOT_TEST_CMD }}
+        run: go test -v -race ./services/... 
 
   detect-changed-services:
     runs-on: ubuntu-latest
@@ -57,8 +51,8 @@ jobs:
             | cut -d/ -f2 \
             | sort -u \
             | grep -Fxf <(echo "$ALL_SERVICES") || true)
-          else  # push/main or dispatch
-            CHANGED="$ALL_SERVICES"  # All services
+          else
+            CHANGED="$ALL_SERVICES"
           fi
 
           if [ -z "$CHANGED" ]; then
@@ -95,7 +89,6 @@ jobs:
           version: latest
           working-directory: ./services/${{ matrix.service }}
           args: --build-tags=integration -c .golangci.yml ./...
-
 
       - name: Build & Test
         working-directory: ./services/${{ matrix.service }}
