@@ -1,0 +1,21 @@
+info:
+  name: DeleteBooking
+  type: grpc
+  seq: 5
+
+grpc:
+  url: localhost:50051
+  method: /proto.BookingService/CreateBooking
+  methodType: unary
+  protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "user_id": 38,
+      "restaurant_id": 121,
+      "quantity": 2,
+      "time_start": {
+        "seconds": 1774350000,
+        "nanos": 0
+      }
+    }
+  auth: inherit
