@@ -19,12 +19,11 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   auth:
     build: ./auth/
-    ports: ["${APP_SERVER_PORT}:${APP_SERVER_PORT}"]
+    ports: ["${AUTH_SERVER_PORT}:50051"]
     <<: *common
     environment:
       # Database
       <<: *auth-db-config
-      APP_SERVER_PORT: ${APP_SERVER_PORT}
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m
@@ -46,7 +45,7 @@ services:
 
   auth_db:
     image: postgres:16
-    ports: ["${DB_PORT}:${DB_PORT}"]
+    ports: ["${DB_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
@@ -59,7 +58,7 @@ services:
 
   auth_redis:
     image: redis:7-alpine
-    ports: ["${REDIS_PORT}:${REDIS_PORT}"]
+    ports: ["${REDIS_PORT}:6379"]
     <<: *common
     command: redis-server --save "" --appendonly no
     healthcheck:
