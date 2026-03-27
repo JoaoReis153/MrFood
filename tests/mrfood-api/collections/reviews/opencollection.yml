@@ -5,10 +5,10 @@ info:
 config:
   protobuf:
     protoFiles:
-      - type: file
-        path: ../../../../services/review/internal/api/grpc/proto/protofile.proto
+    - type: file
+      path: ../../../../services/review/internal/api/grpc/proto/protofile.proto
     importPaths:
-      - path: //wsl.localhost/Debian/usr/include
+    - path: //wsl.localhost/Debian/usr/include
   proxy:
     inherit: true
     config:
@@ -23,5 +23,5 @@ bundled: false
 extensions:
   bruno:
     ignore:
-      - node_modules
-      - .git
+    - node_modules
+    - .git

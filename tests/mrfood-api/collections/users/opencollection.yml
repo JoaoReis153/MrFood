@@ -6,5 +6,5 @@ bundled: false
 extensions:
   bruno:
     ignore:
-      - node_modules
-      - .git
+    - node_modules
+    - .git

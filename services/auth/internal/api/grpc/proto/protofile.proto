@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+
+service TemplateService {
+  rpc PingPong (Ping) returns (Pong);
+  rpc RegisterProcess (Register) returns (RegisterResponse);
+  rpc LoginProcess (Login) returns (LoginResponse);
+  rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
+}
+//Important repeated = all data comes back in one response
+//Important stream = data comes back in multiple responses, one at a time
+
+message PaginationRequest {
+    //if you want to implement using cursor instead use
+    //something like string page_token = 1; instead of page
+  int32 page = 1;
+  int32 limit = 2;
+
+}
+
+message PaginationResponse {
+  repeated Ping data = 1;
+  Pagination pagination = 2;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 pages = 4;
+}
+
+message Ping {
+  int32 id = 1;
+}
+
+message Pong {
+  int32 id = 1;
+}
+
+message Register {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  int32 id = 1;
+  string username = 2;
+}
+
+message Login {
+  string email = 1;
+  string password = 2;
+}
+
+message User {
+  int32 id = 1;
+  string username = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+  User user = 2;
+}
+

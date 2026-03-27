@@ -1,0 +1,16 @@
+info:
+  name: Register
+  type: grpc
+  seq: 4
+
+grpc:
+  url: localhost:50051
+  method: /proto.TemplateService/RegisterProcess
+  methodType: unary
+  message: |
+    {
+      "username": "banana",
+      "email": "banana@gmail.com",
+      "password": "bananapass"
+    }
+  auth: inherit
