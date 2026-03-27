@@ -14,22 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-workspace:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: 'stable'
-          cache: true
-          cache-dependency-path: 'services/**/go.sum'
-
-      - name: Test workspace
-        run: go test -v -race ./services/... 
-
   detect-changed-services:
     runs-on: ubuntu-latest
     outputs:
@@ -79,9 +63,7 @@ jobs:
         with:
           go-version: 'stable'
           cache: true
-          cache-dependency-path: |
-            services/${{ matrix.service }}/go.sum
-            services/${{ matrix.service }}/go.mod
+          cache-dependency-path: 'services/${{ matrix.service }}/go.sum'
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
