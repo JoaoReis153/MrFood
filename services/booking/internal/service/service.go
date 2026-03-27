@@ -24,11 +24,8 @@ func New(repo *repository.Repository, client pb.RestaurantServiceClient) *Servic
 }
 
 func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking, working_hours *models.WorkingHours) (*models.Booking, error) {
-	// check if starting hour is valid
-	if booking.TimeStart.Minute() != 0 && booking.TimeStart.Minute() != 30 {
-		slog.Error("Booking time is not valid: minutes must be either 00 or 30", "time_start", booking.TimeStart.Minute())
-		return nil, status.Error(codes.InvalidArgument, "invalid booking start time")
-	}
+	// truncate start hour to minute 00 or 30
+	booking.TimeStart = booking.TimeStart.UTC().Truncate(30 * time.Minute)
 
 	if booking.TimeStart.Compare(working_hours.TimeStart) < 0 {
 		slog.Error("Booking time is not valid: must be within working hours", "booking_hour_start", booking.TimeStart, "working_hour_start", working_hours.TimeStart)
@@ -98,4 +95,36 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking, wo
 	}
 
 	return booking, nil
+}
+
+func (s *Service) DeleteBooking(ctx context.Context, booking *models.Booking) error {
+	booking.TimeStart = booking.TimeStart.UTC().Truncate(30 * time.Minute)
+
+	people_count, err := s.repo.DeleteBooking(ctx, int(booking.UserID), int(booking.RestaurantID), booking.TimeStart)
+
+	if err != nil {
+		slog.Error("Internal database error")
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	_, _, current_slots, err := s.repo.GetSlots(ctx, int(booking.RestaurantID), booking.TimeStart)
+
+	if err != nil {
+		slog.Error("Internal database error")
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	newSlots := current_slots - people_count
+	if newSlots < 0 {
+		newSlots = 0
+	}
+
+	err = s.repo.UpdateSlots(ctx, int(booking.RestaurantID), int(newSlots), booking.TimeStart)
+
+	if err != nil {
+		slog.Error("Internal database error")
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	return nil
 }
