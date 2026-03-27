@@ -10,7 +10,7 @@ grpc:
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "id": 117,
+      "id": 6,
       "name": "suasoria",
       "latitude": 289.41019114077517,
       "longitude": 231.24068483866333,

@@ -10,7 +10,7 @@ grpc:
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "restaurant_id_1": 580,
-      "restaurant_id_2": 741
+      "restaurant_id_1": 6,
+      "restaurant_id_2": 7
     }
   auth: inherit

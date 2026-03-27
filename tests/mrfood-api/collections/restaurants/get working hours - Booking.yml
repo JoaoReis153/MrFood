@@ -5,12 +5,12 @@ info:
 
 grpc:
   url: localhost:50051
-  method: /proto.RestaurantService/CompareRestaurantDetails
+  method: /proto.RestaurantToBookingService/GetWorkingHours
   methodType: unary
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "restaurant_id_1": 580,
-      "restaurant_id_2": 741
+      "restaurant_id": 7,
+      "time_start": {}
     }
   auth: inherit
