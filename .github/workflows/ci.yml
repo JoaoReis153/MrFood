@@ -90,6 +90,8 @@ jobs:
         with:
           version: latest
           working-directory: ./services/${{ matrix.service }}
+          args: --build-tags=integration -c .golangci.yml ./...
+
 
       - name: Build & Test
         working-directory: ./services/${{ matrix.service }}
