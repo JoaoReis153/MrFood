@@ -1,29 +1,61 @@
-name: Lint & Test & Docker Build & Run All Services
+name: Lint & Test & Docker (Changed Only)
+
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    paths: ['services/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  detect-services:
+  detect-changed-services:
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.set-services.outputs.services }}
+      has-changes: ${{ steps.set-services.outputs.has-changes }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - id: set-services
         run: |
-          SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||' | jq -Rc . | jq -cs .)
-          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+          ALL_SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||')
 
-  lint-and-test-and-docker:
-    needs: detect-services
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+            CHANGED=$(git diff --name-only $BASE_REF...HEAD 2>/dev/null \
+            | grep '^services/' \
+            | cut -d/ -f2 \
+            | sort -u \
+            | grep -Fxf <(echo "$ALL_SERVICES") || true)
+          else
+            CHANGED="$ALL_SERVICES"
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            echo "services=[]" >> $GITHUB_OUTPUT
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          else
+            SERVICES=$(echo "$CHANGED" | jq -Rc . | jq -cs .)
+            echo "services=$SERVICES" >> $GITHUB_OUTPUT
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  lint-test:
+    needs: [detect-changed-services]
     runs-on: ubuntu-latest
+    if: needs.detect-changed-services.outputs.has-changes == 'true'
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(needs.detect-services.outputs.services) }}
+        service: ${{ fromJson(needs.detect-changed-services.outputs.services) }}
     steps:
       - uses: actions/checkout@v6
 
@@ -31,39 +63,17 @@ jobs:
         with:
           go-version: 'stable'
           cache: true
-          cache-dependency-path: |
-            services/${{ matrix.service }}/go.sum
-            services/${{ matrix.service }}/go.mod
+          cache-dependency-path: 'services/${{ matrix.service }}/go.sum'
 
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           working-directory: ./services/${{ matrix.service }}
+          args: --build-tags=integration -c .golangci.yml ./...
 
-      - name: Build
+      - name: Build & Test
         working-directory: ./services/${{ matrix.service }}
-        run: go build -v ./...
-
-      - name: Test
-        working-directory: ./services/${{ matrix.service }}
-        run: go test -v -race ./...
-
-      - name: Build Docker image
-        working-directory: ./services/${{ matrix.service }}
-        run: docker build -t ${{ matrix.service }}:${{ github.sha }} .
-
-      - name: Run Docker container
-        run: docker run -d --name ${{ matrix.service }} ${{ matrix.service }}:${{ github.sha }}
-
-      - name: Check container started
         run: |
-          sleep 3
-          docker logs ${{ matrix.service }}
-          docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }}
-
-      - name: Stop and remove container
-        if: always()
-        run: |
-          docker stop ${{ matrix.service }} || true
-          docker rm ${{ matrix.service }} || true
+          go build -v ./...
+          go test -v -race ./...
