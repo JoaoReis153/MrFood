@@ -5,8 +5,9 @@ info:
 
 grpc:
   url: localhost:50051
-  method: /proto.TemplateService/RegisterProcess
+  method: /proto.AuthService/RefreshTokenProcess
   methodType: unary
+  protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
   message: |
     {
       "username": "banana",
