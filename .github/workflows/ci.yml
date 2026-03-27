@@ -56,7 +56,7 @@ jobs:
             | grep '^services/' \
             | cut -d/ -f2 \
             | sort -u \
-            | grep -w -f <(echo "$ALL_SERVICES") || true)
+            | grep -Fxf <(echo "$ALL_SERVICES") || true)
           else  # push/main or dispatch
             CHANGED="$ALL_SERVICES"  # All services
           fi
