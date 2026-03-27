@@ -52,7 +52,11 @@ jobs:
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE_REF="origin/${{ github.base_ref }}"
-            CHANGED=$(git diff --name-only $BASE_REF...HEAD 2>/dev/null | grep '^services/' || true | cut -d/ -f2 | sort -u | grep -w -f <(echo "$ALL_SERVICES"))
+            CHANGED=$(git diff --name-only $BASE_REF...HEAD 2>/dev/null \
+            | grep '^services/' \
+            | cut -d/ -f2 \
+            | sort -u \
+            | grep -w -f <(echo "$ALL_SERVICES") || true)
           else  # push/main or dispatch
             CHANGED="$ALL_SERVICES"  # All services
           fi
