@@ -60,6 +60,6 @@ services:
 consumers:
   - username: my-client
     jwt_secrets:
-      - key: my-client-issuer
-        secret: to-be-saved
+      - key: my-client
+        secret: PhHpT3Gc8QB8vfsj/dpRRbAWvybhWBWmyI4daC5BCAI=
         algorithm: HS256
