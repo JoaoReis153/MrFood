@@ -19,6 +19,28 @@ services:
         config:
           proto: /etc/kong/proto/auth.proto
 
+  - name: booking
+    host: booking
+    port: 50060
+    protocol: grpc
+
+    routes:
+      - name: booking
+        protocols:
+        - http
+        - https
+        paths:
+          - /reservations
+
+    plugins:
+      - name: grpc-gateway
+        config:
+          proto: /etc/kong/proto/booking.proto
+      # - name: jwt
+      #   config:
+      #     claims_to_verify:
+      #       - exp
+
   # mister example for later
   # - name: protected-api
   #   host: my-api

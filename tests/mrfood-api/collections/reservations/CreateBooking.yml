@@ -4,7 +4,7 @@ info:
   seq: 4
 
 grpc:
-  url: localhost:50051
+  url: localhost:50060
   method: /proto.BookingService/CreateBooking
   methodType: unary
   protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto

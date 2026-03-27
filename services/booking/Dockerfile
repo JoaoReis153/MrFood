@@ -12,5 +12,5 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /booking .
 COPY --from=builder /app/db_setup.sql .
-EXPOSE 8080
+EXPOSE 50060
 CMD ["./booking"]

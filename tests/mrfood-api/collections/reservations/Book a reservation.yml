@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/reservations"
+  url: http://localhost:8000/reservations
   body:
     type: json
     data: |-
@@ -20,7 +20,7 @@ http:
       }
   auth:
     type: bearer
-    token: "{{token}}"
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiXG4iLCJ1c2VybmFtZSI6IndoYXQiLCJpc3MiOiJteS1jbGllbnQtaXNzdWVyIiwiZXhwIjoxNzc0Njk3MzQyLCJpYXQiOjE3NzQ2MTA5NDJ9.qPezNGTjcrlWyiq2z1mYKGyGMI-knX_BzCdo0q2GASg
 
 settings:
   encodeUrl: true

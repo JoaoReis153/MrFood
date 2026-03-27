@@ -70,7 +70,7 @@ services:
   booking:
     build: ./booking
     ports:
-      - "50051:50051"
+      - "50060:50060"
     environment:
       DB_HOST: booking_db
       DB_PORT: 5432
@@ -83,11 +83,12 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+      - kong-net
 
   booking_db:
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "5440:5432"
     environment:
       POSTGRES_DB: mrfood_booking
       POSTGRES_USER: booking
