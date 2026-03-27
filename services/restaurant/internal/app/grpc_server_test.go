@@ -22,7 +22,6 @@ type mockRestaurantService struct {
 	updateFn          func(context.Context, *models.Restaurant, int32) (*models.Restaurant, error)
 	compareFn         func(context.Context, int32, int32) (*models.Restaurant, *models.Restaurant, error)
 	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.TimeRange, error)
-	getStatsFn        func(context.Context, int32) (*models.RestaurantStats, error)
 }
 
 func (m *mockRestaurantService) GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error) {
@@ -58,13 +57,6 @@ func (m *mockRestaurantService) GetWorkingHours(ctx context.Context, restaurantI
 		return nil, errors.New("not configured")
 	}
 	return m.getWorkingHoursFn(ctx, restaurantID, timeStart)
-}
-
-func (m *mockRestaurantService) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
-	if m.getStatsFn == nil {
-		return nil, errors.New("not configured")
-	}
-	return m.getStatsFn(ctx, restaurantID)
 }
 
 func TestGetRestaurantDetailsSuccess(t *testing.T) {
@@ -118,23 +110,6 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	}
 }
 
-func TestGetRestaurantStatsSuccess(t *testing.T) {
-	srv := &server{restaurantService: &mockRestaurantService{
-		getStatsFn: func(context.Context, int32) (*models.RestaurantStats, error) {
-			return &models.RestaurantStats{RestaurantID: 4, AverageRating: 4.2, ReviewCount: 10}, nil
-		},
-	}}
-
-	resp, err := srv.GetRestaurantStats(context.Background(), &pb.GetRestaurantStatsRequest{RestaurantId: 4})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	stats := resp.GetRestaurantStats()
-	if stats.GetRestaurantId() != 4 || stats.GetAverageRating() != 4.2 || stats.GetReviewCount() != 10 {
-		t.Fatalf("unexpected stats: %+v", stats)
-	}
-}
-
 func TestOwnerIDFromMetadata(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("x-user-id", "15"))
 	id, err := ownerIDFromMetadata(ctx)
@@ -171,10 +146,12 @@ func TestMapServiceError(t *testing.T) {
 func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	timestamp := "2026-03-27T12:00:00Z"
 	model := &models.Restaurant{
-		ID:           1,
-		Name:         "Sushi",
-		MediaURL:     "https://example.com/image.jpg",
-		WorkingHours: []string{timestamp},
+		ID:            1,
+		Name:          "Sushi",
+		MediaURL:      "https://example.com/image.jpg",
+		WorkingHours:  []string{timestamp},
+		AverageRating: 4.6,
+		ReviewCount:   19,
 	}
 
 	pbModel := modelToPB(model)
@@ -186,5 +163,8 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	}
 	if len(pbModel.GetWorkingHours()) != 1 {
 		t.Fatalf("expected one working hour, got %d", len(pbModel.GetWorkingHours()))
+	}
+	if pbModel.GetAverageRating() != 4.6 || pbModel.GetReviewCount() != 19 {
+		t.Fatalf("expected stats to be mapped, got rating=%v count=%v", pbModel.GetAverageRating(), pbModel.GetReviewCount())
 	}
 }

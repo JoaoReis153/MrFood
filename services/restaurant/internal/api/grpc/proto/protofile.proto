@@ -14,7 +14,6 @@ service RestaurantService {
 
   rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse);
 }
-  // Get restaurant stats such as average rating and review count
 
 service RestaurantToBookingService {
   rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
@@ -109,6 +108,8 @@ message RestaurantDetails {
   int32 owner_id = 10;
   string owner_name = 11;
   int32 sponsor_tier = 12;
+  double average_rating = 13;
+  int32 review_count = 14;
 
 }
 

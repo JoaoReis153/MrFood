@@ -61,9 +61,6 @@ func TestRepositoryDatabaseNotSet(t *testing.T) {
 	if _, err := repo.GetWorkingHours(ctx, 1, time.Now()); !errors.Is(err, ErrDatabaseNotSet) {
 		t.Fatalf("expected ErrDatabaseNotSet, got %v", err)
 	}
-	if _, err := repo.GetRestaurantStats(ctx, 1); !errors.Is(err, ErrDatabaseNotSet) {
-		t.Fatalf("expected ErrDatabaseNotSet, got %v", err)
-	}
 }
 
 func TestCreateRestaurantRejectsInvalidPayload(t *testing.T) {

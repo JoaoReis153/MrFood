@@ -16,6 +16,7 @@ func main() {
 	config.Get(context.Background())
 
 	app := app.New()
+	defer app.Close()
 
 	err := app.ConnectDb()
 	if err != nil {

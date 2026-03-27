@@ -19,7 +19,12 @@ var (
 )
 
 type Service struct {
-	repo restaurantRepository
+	repo        restaurantRepository
+	reviewStats reviewStatsClient
+}
+
+type reviewStatsClient interface {
+	GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error)
 }
 
 type restaurantRepository interface {
@@ -28,11 +33,10 @@ type restaurantRepository interface {
 	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
 	UpdateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error)
 	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error)
-	GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error)
 }
 
-func New(repo *repository.Repository) *Service {
-	return &Service{repo: repo}
+func New(repo *repository.Repository, reviewStats reviewStatsClient) *Service {
+	return &Service{repo: repo, reviewStats: reviewStats}
 }
 
 func (s *Service) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error) {
@@ -103,7 +107,7 @@ func (s *Service) GetRestaurantByID(ctx context.Context, id int32) (*models.Rest
 		return nil, err
 	}
 
-	return restaurant, nil
+	return s.enrichWithReviewStats(ctx, restaurant)
 }
 
 func (s *Service) CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error) {
@@ -143,18 +147,24 @@ func (s *Service) GetWorkingHours(ctx context.Context, restaurantID int32, timeS
 	return workingHours, nil
 }
 
-func (s *Service) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
-	if restaurantID <= 0 {
-		return nil, ErrInvalidRestaurant
+func (s *Service) enrichWithReviewStats(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error) {
+	if restaurant == nil {
+		return nil, ErrNotFound
+	}
+	if s.reviewStats == nil {
+		return restaurant, nil
 	}
 
-	stats, err := s.repo.GetRestaurantStats(ctx, restaurantID)
+	stats, err := s.reviewStats.GetRestaurantStats(ctx, restaurant.ID)
 	if err != nil {
-		if errors.Is(err, repository.ErrRestaurantNotFound) {
-			return nil, ErrNotFound
-		}
 		return nil, err
 	}
+	if stats == nil {
+		return restaurant, nil
+	}
 
-	return stats, nil
+	restaurant.AverageRating = stats.AverageRating
+	restaurant.ReviewCount = stats.ReviewCount
+
+	return restaurant, nil
 }

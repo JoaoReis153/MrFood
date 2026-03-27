@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"os"
@@ -16,6 +17,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,7 +26,6 @@ import (
 type server struct {
 	pb.UnimplementedRestaurantServiceServer
 	pb.UnimplementedRestaurantToBookingServiceServer
-	pb.UnimplementedRestaurantToReviewServiceServer
 	restaurantService restaurantService
 }
 
@@ -34,7 +35,37 @@ type restaurantService interface {
 	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error)
 	CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error)
 	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error)
-	GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error)
+}
+
+type reviewStatsClient struct {
+	client pb.RestaurantToReviewServiceClient
+}
+
+func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, nil, fmt.Errorf("dial review grpc: %w", err)
+	}
+
+	return &reviewStatsClient{client: pb.NewRestaurantToReviewServiceClient(conn)}, conn, nil
+}
+
+func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
+	resp, err := c.client.GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	if err != nil {
+		return nil, err
+	}
+
+	stats := resp.GetRestaurantStats()
+	if stats == nil {
+		return &models.RestaurantStats{RestaurantID: restaurantID}, nil
+	}
+
+	return &models.RestaurantStats{
+		RestaurantID:  stats.GetRestaurantId(),
+		AverageRating: stats.GetAverageRating(),
+		ReviewCount:   stats.GetReviewCount(),
+	}, nil
 }
 
 func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurantDetailsRequest) (*pb.GetRestaurantDetailsResponse, error) {
@@ -141,21 +172,6 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 	}, nil
 }
 
-func (s *server) GetRestaurantStats(ctx context.Context, req *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
-	stats, err := s.restaurantService.GetRestaurantStats(ctx, req.GetRestaurantId())
-	if err != nil {
-		return nil, mapServiceError(err)
-	}
-
-	return &pb.GetRestaurantStatsResponse{
-		RestaurantStats: &pb.RestaurantStats{
-			RestaurantId:  stats.RestaurantID,
-			AverageRating: stats.AverageRating,
-			ReviewCount:   stats.ReviewCount,
-		},
-	}, nil
-}
-
 func (app *App) RunServer() {
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -170,7 +186,6 @@ func (app *App) RunServer() {
 
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)
-	pb.RegisterRestaurantToReviewServiceServer(s, srv)
 
 	slog.Info("Server running on :50051")
 	if err := s.Serve(lis); err != nil {
@@ -220,16 +235,18 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 	}
 
 	response := &pb.RestaurantDetails{
-		Id:          restaurant.ID,
-		Name:        restaurant.Name,
-		Latitude:    restaurant.Latitude,
-		Longitude:   restaurant.Longitude,
-		Address:     restaurant.Address,
-		Categories:  restaurant.Categories,
-		MaxSlots:    restaurant.MaxSlots,
-		OwnerId:     restaurant.OwnerID,
-		OwnerName:   restaurant.OwnerName,
-		SponsorTier: restaurant.SponsorTier,
+		Id:            restaurant.ID,
+		Name:          restaurant.Name,
+		Latitude:      restaurant.Latitude,
+		Longitude:     restaurant.Longitude,
+		Address:       restaurant.Address,
+		Categories:    restaurant.Categories,
+		MaxSlots:      restaurant.MaxSlots,
+		OwnerId:       restaurant.OwnerID,
+		OwnerName:     restaurant.OwnerName,
+		SponsorTier:   restaurant.SponsorTier,
+		AverageRating: restaurant.AverageRating,
+		ReviewCount:   restaurant.ReviewCount,
 	}
 
 	if strings.TrimSpace(restaurant.MediaURL) != "" {

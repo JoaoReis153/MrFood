@@ -389,27 +389,6 @@ func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, ti
 	return response, nil
 }
 
-func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
-	if r.DB == nil {
-		return nil, ErrDatabaseNotSet
-	}
-
-	exists, err := r.restaurantExists(ctx, restaurantID)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, ErrRestaurantNotFound
-	}
-
-	// Stats are owned by the reviews domain; restaurant currently exposes a zeroed placeholder payload.
-	return &models.RestaurantStats{
-		RestaurantID:  restaurantID,
-		AverageRating: 0,
-		ReviewCount:   0,
-	}, nil
-}
-
 func (r *Repository) restaurantExists(ctx context.Context, restaurantID int32) (bool, error) {
 	var exists bool
 	if err := r.DB.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurantID).Scan(&exists); err != nil {

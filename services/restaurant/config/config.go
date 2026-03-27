@@ -26,6 +26,9 @@ type Config struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 	} `yaml:"db"`
+	Review struct {
+		GRPCAddr string `yaml:"grpc_addr"`
+	} `yaml:"review"`
 }
 
 var globalConfig *Config
@@ -59,6 +62,11 @@ func Load(ctx context.Context) *Config {
 			User:     "postgres",
 			Password: "",
 		},
+		Review: struct {
+			GRPCAddr string `yaml:"grpc_addr"`
+		}{
+			GRPCAddr: "localhost:50052",
+		},
 	}
 
 	overrideWithEnv(cfg)
@@ -88,6 +96,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
 	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+	cfg.Review.GRPCAddr = getEnv("REVIEW_GRPC_ADDR", cfg.Review.GRPCAddr)
 
 }
 
@@ -100,6 +109,9 @@ func validateConfig(cfg *Config) error {
 	}
 	if cfg.DB.Host == "" || cfg.DB.Name == "" {
 		return fmt.Errorf("DB host/name required")
+	}
+	if strings.TrimSpace(cfg.Review.GRPCAddr) == "" {
+		return fmt.Errorf("review grpc addr required")
 	}
 	return nil
 }
