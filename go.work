@@ -1,0 +1,7 @@
+go 1.25.0
+
+use (
+	./services/auth
+	./services/restaurant
+	./services/test_grpc
+)

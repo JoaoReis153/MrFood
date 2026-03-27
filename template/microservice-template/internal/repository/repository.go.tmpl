@@ -1,15 +1,21 @@
 package repository
 
-import models "MrFood/services/{{.ServiceName}}/pkg"
+import (
+	"MrFood/services/{{.ServiceName}}/config"
+	models "MrFood/services/{{.ServiceName}}/pkg"
+	"context"
+)
 
 type Repository struct{}
 
-func New() *Repository {
-	return &Repository{}
+func New(_ context.Context, _ *config.Config) (*Repository, error) {
+	return &Repository{}, nil
 }
 
-// Example method - customize based on your data needs
+func (r *Repository) Close(_ context.Context) error {
+	return nil
+}
+
 func (r *Repository) GetExample(id int) (*models.Example, error) {
-	// In-memory example - replace with database/Redis
 	return &models.Example{ID: id, Name: "Example"}, nil
 }
