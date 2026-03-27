@@ -1,5 +1,8 @@
 version: "3.8"
 
+include:
+  - docker-compose.auth.yml
+
 services:
   kong:
     image: '${GW_IMAGE:-kong/kong-gateway:3.13.0.2}'
@@ -25,47 +28,47 @@ services:
       - "8443:8443"   # Proxy HTTPS
       - "8001:8001"   # Admin API (read-only in DB-less)
 
-  auth:
-    build: ./auth
-    volumes:
-      - ./auth:/app
-    ports:
-      - "50051:50051"
-    environment:
-      DB_HOST: auth_db
-      DB_PORT: 5432
-      DB_NAME: mrfood_auth
-      DB_USER: auth
-      DB_PASS: authsecret
-      APP_LOG_LEVEL: debug
-      APP_JWT_SECRET: Z3Vlc3R3aG9zdHdvcmxkZm9yZXZlcmNoYW5nZXN3b3JkMTIzNDU2
-    depends_on:
-      auth_db:
-        condition: service_healthy
-    networks:
-      - app-network
-      - kong-net
+  # auth:
+  #   build: ./auth
+  #   volumes:
+  #     - ./auth:/app
+  #   ports:
+  #     - "50051:50051"
+  #   environment:
+  #     DB_HOST: auth_db
+  #     DB_PORT: 5432
+  #     DB_NAME: mrfood_auth
+  #     DB_USER: auth
+  #     DB_PASS: authsecret
+  #     APP_LOG_LEVEL: debug
+  #     APP_JWT_SECRET: Z3Vlc3R3aG9zdHdvcmxkZm9yZXZlcmNoYW5nZXN3b3JkMTIzNDU2
+  #   depends_on:
+  #     auth_db:
+  #       condition: service_healthy
+  #   networks:
+  #     - app-network
+  #     - kong-net
 
-  auth_db:
-    image: postgres:16
-    ports:
-      - "5433:5432"
-    environment:
-      POSTGRES_DB: mrfood_auth
-      POSTGRES_USER: auth
-      POSTGRES_PASSWORD: authsecret
-    volumes:
-      - auth_db_data:/var/lib/postgresql/data
-      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U auth -d mrfood_auth"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    command: postgres -c ssl=off -c log_statement=all
-    networks:
-      - app-network
+  # auth_db:
+  #   image: postgres:16
+  #   ports:
+  #     - "5433:5432"
+  #   environment:
+  #     POSTGRES_DB: mrfood_auth
+  #     POSTGRES_USER: auth
+  #     POSTGRES_PASSWORD: authsecret
+  #   volumes:
+  #     - auth_db_data:/var/lib/postgresql/data
+  #     - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U auth -d mrfood_auth"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+  #   command: postgres -c ssl=off -c log_statement=all
+  #   networks:
+  #     - app-network
   
   booking:
     build: ./booking
@@ -112,5 +115,5 @@ networks:
     driver: bridge
 
 volumes:
-  auth_db_data:
+  # auth_db_data:
   booking_db_data:

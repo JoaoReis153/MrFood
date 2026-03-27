@@ -2,6 +2,7 @@ x-common: &common
   restart: unless-stopped
   networks:
     - app-network
+    - kong-net
 
 x-auth-db-config: &auth-db-config
   DB_HOST: auth_db

@@ -12,7 +12,6 @@ import (
 	"MrFood/services/booking/internal/service"
 	models "MrFood/services/booking/pkg"
 
-	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -62,13 +61,19 @@ func NewClient() (pb.RestaurantServiceClient, func(), error) {
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
 	slog.Info("received booking request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
-	id, err := GetUserIDFromContext(ctx)
-	if err != nil {
-		slog.Error("Failed to get id", "error", err)
-		return nil, status.Error(codes.Internal, "failed to get id")
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		slog.Info("no metadata")
 	}
 
-	slog.Info("USERID FROM AUTH: " + id)
+	authHeader := md["authorization"]
+	if len(authHeader) == 0 {
+		slog.Info("no auth header")
+	}
+
+	token := strings.TrimPrefix(authHeader[0], "Bearer ")
+	slog.Info("TOKEN: " + token)
+
 	res, err := s.bookingService.Client.GetWorkingHours(ctx,
 		&pb.WorkingHoursRequest{
 			RestaurantId: req.RestaurantId,
@@ -121,43 +126,4 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 			TimeEnd:   timestamppb.New(newBooking.TimeEnd),
 		},
 	}, nil
-}
-
-// extremely wrong way of doing this, very temporary, this should be called from auth, or every service should have the jwt properties in their config but that seems wrong
-func GetUserIDFromContext(ctx context.Context) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return "", fmt.Errorf("no metadata")
-	}
-
-	authHeader := md["authorization"]
-	if len(authHeader) == 0 {
-		return "", fmt.Errorf("no auth header")
-	}
-
-	token := strings.TrimPrefix(authHeader[0], "Bearer ")
-	slog.Info("TOKEN: " + token)
-
-	return ValidateToken(token)
-}
-
-type Claims struct {
-	UserID   string `json:"user_id"`
-	Username string `json:"username"`
-	jwt.RegisteredClaims
-}
-
-func ValidateToken(tokenString string) (string, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte("this-is-a-temporary-secret-that-we-should-probably-change"), nil
-	})
-
-	slog.Info("VALIDATION ATTEMPT: " + token.Claims.(*Claims).UserID)
-
-	if err != nil || !token.Valid {
-		return "", err
-	}
-
-	claims := token.Claims.(*Claims)
-	return claims.UserID, nil
 }

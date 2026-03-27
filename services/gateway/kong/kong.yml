@@ -36,10 +36,10 @@ services:
       - name: grpc-gateway
         config:
           proto: /etc/kong/proto/booking.proto
-      # - name: jwt
-      #   config:
-      #     claims_to_verify:
-      #       - exp
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
 
   # mister example for later
   # - name: protected-api
@@ -61,5 +61,5 @@ consumers:
   - username: my-client
     jwt_secrets:
       - key: my-client-issuer
-        secret: this-is-a-temporary-secret-that-we-should-probably-change
+        secret: to-be-saved
         algorithm: HS256
