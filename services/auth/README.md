@@ -1,39 +1,131 @@
-# auth Microservice
+# Auth Service
 
-## Quick Start
+## Current Status
 
-```bash
-make build
-make docker-build
-make docker-up
-```
+- Transport: **gRPC only** (no REST endpoints exposed by this service).
+- API contract: `internal/api/grpc/proto/protofile.proto`.
+- Server startup: `cmd/main.go` initializes config, logger, app dependencies, then runs the gRPC server.
+- Dependencies: PostgreSQL (users, refresh tokens, token versions) + Redis (blacklist + token-version cache).
+- Shutdown: graceful stop on `SIGINT`/`SIGTERM`, with connection cleanup.
 
-## Endpoints
+Implemented and covered by unit tests:
 
-- GET /api/v1/health - Health check
+- User registration and lookup service logic.
+- Login with password verification + token pair generation.
+- Refresh token validation + rotation.
+- Logout with access-token blacklist and user-wide token revocation.
 
-- GET /api/v1/ping - Ping endpoint
+## Operations (gRPC)
+
+Service: `AuthService`
+
+- `PingPong(Ping) -> Pong`
+- `RegisterProcess(Register) -> RegisterResponse`
+- `LoginProcess(Login) -> LoginResponse`
+- `RefreshTokenProcess(RefreshRequest) -> RefreshResponse`
+- `LogoutProcess(LogoutRequest) -> LogoutResponse`
+
+## Workflow and Logic
+
+### 1) Register
+
+1. Receives `username`, `email`, `password`.
+2. Hashes password with bcrypt.
+3. Validates user payload (`username >= 3`, valid email, password required).
+4. Stores user in `app_user`.
+5. Returns only `id` and `username`.
+
+### 2) Login
+
+1. Fetches user by email.
+2. Compares provided password against stored bcrypt hash.
+3. Revokes all previous user refresh tokens.
+4. Increments user token version (invalidates older access tokens).
+5. Generates new token pair:
+   - Access token: JWT (`HS256`) with `user_id`, `username`, `token_version`, `token_type=access`.
+   - Refresh token: JWT (`HS256`) with `user_id`, `token_type=refresh`, persisted in `refresh_tokens`.
+6. Returns access token, refresh token, and basic user info.
+
+### 3) Refresh Token
+
+1. Parses and verifies refresh JWT signature and expiry.
+2. Ensures token type is `refresh`.
+3. Checks refresh token state in DB (exists and not revoked).
+4. Revokes old refresh token (rotation).
+5. Issues and stores a new token pair.
+
+### 4) Logout
+
+1. Validates access token.
+2. Blacklists the specific access token in Redis until its expiration.
+3. Revokes all refresh tokens for that user in DB.
+4. Increments token version to invalidate other access tokens.
+
+## Token Revocation Strategy
+
+The service uses a layered revocation model:
+
+- **Access token blacklist** in Redis (`blacklist:<token_id>`).
+- **Per-user token version** in DB + Redis cache (`token_version:<user_id>`).
+- **Refresh token revocation** in PostgreSQL (`refresh_tokens.revoked`).
+
+This allows immediate single-token revocation (logout), plus full-session invalidation (login/logout-all behavior).
+
+## Data Model
+
+- `app_user(user_id, username, password, email)`
+- `refresh_tokens(token_id, user_id, expires_at, revoked, created_at)`
+- `user_token_versions(user_id, version)`
+
+Schema file: `db_setup.sql`.
+
+## Configuration
+
+Main environment variables used by the service:
+
+- Server/logging: `APP_SERVER_HOST`, `APP_SERVER_PORT`, `APP_SERVER_TIMEOUT`, `APP_LOG_LEVEL`
+- DB: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_MIN_CONNS`, `DB_MAX_CONNS`, `DB_MAX_CONN_LIFETIME`, `DB_HEALTH_CHECK_PERIOD`
+- Redis: `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASS`, `REDIS_DB`
+- JWT: `APP_JWT_ACCESS_TOKEN_SECRET`, `APP_JWT_REFRESH_TOKEN_SECRET`
+
+Defaults and validation rules are defined in `config/config.go`.
 
 ## Development
 
+### Run locally
+
 ```bash
-go run cmd/main.go
-make test
-make lint
+go run ./cmd/main.go
 ```
 
-## gRPC Implementation
-- gRPC implementation consists of a single .proto file that can be found in "test_grpc/internal/api/grpc/proto". It defines the contracts between microservices (denoted by the "rpc" keyword) and the messages sent by each of them.
+### Build and test
 
-- Whenever the .proto file is changed, navigate to "MrFood/services/<service_name>" and execute the following command:
+```bash
+make build
+make test
+```
 
-`make proto`
+### Run with Docker Compose (from `services/`)
 
-- This command generates the pb/ directory that contains 2 .pb.go files, needed for gRPC to work.
+```bash
+docker compose up --build auth auth_db redis
+```
 
-- **Important note**: protoc needs to installed in order to run the scripts. Install it via:
-    - Linux
-    `sudo dnf install protobuf-compiler`
+## gRPC Code Generation
 
-    - MacOS
-    `brew install protobuf`
+Proto file:
+
+- `internal/api/grpc/proto/protofile.proto`
+
+Generate stubs (from `services/auth`):
+
+```bash
+make proto
+```
+
+This updates generated files under `internal/api/grpc/pb`.
+
+`protoc` installation examples:
+
+- macOS: `brew install protobuf`
+- Linux (dnf): `sudo dnf install protobuf-compiler`

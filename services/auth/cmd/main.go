@@ -4,28 +4,39 @@ import (
 	"MrFood/services/auth/config"
 	"MrFood/services/auth/internal/app"
 	"context"
-	"log"
 	"log/slog"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 )
 
 func main() {
-	setupLogger(config.Get(context.Background()).Log.Level)
+	ctx := context.Background()
+	cfg := config.Get(ctx)
+	setupLogger(cfg.Log.Level)
 
-	config.Get(context.Background())
-
-	app := app.New()
-
-	err := app.ConnectDb()
+	app, err := app.New(ctx, cfg)
 	if err != nil {
-		log.Fatalf("DB connection failed: %v", err)
+		slog.Error("app init failed", "error", err)
+		os.Exit(1)
 	}
-	defer app.DB.Close()
+	defer func() {
+		ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
+		if err := app.Close(ctx); err != nil {
+			slog.Error("app close failed", "error", err)
+		}
+	}()
 
-	app.InitDependencies()
+	shutdownCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	app.RunServer()
+	slog.Info("starting server")
+	if err := app.RunServer(shutdownCtx, cfg); err != nil {
+		slog.Error("server failed", "error", err)
+	}
 }
 
 func setupLogger(logLevel string) {

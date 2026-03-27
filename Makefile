@@ -1,5 +1,12 @@
 # Path to docker-compose file
 COMPOSE_FILE=services/docker-compose.yml
+TEST_PACKAGES=./services/auth/... ./services/restaurant/... ./services/test_grpc/...
+
+.PHONY: build run stop remove remove-images remove-all remove-all-force remove-all-force-all test
+
+# Run all Go tests across service modules from repo root
+test:
+	go test -v -race $(TEST_PACKAGES)
 
 # Build Docker Compose services
 build:
