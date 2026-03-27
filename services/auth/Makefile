@@ -23,7 +23,7 @@ docker-up:
 		-e APP_SERVER_HOST=0.0.0.0 \
 		-e APP_SERVER_PORT=8080 \
 		-e APP_SERVER_TIMEOUT=30s \
-		-e APP_LOG_LEVEL=info \
+		-e APP_LOG_LEVEL=debug \
 		$(SERVICE_NAME):latest
 
 docker-down:
