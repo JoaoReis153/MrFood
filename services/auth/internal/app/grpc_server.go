@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"os"
 	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
@@ -149,7 +148,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Server.Port))
 	if err != nil {
 		slog.Error("failed", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("listen: %w", err)
 	}
 
 	jwtServiceInstance := auth.NewJWTService(&cfg.JWT, app.Repo)
