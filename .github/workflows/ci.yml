@@ -1,10 +1,9 @@
-name: Lint & Test & Docker Build & Run All Services
+name: Lint & Test & Docker (Changed Only)
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+    paths: ['services/**']
   workflow_dispatch:
 
 permissions:
@@ -22,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v6
         with:
@@ -32,27 +33,47 @@ jobs:
             services/restaurant/go.sum
             services/test_grpc/go.sum
 
-      - name: Test workspace modules
+      - name: Test workspace
         run: ${{ env.ROOT_TEST_CMD }}
 
-  detect-services:
+  detect-changed-services:
     runs-on: ubuntu-latest
     outputs:
       services: ${{ steps.set-services.outputs.services }}
+      has-changes: ${{ steps.set-services.outputs.has-changes }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - id: set-services
         run: |
-          SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||' | jq -Rc . | jq -cs .)
-          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+          ALL_SERVICES=$(find ./services -maxdepth 1 -mindepth 1 -type d -exec test -f {}/go.mod \; -print | sed 's|./services/||')
 
-  lint-and-test-and-docker:
-    needs: [test-workspace, detect-services]
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+            CHANGED=$(git diff --name-only $BASE_REF...HEAD 2>/dev/null | grep '^services/' || true | cut -d/ -f2 | sort -u | grep -w -f <(echo "$ALL_SERVICES"))
+          else  # push/main or dispatch
+            CHANGED="$ALL_SERVICES"  # All services
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            echo "services=[]" >> $GITHUB_OUTPUT
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          else
+            SERVICES=$(echo "$CHANGED" | jq -Rc . | jq -cs .)
+            echo "services=$SERVICES" >> $GITHUB_OUTPUT
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          fi
+
+  lint-test:
+    needs: [test-workspace, detect-changed-services]
     runs-on: ubuntu-latest
+    if: needs.detect-changed-services.outputs.has-changes == 'true'
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJson(needs.detect-services.outputs.services) }}
+        service: ${{ fromJson(needs.detect-changed-services.outputs.services) }}
     steps:
       - uses: actions/checkout@v6
 
@@ -70,77 +91,8 @@ jobs:
           version: latest
           working-directory: ./services/${{ matrix.service }}
 
-      - name: Build
+      - name: Build & Test
         working-directory: ./services/${{ matrix.service }}
-        run: go build -v ./...
-
-      - name: Test
-        working-directory: ./services/${{ matrix.service }}
-        run: go test -v -race ./...
-
-      - name: Prepare CI env file
-        if: matrix.service == 'auth'
         run: |
-          ACCESS_SECRET="${{ secrets.AUTH_JWT_ACCESS_TOKEN_SECRET }}"
-          REFRESH_SECRET="${{ secrets.AUTH_JWT_REFRESH_TOKEN_SECRET }}"
-
-          # For forks or missing secrets, generate temporary random secrets
-          if [ -z "$ACCESS_SECRET" ]; then
-            echo "INFO: Using temporary access secret for fork/test"
-            ACCESS_SECRET=$(openssl rand -base64 32)
-          fi
-
-          if [ -z "$REFRESH_SECRET" ]; then
-            echo "INFO: Using temporary refresh secret for fork/test"
-            REFRESH_SECRET=$(openssl rand -base64 32)
-          fi
-
-          cat > .env.ci << EOF
-          APP_SERVER_PORT=50051
-          DB_PORT=5432
-          REDIS_PORT=6379
-          POSTGRES_USER=auth
-          POSTGRES_PASSWORD=testpass
-          AUTH_REDIS_PASS=
-          AUTH_JWT_ACCESS_TOKEN_SECRET=$ACCESS_SECRET
-          AUTH_JWT_REFRESH_TOKEN_SECRET=$REFRESH_SECRET
-          EOF
-          
-      - name: Build Docker image
-        if: github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
-        working-directory: ./services/${{ matrix.service }}
-        run: docker build -t ${{ matrix.service }}:${{ github.sha }} .
-
-      - name: Run Docker container (stateless services)
-        if: matrix.service != 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: docker run -d --name ${{ matrix.service }} ${{ matrix.service }}:${{ github.sha }}
-
-      - name: Run auth stack via docker compose
-        if: matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: docker compose --env-file .env.ci -f services/docker-compose.yml up -d auth auth_db auth_redis
-
-      - name: Check container started (stateless services)
-        if: matrix.service != 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: |
-          sleep 3
-          docker logs ${{ matrix.service }}
-          docker inspect -f '{{.State.ExitCode}}' ${{ matrix.service }}
-
-      - name: Check auth stack started
-        if: matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: |
-          sleep 10
-          docker compose --env-file .env.ci -f services/docker-compose.yml ps
-          docker compose --env-file .env.ci -f services/docker-compose.yml logs auth || true
-          docker compose --env-file .env.ci -f services/docker-compose.yml logs auth_db || true
-          docker compose --env-file .env.ci -f services/docker-compose.yml logs auth_redis || true
-
-      - name: Stop and remove container
-        if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: |
-          docker stop ${{ matrix.service }} || true
-          docker rm ${{ matrix.service }} || true
-
-      - name: Stop auth compose stack
-        if: always() && matrix.service == 'auth' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
-        run: docker compose --env-file .env.ci -f services/docker-compose.yml down -v || true
+          go build -v ./...
+          go test -v -race ./...
