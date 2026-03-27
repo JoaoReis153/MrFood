@@ -81,8 +81,8 @@ jobs:
       - name: Prepare CI env file
         if: matrix.service == 'auth'
         run: |
-          ACCESS_SECRET="${{ secrets.APP_JWT_ACCESS_TOKEN_SECRET }}"
-          REFRESH_SECRET="${{ secrets.APP_JWT_REFRESH_TOKEN_SECRET }}"
+          ACCESS_SECRET="${{ secrets.AUTH_JWT_ACCESS_TOKEN_SECRET }}"
+          REFRESH_SECRET="${{ secrets.AUTH_JWT_REFRESH_TOKEN_SECRET }}"
 
           # For forks or missing secrets, generate temporary random secrets
           if [ -z "$ACCESS_SECRET" ]; then
@@ -96,21 +96,14 @@ jobs:
           fi
 
           cat > .env.ci << EOF
-          DB_NAME=mrfood_auth
-          DB_USER=auth
-          DB_PASS=testpass
+          APP_SERVER_PORT=50051
           DB_PORT=5432
           REDIS_PORT=6379
-          REDIS_PASS=
-          REDIS_DB=0
-          AUTH_PORT=50051
-          APP_LOG_LEVEL=debug
-          DB_MIN_CONNS=4
-          DB_MAX_CONNS=20
-          DB_MAX_CONN_LIFETIME=15m
-          DB_HEALTH_CHECK_PERIOD=1m
-          APP_JWT_ACCESS_TOKEN_SECRET=$ACCESS_SECRET
-          APP_JWT_REFRESH_TOKEN_SECRET=$REFRESH_SECRET
+          POSTGRES_USER=auth
+          POSTGRES_PASSWORD=testpass
+          AUTH_REDIS_PASS=
+          AUTH_JWT_ACCESS_TOKEN_SECRET=$ACCESS_SECRET
+          AUTH_JWT_REFRESH_TOKEN_SECRET=$REFRESH_SECRET
           EOF
           
       - name: Build Docker image

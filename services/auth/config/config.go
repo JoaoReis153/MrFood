@@ -131,25 +131,25 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
-	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
-	cfg.DB.Name = getEnv("DB_NAME", cfg.DB.Name)
-	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
+	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST")
+	cfg.DB.Port = getEnvIntAny(cfg.DB.Port, "DB_PORT")
+	cfg.DB.Name = getEnvAny(cfg.DB.Name, "POSTGRES_DB")
+	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER")
+	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD")
 	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
 	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
 	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
-	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
-	cfg.Redis.Port = getEnvInt("REDIS_PORT", cfg.Redis.Port)
-	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
+	cfg.Redis.Host = getEnvAny(cfg.Redis.Host, "REDIS_HOST", "AUTH_REDIS_HOST")
+	cfg.Redis.Port = getEnvIntAny(cfg.Redis.Port, "REDIS_PORT", "AUTH_REDIS_PORT")
+	cfg.Redis.Password = getEnvAny(cfg.Redis.Password, "REDIS_PASS", "AUTH_REDIS_PASS")
 	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
-	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
-	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
+	cfg.JWT.AccessTokenSecret = getEnvAny(cfg.JWT.AccessTokenSecret, "APP_JWT_ACCESS_TOKEN_SECRET", "AUTH_JWT_ACCESS_TOKEN_SECRET")
+	cfg.JWT.RefreshTokenSecret = getEnvAny(cfg.JWT.RefreshTokenSecret, "APP_JWT_REFRESH_TOKEN_SECRET", "AUTH_JWT_REFRESH_TOKEN_SECRET")
 }
 
 func validateConfig(cfg *Config) error {
@@ -174,6 +174,15 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+func getEnvAny(defaultValue string, keys ...string) string {
+	for _, key := range keys {
+		if value := os.Getenv(key); value != "" {
+			return value
+		}
+	}
+	return defaultValue
+}
+
 func getEnvInt(key string, defaultValue int) int {
 	value := os.Getenv(key)
 	if value == "" {
@@ -189,6 +198,24 @@ func getEnvInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return intVal
+}
+
+func getEnvIntAny(defaultValue int, keys ...string) int {
+	for _, key := range keys {
+		if value := os.Getenv(key); value != "" {
+			intVal, err := strconv.Atoi(value)
+			if err != nil {
+				slog.Warn("invalid int env var, using default",
+					slog.String("key", key),
+					slog.String("value", value),
+					slog.Int("default", defaultValue),
+				)
+				return defaultValue
+			}
+			return intVal
+		}
+	}
+	return defaultValue
 }
 
 func getEnvInt32(key string, defaultValue int32) int32 {
