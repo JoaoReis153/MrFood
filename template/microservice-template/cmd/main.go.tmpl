@@ -37,8 +37,7 @@ func main() {
 	if err := app.RunServer(shutdownCtx, cfg); err != nil {
 		slog.Error("server failed", "error", err)
 	}
-
-
+}
 
 func setupLogger(logLevel string) {
 	level := slog.LevelInfo
@@ -61,5 +60,4 @@ func setupLogger(logLevel string) {
 
 	slog.SetDefault(slog.New(handler))
 	slog.Info("logger initialized", "level", logLevel)
-}
 }
