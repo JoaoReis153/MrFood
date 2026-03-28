@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ var (
 	ErrRestaurantNotFound = errors.New("restaurant not found")
 	ErrInvalidRestaurant  = errors.New("invalid restaurant data")
 	ErrDatabaseNotSet     = errors.New("database is not configured")
+	ErrDatabaseRollback   = errors.New("database is rollbacked")
 )
 
 type Repository struct {
@@ -142,7 +144,8 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil {
-
+			slog.Error("rollback transaction", "error", err)
+			return
 		}
 	}(tx, ctx)
 
@@ -218,7 +221,8 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil {
-
+			slog.Error("rollback transaction", "error", err)
+			return
 		}
 	}(tx, ctx)
 
