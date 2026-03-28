@@ -9,6 +9,7 @@ import (
 
 	models "MrFood/services/restaurant/pkg"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -138,7 +139,12 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func(tx pgx.Tx, ctx context.Context) {
+		err := tx.Rollback(ctx)
+		if err != nil {
+
+		}
+	}(tx, ctx)
 
 	query := `
 		INSERT INTO restaurants (name, latitude, longitude, address, media_url, max_slots, owner_id,owner_name,sponsor_tier)
@@ -209,7 +215,12 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func(tx pgx.Tx, ctx context.Context) {
+		err := tx.Rollback(ctx)
+		if err != nil {
+
+		}
+	}(tx, ctx)
 
 	var exists bool
 	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurant.ID).Scan(&exists)
