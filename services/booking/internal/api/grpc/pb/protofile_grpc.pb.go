@@ -19,108 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RestaurantService_GetWorkingHours_FullMethodName = "/proto.RestaurantService/GetWorkingHours"
-)
-
-// RestaurantServiceClient is the client API for RestaurantService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RestaurantServiceClient interface {
-	GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error)
-}
-
-type restaurantServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewRestaurantServiceClient(cc grpc.ClientConnInterface) RestaurantServiceClient {
-	return &restaurantServiceClient{cc}
-}
-
-func (c *restaurantServiceClient) GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(WorkingHoursResponse)
-	err := c.cc.Invoke(ctx, RestaurantService_GetWorkingHours_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// RestaurantServiceServer is the server API for RestaurantService service.
-// All implementations must embed UnimplementedRestaurantServiceServer
-// for forward compatibility.
-type RestaurantServiceServer interface {
-	GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error)
-	mustEmbedUnimplementedRestaurantServiceServer()
-}
-
-// UnimplementedRestaurantServiceServer must be embedded to have
-// forward compatible implementations.
-//
-// NOTE: this should be embedded by value instead of pointer to avoid a nil
-// pointer dereference when methods are called.
-type UnimplementedRestaurantServiceServer struct{}
-
-func (UnimplementedRestaurantServiceServer) GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetWorkingHours not implemented")
-}
-func (UnimplementedRestaurantServiceServer) mustEmbedUnimplementedRestaurantServiceServer() {}
-func (UnimplementedRestaurantServiceServer) testEmbeddedByValue()                           {}
-
-// UnsafeRestaurantServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RestaurantServiceServer will
-// result in compilation errors.
-type UnsafeRestaurantServiceServer interface {
-	mustEmbedUnimplementedRestaurantServiceServer()
-}
-
-func RegisterRestaurantServiceServer(s grpc.ServiceRegistrar, srv RestaurantServiceServer) {
-	// If the following call panics, it indicates UnimplementedRestaurantServiceServer was
-	// embedded by pointer and is nil.  This will cause panics if an
-	// unimplemented method is ever invoked, so we test this at initialization
-	// time to prevent it from happening at runtime later due to I/O.
-	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
-		t.testEmbeddedByValue()
-	}
-	s.RegisterService(&RestaurantService_ServiceDesc, srv)
-}
-
-func _RestaurantService_GetWorkingHours_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WorkingHoursRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RestaurantServiceServer).GetWorkingHours(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RestaurantService_GetWorkingHours_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RestaurantServiceServer).GetWorkingHours(ctx, req.(*WorkingHoursRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// RestaurantService_ServiceDesc is the grpc.ServiceDesc for RestaurantService service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var RestaurantService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.RestaurantService",
-	HandlerType: (*RestaurantServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetWorkingHours",
-			Handler:    _RestaurantService_GetWorkingHours_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "internal/api/grpc/proto/protofile.proto",
-}
-
-const (
 	BookingService_CreateBooking_FullMethodName = "/proto.BookingService/CreateBooking"
 	BookingService_DeleteBooking_FullMethodName = "/proto.BookingService/DeleteBooking"
 )
@@ -129,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BookingServiceClient interface {
-	CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*Booking, error)
+	CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*CreateBookingResponse, error)
 	DeleteBooking(ctx context.Context, in *DeleteBookingRequest, opts ...grpc.CallOption) (*DeleteBookingResponse, error)
 }
 
@@ -141,9 +39,9 @@ func NewBookingServiceClient(cc grpc.ClientConnInterface) BookingServiceClient {
 	return &bookingServiceClient{cc}
 }
 
-func (c *bookingServiceClient) CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*Booking, error) {
+func (c *bookingServiceClient) CreateBooking(ctx context.Context, in *CreateBookingRequest, opts ...grpc.CallOption) (*CreateBookingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Booking)
+	out := new(CreateBookingResponse)
 	err := c.cc.Invoke(ctx, BookingService_CreateBooking_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -165,7 +63,7 @@ func (c *bookingServiceClient) DeleteBooking(ctx context.Context, in *DeleteBook
 // All implementations must embed UnimplementedBookingServiceServer
 // for forward compatibility.
 type BookingServiceServer interface {
-	CreateBooking(context.Context, *CreateBookingRequest) (*Booking, error)
+	CreateBooking(context.Context, *CreateBookingRequest) (*CreateBookingResponse, error)
 	DeleteBooking(context.Context, *DeleteBookingRequest) (*DeleteBookingResponse, error)
 	mustEmbedUnimplementedBookingServiceServer()
 }
@@ -177,7 +75,7 @@ type BookingServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedBookingServiceServer struct{}
 
-func (UnimplementedBookingServiceServer) CreateBooking(context.Context, *CreateBookingRequest) (*Booking, error) {
+func (UnimplementedBookingServiceServer) CreateBooking(context.Context, *CreateBookingRequest) (*CreateBookingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateBooking not implemented")
 }
 func (UnimplementedBookingServiceServer) DeleteBooking(context.Context, *DeleteBookingRequest) (*DeleteBookingResponse, error) {
@@ -254,6 +152,109 @@ var BookingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteBooking",
 			Handler:    _BookingService_DeleteBooking_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	RestaurantToBookingService_GetWorkingHours_FullMethodName = "/proto.RestaurantToBookingService/GetWorkingHours"
+)
+
+// RestaurantToBookingServiceClient is the client API for RestaurantToBookingService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type RestaurantToBookingServiceClient interface {
+	GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error)
+}
+
+type restaurantToBookingServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRestaurantToBookingServiceClient(cc grpc.ClientConnInterface) RestaurantToBookingServiceClient {
+	return &restaurantToBookingServiceClient{cc}
+}
+
+func (c *restaurantToBookingServiceClient) GetWorkingHours(ctx context.Context, in *WorkingHoursRequest, opts ...grpc.CallOption) (*WorkingHoursResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WorkingHoursResponse)
+	err := c.cc.Invoke(ctx, RestaurantToBookingService_GetWorkingHours_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RestaurantToBookingServiceServer is the server API for RestaurantToBookingService service.
+// All implementations must embed UnimplementedRestaurantToBookingServiceServer
+// for forward compatibility.
+type RestaurantToBookingServiceServer interface {
+	GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error)
+	mustEmbedUnimplementedRestaurantToBookingServiceServer()
+}
+
+// UnimplementedRestaurantToBookingServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedRestaurantToBookingServiceServer struct{}
+
+func (UnimplementedRestaurantToBookingServiceServer) GetWorkingHours(context.Context, *WorkingHoursRequest) (*WorkingHoursResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkingHours not implemented")
+}
+func (UnimplementedRestaurantToBookingServiceServer) mustEmbedUnimplementedRestaurantToBookingServiceServer() {
+}
+func (UnimplementedRestaurantToBookingServiceServer) testEmbeddedByValue() {}
+
+// UnsafeRestaurantToBookingServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RestaurantToBookingServiceServer will
+// result in compilation errors.
+type UnsafeRestaurantToBookingServiceServer interface {
+	mustEmbedUnimplementedRestaurantToBookingServiceServer()
+}
+
+func RegisterRestaurantToBookingServiceServer(s grpc.ServiceRegistrar, srv RestaurantToBookingServiceServer) {
+	// If the following call panics, it indicates UnimplementedRestaurantToBookingServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&RestaurantToBookingService_ServiceDesc, srv)
+}
+
+func _RestaurantToBookingService_GetWorkingHours_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WorkingHoursRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RestaurantToBookingServiceServer).GetWorkingHours(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RestaurantToBookingService_GetWorkingHours_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RestaurantToBookingServiceServer).GetWorkingHours(ctx, req.(*WorkingHoursRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RestaurantToBookingService_ServiceDesc is the grpc.ServiceDesc for RestaurantToBookingService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var RestaurantToBookingService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.RestaurantToBookingService",
+	HandlerType: (*RestaurantToBookingServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetWorkingHours",
+			Handler:    _RestaurantToBookingService_GetWorkingHours_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -6,13 +6,14 @@ package proto;
 
 option go_package = "/pb;pb";
 
-service RestaurantService {
-  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
-}
 
 service BookingService {
-  rpc CreateBooking (CreateBookingRequest) returns (Booking);
+  rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse);
   rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse);
+}
+
+service RestaurantToBookingService {
+  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
 }
 
 message WorkingHoursRequest {
@@ -22,7 +23,8 @@ message WorkingHoursRequest {
 
 message WorkingHoursResponse {
   int32 restaurant_id = 1;
-  TimeRange working_hours = 2;
+  google.protobuf.Timestamp time_start = 2;
+  google.protobuf.Timestamp time_end = 3;
 }
 
 message CreateBookingRequest {
@@ -32,6 +34,10 @@ message CreateBookingRequest {
   google.protobuf.Timestamp time_start = 4;
 }
 
+message CreateBookingResponse {
+  int32 booking_id = 1;
+}
+
 message DeleteBookingRequest {
   int32 user_id = 1;
   int32 restaurant_id = 2;
@@ -39,16 +45,3 @@ message DeleteBookingRequest {
 }
 
 message DeleteBookingResponse {}
-
-message Booking {
-  int32 id = 1;
-  int32 user_id = 2;
-  int32 restaurant_id = 3;
-  int32 quantity = 4;
-  TimeRange working_hours = 5;
-}
-
-message TimeRange {
-  google.protobuf.Timestamp time_start = 1;
-  google.protobuf.Timestamp time_end = 2;
-}
