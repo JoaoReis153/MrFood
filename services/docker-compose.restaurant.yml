@@ -4,11 +4,16 @@ x-common: &common
     - app-network
 
 x-restaurant-db-config: &restaurant-db-config
-  DB_HOST: restaurant_db
-  POSTGRES_DB: mrfood_restaurant
-  DB_PORT: ${RESTAURANT_DB_PORT:-5432}
+  POSTGRES_DB: ${RESTAURANT_POSTGRES_DB:-mrfood_restaurant}
   POSTGRES_USER: ${RESTAURANT_POSTGRES_USER:-restaurant}
   POSTGRES_PASSWORD: ${RESTAURANT_POSTGRES_PASSWORD:-restaurantsecret}
+
+x-restaurant-app-db-config: &restaurant-app-db-config
+  DB_HOST: restaurant_db
+  DB_PORT: 5432
+  DB_NAME: ${RESTAURANT_POSTGRES_DB:-mrfood_restaurant}
+  DB_USER: ${RESTAURANT_POSTGRES_USER:-restaurant}
+  DB_PASS: ${RESTAURANT_POSTGRES_PASSWORD:-restaurantsecret}
 
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -19,12 +24,12 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   restaurant:
     build: ./restaurant/
-    ports: ["${RESTAURANT_SERVER_PORT:-50051}:${RESTAURANT_SERVER_PORT:-50051}"]
+    ports: ["${RESTAURANT_SERVER_PORT:-50052}:${RESTAURANT_SERVER_PORT:-50052}"]
     <<: *common
     environment:
       # Database
-      <<: *restaurant-db-config
-      RESTAURANT_SERVER_PORT: ${RESTAURANT_SERVER_PORT:-50051}
+      <<: *restaurant-app-db-config
+      APP_SERVER_PORT: ${RESTAURANT_SERVER_PORT:-50052}
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m

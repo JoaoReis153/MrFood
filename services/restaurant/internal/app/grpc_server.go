@@ -1,6 +1,7 @@
 package app
 
 import (
+	"MrFood/services/restaurant/config"
 	"context"
 	"errors"
 	"fmt"
@@ -179,7 +180,10 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 }
 
 func (app *App) RunServer() {
-	lis, err := net.Listen("tcp", ":50051")
+	cfg := config.Get(context.Background())
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		slog.Error("failed", "error", err)
 		os.Exit(1)
@@ -193,7 +197,7 @@ func (app *App) RunServer() {
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)
 
-	slog.Info("Server running on :50051")
+	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
 		slog.Error("failed", "error", err)
 		os.Exit(1)
