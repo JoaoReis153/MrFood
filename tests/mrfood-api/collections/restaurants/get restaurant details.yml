@@ -4,12 +4,12 @@ info:
   seq: 5
 
 grpc:
-  url: localhost:50051
+  url: localhost:50052
   method: /proto.RestaurantService/GetRestaurantDetails
   methodType: unary
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "id": 6
+      "id": 1
     }
   auth: inherit

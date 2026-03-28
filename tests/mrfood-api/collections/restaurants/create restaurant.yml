@@ -4,7 +4,7 @@ info:
   seq: 6
 
 grpc:
-  url: localhost:50051
+  url: localhost:50052
   method: /proto.RestaurantService/CreateRestaurant
   methodType: unary
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto

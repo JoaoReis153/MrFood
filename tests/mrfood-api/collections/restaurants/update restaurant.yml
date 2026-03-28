@@ -4,14 +4,14 @@ info:
   seq: 7
 
 grpc:
-  url: localhost:50051
+  url: localhost:50052
   method: /proto.RestaurantService/UpdateRestaurant
   methodType: unary
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "id": 6,
-      "name": "suasoria",
+      "id": 1,
+      "name": "Barneys without Jr",
       "latitude": 289.41019114077517,
       "longitude": 231.24068483866333,
       "address": "derelinquo",
