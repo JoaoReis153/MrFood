@@ -4,16 +4,13 @@ x-common: &common
     - app-network
 
 x-restaurant-db-config: &restaurant-db-config
-  POSTGRES_DB: ${RESTAURANT_POSTGRES_DB:-mrfood_restaurant}
-  POSTGRES_USER: ${RESTAURANT_POSTGRES_USER:-restaurant}
-  POSTGRES_PASSWORD: ${RESTAURANT_POSTGRES_PASSWORD:-restaurantsecret}
-
-x-restaurant-app-db-config: &restaurant-app-db-config
   DB_HOST: restaurant_db
-  DB_PORT: 5432
-  DB_NAME: ${RESTAURANT_POSTGRES_DB:-mrfood_restaurant}
-  DB_USER: ${RESTAURANT_POSTGRES_USER:-restaurant}
-  DB_PASS: ${RESTAURANT_POSTGRES_PASSWORD:-restaurantsecret}
+  DB_NAME: ${RESTAURANT_POSTGRES_DB}
+  DB_USER: ${RESTAURANT_POSTGRES_USER}
+  DB_PASS: ${RESTAURANT_POSTGRES_PASSWORD}
+  POSTGRES_DB: ${RESTAURANT_POSTGRES_DB}
+  POSTGRES_USER: ${RESTAURANT_POSTGRES_USER}
+  POSTGRES_PASSWORD: ${RESTAURANT_POSTGRES_PASSWORD}
 
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -24,12 +21,12 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   restaurant:
     build: ./restaurant/
-    ports: ["${RESTAURANT_SERVER_PORT:-50052}:${RESTAURANT_SERVER_PORT:-50052}"]
+    ports: ["${RESTAURANT_SERVER_PORT}:${RESTAURANT_SERVER_PORT}"]
     <<: *common
     environment:
       # Database
-      <<: *restaurant-app-db-config
-      APP_SERVER_PORT: ${RESTAURANT_SERVER_PORT:-50052}
+      <<: *restaurant-db-config
+      APP_SERVER_PORT: ${RESTAURANT_SERVER_PORT}
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m
@@ -44,7 +41,7 @@ services:
 
   restaurant_db:
     image: postgres:16
-    ports: ["${RESTAURANT_DB_PORT:-5432}:5432"]
+    ports: ["${RESTAURANT_DB_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:

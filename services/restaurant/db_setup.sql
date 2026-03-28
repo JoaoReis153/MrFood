@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
     media_url VARCHAR(255),
     max_slots INTEGER NOT NULL CHECK (max_slots >= 0),
     owner_id INTEGER NOT NULL,
+    owner_name VARCHAR(100) NOT NULL,
     sponsor_tier INTEGER NOT NULL DEFAULT 0 CHECK (sponsor_tier >= 0)
 );
 

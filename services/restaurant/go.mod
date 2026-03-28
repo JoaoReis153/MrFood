@@ -3,6 +3,7 @@ module MrFood/services/restaurant
 go 1.24.0
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.7.4
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.10

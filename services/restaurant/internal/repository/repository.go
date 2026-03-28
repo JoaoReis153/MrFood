@@ -32,7 +32,7 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 	}
 
 	query := `
-		SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, sponsor_tier
+		SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, owner_name,sponsor_tier
 		FROM restaurants
 		WHERE id = $1
 	`
@@ -49,6 +49,7 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 		&mediaURL,
 		&restaurant.MaxSlots,
 		&restaurant.OwnerID,
+		&restaurant.OwnerName,
 		&restaurant.SponsorTier,
 	)
 	if err != nil {
@@ -140,8 +141,8 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	defer tx.Rollback(ctx)
 
 	query := `
-		INSERT INTO restaurants (name, latitude, longitude, address, media_url, max_slots, owner_id, sponsor_tier)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO restaurants (name, latitude, longitude, address, media_url, max_slots, owner_id,owner_name,sponsor_tier)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id
 	`
 
@@ -154,6 +155,7 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 		nullableString(restaurant.MediaURL),
 		restaurant.MaxSlots,
 		restaurant.OwnerID,
+		restaurant.OwnerName,
 		restaurant.SponsorTier,
 	).Scan(&newID)
 	if err != nil {
@@ -250,16 +252,6 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	if restaurant.MaxSlots > 0 {
 		setClauses = append(setClauses, fmt.Sprintf("max_slots = $%d", argPos))
 		args = append(args, restaurant.MaxSlots)
-		argPos++
-	}
-	if restaurant.OwnerID > 0 {
-		setClauses = append(setClauses, fmt.Sprintf("owner_id = $%d", argPos))
-		args = append(args, restaurant.OwnerID)
-		argPos++
-	}
-	if restaurant.SponsorTier > 0 {
-		setClauses = append(setClauses, fmt.Sprintf("sponsor_tier = $%d", argPos))
-		args = append(args, restaurant.SponsorTier)
 		argPos++
 	}
 

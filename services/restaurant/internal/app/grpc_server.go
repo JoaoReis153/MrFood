@@ -2,6 +2,9 @@ package app
 
 import (
 	"MrFood/services/restaurant/config"
+	pb "MrFood/services/restaurant/internal/api/grpc/pb"
+	"MrFood/services/restaurant/internal/service"
+	models "MrFood/services/restaurant/pkg"
 	"context"
 	"errors"
 	"fmt"
@@ -12,13 +15,11 @@ import (
 	"strings"
 	"time"
 
-	pb "MrFood/services/restaurant/internal/api/grpc/pb"
-	"MrFood/services/restaurant/internal/service"
-	models "MrFood/services/restaurant/pkg"
-
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -89,14 +90,15 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 }
 
 func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantRequest) (*pb.CreateRestaurantResponse, error) {
-	requesterOwnerID, err := ownerIDFromMetadata(ctx)
+	requesterOwner, err := ExtractUserFromContext(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwnerID)
+	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwner.UserID)
 
 	restaurant := &models.Restaurant{
-		OwnerID:      requesterOwnerID,
+		OwnerID:      requesterOwner.UserID,
+		OwnerName:    requesterOwner.Username,
 		Name:         req.GetName(),
 		Address:      req.GetAddress(),
 		WorkingHours: req.GetWorkingHours(),
@@ -118,7 +120,8 @@ func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantR
 }
 
 func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantRequest) (*pb.UpdateRestaurantResponse, error) {
-	requesterOwnerID, err := ownerIDFromMetadata(ctx)
+	requestOwner, err := ExtractUserFromContext(ctx)
+
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
@@ -139,7 +142,7 @@ func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantR
 		changes.WorkingHours = append(changes.WorkingHours, wh.AsTime().UTC().Format(time.RFC3339))
 	}
 
-	updatedRestaurant, err := s.restaurantService.UpdateRestaurant(ctx, changes, requesterOwnerID)
+	updatedRestaurant, err := s.restaurantService.UpdateRestaurant(ctx, changes, requestOwner.UserID)
 	if err != nil {
 		return nil, mapServiceError(err)
 	}
@@ -204,32 +207,59 @@ func (app *App) RunServer() {
 	}
 }
 
-func ownerIDFromMetadata(ctx context.Context) (int32, error) {
-	return 1, nil
-	/*
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return 0, errors.New("missing request metadata")
-		}
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID       string `json:"user_id"`
+	Username     string `json:"username"`
+	TokenVersion int    `json:"token_version"`
+	TokenType    string `json:"token_type"` // access or refresh
+}
 
-		ownerIDs := md.Get("x-user-id")
-		if len(ownerIDs) == 0 {
-			return 0, errors.New("missing x-user-id maetadata")
-		}
+type UserInfo struct {
+	UserID   int32
+	Username string
+}
 
-		ownerID := strings.TrimSpace(ownerIDs[0])
-		if ownerID == "" {
-			return 0, errors.New("empty x-user-id metadata")
-		}
+func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("no metadata")
+	}
 
-		parsed, err := parseInt32(ownerID)
-		if err != nil {
-			return 0, errors.New("invalid x-user-id metadata")
-		}
+	authHeader := md["authorization"]
+	if len(authHeader) == 0 {
+		return nil, errors.New("no auth header")
+	}
 
-		return parsed, nil
+	tokenStr := strings.TrimPrefix(authHeader[0], "Bearer ")
 
-	*/
+	claims := &Claims{}
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
+
+	if err != nil {
+		slog.Error("failed to parse token", "error", err)
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+	userID, err := parseInt32(claims.UserID)
+
+	if err != nil {
+		slog.Error("failed to parse user id", "error", err)
+		return nil, status.Error(codes.Unauthenticated, "invalid user id in token")
+	}
+
+	userInfo := &UserInfo{
+		UserID:   userID,
+		Username: claims.Username,
+	}
+
+	slog.Info("USER INFO",
+		"user_id", claims.UserID,
+		"username", claims.Username,
+		"token_type", claims.TokenType,
+		"exp", claims.ExpiresAt,
+	)
+
+	return userInfo, nil
 }
 
 func parseInt32(value string) (int32, error) {
