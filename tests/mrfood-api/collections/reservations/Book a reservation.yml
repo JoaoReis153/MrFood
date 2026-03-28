@@ -20,7 +20,7 @@ http:
       }
   auth:
     type: bearer
-    token: "{{token}}"
+    token: {{token}}
 
 settings:
   encodeUrl: true

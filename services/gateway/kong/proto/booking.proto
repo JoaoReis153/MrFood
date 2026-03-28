@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package proto;
+
+option go_package = "/pb;pb";
+
+service BookingService {
+  rpc CreateBooking (CreateBookingRequest) returns (Booking) {
+    option (google.api.http) = {
+      post: "/reservations"
+      body: "*"
+    };
+  };
+}
+
+message WorkingHoursRequest {
+  int32 restaurant_id = 1;
+  google.protobuf.Timestamp time_start = 2;
+}
+
+message WorkingHoursResponse {
+  int32 restaurant_id = 1;
+  TimeRange working_hours = 2;
+}
+
+message CreateBookingRequest {
+  int32 user_id = 1;
+  int32 restaurant_id = 2;
+  int32 quantity = 3;
+  google.protobuf.Timestamp time_start = 4;
+}
+
+message Booking {
+  int32 id = 1;
+  int32 user_id = 2;
+  int32 restaurant_id = 3;
+  int32 quantity = 4;
+  TimeRange working_hours = 5;
+}
+
+message TimeRange {
+  google.protobuf.Timestamp time_start = 1;
+  google.protobuf.Timestamp time_end = 2;
+}

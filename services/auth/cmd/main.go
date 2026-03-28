@@ -55,7 +55,7 @@ func setupLogger(logLevel string) {
 
 	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		Level:     level,
-		AddSource: true, // file:line numbers
+		AddSource: true,
 	})
 
 	slog.SetDefault(slog.New(handler))

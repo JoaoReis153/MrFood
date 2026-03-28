@@ -104,7 +104,7 @@ func Load(_ context.Context) (*Config, error) {
 		return nil, fmt.Errorf("config: %w", err)
 	}
 
-	slog.Info("config loaded",
+	slog.Debug("config loaded",
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
 		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
 		slog.String("redis", fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)),

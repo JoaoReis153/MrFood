@@ -7,16 +7,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/reservations/minimum"
-  params:
-    - name: numberOfPeople
-      value: ""
-      type: query
-      description: Number of people for the reservation
-    - name: day
-      value: ""
-      type: query
-      description: Day of the reservation (YYYY-MM-DD)
+  url: localhost:500060/reservations/minimum
   auth:
     type: bearer
     token: "{{token}}"

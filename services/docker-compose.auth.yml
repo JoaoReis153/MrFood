@@ -2,6 +2,7 @@ x-common: &common
   restart: unless-stopped
   networks:
     - app-network
+    - kong-net
 
 x-auth-db-config: &auth-db-config
   DB_HOST: auth_db
@@ -60,7 +61,7 @@ services:
     <<: *common
     command: redis-server --save "" --appendonly no
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -68,6 +69,7 @@ services:
 networks:
   app-network:
     driver: bridge
-
+  kong-net:
+    driver: bridge
 volumes:
   auth_db_data:
