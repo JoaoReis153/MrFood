@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:8000/reservations
+  url: "{{baseUrl}}/reservations"
   body:
     type: json
     data: |-
