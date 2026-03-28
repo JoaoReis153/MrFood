@@ -17,6 +17,12 @@ if [ ! -d "$TEMPLATE_DIR" ]; then
   exit 1
 fi
 
+
+
+
+
+
+
 # Create base directory
 mkdir -p "$ROOT"
 
