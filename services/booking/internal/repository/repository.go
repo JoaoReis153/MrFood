@@ -2,12 +2,23 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
+	models "MrFood/services/booking/pkg"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+const MAX_SLOTS int32 = 15
+
+var (
+	ErrInvalidBooking       = errors.New("invalid booking arguments")
+	ErrBookingAlreadyExists = errors.New("booking already exists")
+	ErrBookingNotFound      = errors.New("booking not found")
 )
 
 type Repository struct {
@@ -18,29 +29,14 @@ func New(db *pgxpool.Pool) *Repository {
 	return &Repository{DB: db}
 }
 
-/////////////////////////////////////////////////////////////////
-////                      BOOKING                            ////
-/////////////////////////////////////////////////////////////////
-
-func (r *Repository) CreateBooking(ctx context.Context, user_id, restaurant_id, people_count int, time_start, time_end time.Time) (int32, error) {
-	query := `
-		INSERT INTO booking (user_id, restaurant_id, time_start, time_end, people_count)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
-	`
-	var booking_id int32
-
-	err := r.DB.QueryRow(ctx, query, user_id, restaurant_id, time_start, time_end, people_count).Scan(&booking_id)
-
+func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
+	tx, err := r.DB.Begin(ctx)
 	if err != nil {
-		slog.Error("Failed to create booking", "error", err)
-		return 0, fmt.Errorf("Failed to create booking: %w", err)
+		return 0, err
 	}
+	defer tx.Rollback(ctx)
 
-	return booking_id, nil
-}
-
-func (r *Repository) CheckBooking(ctx context.Context, user_id, restaurant_id int, time_start time.Time) (int32, error) {
+	// check if booking already exists
 	query := `
 		SELECT 1
 		FROM booking
@@ -52,107 +48,78 @@ func (r *Repository) CheckBooking(ctx context.Context, user_id, restaurant_id in
 
 	var exists int32
 
-	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start, user_id).Scan(&exists)
+	err = tx.QueryRow(ctx, query, booking.RestaurantID, booking.TimeStart, booking.UserID).Scan(&exists)
 
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return exists, nil
-		}
-
-		slog.Error("Failed to search for booking", "error", err)
-		return 0, fmt.Errorf("failed to search for booking: %w", err)
+	if err != nil && err != pgx.ErrNoRows {
+		return 0, err
 	}
 
-	return exists, nil
-}
-
-func (r *Repository) DeleteBooking(ctx context.Context, user_id, restaurant_id int, time_start time.Time) (int32, error) {
-	query := `
-		DELETE FROM booking
-		WHERE restaurant_id = $1
-		AND time_start = $2
-		AND user_id = $3 
-		RETURNING people_count
-	`
-
-	var people_count int32
-
-	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start, user_id).Scan(&people_count)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			slog.Error("Booking does not exist", "error", err)
-			return 0, fmt.Errorf("booking doesn not exist: %w", err)
-		}
-		slog.Error("Failed to delete booking", "error", err)
-		return 0, fmt.Errorf("failed to delete booking: %w", err)
+	if exists > 0 {
+		return 0, ErrBookingAlreadyExists
 	}
 
-	return people_count, nil
-}
-
-/////////////////////////////////////////////////////////////////
-////                        SLOTS                            ////
-/////////////////////////////////////////////////////////////////
-
-func (r *Repository) GetSlots(ctx context.Context, restaurant_id int, time_start time.Time) (bool, int32, int32, error) {
-	query := `
+	// check if there are sufficient available slots
+	query = `
 		SELECT max_slots, current_slots
 		FROM restaurant_slots
 		WHERE restaurant_id = $1
 		AND time_start = $2
+		FOR UPDATE
 	`
 
 	var max_slots, current_slots int32
 
-	err := r.DB.QueryRow(ctx, query, restaurant_id, time_start).Scan(&max_slots, &current_slots)
+	err = tx.QueryRow(ctx, query, booking.RestaurantID, booking.TimeStart).Scan(&max_slots, &current_slots)
 
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return false, 0, 0, nil
+		if errors.Is(err, pgx.ErrNoRows) {
+			max_slots = MAX_SLOTS
+			current_slots = 0
+		} else {
+			return 0, err
 		}
-
-		slog.Error("Failed to search for slots", "error", err)
-		return false, 0, 0, fmt.Errorf("failed to search for slots: %w", err)
+	} else if booking.PeopleCount > max_slots-current_slots {
+		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "available_slots", max_slots-current_slots)
+		return 0, ErrInvalidBooking
 	}
 
-	return true, max_slots, current_slots, nil
-}
-
-func (r *Repository) CreateSlots(ctx context.Context, user_id, restaurant_id, max_slots, current_slots int, time_start, time_end time.Time) error {
-	query := `
-		INSERT INTO restaurant_slots
-		VALUES ($1, $2, $3, $4, $5, $6)
+	// create booking
+	query = `
+		INSERT INTO booking (user_id, restaurant_id, time_start, time_end, people_count)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
 	`
+	var booking_id int32
 
-	_, err := r.DB.Exec(ctx, query, user_id, restaurant_id, time_start, time_end, max_slots, current_slots)
+	err = tx.QueryRow(ctx, query, booking.UserID, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).Scan(&booking_id)
 
 	if err != nil {
-		slog.Error("Failed to create slots", "error", err)
-		return fmt.Errorf("Failed to create slots: %w", err)
+		return 0, err
 	}
 
-	return nil
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
 
+	return booking_id, nil
 }
 
-func (r *Repository) UpdateSlots(ctx context.Context, restaurant_id, current_slots int, time_start time.Time) error {
+func (r *Repository) DeleteBooking(ctx context.Context, user_id, restaurant_id int, time_start time.Time) error {
 	query := `
-		UPDATE restaurant_slots
-		SET current_slots = $1
-		WHERE restaurant_id = $2
-		AND time_start = $3
+		DELETE FROM booking
+		WHERE restaurant_id = $1
+		AND time_start = $2
+		AND user_id = $3;
 	`
 
-	cmdTag, err := r.DB.Exec(ctx, query, current_slots, restaurant_id, time_start)
+	cmdTag, err := r.DB.Exec(ctx, query, restaurant_id, time_start, user_id)
 
 	if err != nil {
-		slog.Error("Failed to update slots", "error", err)
-		return fmt.Errorf("Failed to update slots: %w", err)
+		return fmt.Errorf("failed to delete booking: %w", err)
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("no slots found to update")
+		return ErrBookingNotFound
 	}
 
 	return nil
