@@ -11,6 +11,9 @@ services:
     networks:
       - kong-net
 
+    env_file:
+      - .env
+
     environment:
       KONG_DATABASE: "off"                         # Disable database
       KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # Path to config file

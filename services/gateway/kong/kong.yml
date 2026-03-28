@@ -60,6 +60,9 @@ services:
 consumers:
   - username: my-client
     jwt_secrets:
-      - key: my-client
-        secret: PhHpT3Gc8QB8vfsj/dpRRbAWvybhWBWmyI4daC5BCAI=
+      - key: generate-key
+        secret: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
+        algorithm: HS256
+      - key: refresh-key
+        secret: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
         algorithm: HS256
