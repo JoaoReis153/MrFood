@@ -1,3 +1,4 @@
 include:
   - docker-compose.auth.yml
   - docker-compose.restaurant.yml
+  - docker-compose.booking.yml
