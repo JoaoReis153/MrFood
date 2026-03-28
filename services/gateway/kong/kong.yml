@@ -19,39 +19,23 @@ services:
         config:
           proto: /etc/kong/proto/auth.proto
 
-  - name: booking
-    host: booking
-    port: 50060
-    protocol: grpc
-
-    routes:
-      - name: booking
-        protocols:
-        - http
-        - https
-        paths:
-          - /reservations
-
-    plugins:
-      - name: grpc-gateway
-        config:
-          proto: /etc/kong/proto/booking.proto
-      - name: jwt
-        config:
-          claims_to_verify:
-            - exp
-
-  # mister example for later
-  # - name: protected-api
-  #   host: my-api
-  #   port: 8080
+  # - name: booking
+  #   host: booking
+  #   port: 50060
+  #   protocol: grpc
 
   #   routes:
-  #     - name: protected-api
+  #     - name: booking
+  #       protocols:
+  #       - http
+  #       - https
   #       paths:
-  #         - /api
+  #         - /reservations
 
   #   plugins:
+  #     - name: grpc-gateway
+  #       config:
+  #         proto: /etc/kong/proto/booking.proto
   #     - name: jwt
   #       config:
   #         claims_to_verify:
@@ -62,7 +46,4 @@ consumers:
     jwt_secrets:
       - key: generate-key
         secret: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
-        algorithm: HS256
-      - key: refresh-key
-        secret: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
         algorithm: HS256
