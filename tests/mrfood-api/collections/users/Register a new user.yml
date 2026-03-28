@@ -7,13 +7,13 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/auth/register"
+  url: http://localhost:8000/auth/register
   body:
     type: json
     data: |-
       {
-        "name": "John Doe",
-        "email": "john@example.com",
+        "username": "cristiano",
+        "email": "cristiano@example.com",
         "password": "StrongPassword123"
       }
   auth: inherit
