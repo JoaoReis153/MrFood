@@ -2,7 +2,6 @@ package main
 
 import (
 	"MrFood/services/booking/config"
-	"MrFood/services/booking/internal/api/grpc"
 	"MrFood/services/booking/internal/app"
 	"context"
 	"log"
@@ -13,9 +12,7 @@ import (
 
 func main() {
 	setupLogger(config.Get(context.Background()).Log.Level)
-
 	config.Get(context.Background())
-
 	application := app.New()
 
 	err := application.ConnectDb()
@@ -24,15 +21,8 @@ func main() {
 	}
 	defer application.DB.Close()
 
-	client, _, err := grpc.NewClient()
-
-	application.Client = client
-
-	slog.Info("app client", "client", application.Client)
-
 	application.InitDependencies()
-
-	grpc.RunServer(application.Service)
+	app.RunServer(application.Service)
 }
 
 func setupLogger(logLevel string) {
