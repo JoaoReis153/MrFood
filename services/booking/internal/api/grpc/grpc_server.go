@@ -2,16 +2,19 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
 	"net"
 	"strings"
+	"time"
 
 	pb "MrFood/services/booking/internal/api/grpc/pb"
 	"MrFood/services/booking/internal/service"
 	models "MrFood/services/booking/pkg"
 
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -61,29 +64,23 @@ func NewClient() (pb.RestaurantServiceClient, func(), error) {
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.Booking, error) {
 	slog.Info("received booking request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		slog.Info("no metadata")
-	}
-
-	authHeader := md["authorization"]
-	if len(authHeader) == 0 {
-		slog.Info("no auth header")
-	}
-
-	token := strings.TrimPrefix(authHeader[0], "Bearer ")
-	slog.Info("TOKEN: " + token)
-
-	res, err := s.bookingService.Client.GetWorkingHours(ctx,
-		&pb.WorkingHoursRequest{
-			RestaurantId: req.RestaurantId,
-			TimeStart:    req.TimeStart,
-		})
-
+	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
-		slog.Error("Failed to get slots", "error", err)
-		return nil, status.Error(codes.Internal, "failed to get slots")
+		slog.Info("ERROR: ", err)
+	} else {
+		slog.Info("Claims received", claims.Username, claims.UserID)
 	}
+
+	// res, err := s.bookingService.Client.GetWorkingHours(ctx,
+	// 	&pb.WorkingHoursRequest{
+	// 		RestaurantId: req.RestaurantId,
+	// 		TimeStart:    req.TimeStart,
+	// 	})
+
+	// if err != nil {
+	// 	slog.Error("Failed to get slots", "error", err)
+	// 	return nil, status.Error(codes.Internal, "failed to get slots")
+	// }
 
 	booking := &models.Booking{
 		UserID:       req.UserId,
@@ -93,13 +90,13 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 	}
 
 	// Mock response from gRPC
-	// res := &pb.WorkingHoursResponse{
-	// 	RestaurantId: 1,
-	// 	WorkingHours: &pb.TimeRange{
-	// 		TimeStart: timestamppb.New(time.Date(2026, 3, 24, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
-	// 		TimeEnd:   timestamppb.New(time.Date(2026, 3, 24, 18, 0, 0, 0, time.UTC)), // 6:00 PM
-	// 	},
-	// }
+	res := &pb.WorkingHoursResponse{
+		RestaurantId: 1,
+		WorkingHours: &pb.TimeRange{
+			TimeStart: timestamppb.New(time.Date(2026, 3, 28, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
+			TimeEnd:   timestamppb.New(time.Date(2026, 3, 28, 18, 0, 0, 0, time.UTC)), // 6:00 PM
+		},
+	}
 
 	working_hours := &models.WorkingHours{
 		RestaurantID: res.RestaurantId,
@@ -126,4 +123,43 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 			TimeEnd:   timestamppb.New(newBooking.TimeEnd),
 		},
 	}, nil
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID       string `json:"user_id"`
+	Username     string `json:"username"`
+	TokenVersion int    `json:"token_version"`
+	TokenType    string `json:"token_type"` // access or refresh
+}
+
+func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("no metadata")
+	}
+
+	authHeader := md["authorization"]
+	if len(authHeader) == 0 {
+		return nil, errors.New("no auth header")
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader[0], "Bearer ")
+
+	claims := &Claims{}
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
+
+	if err != nil {
+		slog.Error("failed to parse token", "error", err)
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+
+	slog.Info("USER INFO",
+		"user_id", claims.UserID,
+		"username", claims.Username,
+		"token_type", claims.TokenType,
+		"exp", claims.ExpiresAt,
+	)
+
+	return claims, nil
 }

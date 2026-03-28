@@ -11,12 +11,12 @@ services:
     networks:
       - kong-net
 
-    env_file:
-      - .env
-
     environment:
       KONG_DATABASE: "off"                         # Disable database
       KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # Path to config file
+
+      APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
+      APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
 
 
       KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
