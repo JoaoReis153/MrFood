@@ -30,7 +30,7 @@ type server struct {
 }
 
 func RunServer(service bookingService) {
-	lis, err := net.Listen("tcp", ":50051")
+	lis, err := net.Listen("tcp", ":50053")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func RunServer(service bookingService) {
 	})
 	reflection.Register(s)
 
-	fmt.Println("Server running on :50051")
+	fmt.Println("Server running on :50053")
 	if err := s.Serve(lis); err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func RunServer(service bookingService) {
 
 func NewClient() (pb.RestaurantToBookingServiceClient, func(), error) {
 	conn, err := grpc.NewClient(
-		"localhost:50051",
+		"localhost:50053",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
