@@ -34,12 +34,12 @@ services:
       # App
       APP_LOG_LEVEL: debug
     depends_on:
-      restaurant_db:
+      booking_db:
         condition: service_healthy
     volumes:
       - ./booking:/app
 
-  restaurant_db:
+  booking_db:
     image: postgres:16
     ports: ["${BOOKING_DB_PORT}:5432"]
     <<: *common
