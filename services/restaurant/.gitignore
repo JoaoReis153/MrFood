@@ -34,7 +34,7 @@ logs/
 .dockerignore
 
 # Environment variables
-.env
+../.env
 .env.local
 .env.*.local
 

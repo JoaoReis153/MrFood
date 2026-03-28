@@ -1,8 +1,9 @@
-.PHONY: build test lint docker-build docker-up docker-down clean
+.PHONY: build test lint docker-build docker-up docker-down clean proto
 
 # Config
 SERVICE_NAME := android
 BINARY := bin/server
+PROTO_PATH := internal/api/grpc/
 
 build:
 	go build -o $(BINARY) ./cmd
@@ -22,7 +23,7 @@ docker-up:
 		-e APP_SERVER_HOST=0.0.0.0 \
 		-e APP_SERVER_PORT=8080 \
 		-e APP_SERVER_TIMEOUT=30s \
-		-e APP_LOG_LEVEL=info \
+		-e APP_LOG_LEVEL=debug \
 		$(SERVICE_NAME):latest
 
 docker-down:
@@ -31,3 +32,6 @@ docker-down:
 
 clean:
 	rm -rf $(BINARY)
+
+proto:
+	protoc --go_out=$(PROTO_PATH) --go-grpc_out=$(PROTO_PATH) $(PROTO_PATH)/proto/protofile.proto

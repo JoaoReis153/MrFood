@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -11,5 +11,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /auth .
-EXPOSE 8080
+EXPOSE 50051
 CMD ["./auth"]

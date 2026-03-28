@@ -1,50 +1,63 @@
 package main
 
 import (
+	"MrFood/services/auth/config"
+	"MrFood/services/auth/internal/app"
 	"context"
-	"fmt"
-	"log"
-	"net/http"
+	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
-
-	"MrFood/services/auth/config"
-	"MrFood/services/auth/internal/api/rest/router"
-	"MrFood/services/auth/internal/app"
 )
 
 func main() {
+	ctx := context.Background()
+	cfg := config.Get(ctx)
+	setupLogger(cfg.Log.Level)
 
-	cfg := config.Get()
-
-	app := app.New()
-	r := router.New(app)
-
-	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port),
-		Handler:      r,
-		ReadTimeout:  cfg.Server.Timeout,
-		WriteTimeout: cfg.Server.Timeout,
+	app, err := app.New(ctx, cfg)
+	if err != nil {
+		slog.Error("app init failed", "error", err)
+		os.Exit(1)
 	}
-
-	go func() {
-		log.Printf("auth starting on :8080")
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("ListenAndServe(): %v", err)
+	defer func() {
+		ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		defer cancel()
+		if err := app.Close(ctx); err != nil {
+			slog.Error("app close failed", "error", err)
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("shutting down server...")
+	shutdownCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
+	slog.Info("starting server")
+	if err := app.RunServer(shutdownCtx, cfg); err != nil {
+		slog.Error("server failed", "error", err)
 	}
+}
+
+func setupLogger(logLevel string) {
+	level := slog.LevelInfo // Default
+
+	switch strings.ToLower(logLevel) {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	case "info":
+		level = slog.LevelInfo
+	}
+
+	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level:     level,
+		AddSource: true, // file:line numbers
+	})
+
+	slog.SetDefault(slog.New(handler))
+	slog.Info("logger initialized", "level", logLevel)
 }

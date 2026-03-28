@@ -1,0 +1,16 @@
+info:
+  name: Register
+  type: grpc
+  seq: 4
+
+grpc:
+  url: localhost:50051
+  method: /proto.AuthService/RegisterProcess
+  methodType: unary
+  protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
+  message: |
+    {
+      "username": "banana",
+      "email": "banana11@gmail.com",
+      "password": "bananapass"
+    }
