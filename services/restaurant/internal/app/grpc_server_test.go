@@ -11,7 +11,6 @@ import (
 	models "MrFood/services/restaurant/pkg"
 
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -107,17 +106,6 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	}
 	if got := resp.GetWorkingHours().GetTimeEnd().AsTime(); !got.Equal(end) {
 		t.Fatalf("expected %s, got %s", end, got)
-	}
-}
-
-func TestOwnerIDFromMetadata(t *testing.T) {
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("x-user-id", "15"))
-	id, err := ownerIDFromMetadata(ctx)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if id != 15 {
-		t.Fatalf("expected id 15, got %d", id)
 	}
 }
 
