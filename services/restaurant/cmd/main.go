@@ -1,50 +1,54 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	"MrFood/services/restaurant/config"
-	"MrFood/services/restaurant/internal/api/rest/router"
 	"MrFood/services/restaurant/internal/app"
+	"context"
+	"log"
+	"log/slog"
+	"os"
+	"strings"
 )
 
 func main() {
+	setupLogger(config.Get(context.Background()).Log.Level)
 
-	cfg := config.Get()
+	config.Get(context.Background())
 
 	app := app.New()
-	r := router.New(app)
+	defer app.Close()
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port),
-		Handler:      r,
-		ReadTimeout:  cfg.Server.Timeout,
-		WriteTimeout: cfg.Server.Timeout,
+	err := app.ConnectDb()
+	if err != nil {
+		log.Fatalf("DB connection failed: %v", err)
+	}
+	defer app.DB.Close()
+
+	app.InitDependencies()
+
+	app.RunServer()
+
+}
+
+func setupLogger(logLevel string) {
+	level := slog.LevelInfo // Default
+
+	switch strings.ToLower(logLevel) {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	case "info":
+		level = slog.LevelInfo
 	}
 
-	go func() {
-		log.Printf("{{.ServiceName}} starting on :8080")
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			log.Fatalf("ListenAndServe(): %v", err)
-		}
-	}()
+	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level:     level,
+		AddSource: true, // file:line numbers
+	})
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("shutting down server...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", err)
-	}
+	slog.SetDefault(slog.New(handler))
+	slog.Info("logger initialized", "level", logLevel)
 }
