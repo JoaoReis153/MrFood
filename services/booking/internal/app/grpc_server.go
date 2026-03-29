@@ -7,14 +7,18 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"strconv"
+	"strings"
 
 	pb "MrFood/services/booking/internal/api/grpc/pb"
 	"MrFood/services/booking/internal/service"
 	models "MrFood/services/booking/pkg"
 
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
@@ -27,6 +31,14 @@ type bookingService interface {
 type server struct {
 	pb.UnimplementedBookingServiceServer
 	bookingService bookingService
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID       string `json:"user_id"`
+	Username     string `json:"username"`
+	TokenVersion int    `json:"token_version"`
+	TokenType    string `json:"token_type"` // access or refresh
 }
 
 func RunServer(service bookingService) {
@@ -47,9 +59,9 @@ func RunServer(service bookingService) {
 	}
 }
 
-func NewClient() (pb.RestaurantToBookingServiceClient, func(), error) {
+func NewClient(address string) (pb.RestaurantToBookingServiceClient, func(), error) {
 	conn, err := grpc.NewClient(
-		"localhost:50053",
+		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
@@ -64,8 +76,20 @@ func NewClient() (pb.RestaurantToBookingServiceClient, func(), error) {
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.CreateBookingResponse, error) {
 	slog.Info("received booking CREATION request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
+	claims, err := ExtractUserFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user_id, err := parseInt32(claims.UserID)
+
+	if err != nil {
+		return nil, err
+	}
+
 	booking := &models.Booking{
-		UserID:       req.UserId,
+		UserID:       user_id,
 		RestaurantID: req.RestaurantId,
 		TimeStart:    req.TimeStart.AsTime(),
 		PeopleCount:  req.Quantity,
@@ -102,6 +126,48 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 	slog.Info("Booking deleted", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
 
 	return &pb.DeleteBookingResponse{}, nil
+}
+
+func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("no metadata")
+	}
+
+	authHeader := md["authorization"]
+	if len(authHeader) == 0 {
+		return nil, errors.New("no auth header")
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader[0], "Bearer ")
+
+	claims := &Claims{}
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
+
+	if err != nil {
+		slog.Error("failed to parse token", "error", err)
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+
+	slog.Info("USER INFO",
+		"user_id", claims.UserID,
+		"username", claims.Username,
+		"token_type", claims.TokenType,
+		"exp", claims.ExpiresAt,
+	)
+
+	return claims, nil
+}
+
+func parseInt32(value string) (int32, error) {
+	v, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	if v < 1 {
+		return 0, errors.New("out of int32 range")
+	}
+	return int32(v), nil
 }
 
 func mapServiceError(err error) error {
