@@ -23,7 +23,8 @@ make lint
 ```
 
 ## gRPC Implementation
-- gRPC implementation consists of a single .proto file that can be found in "test_grpc/internal/api/grpc/proto". It defines the contracts between microservices (denoted by the "rpc" keyword) and the messages sent by each of them.
+- gRPC implementation consists of a single .proto file. 
+- It defines the contracts between microservices (denoted by the "rpc" keyword) and the messages sent by each of them.
 
 - Whenever the .proto file is changed, navigate to "MrFood/services/<service_name>" and execute the following command:
 
