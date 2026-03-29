@@ -1,4 +1,4 @@
-package grpc
+package app
 
 import (
 	"context"
@@ -135,7 +135,6 @@ func TestServer_CreateReview_Success(t *testing.T) {
 
 	resp, err := s.CreateReview(ctx, &pb.CreateReviewRequest{
 		RestaurantId: 1,
-		UserId:       2,
 		Rating:       5,
 		Comment:      "good",
 	})
@@ -161,7 +160,7 @@ func TestServer_CreateReview_Error(t *testing.T) {
 	}
 	s := &server{svc: ms}
 
-	_, err := s.CreateReview(ctx, &pb.CreateReviewRequest{RestaurantId: 1, UserId: 2, Rating: 3})
+	_, err := s.CreateReview(ctx, &pb.CreateReviewRequest{RestaurantId: 1, Rating: 3})
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}

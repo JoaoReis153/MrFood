@@ -2,3 +2,4 @@ include:
   - docker-compose.auth.yml
   - docker-compose.restaurant.yml
   - docker-compose.kong.yml
+  - docker-compose.review.yml

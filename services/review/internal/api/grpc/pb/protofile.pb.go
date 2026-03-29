@@ -297,9 +297,8 @@ func (x *GetReviewsRequest) GetLimit() int32 {
 type CreateReviewRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	UserId        int32                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Comment       string                 `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
-	Rating        int32                  `protobuf:"varint,4,opt,name=rating,proto3" json:"rating,omitempty"`
+	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	Rating        int32                  `protobuf:"varint,3,opt,name=rating,proto3" json:"rating,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -337,13 +336,6 @@ func (*CreateReviewRequest) Descriptor() ([]byte, []int) {
 func (x *CreateReviewRequest) GetRestaurantId() int32 {
 	if x != nil {
 		return x.RestaurantId
-	}
-	return 0
-}
-
-func (x *CreateReviewRequest) GetUserId() int32 {
-	if x != nil {
-		return x.UserId
 	}
 	return 0
 }
@@ -758,12 +750,11 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x04page\x18\x02 \x01(\x05H\x00R\x04page\x88\x01\x01\x12\x19\n" +
 	"\x05limit\x18\x03 \x01(\x05H\x01R\x05limit\x88\x01\x01B\a\n" +
 	"\x05_pageB\b\n" +
-	"\x06_limit\"\x85\x01\n" +
+	"\x06_limit\"l\n" +
 	"\x13CreateReviewRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x05R\x06userId\x12\x18\n" +
-	"\acomment\x18\x03 \x01(\tR\acomment\x12\x16\n" +
-	"\x06rating\x18\x04 \x01(\x05R\x06rating\"\x85\x01\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x18\n" +
+	"\acomment\x18\x02 \x01(\tR\acomment\x12\x16\n" +
+	"\x06rating\x18\x03 \x01(\x05R\x06rating\"\x85\x01\n" +
 	"\x13UpdateReviewRequest\x12\x1b\n" +
 	"\treview_id\x18\x01 \x01(\x05R\breviewId\x12\x1d\n" +
 	"\acomment\x18\x02 \x01(\tH\x00R\acomment\x88\x01\x01\x12\x1b\n" +

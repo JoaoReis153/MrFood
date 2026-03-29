@@ -138,8 +138,6 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
-	cfg.Redis.Host = getEnvAny(cfg.Redis.Host, "REDIS_HOST", "AUTH_REDIS_HOST")
-	cfg.Redis.Password = getEnvAny(cfg.Redis.Password, "REDIS_PASS", "AUTH_REDIS_PASS")
 	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
 	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
 

@@ -15,6 +15,7 @@ var (
 	ErrReviewNotFound      = errors.New("Review not found")
 	ErrRestaurantNotFound  = errors.New("Restaurant not found")
 	ErrLimitTooLarge       = errors.New("Limit must be less than or equal to 100")
+	ErrForbidden           = errors.New("Access forbidden")
 )
 
 type Review struct {

@@ -4,7 +4,7 @@ info:
   seq: 8
 
 grpc:
-  url: localhost:50051
+  url: localhost:50052
   method: /proto.ReviewService/DeleteReview
   methodType: unary
   message: |-

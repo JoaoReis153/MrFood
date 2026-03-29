@@ -2,7 +2,6 @@ package main
 
 import (
 	"MrFood/services/review/config"
-	"MrFood/services/review/internal/api/grpc"
 	"MrFood/services/review/internal/app"
 	"context"
 	"log"
@@ -22,7 +21,7 @@ func main() {
 	}
 	defer application.DB.Close()
 	application.InitDependencies()
-	grpc.RunServer(application.Service)
+	app.RunServer(application.Service)
 }
 
 func setupLogger(logLevel string) {

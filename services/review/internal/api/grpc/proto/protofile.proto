@@ -61,9 +61,8 @@ message GetReviewsRequest {
 
 message CreateReviewRequest {
   int32 restaurant_id = 1;
-  int32 user_id = 2;
-  string comment = 3;
-  int32 rating = 4;
+  string comment = 2;
+  int32 rating = 3;
 }
 
 message UpdateReviewRequest {

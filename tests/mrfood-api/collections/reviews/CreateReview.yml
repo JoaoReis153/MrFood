@@ -4,13 +4,13 @@ info:
   seq: 6
 
 grpc:
-  url: localhost:50051
+  url: localhost:50052
   method: /proto.ReviewService/CreateReview
   methodType: unary
   protoFilePath: ../../../../services/review/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "restaurant_id": 11,
+      "restaurant_id": 1,
       "user_id": 4,
       "comment": "meh +",
       "rating": 3

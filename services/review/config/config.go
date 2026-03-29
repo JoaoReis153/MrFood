@@ -7,57 +7,63 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-type Config struct {
-	Server struct {
-		Host    string        `yaml:"host"`
-		Port    int           `yaml:"port"`
-		Timeout time.Duration `yaml:"timeout"`
-	} `yaml:"server"`
-	Log struct {
-		Level string `yaml:"level"`
-	} `yaml:"log"`
-	DB struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Name     string `yaml:"name"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-	} `yaml:"db"`
+type ServerConfig struct {
+	Host    string        `yaml:"host"    validate:"required"`
+	Port    int           `yaml:"port"    validate:"required,min=1,max=65535"`
+	Timeout time.Duration `yaml:"timeout" validate:"required"`
 }
 
-var globalConfig *Config
+type LogConfig struct {
+	Level string `yaml:"level" validate:"required,oneof=debug info warn error"`
+}
 
-func Load(ctx context.Context) *Config {
+type DBConfig struct {
+	Host              string `yaml:"host"     validate:"required"`
+	Port              int    `yaml:"port"     validate:"required,min=1,max=65535"`
+	Name              string `yaml:"name"     validate:"required"`
+	User              string `yaml:"user"     validate:"required"`
+	Password          string `yaml:"password"`
+	MinConns          int32
+	MaxConns          int32         `yaml:"max_conns"`
+	MaxConnLifetime   time.Duration `yaml:"max_conn_lifetime"`
+	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
+}
+
+type Config struct {
+	Server ServerConfig `yaml:"server"`
+	Log    LogConfig    `yaml:"log"`
+	DB     DBConfig     `yaml:"db"`
+}
+
+var (
+	globalConfig *Config
+	once         sync.Once
+)
+
+func Load(_ context.Context) (*Config, error) {
 	cfg := &Config{
-		Server: struct {
-			Host    string        `yaml:"host"`
-			Port    int           `yaml:"port"`
-			Timeout time.Duration `yaml:"timeout"`
-		}{
+		Server: ServerConfig{
 			Host:    "0.0.0.0",
 			Port:    8080,
 			Timeout: 30 * time.Second,
 		},
-		Log: struct {
-			Level string `yaml:"level"`
-		}{
+		Log: LogConfig{
 			Level: "info",
 		},
-		DB: struct {
-			Host     string `yaml:"host"`
-			Port     int    `yaml:"port"`
-			Name     string `yaml:"name"`
-			User     string `yaml:"user"`
-			Password string `yaml:"password"`
-		}{
-			Host:     "localhost",
-			Port:     5432,
-			Name:     "mrfood",
-			User:     "postgres",
-			Password: "",
+		DB: DBConfig{
+			Host:              "localhost",
+			Port:              5432,
+			Name:              "mrfood",
+			User:              "postgres",
+			Password:          "",
+			MinConns:          2,
+			MaxConns:          20,
+			MaxConnLifetime:   15 * time.Minute,
+			HealthCheckPeriod: 1 * time.Minute,
 		},
 	}
 
@@ -66,7 +72,7 @@ func Load(ctx context.Context) *Config {
 
 	if err := validateConfig(cfg); err != nil {
 		slog.Error("invalid config", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("config: %w", err)
 	}
 
 	slog.Info("config loaded",
@@ -75,7 +81,7 @@ func Load(ctx context.Context) *Config {
 		slog.String("log_level", cfg.Log.Level),
 	)
 
-	return cfg
+	return cfg, nil
 }
 
 func overrideWithEnv(cfg *Config) {
@@ -137,8 +143,13 @@ func parseDuration(s string) time.Duration {
 }
 
 func Get(ctx context.Context) *Config {
-	if globalConfig == nil {
-		globalConfig = Load(ctx)
-	}
+	once.Do(func() {
+		cfg, err := Load(ctx)
+		if err != nil {
+			slog.Error("invalid config", "error", err)
+			panic(err)
+		}
+		globalConfig = cfg
+	})
 	return globalConfig
 }

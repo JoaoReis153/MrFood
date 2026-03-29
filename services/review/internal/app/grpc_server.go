@@ -1,4 +1,4 @@
-package grpc
+package app
 
 import (
 	"context"
@@ -7,13 +7,17 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"strconv"
+	"strings"
 
 	pb "MrFood/services/review/internal/api/grpc/pb"
 	"MrFood/services/review/internal/service"
 	models "MrFood/services/review/pkg"
 
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -31,6 +35,14 @@ type server struct {
 	pb.UnimplementedReviewServiceServer
 	pb.UnimplementedReviewToDetailsServiceServer
 	svc ReviewService
+}
+
+type Claims struct {
+	jwt.RegisteredClaims
+	UserID       string `json:"user_id"`
+	Username     string `json:"username"`
+	TokenVersion int    `json:"token_version"`
+	TokenType    string `json:"token_type"` // access or refresh
 }
 
 func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb.GetReviewsResponse, error) {
@@ -70,27 +82,38 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 }
 
 func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.CreateReviewResponse, error) {
-	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", req.GetUserId(), "rating", req.GetRating())
+	claims, err := ExtractUserFromContext(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Invalid token")
+	}
+
+	user_id, err := parseInt32(claims.UserID)
+	if err != nil {
+		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
+		return nil, mapToGRPCError(err)
+	}
+	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
 		RestaurantID: int32(req.GetRestaurantId()),
-		UserID:       int32(req.GetUserId()),
+		UserID:       user_id,
 		Rating:       int32(req.GetRating()),
 		Comment:      req.GetComment(),
 	}
-	review, err := s.svc.CreateReview(ctx, review)
+
+	reviewResponse, err := s.svc.CreateReview(ctx, review)
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
 
-	slog.Info("CreateReview request successful", "reviewID", review.ReviewID, "restaurantID", review.RestaurantID, "userID", review.UserID)
+	slog.Info("CreateReview request successful", "reviewID", reviewResponse.ReviewID, "restaurantID", reviewResponse.RestaurantID, "userID", reviewResponse.UserID)
 	return &pb.CreateReviewResponse{
 		Review: &pb.Review{
-			ReviewId:     int32(review.ReviewID),
-			RestaurantId: int32(review.RestaurantID),
-			UserId:       int32(review.UserID),
-			Rating:       int32(review.Rating),
-			Comment:      review.Comment,
-			CreatedAt:    timestamppb.New(review.CreatedAt),
+			ReviewId:     int32(reviewResponse.ReviewID),
+			RestaurantId: int32(reviewResponse.RestaurantID),
+			UserId:       int32(reviewResponse.UserID),
+			Rating:       int32(reviewResponse.Rating),
+			Comment:      reviewResponse.Comment,
+			CreatedAt:    timestamppb.New(reviewResponse.CreatedAt),
 		},
 	}, nil
 }
@@ -171,6 +194,48 @@ func RunServer(svc *service.Service) {
 	}
 }
 
+func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("no metadata")
+	}
+
+	authHeader := md["authorization"]
+	if len(authHeader) == 0 {
+		return nil, errors.New("no auth header")
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader[0], "Bearer ")
+
+	claims := &Claims{}
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
+
+	if err != nil {
+		slog.Error("failed to parse token", "error", err)
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+
+	slog.Info("USER INFO",
+		"user_id", claims.UserID,
+		"username", claims.Username,
+		"token_type", claims.TokenType,
+		"exp", claims.ExpiresAt,
+	)
+
+	return claims, nil
+}
+
+func parseInt32(value string) (int32, error) {
+	v, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	if v < 1 {
+		return 0, errors.New("out of int32 range")
+	}
+	return int32(v), nil
+}
+
 func mapToGRPCError(err error) error {
 	slog.Error("gRPC Operation Failed", "error", err)
 	switch {
@@ -181,6 +246,8 @@ func mapToGRPCError(err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, models.ErrRestaurantNotFound), errors.Is(err, models.ErrReviewNotFound):
 		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, models.ErrForbidden):
+		return status.Error(codes.PermissionDenied, err.Error())
 	default:
 		return status.Error(codes.Internal, "Internal server error")
 	}
