@@ -74,7 +74,6 @@ func NewClient(address string) (pb.RestaurantToBookingServiceClient, func(), err
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.CreateBookingResponse, error) {
-	slog.Info("received booking CREATION request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
 	claims, err := ExtractUserFromContext(ctx)
 
@@ -87,6 +86,8 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Info("received booking CREATION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
 	booking := &models.Booking{
 		UserID:       user_id,
@@ -101,7 +102,7 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		return nil, mapServiceError(err)
 	}
 
-	slog.Info("Booking created", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
+	slog.Info("Booking created", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
 
 	return &pb.CreateBookingResponse{
 		BookingId: booking_id,
@@ -109,21 +110,33 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 }
 
 func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest) (*pb.DeleteBookingResponse, error) {
-	slog.Info("received booking DELETION request", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
+	claims, err := ExtractUserFromContext(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user_id, err := parseInt32(claims.UserID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	slog.Info("received booking DELETION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
 
 	booking := &models.Booking{
-		UserID:       req.UserId,
+		UserID:       user_id,
 		RestaurantID: req.RestaurantId,
 		TimeStart:    req.TimeStart.AsTime(),
 	}
 
-	err := s.bookingService.DeleteBooking(ctx, booking)
+	err = s.bookingService.DeleteBooking(ctx, booking)
 
 	if err != nil {
 		return nil, mapServiceError(err)
 	}
 
-	slog.Info("Booking deleted", "user_id", req.UserId, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
+	slog.Info("Booking deleted", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
 
 	return &pb.DeleteBookingResponse{}, nil
 }
