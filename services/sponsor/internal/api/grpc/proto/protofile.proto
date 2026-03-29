@@ -3,19 +3,22 @@ syntax = "proto3";
 package proto;
 
 option go_package = "/pb;pb";
+import "google/protobuf/timestamp.proto";
 
 service SponsorService {
   rpc PingPong (Ping) returns (Pong);
-  rpc ManyPings (stream Ping) returns (Pong);
-  rpc ManyPongs (Ping) returns (stream Pong);
-  rpc ManyPingPongs (stream Ping) returns (stream Pong);
-  rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
-  rpc Sponsor (Sponsorship) returns (SponsorshipResponse);
+  rpc Sponsor (SponsorshipRequest) returns (SponsorshipResponse);
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse);
 }
+
+service RestaurantService {
+  rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse);
+}
+
 //Important repeated = all data comes back in one response
 //Important stream = data comes back in multiple responses, one at a time
 
-message Sponsorship {
+message SponsorshipRequest {
   int32 id = 1;
   int32 tier = 2;
 }
@@ -23,6 +26,37 @@ message Sponsorship {
 message SponsorshipResponse {
   int32 id = 1;
   int32 tier = 2;
+  google.protobuf.Timestamp until = 3;
+}
+
+message GetRestaurantSponsorshipRequest {
+  int32 id =1;
+}
+
+message GetRestaurantDetailsRequest {
+  int32 id = 1;
+}
+
+message GetRestaurantDetailsResponse {
+  RestaurantDetails restaurant = 1;
+}
+
+message RestaurantDetails {
+  int32 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  repeated google.protobuf.Timestamp working_hours = 6;
+  repeated string categories = 7;
+  optional string media_url = 8;
+  int32 max_slots = 9;
+  int32 owner_id = 10;
+  string owner_name = 11;
+  int32 sponsor_tier = 12;
+  optional double average_rating = 13;
+  optional int32 review_count = 14;
+
 }
 
 message PaginationRequest {

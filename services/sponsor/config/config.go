@@ -48,7 +48,7 @@ func Load(_ context.Context) (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Host:    "0.0.0.0",
-			Port:    8080,
+			Port:    50054,
 			Timeout: 30 * time.Second,
 		},
 		Log: LogConfig{

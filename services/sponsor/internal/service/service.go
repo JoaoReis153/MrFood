@@ -3,16 +3,26 @@ package service
 import (
 	"MrFood/services/sponsor/internal/repository"
 	models "MrFood/services/sponsor/pkg"
+	"context"
 )
 
 type Service struct {
-	repo repository.Repository
+	repo sponsorRepository
 }
 
-func New(repo repository.Repository) *Service {
+func New(repo *repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) GetExample(id int) (*models.Sponsorship, error) {
-	return s.repo.GetExample(id)
+type sponsorRepository interface {
+	GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
+	Sponsor(ctx context.Context, request *models.SponsorshipRequest) (*models.SponsorshipResponse, error)
+}
+
+func (s *Service) Sponsor(ctx context.Context, request *models.SponsorshipRequest) (*models.SponsorshipResponse, error) {
+	return s.repo.Sponsor(ctx, request)
+}
+
+func (s *Service) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+	return s.repo.GetRestaurantSponsorship(ctx, id)
 }

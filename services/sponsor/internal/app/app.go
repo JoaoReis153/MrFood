@@ -14,19 +14,28 @@ type App struct {
 }
 
 func New() *App {
-	repo := repository.New()
-	svc := service.New(*repo)
-
-	return &App{
-		Service: svc,
-	}
+	return &App{}
 }
 
-// func (app *App) InitDependencies() {
-// 	if app.DB == nil {
-// 		panic("DB not initialized")
-// 	}
+func (app *App) InitDependencies() {
+	if app.DB == nil {
+		panic("DB not initialized")
+	}
+	// cfg := config.Get(context.Background())
 
-// 	app.Repo = repository.New(app.DB)
-// 	app.Service = service.New(app.Repo)
+	app.Repo = repository.New(app.DB)
+
+	// reviewClient, reviewConn, err := newReviewStatsClient(cfg.Review.GRPCAddr)
+	// if err != nil {
+	// 	panic(fmt.Errorf("review client init failed: %w", err))
+	// }
+
+	// app.ReviewConn = reviewConn
+	app.Service = service.New(app.Repo)
+}
+
+// func (app *App) Close() {
+// 	if app.ReviewConn != nil {
+// 		_ = app.ReviewConn.Close()
+// 	}
 // }

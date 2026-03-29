@@ -19,12 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	SponsorService_PingPong_FullMethodName            = "/proto.SponsorService/PingPong"
-	SponsorService_ManyPings_FullMethodName           = "/proto.SponsorService/ManyPings"
-	SponsorService_ManyPongs_FullMethodName           = "/proto.SponsorService/ManyPongs"
-	SponsorService_ManyPingPongs_FullMethodName       = "/proto.SponsorService/ManyPingPongs"
-	SponsorService_GetPaginatedExample_FullMethodName = "/proto.SponsorService/GetPaginatedExample"
-	SponsorService_Sponsor_FullMethodName             = "/proto.SponsorService/Sponsor"
+	SponsorService_PingPong_FullMethodName                 = "/proto.SponsorService/PingPong"
+	SponsorService_Sponsor_FullMethodName                  = "/proto.SponsorService/Sponsor"
+	SponsorService_GetRestaurantSponsorship_FullMethodName = "/proto.SponsorService/GetRestaurantSponsorship"
 )
 
 // SponsorServiceClient is the client API for SponsorService service.
@@ -32,11 +29,8 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SponsorServiceClient interface {
 	PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error)
-	ManyPings(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingsClient, error)
-	ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (SponsorService_ManyPongsClient, error)
-	ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingPongsClient, error)
-	GetPaginatedExample(ctx context.Context, in *PaginationRequest, opts ...grpc.CallOption) (*PaginationResponse, error)
-	Sponsor(ctx context.Context, in *Sponsorship, opts ...grpc.CallOption) (*SponsorshipResponse, error)
+	Sponsor(ctx context.Context, in *SponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error)
+	GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error)
 }
 
 type sponsorServiceClient struct {
@@ -57,120 +51,20 @@ func (c *sponsorServiceClient) PingPong(ctx context.Context, in *Ping, opts ...g
 	return out, nil
 }
 
-func (c *sponsorServiceClient) ManyPings(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingsClient, error) {
+func (c *sponsorServiceClient) Sponsor(ctx context.Context, in *SponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &SponsorService_ServiceDesc.Streams[0], SponsorService_ManyPings_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &sponsorServiceManyPingsClient{ClientStream: stream}
-	return x, nil
-}
-
-type SponsorService_ManyPingsClient interface {
-	Send(*Ping) error
-	CloseAndRecv() (*Pong, error)
-	grpc.ClientStream
-}
-
-type sponsorServiceManyPingsClient struct {
-	grpc.ClientStream
-}
-
-func (x *sponsorServiceManyPingsClient) Send(m *Ping) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *sponsorServiceManyPingsClient) CloseAndRecv() (*Pong, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(Pong)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *sponsorServiceClient) ManyPongs(ctx context.Context, in *Ping, opts ...grpc.CallOption) (SponsorService_ManyPongsClient, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &SponsorService_ServiceDesc.Streams[1], SponsorService_ManyPongs_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &sponsorServiceManyPongsClient{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type SponsorService_ManyPongsClient interface {
-	Recv() (*Pong, error)
-	grpc.ClientStream
-}
-
-type sponsorServiceManyPongsClient struct {
-	grpc.ClientStream
-}
-
-func (x *sponsorServiceManyPongsClient) Recv() (*Pong, error) {
-	m := new(Pong)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *sponsorServiceClient) ManyPingPongs(ctx context.Context, opts ...grpc.CallOption) (SponsorService_ManyPingPongsClient, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &SponsorService_ServiceDesc.Streams[2], SponsorService_ManyPingPongs_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &sponsorServiceManyPingPongsClient{ClientStream: stream}
-	return x, nil
-}
-
-type SponsorService_ManyPingPongsClient interface {
-	Send(*Ping) error
-	Recv() (*Pong, error)
-	grpc.ClientStream
-}
-
-type sponsorServiceManyPingPongsClient struct {
-	grpc.ClientStream
-}
-
-func (x *sponsorServiceManyPingPongsClient) Send(m *Ping) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *sponsorServiceManyPingPongsClient) Recv() (*Pong, error) {
-	m := new(Pong)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *sponsorServiceClient) GetPaginatedExample(ctx context.Context, in *PaginationRequest, opts ...grpc.CallOption) (*PaginationResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PaginationResponse)
-	err := c.cc.Invoke(ctx, SponsorService_GetPaginatedExample_FullMethodName, in, out, cOpts...)
+	out := new(SponsorshipResponse)
+	err := c.cc.Invoke(ctx, SponsorService_Sponsor_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *sponsorServiceClient) Sponsor(ctx context.Context, in *Sponsorship, opts ...grpc.CallOption) (*SponsorshipResponse, error) {
+func (c *sponsorServiceClient) GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SponsorshipResponse)
-	err := c.cc.Invoke(ctx, SponsorService_Sponsor_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SponsorService_GetRestaurantSponsorship_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,11 +76,8 @@ func (c *sponsorServiceClient) Sponsor(ctx context.Context, in *Sponsorship, opt
 // for forward compatibility
 type SponsorServiceServer interface {
 	PingPong(context.Context, *Ping) (*Pong, error)
-	ManyPings(SponsorService_ManyPingsServer) error
-	ManyPongs(*Ping, SponsorService_ManyPongsServer) error
-	ManyPingPongs(SponsorService_ManyPingPongsServer) error
-	GetPaginatedExample(context.Context, *PaginationRequest) (*PaginationResponse, error)
-	Sponsor(context.Context, *Sponsorship) (*SponsorshipResponse, error)
+	Sponsor(context.Context, *SponsorshipRequest) (*SponsorshipResponse, error)
+	GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*SponsorshipResponse, error)
 	mustEmbedUnimplementedSponsorServiceServer()
 }
 
@@ -197,20 +88,11 @@ type UnimplementedSponsorServiceServer struct {
 func (UnimplementedSponsorServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PingPong not implemented")
 }
-func (UnimplementedSponsorServiceServer) ManyPings(SponsorService_ManyPingsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ManyPings not implemented")
-}
-func (UnimplementedSponsorServiceServer) ManyPongs(*Ping, SponsorService_ManyPongsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ManyPongs not implemented")
-}
-func (UnimplementedSponsorServiceServer) ManyPingPongs(SponsorService_ManyPingPongsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ManyPingPongs not implemented")
-}
-func (UnimplementedSponsorServiceServer) GetPaginatedExample(context.Context, *PaginationRequest) (*PaginationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPaginatedExample not implemented")
-}
-func (UnimplementedSponsorServiceServer) Sponsor(context.Context, *Sponsorship) (*SponsorshipResponse, error) {
+func (UnimplementedSponsorServiceServer) Sponsor(context.Context, *SponsorshipRequest) (*SponsorshipResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sponsor not implemented")
+}
+func (UnimplementedSponsorServiceServer) GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*SponsorshipResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRestaurantSponsorship not implemented")
 }
 func (UnimplementedSponsorServiceServer) mustEmbedUnimplementedSponsorServiceServer() {}
 
@@ -243,99 +125,8 @@ func _SponsorService_PingPong_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SponsorService_ManyPings_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SponsorServiceServer).ManyPings(&sponsorServiceManyPingsServer{ServerStream: stream})
-}
-
-type SponsorService_ManyPingsServer interface {
-	SendAndClose(*Pong) error
-	Recv() (*Ping, error)
-	grpc.ServerStream
-}
-
-type sponsorServiceManyPingsServer struct {
-	grpc.ServerStream
-}
-
-func (x *sponsorServiceManyPingsServer) SendAndClose(m *Pong) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *sponsorServiceManyPingsServer) Recv() (*Ping, error) {
-	m := new(Ping)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _SponsorService_ManyPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Ping)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(SponsorServiceServer).ManyPongs(m, &sponsorServiceManyPongsServer{ServerStream: stream})
-}
-
-type SponsorService_ManyPongsServer interface {
-	Send(*Pong) error
-	grpc.ServerStream
-}
-
-type sponsorServiceManyPongsServer struct {
-	grpc.ServerStream
-}
-
-func (x *sponsorServiceManyPongsServer) Send(m *Pong) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _SponsorService_ManyPingPongs_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SponsorServiceServer).ManyPingPongs(&sponsorServiceManyPingPongsServer{ServerStream: stream})
-}
-
-type SponsorService_ManyPingPongsServer interface {
-	Send(*Pong) error
-	Recv() (*Ping, error)
-	grpc.ServerStream
-}
-
-type sponsorServiceManyPingPongsServer struct {
-	grpc.ServerStream
-}
-
-func (x *sponsorServiceManyPingPongsServer) Send(m *Pong) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *sponsorServiceManyPingPongsServer) Recv() (*Ping, error) {
-	m := new(Ping)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func _SponsorService_GetPaginatedExample_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PaginationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SponsorServiceServer).GetPaginatedExample(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SponsorService_GetPaginatedExample_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SponsorServiceServer).GetPaginatedExample(ctx, req.(*PaginationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _SponsorService_Sponsor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Sponsorship)
+	in := new(SponsorshipRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -347,7 +138,25 @@ func _SponsorService_Sponsor_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: SponsorService_Sponsor_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SponsorServiceServer).Sponsor(ctx, req.(*Sponsorship))
+		return srv.(SponsorServiceServer).Sponsor(ctx, req.(*SponsorshipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SponsorService_GetRestaurantSponsorship_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantSponsorshipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SponsorServiceServer).GetRestaurantSponsorship(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SponsorService_GetRestaurantSponsorship_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SponsorServiceServer).GetRestaurantSponsorship(ctx, req.(*GetRestaurantSponsorshipRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -364,31 +173,105 @@ var SponsorService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SponsorService_PingPong_Handler,
 		},
 		{
-			MethodName: "GetPaginatedExample",
-			Handler:    _SponsorService_GetPaginatedExample_Handler,
-		},
-		{
 			MethodName: "Sponsor",
 			Handler:    _SponsorService_Sponsor_Handler,
 		},
-	},
-	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "ManyPings",
-			Handler:       _SponsorService_ManyPings_Handler,
-			ClientStreams: true,
-		},
-		{
-			StreamName:    "ManyPongs",
-			Handler:       _SponsorService_ManyPongs_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "ManyPingPongs",
-			Handler:       _SponsorService_ManyPingPongs_Handler,
-			ServerStreams: true,
-			ClientStreams: true,
+			MethodName: "GetRestaurantSponsorship",
+			Handler:    _SponsorService_GetRestaurantSponsorship_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	RestaurantService_GetRestaurantDetails_FullMethodName = "/proto.RestaurantService/GetRestaurantDetails"
+)
+
+// RestaurantServiceClient is the client API for RestaurantService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type RestaurantServiceClient interface {
+	GetRestaurantDetails(ctx context.Context, in *GetRestaurantDetailsRequest, opts ...grpc.CallOption) (*GetRestaurantDetailsResponse, error)
+}
+
+type restaurantServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRestaurantServiceClient(cc grpc.ClientConnInterface) RestaurantServiceClient {
+	return &restaurantServiceClient{cc}
+}
+
+func (c *restaurantServiceClient) GetRestaurantDetails(ctx context.Context, in *GetRestaurantDetailsRequest, opts ...grpc.CallOption) (*GetRestaurantDetailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRestaurantDetailsResponse)
+	err := c.cc.Invoke(ctx, RestaurantService_GetRestaurantDetails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RestaurantServiceServer is the server API for RestaurantService service.
+// All implementations must embed UnimplementedRestaurantServiceServer
+// for forward compatibility
+type RestaurantServiceServer interface {
+	GetRestaurantDetails(context.Context, *GetRestaurantDetailsRequest) (*GetRestaurantDetailsResponse, error)
+	mustEmbedUnimplementedRestaurantServiceServer()
+}
+
+// UnimplementedRestaurantServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedRestaurantServiceServer struct {
+}
+
+func (UnimplementedRestaurantServiceServer) GetRestaurantDetails(context.Context, *GetRestaurantDetailsRequest) (*GetRestaurantDetailsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRestaurantDetails not implemented")
+}
+func (UnimplementedRestaurantServiceServer) mustEmbedUnimplementedRestaurantServiceServer() {}
+
+// UnsafeRestaurantServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RestaurantServiceServer will
+// result in compilation errors.
+type UnsafeRestaurantServiceServer interface {
+	mustEmbedUnimplementedRestaurantServiceServer()
+}
+
+func RegisterRestaurantServiceServer(s grpc.ServiceRegistrar, srv RestaurantServiceServer) {
+	s.RegisterService(&RestaurantService_ServiceDesc, srv)
+}
+
+func _RestaurantService_GetRestaurantDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantDetailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RestaurantServiceServer).GetRestaurantDetails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RestaurantService_GetRestaurantDetails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RestaurantServiceServer).GetRestaurantDetails(ctx, req.(*GetRestaurantDetailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RestaurantService_ServiceDesc is the grpc.ServiceDesc for RestaurantService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var RestaurantService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.RestaurantService",
+	HandlerType: (*RestaurantServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetRestaurantDetails",
+			Handler:    _RestaurantService_GetRestaurantDetails_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/api/grpc/proto/protofile.proto",
 }
