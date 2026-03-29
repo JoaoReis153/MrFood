@@ -43,7 +43,7 @@ services:
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - restaurant_db_data:/var/lib/postgresql/data
-      - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *restaurant-db-config
     healthcheck:

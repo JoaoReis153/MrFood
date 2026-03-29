@@ -46,7 +46,7 @@ services:
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - booking_db_data:/var/lib/postgresql/data
-      - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *booking-db-config
     healthcheck:
