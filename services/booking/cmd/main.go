@@ -14,6 +14,7 @@ func main() {
 	setupLogger(config.Get(context.Background()).Log.Level)
 	config.Get(context.Background())
 	application := app.New()
+	defer application.Close()
 
 	err := application.ConnectDb()
 	if err != nil {

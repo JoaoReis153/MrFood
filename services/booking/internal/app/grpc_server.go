@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"MrFood/services/booking/config"
 	pb "MrFood/services/booking/internal/api/grpc/pb"
 	"MrFood/services/booking/internal/service"
 	models "MrFood/services/booking/pkg"
@@ -42,7 +43,10 @@ type Claims struct {
 }
 
 func RunServer(service bookingService) {
-	lis, err := net.Listen("tcp", ":50053")
+	cfg := config.Get(context.Background())
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,13 +57,13 @@ func RunServer(service bookingService) {
 	})
 	reflection.Register(s)
 
-	fmt.Println("Server running on :50053")
+	fmt.Println("Server running on", addr)
 	if err := s.Serve(lis); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func NewClient(address string) (pb.RestaurantToBookingServiceClient, func(), error) {
+func NewClient(address string) (pb.RestaurantToBookingServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -68,13 +72,7 @@ func NewClient(address string) (pb.RestaurantToBookingServiceClient, func(), err
 		return nil, nil, err
 	}
 
-	cleanup := func() {
-		if err := conn.Close(); err != nil {
-			slog.Error("failed to close grpc connection", "error", err)
-		}
-	}
-
-	return pb.NewRestaurantToBookingServiceClient(conn), cleanup, nil
+	return pb.NewRestaurantToBookingServiceClient(conn), conn, nil
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.CreateBookingResponse, error) {
