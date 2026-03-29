@@ -136,10 +136,9 @@ func (x *WorkingHoursResponse) GetTimeEnd() *timestamppb.Timestamp {
 
 type CreateBookingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RestaurantId  int32                  `protobuf:"varint,2,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
+	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -172,13 +171,6 @@ func (x *CreateBookingRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateBookingRequest.ProtoReflect.Descriptor instead.
 func (*CreateBookingRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *CreateBookingRequest) GetUserId() int32 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
 }
 
 func (x *CreateBookingRequest) GetRestaurantId() int32 {
@@ -248,9 +240,8 @@ func (x *CreateBookingResponse) GetBookingId() int32 {
 
 type DeleteBookingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        int32                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	RestaurantId  int32                  `protobuf:"varint,2,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
+	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -283,13 +274,6 @@ func (x *DeleteBookingRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use DeleteBookingRequest.ProtoReflect.Descriptor instead.
 func (*DeleteBookingRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *DeleteBookingRequest) GetUserId() int32 {
-	if x != nil {
-		return x.UserId
-	}
-	return 0
 }
 
 func (x *DeleteBookingRequest) GetRestaurantId() int32 {
@@ -355,21 +339,19 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
 	"\n" +
 	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\x125\n" +
-	"\btime_end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd\"\xab\x01\n" +
-	"\x14CreateBookingRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12#\n" +
-	"\rrestaurant_id\x18\x02 \x01(\x05R\frestaurantId\x12\x1a\n" +
-	"\bquantity\x18\x03 \x01(\x05R\bquantity\x129\n" +
+	"\btime_end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd\"\x92\x01\n" +
+	"\x14CreateBookingRequest\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x1a\n" +
+	"\bquantity\x18\x02 \x01(\x05R\bquantity\x129\n" +
 	"\n" +
-	"time_start\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"6\n" +
+	"time_start\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"6\n" +
 	"\x15CreateBookingResponse\x12\x1d\n" +
 	"\n" +
-	"booking_id\x18\x01 \x01(\x05R\tbookingId\"\x8f\x01\n" +
-	"\x14DeleteBookingRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\x05R\x06userId\x12#\n" +
-	"\rrestaurant_id\x18\x02 \x01(\x05R\frestaurantId\x129\n" +
+	"booking_id\x18\x01 \x01(\x05R\tbookingId\"v\n" +
+	"\x14DeleteBookingRequest\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
 	"\n" +
-	"time_start\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\x17\n" +
+	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\x17\n" +
 	"\x15DeleteBookingResponse2\xa8\x01\n" +
 	"\x0eBookingService\x12J\n" +
 	"\rCreateBooking\x12\x1b.proto.CreateBookingRequest\x1a\x1c.proto.CreateBookingResponse\x12J\n" +

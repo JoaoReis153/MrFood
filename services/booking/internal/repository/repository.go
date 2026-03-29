@@ -10,7 +10,7 @@ import (
 	models "MrFood/services/booking/pkg"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const MAX_SLOTS int32 = 15
@@ -21,11 +21,17 @@ var (
 	ErrBookingNotFound      = errors.New("booking not found")
 )
 
-type Repository struct {
-	DB *pgxpool.Pool
+type DB interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func New(db *pgxpool.Pool) *Repository {
+type Repository struct {
+	DB DB
+}
+
+func New(db DB) *Repository {
 	return &Repository{DB: db}
 }
 

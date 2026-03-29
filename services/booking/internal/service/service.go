@@ -56,7 +56,7 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 		return 0, ErrInvalidBooking
 	}
 
-	var time_end = booking.TimeStart.Add(time.Hour * time.Duration(1))
+	var time_end = booking.TimeStart.Add(time.Hour)
 
 	if time_end.After(working_hours.TimeEnd) {
 		time_end = working_hours.TimeEnd

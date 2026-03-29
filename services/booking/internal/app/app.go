@@ -23,7 +23,7 @@ func (app *App) InitDependencies() {
 		panic("DB not initialized")
 	}
 
-	client, _, err := NewClient()
+	client, _, err := NewClient("localhost:50053")
 	if err != nil {
 		panic(fmt.Errorf("client init failed: %w", err))
 	}
