@@ -56,7 +56,7 @@ func Load(_ context.Context) (*Config, error) {
 		},
 		DB: DBConfig{
 			Host: "localhost",
-			Port: 5435,
+			Port: 5432,
 			Name: "mrfood",
 			User: "postgres",
 		},

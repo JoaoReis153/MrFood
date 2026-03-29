@@ -16,10 +16,10 @@ func New(repo *repository.Repository) *Service {
 
 type sponsorRepository interface {
 	GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
-	Sponsor(ctx context.Context, request *models.SponsorshipRequest) (*models.SponsorshipResponse, error)
+	Sponsor(ctx context.Context, request *models.Sponsorship) (*models.SponsorshipResponse, error)
 }
 
-func (s *Service) Sponsor(ctx context.Context, request *models.SponsorshipRequest) (*models.SponsorshipResponse, error) {
+func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship) (*models.SponsorshipResponse, error) {
 	return s.repo.Sponsor(ctx, request)
 }
 

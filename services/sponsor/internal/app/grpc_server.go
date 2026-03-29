@@ -1,17 +1,20 @@
 package app
 
 import (
+	"MrFood/services/sponsor/config"
 	pb "MrFood/services/sponsor/internal/api/grpc/pb"
 	"MrFood/services/sponsor/internal/service"
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	models "MrFood/services/sponsor/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
@@ -52,10 +55,27 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
+	slog.Info("USER: ", user.Username)
+
+	sponsorship := &models.Sponsorship{
+		ID:         int(req.Id),
+		Tier:       int(req.Tier),
+		Status:     true,
+		Until:      time.Now().AddDate(0, 1, 0),
+		Categories: []string{},
+	}
+
+	response, err := s.sponsorService.Sponsor(ctx, sponsorship)
+	if err != nil {
+		return nil, err
+	}
+
+	slog.Info("ADDED TO DATABASE: ", response.ID, response.Tier, response.Until)
+
 	return &pb.SponsorshipResponse{
-		Id:    user.UserID,
-		Tier:  req.Tier,
-		Until: timestamppb.New(time.Now().AddDate(0, 1, 0)),
+		Id:    int32(response.ID),
+		Tier:  int32(response.Tier),
+		Until: timestamppb.New(response.Until),
 	}, nil
 }
 
@@ -112,17 +132,26 @@ func parseInt32(value string) (int32, error) {
 	return int32(v), nil
 }
 
-func RunServer() {
-	lis, err := net.Listen("tcp", ":50054")
+func (app *App) RunServer() {
+	cfg := config.Get(context.Background())
+	addr := fmt.Sprintf(":%d", cfg.Server.Port)
+
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed", "error", err)
+		os.Exit(1)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterSponsorServiceServer(s, &server{})
+	srv := &server{
+		sponsorService: app.Service,
+	}
 
-	fmt.Println("Server running on :50054")
+	pb.RegisterSponsorServiceServer(s, srv)
+
+	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
-		log.Fatal(err)
+		slog.Error("failed", "error", err)
+		os.Exit(1)
 	}
 }

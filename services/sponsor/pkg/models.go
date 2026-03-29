@@ -18,6 +18,14 @@ type SponsorshipResponse struct {
 	Until time.Time `json:"until"`
 }
 
+type Sponsorship struct {
+	ID         int       `json:"id"`
+	Tier       int       `json:"tier" validate:"required,min=1,max=4"`
+	Status     bool      `json:status`
+	Until      time.Time `json:"until"`
+	Categories []string  `json:"categories"`
+}
+
 var validate = validator.New()
 
 func ValidateSponsorshipRequest(s SponsorshipRequest) error {
