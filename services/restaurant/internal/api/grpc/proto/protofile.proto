@@ -48,12 +48,8 @@ message WorkingHoursRequest {
 
 message WorkingHoursResponse {
   int32 restaurant_id = 1;
-  TimeRange working_hours = 2;
-}
-
-message TimeRange {
-  google.protobuf.Timestamp time_start = 1;
-  google.protobuf.Timestamp time_end = 2;
+  google.protobuf.Timestamp time_start = 2;
+  google.protobuf.Timestamp time_end = 3;
 }
 
 message GetRestaurantDetailsRequest {

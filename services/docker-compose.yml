@@ -3,3 +3,4 @@ include:
   - docker-compose.restaurant.yml
   - docker-compose.kong.yml
   - docker-compose.review.yml
+  - docker-compose.booking.yml
