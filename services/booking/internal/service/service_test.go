@@ -18,12 +18,14 @@ type mockGRPCClient struct{}
 func (m *mockGRPCClient) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursRequest, opts ...grpc.CallOption) (*pb.WorkingHoursResponse, error) {
 	return &pb.WorkingHoursResponse{
 		RestaurantId: req.RestaurantId,
-		TimeStart:    timestamppb.New(time.Date(2026, 3, 28, 9, 0, 0, 0, time.UTC)),  // 9:00 AM
-		TimeEnd:      timestamppb.New(time.Date(2026, 3, 28, 18, 0, 0, 0, time.UTC)), // 6:00 PM
+		TimeStart:    timestamppb.New(time.Date(2026, 3, 28, 9, 0, 0, 0, time.UTC)),
+		TimeEnd:      timestamppb.New(time.Date(2026, 3, 28, 18, 0, 0, 0, time.UTC)),
 	}, nil
 }
 
-type mockRepo struct{}
+type mockRepo struct {
+	bookings map[int32]int32 // bookingID -> userID
+}
 
 func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
 	if booking.PeopleCount > MAX_SLOTS {
@@ -32,10 +34,19 @@ func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (
 	return 42, nil
 }
 
-func (m *mockRepo) DeleteBooking(ctx context.Context, userID, restaurantID int, start time.Time) error {
-	if userID == 0 {
+func (m *mockRepo) DeleteBooking(ctx context.Context, req *models.DeleteBooking) error {
+	if m.bookings == nil {
+		m.bookings = map[int32]int32{
+			1: 1,
+		}
+	}
+
+	userID, ok := m.bookings[req.BookingID]
+	if !ok || userID != req.UserID {
 		return ErrBookingNotFound
 	}
+
+	delete(m.bookings, req.BookingID)
 	return nil
 }
 
@@ -107,21 +118,36 @@ func TestCreateBooking_EdgeCases(t *testing.T) {
 func TestDeleteBooking(t *testing.T) {
 	service := New(&mockRepo{}, &mockGRPCClient{})
 
-	err := service.DeleteBooking(context.Background(), &models.Booking{
-		UserID:       1,
-		RestaurantID: 1,
-		TimeStart:    time.Date(2026, 3, 28, 10, 0, 0, 0, time.UTC),
+	t.Run("Successful deletion", func(t *testing.T) {
+		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
+			UserID:    1,
+			BookingID: 1,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
 
-	err = service.DeleteBooking(context.Background(), &models.Booking{
-		UserID:       0,
-		RestaurantID: 1,
-		TimeStart:    time.Date(2026, 3, 28, 10, 0, 0, 0, time.UTC),
+	t.Run("Booking not found", func(t *testing.T) {
+		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
+			UserID:    1,
+			BookingID: 999, // non-existent booking
+		})
+		if !errors.Is(err, ErrBookingNotFound) {
+			t.Fatalf("expected ErrBookingNotFound, got %v", err)
+		}
 	})
-	if !errors.Is(err, ErrBookingNotFound) {
-		t.Fatalf("expected ErrBookingNotFound, got %v", err)
-	}
+
+	t.Run("Wrong user", func(t *testing.T) {
+		// Recreate the booking to ensure it exists
+		service.repo.(*mockRepo).bookings = map[int32]int32{1: 1}
+
+		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
+			UserID:    2, // wrong user
+			BookingID: 1,
+		})
+		if !errors.Is(err, ErrBookingNotFound) {
+			t.Fatalf("expected ErrBookingNotFound for wrong user, got %v", err)
+		}
+	})
 }

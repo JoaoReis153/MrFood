@@ -23,7 +23,7 @@ var (
 
 type BookingRepository interface {
 	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
-	DeleteBooking(ctx context.Context, userID, restaurantID int, start time.Time) error
+	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
 type Service struct {
@@ -73,10 +73,8 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	return booking_id, nil
 }
 
-func (s *Service) DeleteBooking(ctx context.Context, booking *models.Booking) error {
-	booking.TimeStart = booking.TimeStart.UTC().Truncate(30 * time.Minute)
-
-	err := s.repo.DeleteBooking(ctx, int(booking.UserID), int(booking.RestaurantID), booking.TimeStart)
+func (s *Service) DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error {
+	err := s.repo.DeleteBooking(ctx, delete_request)
 
 	return err
 }

@@ -240,8 +240,7 @@ func (x *CreateBookingResponse) GetBookingId() int32 {
 
 type DeleteBookingRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
+	BookingId     int32                  `protobuf:"varint,1,opt,name=booking_id,json=bookingId,proto3" json:"booking_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -276,18 +275,11 @@ func (*DeleteBookingRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *DeleteBookingRequest) GetRestaurantId() int32 {
+func (x *DeleteBookingRequest) GetBookingId() int32 {
 	if x != nil {
-		return x.RestaurantId
+		return x.BookingId
 	}
 	return 0
-}
-
-func (x *DeleteBookingRequest) GetTimeStart() *timestamppb.Timestamp {
-	if x != nil {
-		return x.TimeStart
-	}
-	return nil
 }
 
 type DeleteBookingResponse struct {
@@ -347,11 +339,10 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"time_start\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"6\n" +
 	"\x15CreateBookingResponse\x12\x1d\n" +
 	"\n" +
-	"booking_id\x18\x01 \x01(\x05R\tbookingId\"v\n" +
-	"\x14DeleteBookingRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
+	"booking_id\x18\x01 \x01(\x05R\tbookingId\"5\n" +
+	"\x14DeleteBookingRequest\x12\x1d\n" +
 	"\n" +
-	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\x17\n" +
+	"booking_id\x18\x01 \x01(\x05R\tbookingId\"\x17\n" +
 	"\x15DeleteBookingResponse2\xa8\x01\n" +
 	"\x0eBookingService\x12J\n" +
 	"\rCreateBooking\x12\x1b.proto.CreateBookingRequest\x1a\x1c.proto.CreateBookingResponse\x12J\n" +
@@ -386,18 +377,17 @@ var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	6, // 1: proto.WorkingHoursResponse.time_start:type_name -> google.protobuf.Timestamp
 	6, // 2: proto.WorkingHoursResponse.time_end:type_name -> google.protobuf.Timestamp
 	6, // 3: proto.CreateBookingRequest.time_start:type_name -> google.protobuf.Timestamp
-	6, // 4: proto.DeleteBookingRequest.time_start:type_name -> google.protobuf.Timestamp
-	2, // 5: proto.BookingService.CreateBooking:input_type -> proto.CreateBookingRequest
-	4, // 6: proto.BookingService.DeleteBooking:input_type -> proto.DeleteBookingRequest
-	0, // 7: proto.RestaurantToBookingService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
-	3, // 8: proto.BookingService.CreateBooking:output_type -> proto.CreateBookingResponse
-	5, // 9: proto.BookingService.DeleteBooking:output_type -> proto.DeleteBookingResponse
-	1, // 10: proto.RestaurantToBookingService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	2, // 4: proto.BookingService.CreateBooking:input_type -> proto.CreateBookingRequest
+	4, // 5: proto.BookingService.DeleteBooking:input_type -> proto.DeleteBookingRequest
+	0, // 6: proto.RestaurantToBookingService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
+	3, // 7: proto.BookingService.CreateBooking:output_type -> proto.CreateBookingResponse
+	5, // 8: proto.BookingService.DeleteBooking:output_type -> proto.DeleteBookingResponse
+	1, // 9: proto.RestaurantToBookingService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_internal_api_grpc_proto_protofile_proto_init() }

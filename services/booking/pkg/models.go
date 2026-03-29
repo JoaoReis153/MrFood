@@ -11,6 +11,11 @@ type Booking struct {
 	TimeEnd      time.Time `json:"time_end"`
 }
 
+type DeleteBooking struct {
+	BookingID int32 `json:"booking_id"`
+	UserID    int32 `json:"user_id"`
+}
+
 type RestaurantSlots struct {
 	ID           int32     `json:"id"`
 	RestaurantID int32     `json:"restaurant_id"`

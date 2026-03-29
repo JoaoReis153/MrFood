@@ -204,7 +204,10 @@ func TestCreateBooking(t *testing.T) {
 
 func TestDeleteBooking(t *testing.T) {
 	ctx := context.Background()
-	start := time.Now()
+	baseDeleteBooking := &models.DeleteBooking{
+		BookingID: 1,
+		UserID:    1,
+	}
 
 	t.Run("not found", func(t *testing.T) {
 		mock, _ := pgxmock.NewPool()
@@ -213,10 +216,10 @@ func TestDeleteBooking(t *testing.T) {
 		repo := New(mock)
 
 		mock.ExpectExec(`DELETE FROM booking`).
-			WithArgs(1, start, 1).
+			WithArgs(baseDeleteBooking.BookingID, baseDeleteBooking.UserID).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 
-		err := repo.DeleteBooking(ctx, 1, 1, start)
+		err := repo.DeleteBooking(ctx, baseDeleteBooking)
 		if !errors.Is(err, ErrBookingNotFound) {
 			t.Fatalf("expected ErrBookingNotFound, got %v", err)
 		}
@@ -231,7 +234,7 @@ func TestDeleteBooking(t *testing.T) {
 		mock.ExpectExec(`DELETE FROM booking`).
 			WillReturnError(errors.New("delete failed"))
 
-		err := repo.DeleteBooking(ctx, 1, 1, start)
+		err := repo.DeleteBooking(ctx, baseDeleteBooking)
 		if err == nil {
 			t.Fatalf("expected error")
 		}
@@ -244,10 +247,10 @@ func TestDeleteBooking(t *testing.T) {
 		repo := New(mock)
 
 		mock.ExpectExec(`DELETE FROM booking`).
-			WithArgs(1, start, 1).
+			WithArgs(baseDeleteBooking.BookingID, baseDeleteBooking.UserID).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
 
-		err := repo.DeleteBooking(ctx, 1, 1, start)
+		err := repo.DeleteBooking(ctx, baseDeleteBooking)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

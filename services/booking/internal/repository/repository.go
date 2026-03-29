@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"time"
 
 	models "MrFood/services/booking/pkg"
 
@@ -112,15 +111,14 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 	return booking_id, nil
 }
 
-func (r *Repository) DeleteBooking(ctx context.Context, user_id, restaurant_id int, time_start time.Time) error {
+func (r *Repository) DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error {
 	query := `
 		DELETE FROM booking
-		WHERE restaurant_id = $1
-		AND time_start = $2
-		AND user_id = $3;
+		WHERE id = $1
+		AND user_id = $2;
 	`
 
-	cmdTag, err := r.DB.Exec(ctx, query, restaurant_id, time_start, user_id)
+	cmdTag, err := r.DB.Exec(ctx, query, delete_request.BookingID, delete_request.UserID)
 
 	if err != nil {
 		return fmt.Errorf("failed to delete booking: %w", err)

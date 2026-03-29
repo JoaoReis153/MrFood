@@ -26,7 +26,7 @@ import (
 
 type bookingService interface {
 	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
-	DeleteBooking(ctx context.Context, booking *models.Booking) error
+	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
 type server struct {
@@ -124,21 +124,20 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 		return nil, err
 	}
 
-	slog.Info("received booking DELETION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
-
-	booking := &models.Booking{
-		UserID:       user_id,
-		RestaurantID: req.RestaurantId,
-		TimeStart:    req.TimeStart.AsTime(),
+	delete_request := &models.DeleteBooking{
+		BookingID: req.BookingId,
+		UserID:    user_id,
 	}
 
-	err = s.bookingService.DeleteBooking(ctx, booking)
+	slog.Info("received booking DELETION request", "booking_id", delete_request.BookingID)
+
+	err = s.bookingService.DeleteBooking(ctx, delete_request)
 
 	if err != nil {
 		return nil, mapServiceError(err)
 	}
 
-	slog.Info("Booking deleted", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
+	slog.Info("booking DELETED", "booking_id", delete_request.BookingID)
 
 	return &pb.DeleteBookingResponse{}, nil
 }

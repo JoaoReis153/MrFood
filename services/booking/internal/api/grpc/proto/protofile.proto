@@ -38,8 +38,7 @@ message CreateBookingResponse {
 }
 
 message DeleteBookingRequest {
-  int32 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
+  int32 booking_id = 1;
 }
 
 message DeleteBookingResponse {}

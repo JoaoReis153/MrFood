@@ -17,14 +17,14 @@ import (
 
 type mockService struct {
 	createFn func(ctx context.Context, booking *models.Booking) (int32, error)
-	deleteFn func(ctx context.Context, booking *models.Booking) error
+	deleteFn func(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
 func (m *mockService) CreateBooking(ctx context.Context, b *models.Booking) (int32, error) {
 	return m.createFn(ctx, b)
 }
 
-func (m *mockService) DeleteBooking(ctx context.Context, b *models.Booking) error {
+func (m *mockService) DeleteBooking(ctx context.Context, b *models.DeleteBooking) error {
 	return m.deleteFn(ctx, b)
 }
 
@@ -143,11 +143,8 @@ func TestCreateBooking(t *testing.T) {
 
 func TestDeleteBooking(t *testing.T) {
 
-	now := time.Now()
-
 	baseReq := &pb.DeleteBookingRequest{
-		RestaurantId: 1,
-		TimeStart:    timestamppb.New(now),
+		BookingId: 1,
 	}
 
 	t.Run("no metadata", func(t *testing.T) {
@@ -175,7 +172,7 @@ func TestDeleteBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				deleteFn: func(ctx context.Context, b *models.Booking) error {
+				deleteFn: func(ctx context.Context, b *models.DeleteBooking) error {
 					return service.ErrBookingNotFound
 				},
 			},
@@ -192,7 +189,7 @@ func TestDeleteBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				deleteFn: func(ctx context.Context, b *models.Booking) error {
+				deleteFn: func(ctx context.Context, b *models.DeleteBooking) error {
 					return errors.New("some error")
 				},
 			},
@@ -209,7 +206,7 @@ func TestDeleteBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				deleteFn: func(ctx context.Context, b *models.Booking) error {
+				deleteFn: func(ctx context.Context, b *models.DeleteBooking) error {
 					if b.UserID != 1 {
 						t.Fatalf("expected userID 1, got %d", b.UserID)
 					}
