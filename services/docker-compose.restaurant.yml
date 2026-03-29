@@ -4,10 +4,7 @@ x-common: &common
     - app-network
 
 x-restaurant-db-config: &restaurant-db-config
-  DB_HOST: restaurant_db
-  DB_NAME: ${RESTAURANT_POSTGRES_DB}
-  DB_USER: ${RESTAURANT_POSTGRES_USER}
-  DB_PASS: ${RESTAURANT_POSTGRES_PASSWORD}
+  POSTGRES_HOST: restaurant_db
   POSTGRES_DB: ${RESTAURANT_POSTGRES_DB}
   POSTGRES_USER: ${RESTAURANT_POSTGRES_USER}
   POSTGRES_PASSWORD: ${RESTAURANT_POSTGRES_PASSWORD}
@@ -41,7 +38,7 @@ services:
 
   restaurant_db:
     image: postgres:16
-    ports: ["${RESTAURANT_DB_PORT}:5432"]
+    ports: ["${RESTAURANT_POSTGRES_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:

@@ -1,7 +1,4 @@
-version: "3.8"
-
 include:
   - docker-compose.auth.yml
   - docker-compose.restaurant.yml
-
   - docker-compose.kong.yml

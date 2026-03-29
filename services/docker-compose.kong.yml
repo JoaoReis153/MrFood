@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   kong:
     image: '${GW_IMAGE:-kong/kong-gateway:3.13.0.2}'

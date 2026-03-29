@@ -91,10 +91,8 @@ func Load(_ context.Context) (*Config, error) {
 			DB:       0,
 		},
 		JWT: JWTConfig{
-			AccessTokenSecret:  "to-be-saved",
-			RefreshTokenSecret: "to-be-saved",
-			AccessTokenTTL:     15 * time.Minute,
-			RefreshTokenTTL:    7 * 24 * time.Hour,
+			AccessTokenTTL:  15 * time.Minute,
+			RefreshTokenTTL: 7 * 24 * time.Hour,
 		},
 	}
 
@@ -130,23 +128,25 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST")
-	cfg.DB.Name = getEnvAny(cfg.DB.Name, "POSTGRES_DB")
-	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER")
-	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD")
+	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Name = getEnv("POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
+
 	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
 	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
 	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
-	cfg.Redis.Host = getEnvAny(cfg.Redis.Host, "REDIS_HOST", "AUTH_REDIS_HOST")
-	cfg.Redis.Password = getEnvAny(cfg.Redis.Password, "REDIS_PASS", "AUTH_REDIS_PASS")
+	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
+	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
+
 	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
-	cfg.JWT.AccessTokenSecret = getEnvAny(cfg.JWT.AccessTokenSecret, "APP_JWT_ACCESS_TOKEN_SECRET", "AUTH_JWT_ACCESS_TOKEN_SECRET")
-	cfg.JWT.RefreshTokenSecret = getEnvAny(cfg.JWT.RefreshTokenSecret, "APP_JWT_REFRESH_TOKEN_SECRET", "AUTH_JWT_REFRESH_TOKEN_SECRET")
+	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
+	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
 }
 
 func validateConfig(cfg *Config) error {
