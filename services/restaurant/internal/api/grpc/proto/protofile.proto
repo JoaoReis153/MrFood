@@ -1,0 +1,124 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+import "google/protobuf/timestamp.proto";
+
+service RestaurantService {
+  rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse);
+
+  rpc CreateRestaurant(CreateRestaurantRequest) returns (CreateRestaurantResponse);
+
+  rpc UpdateRestaurant(UpdateRestaurantRequest) returns (UpdateRestaurantResponse);
+
+  rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse);
+}
+
+service RestaurantToBookingService {
+  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
+}
+
+service RestaurantToReviewService {
+  rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
+}
+
+
+message RestaurantStats {
+  int32 restaurant_id = 1;
+  double average_rating = 2;
+  int32 review_count = 3;
+}
+
+message GetRestaurantStatsRequest {
+  int32 restaurant_id = 1;
+}
+
+message GetRestaurantStatsResponse {
+  RestaurantStats restaurant_stats = 1;
+}
+
+
+
+
+message WorkingHoursRequest {
+  int32 restaurant_id = 1;
+  google.protobuf.Timestamp time_start = 2;
+}
+
+message WorkingHoursResponse {
+  int32 restaurant_id = 1;
+  TimeRange working_hours = 2;
+}
+
+message TimeRange {
+  google.protobuf.Timestamp time_start = 1;
+  google.protobuf.Timestamp time_end = 2;
+}
+
+message GetRestaurantDetailsRequest {
+  int32 id = 1;
+}
+
+message GetRestaurantDetailsResponse {
+  RestaurantDetails restaurant = 1;
+}
+
+message CreateRestaurantRequest {
+  string name = 1;
+  double latitude = 2;
+  double longitude = 3;
+  string address = 4;
+  repeated string working_hours = 5;
+  repeated string categories = 6;
+  int32 max_slots = 7;
+  bool has_media = 8;
+}
+
+message CreateRestaurantResponse {
+  int32 restaurant_id = 1;
+  optional string presigned_url = 2;
+}
+
+message UpdateRestaurantRequest {
+  int32 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  repeated google.protobuf.Timestamp working_hours = 6;
+  repeated string categories = 7;
+  int32 max_slots = 8;
+}
+
+message UpdateRestaurantResponse {
+  RestaurantDetails restaurant = 1;
+}
+
+message RestaurantDetails {
+  int32 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  repeated google.protobuf.Timestamp working_hours = 6;
+  repeated string categories = 7;
+  optional string media_url = 8;
+  int32 max_slots = 9;
+  int32 owner_id = 10;
+  string owner_name = 11;
+  int32 sponsor_tier = 12;
+  optional double average_rating = 13;
+  optional int32 review_count = 14;
+
+}
+
+message CompareRestaurantDetailsRequest {
+  int32 restaurant_id_1 = 1;
+  int32 restaurant_id_2 = 2;
+}
+
+message CompareRestaurantDetailsResponse {
+  RestaurantDetails restaurant1 = 1;
+  RestaurantDetails restaurant2 = 2;
+}

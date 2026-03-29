@@ -5,6 +5,11 @@ type SuccessResponse[T any] struct {
 	Message string `json:"message,omitempty"`
 }
 
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 type Pagination struct {
 	Page  int `json:"page"`
 	Limit int `json:"limit"`

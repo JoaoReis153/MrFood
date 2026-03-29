@@ -1,47 +1,47 @@
-# Path to docker-compose file
-COMPOSE_FILE=services/docker-compose.yml
-TEST_PACKAGES=./services/auth/... ./services/restaurant/... ./services/test_grpc/...
+# Config
+PROJECT_NAME := mrfood
+COMPOSE_FILE := services/docker-compose.yml
+TEST_PACKAGES := ./services/auth/... ./services/restaurant/...
 
-.PHONY: build run stop remove remove-images remove-all remove-all-force remove-all-force-all test
+DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
 
-# Run all Go tests across service modules from repo root
+.PHONY: test build run stop down logs restart clean clean-volumes clean-all
+
+## Run all Go tests
 test:
 	go test -v -race $(TEST_PACKAGES)
 
-# Build Docker Compose services
+## Build services
 build:
-	docker-compose -f $(COMPOSE_FILE) build
+	$(DC) build
 
-# Run Docker Compose services
+## Start services (detached)
 run:
-	docker-compose -f $(COMPOSE_FILE) up -d
+	$(DC) up -d
 
-# Stop Docker Compose services
+## Stop services
 stop:
-	docker-compose -f $(COMPOSE_FILE) stop
+	$(DC) stop
 
-# Remove Docker Compose services
-remove:
-	docker-compose -f $(COMPOSE_FILE) down
+## Stop and remove services
+down:
+	$(DC) down
 
-# Remove all Docker images
-remove-images:
-	docker rmi -f $$(docker images -q)
+## View logs
+logs:
+	$(DC) logs -f
 
-# Remove all containers safely
-remove-all:
-	@if [ "$$(docker ps -aq)" ]; then docker rm -f $$(docker ps -aq); else echo "No containers to remove"; fi
-	@if [ "$$(docker images -q)" ]; then docker rmi -f $$(docker images -q); else echo "No images to remove"; fi
+## Restart services
+restart: down run
 
-# Remove all containers, images, and volumes safely
-remove-all-force:
-	@if [ "$$(docker ps -aq)" ]; then docker rm -f $$(docker ps -aq); else echo "No containers to remove"; fi
-	@if [ "$$(docker images -q)" ]; then docker rmi -f $$(docker images -q); else echo "No images to remove"; fi
-	@if [ "$$(docker volume ls -q)" ]; then docker volume rm $$(docker volume ls -q); else echo "No volumes to remove"; fi
+## Remove only this project's containers + images
+clean:
+	$(DC) down --rmi local --remove-orphans
 
-# Remove all containers, images, volumes, and networks safely
-remove-all-force-all:
-	@if [ "$$(docker ps -aq)" ]; then docker rm -f $$(docker ps -aq); else echo "No containers to remove"; fi
-	@if [ "$$(docker images -q)" ]; then docker rmi -f $$(docker images -q); else echo "No images to remove"; fi
-	@if [ "$$(docker volume ls -q)" ]; then docker volume rm $$(docker volume ls -q); else echo "No volumes to remove"; fi
-	@if [ "$$(docker network ls -q -f type=custom)" ]; then docker network rm $$(docker network ls -q -f type=custom); else echo "No custom networks to remove"; fi
+clean-volumes:
+## Remove containers + images + volumes ( deletes DB data)
+	$(DC) down --rmi local --volumes --remove-orphans
+
+## Full reset
+clean-all:
+	$(DC) down --rmi all --volumes --remove-orphans
