@@ -1,11 +1,42 @@
 package pkg
 
-type Example struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+import "time"
+
+type Restaurant struct {
+	ID            int32    `json:"id"`
+	SponsorTier   int32    `json:"sponsor_tier"`
+	MaxSlots      int32    `json:"max_slots"`
+	OwnerID       int32    `json:"owner_id"`
+	ReviewCount   *int32   `json:"review_count,omitempty"`
+	Latitude      float64  `json:"latitude"`
+	Longitude     float64  `json:"longitude"`
+	AverageRating *float64 `json:"average_rating,omitempty"`
+	Name          string   `json:"name"`
+	OwnerName     string   `json:"owner_name"`
+	Address       string   `json:"address"`
+	MediaURL      string   `json:"media_url"`
+	WorkingHours  []string `json:"working_hours" validate:"len=7"`
+	Categories    []string `json:"categories"`
 }
 
-type ErrorResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+type RestaurantCreateRequest struct {
+	OwnerID      int32    `json:"owner_id"`
+	MaxSlots     int32    `json:"max_slots"`
+	Longitude    float64  `json:"longitude"`
+	Latitude     float64  `json:"latitude"`
+	Address      string   `json:"address"`
+	Name         string   `json:"name"`
+	WorkingHours []string `json:"working_hours" validate:"len=7"`
+	Categories   []string `json:"categories"`
+}
+
+type TimeRange struct {
+	TimeStart time.Time `json:"time_start"`
+	TimeEnd   time.Time `json:"time_end"`
+}
+
+type RestaurantStats struct {
+	RestaurantID  int32   `json:"restaurant_id"`
+	AverageRating float64 `json:"average_rating"`
+	ReviewCount   int32   `json:"review_count"`
 }

@@ -1,39 +1,70 @@
 # {{.ServiceName}} Microservice
 
-## Quick Start
+## Current Status
+
+- Transport: **gRPC only** (no REST endpoints exposed by this service).
+- API contract: `internal/api/grpc/proto/protofile.proto`.
+- Server startup: `cmd/main.go` initializes config, logger, app dependencies, then runs the gRPC server.
+- Shutdown: graceful stop on `SIGINT`/`SIGTERM`.
+
+## Operations (gRPC)
+
+Service: `TemplateService`
+
+- `PingPong(Ping) -> Pong`
+
+## Workflow and Logic
+
+### 1) Ping
+
+1. Receives a `Ping` message.
+2. Returns a `Pong` response.
+
+## Configuration
+
+Main environment variables used by the service:
+
+- Server/logging: `APP_SERVER_HOST`, `APP_SERVER_PORT`, `APP_SERVER_TIMEOUT`, `APP_LOG_LEVEL`
+
+Defaults and validation rules are defined in `config/config.go`.
+
+## Development
+
+### Run locally
+
+```bash
+go run ./cmd/main.go
+```
+
+### Build and test
 
 ```bash
 make build
+make test
+```
+
+### Run in Docker
+
+```bash
 make docker-build
 make docker-up
 ```
 
-## Endpoints
+## gRPC Code Generation
 
-- GET /api/v1/health - Health check
+Proto file:
 
-- GET /api/v1/ping - Ping endpoint
+- `internal/api/grpc/proto/protofile.proto`
 
-## Development
+Generate stubs (from `services/{{.ServiceName}}`):
 
 ```bash
-go run cmd/main.go
-make test
-make lint
+make proto
 ```
 
-## gRPC Implementation
-- gRPC implementation consists of a single .proto file that can be found in "test_grpc/internal/api/grpc/proto". It defines the contracts between microservices (denoted by the "rpc" keyword) and the messages sent by each of them.
+This updates generated files under `internal/api/grpc/pb`.
 
-- Whenever the .proto file is changed, navigate to "MrFood/services/<service_name>" and execute the following command:
+`protoc` installation examples:
 
-`make proto`
-
-- This command generates the pb/ directory that contains 2 .pb.go files, needed for gRPC to work.
-
-- **Important note**: protoc needs to installed in order to run the scripts. Install it via:
-    - Linux
-    `sudo dnf install protobuf-compiler`
-
-    - MacOS
-    `brew install protobuf`
+- macOS: `brew install protobuf`
+- Linux (dnf): `sudo dnf install protobuf-compiler`

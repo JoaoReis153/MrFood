@@ -5,13 +5,12 @@ info:
 
 grpc:
   url: localhost:50051
-  method: /proto.TemplateService/RegisterProcess
+  method: /proto.AuthService/RegisterProcess
   methodType: unary
   protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
   message: |
     {
       "username": "banana",
-      "email": "banana@gmail.com",
+      "email": "banana11@gmail.com",
       "password": "bananapass"
     }
-  auth: inherit

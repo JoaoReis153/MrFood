@@ -1,7 +1,7 @@
 package app
 
 import (
-	"MrFood/services/auth/config"
+	"MrFood/services/restaurant/config"
 	"context"
 	"fmt"
 	"log/slog"

@@ -1,0 +1,52 @@
+_format_version: "3.0"
+
+services:
+  - name: auth
+    host: auth
+    port: 50051
+    protocol: grpc
+
+    routes:
+      - name: auth
+        protocols:
+        - http
+        - https
+        paths:
+          - /auth
+
+    plugins:
+      - name: grpc-gateway
+        config:
+          proto: /etc/kong/proto/auth.proto
+
+  - name: booking
+    host: booking
+    port: 50060
+    protocol: grpc
+
+    routes:
+      - name: booking
+        protocols:
+        - http
+        - https
+        paths:
+          - /reservations
+
+    plugins:
+      - name: grpc-gateway
+        config:
+          proto: /etc/kong/proto/booking.proto
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
+
+consumers:
+  - username: my-client
+    jwt_secrets:
+      - key: generate-key
+        secret: ${APP_JWT_ACCESS_TOKEN_SECRET}
+        algorithm: HS256
+      - key: refresh-key
+        secret: ${APP_JWT_REFRESH_TOKEN_SECRET}
+        algorithm: HS256

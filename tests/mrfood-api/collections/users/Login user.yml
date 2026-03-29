@@ -7,12 +7,12 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/auth/login"
+  url: http://localhost:8000/auth/login
   body:
     type: json
     data: |-
       {
-        "email": "john@example.com",
+        "email": "cristiano@example.com",
         "password": "StrongPassword123"
       }
   auth: inherit

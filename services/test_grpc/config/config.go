@@ -37,7 +37,7 @@ func Load() *Config {
 		Log: struct {
 			Level string `yaml:"level"`
 		}{
-			Level: "info",
+			Level: "debug",
 		},
 	}
 
