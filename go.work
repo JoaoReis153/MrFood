@@ -4,5 +4,4 @@ use (
 	./services/auth
 	./services/booking
 	./services/restaurant
-	./services/test_grpc
 )

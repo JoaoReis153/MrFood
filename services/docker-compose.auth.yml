@@ -5,7 +5,7 @@ x-common: &common
     - kong-net
 
 x-auth-db-config: &auth-db-config
-  DB_HOST: auth_db
+  POSTGRES_HOST: auth_db
   POSTGRES_DB: mrfood_auth
   POSTGRES_USER: ${AUTH_POSTGRES_USER}
   POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}

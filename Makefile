@@ -1,7 +1,7 @@
 # Config
 PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
-TEST_PACKAGES := ./services/auth/... ./services/restaurant/... ./services/test_grpc/...
+TEST_PACKAGES := ./services/auth/... ./services/restaurant/...
 
 DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
 
