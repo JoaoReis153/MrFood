@@ -68,7 +68,11 @@ func NewClient(address string) (pb.RestaurantToBookingServiceClient, func(), err
 		return nil, nil, err
 	}
 
-	cleanup := func() { conn.Close() }
+	cleanup := func() {
+		if err := conn.Close(); err != nil {
+			slog.Error("failed to close grpc connection", "error", err)
+		}
+	}
 
 	return pb.NewRestaurantToBookingServiceClient(conn), cleanup, nil
 }
