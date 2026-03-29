@@ -23,5 +23,5 @@ consumers:
   - username: my-client
     jwt_secrets:
       - key: generate-key
-        secret: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
+        secret: CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
         algorithm: HS256

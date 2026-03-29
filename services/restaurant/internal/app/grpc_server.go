@@ -175,10 +175,8 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 
 	return &pb.WorkingHoursResponse{
 		RestaurantId: req.GetRestaurantId(),
-		WorkingHours: &pb.TimeRange{
-			TimeStart: timestamppb.New(workingHours.TimeStart),
-			TimeEnd:   timestamppb.New(workingHours.TimeEnd),
-		},
+		TimeStart:    timestamppb.New(workingHours.TimeStart),
+		TimeEnd:      timestamppb.New(workingHours.TimeEnd),
 	}, nil
 }
 

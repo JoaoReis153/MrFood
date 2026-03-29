@@ -49,7 +49,7 @@ services:
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - auth_db_data:/var/lib/postgresql/data
-      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *auth-db-config
     healthcheck:

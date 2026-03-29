@@ -101,10 +101,10 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if got := resp.GetWorkingHours().GetTimeStart().AsTime(); !got.Equal(start) {
+	if got := resp.GetTimeStart().AsTime(); !got.Equal(start) {
 		t.Fatalf("expected %s, got %s", start, got)
 	}
-	if got := resp.GetWorkingHours().GetTimeEnd().AsTime(); !got.Equal(end) {
+	if got := resp.GetTimeEnd().AsTime(); !got.Equal(end) {
 		t.Fatalf("expected %s, got %s", end, got)
 	}
 }
