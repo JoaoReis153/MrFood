@@ -171,15 +171,6 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-func getEnvAny(defaultValue string, keys ...string) string {
-	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
-			return value
-		}
-	}
-	return defaultValue
-}
-
 func getEnvInt(key string, defaultValue int) int {
 	value := os.Getenv(key)
 	if value == "" {
