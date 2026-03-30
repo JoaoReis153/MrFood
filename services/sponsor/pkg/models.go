@@ -26,6 +26,12 @@ type Sponsorship struct {
 	Categories []string  `json:"categories"`
 }
 
+type RestaurantDetails struct {
+	ID         int      `json:"id"`
+	Categories []string `json:"categories"`
+	OwnerID    int      `json:"owner_id"`
+}
+
 var validate = validator.New()
 
 func ValidateSponsorshipRequest(s SponsorshipRequest) error {

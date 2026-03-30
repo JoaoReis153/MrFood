@@ -11,8 +11,8 @@ service SponsorService {
   rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse);
 }
 
-service RestaurantService {
-  rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse);
+service RestaurantToSponsorService {
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (GetRestaurantSponsorshipResponse);
 }
 
 //Important repeated = all data comes back in one response
@@ -30,33 +30,13 @@ message SponsorshipResponse {
 }
 
 message GetRestaurantSponsorshipRequest {
-  int32 id =1;
-}
-
-message GetRestaurantDetailsRequest {
   int32 id = 1;
 }
 
-message GetRestaurantDetailsResponse {
-  RestaurantDetails restaurant = 1;
-}
-
-message RestaurantDetails {
+message GetRestaurantSponsorshipResponse {
   int32 id = 1;
-  string name = 2;
-  double latitude = 3;
-  double longitude = 4;
-  string address = 5;
-  repeated google.protobuf.Timestamp working_hours = 6;
-  repeated string categories = 7;
-  optional string media_url = 8;
-  int32 max_slots = 9;
-  int32 owner_id = 10;
-  string owner_name = 11;
-  int32 sponsor_tier = 12;
-  optional double average_rating = 13;
-  optional int32 review_count = 14;
-
+  repeated string categories = 2;
+  int32 owner_id = 3;
 }
 
 message PaginationRequest {

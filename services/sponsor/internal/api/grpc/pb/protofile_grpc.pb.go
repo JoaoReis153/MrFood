@@ -186,90 +186,91 @@ var SponsorService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	RestaurantService_GetRestaurantDetails_FullMethodName = "/proto.RestaurantService/GetRestaurantDetails"
+	RestaurantToSponsorService_GetRestaurantSponsorship_FullMethodName = "/proto.RestaurantToSponsorService/GetRestaurantSponsorship"
 )
 
-// RestaurantServiceClient is the client API for RestaurantService service.
+// RestaurantToSponsorServiceClient is the client API for RestaurantToSponsorService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RestaurantServiceClient interface {
-	GetRestaurantDetails(ctx context.Context, in *GetRestaurantDetailsRequest, opts ...grpc.CallOption) (*GetRestaurantDetailsResponse, error)
+type RestaurantToSponsorServiceClient interface {
+	GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*GetRestaurantSponsorshipResponse, error)
 }
 
-type restaurantServiceClient struct {
+type restaurantToSponsorServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRestaurantServiceClient(cc grpc.ClientConnInterface) RestaurantServiceClient {
-	return &restaurantServiceClient{cc}
+func NewRestaurantToSponsorServiceClient(cc grpc.ClientConnInterface) RestaurantToSponsorServiceClient {
+	return &restaurantToSponsorServiceClient{cc}
 }
 
-func (c *restaurantServiceClient) GetRestaurantDetails(ctx context.Context, in *GetRestaurantDetailsRequest, opts ...grpc.CallOption) (*GetRestaurantDetailsResponse, error) {
+func (c *restaurantToSponsorServiceClient) GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*GetRestaurantSponsorshipResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetRestaurantDetailsResponse)
-	err := c.cc.Invoke(ctx, RestaurantService_GetRestaurantDetails_FullMethodName, in, out, cOpts...)
+	out := new(GetRestaurantSponsorshipResponse)
+	err := c.cc.Invoke(ctx, RestaurantToSponsorService_GetRestaurantSponsorship_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RestaurantServiceServer is the server API for RestaurantService service.
-// All implementations must embed UnimplementedRestaurantServiceServer
+// RestaurantToSponsorServiceServer is the server API for RestaurantToSponsorService service.
+// All implementations must embed UnimplementedRestaurantToSponsorServiceServer
 // for forward compatibility
-type RestaurantServiceServer interface {
-	GetRestaurantDetails(context.Context, *GetRestaurantDetailsRequest) (*GetRestaurantDetailsResponse, error)
-	mustEmbedUnimplementedRestaurantServiceServer()
+type RestaurantToSponsorServiceServer interface {
+	GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*GetRestaurantSponsorshipResponse, error)
+	mustEmbedUnimplementedRestaurantToSponsorServiceServer()
 }
 
-// UnimplementedRestaurantServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedRestaurantServiceServer struct {
+// UnimplementedRestaurantToSponsorServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedRestaurantToSponsorServiceServer struct {
 }
 
-func (UnimplementedRestaurantServiceServer) GetRestaurantDetails(context.Context, *GetRestaurantDetailsRequest) (*GetRestaurantDetailsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRestaurantDetails not implemented")
+func (UnimplementedRestaurantToSponsorServiceServer) GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*GetRestaurantSponsorshipResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRestaurantSponsorship not implemented")
 }
-func (UnimplementedRestaurantServiceServer) mustEmbedUnimplementedRestaurantServiceServer() {}
+func (UnimplementedRestaurantToSponsorServiceServer) mustEmbedUnimplementedRestaurantToSponsorServiceServer() {
+}
 
-// UnsafeRestaurantServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RestaurantServiceServer will
+// UnsafeRestaurantToSponsorServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RestaurantToSponsorServiceServer will
 // result in compilation errors.
-type UnsafeRestaurantServiceServer interface {
-	mustEmbedUnimplementedRestaurantServiceServer()
+type UnsafeRestaurantToSponsorServiceServer interface {
+	mustEmbedUnimplementedRestaurantToSponsorServiceServer()
 }
 
-func RegisterRestaurantServiceServer(s grpc.ServiceRegistrar, srv RestaurantServiceServer) {
-	s.RegisterService(&RestaurantService_ServiceDesc, srv)
+func RegisterRestaurantToSponsorServiceServer(s grpc.ServiceRegistrar, srv RestaurantToSponsorServiceServer) {
+	s.RegisterService(&RestaurantToSponsorService_ServiceDesc, srv)
 }
 
-func _RestaurantService_GetRestaurantDetails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRestaurantDetailsRequest)
+func _RestaurantToSponsorService_GetRestaurantSponsorship_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantSponsorshipRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RestaurantServiceServer).GetRestaurantDetails(ctx, in)
+		return srv.(RestaurantToSponsorServiceServer).GetRestaurantSponsorship(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RestaurantService_GetRestaurantDetails_FullMethodName,
+		FullMethod: RestaurantToSponsorService_GetRestaurantSponsorship_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RestaurantServiceServer).GetRestaurantDetails(ctx, req.(*GetRestaurantDetailsRequest))
+		return srv.(RestaurantToSponsorServiceServer).GetRestaurantSponsorship(ctx, req.(*GetRestaurantSponsorshipRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RestaurantService_ServiceDesc is the grpc.ServiceDesc for RestaurantService service.
+// RestaurantToSponsorService_ServiceDesc is the grpc.ServiceDesc for RestaurantToSponsorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RestaurantService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.RestaurantService",
-	HandlerType: (*RestaurantServiceServer)(nil),
+var RestaurantToSponsorService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.RestaurantToSponsorService",
+	HandlerType: (*RestaurantToSponsorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetRestaurantDetails",
-			Handler:    _RestaurantService_GetRestaurantDetails_Handler,
+			MethodName: "GetRestaurantSponsorship",
+			Handler:    _RestaurantToSponsorService_GetRestaurantSponsorship_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

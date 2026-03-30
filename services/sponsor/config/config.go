@@ -33,9 +33,12 @@ type DBConfig struct {
 }
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	Log    LogConfig    `yaml:"log"`
-	DB     DBConfig     `yaml:"db"`
+	Server     ServerConfig `yaml:"server"`
+	Log        LogConfig    `yaml:"log"`
+	DB         DBConfig     `yaml:"db"`
+	Restaurant struct {
+		GRPCAddr string `yaml:"grpc_addr"`
+	} `yaml:"review"`
 }
 
 var (
@@ -59,6 +62,11 @@ func Load(_ context.Context) (*Config, error) {
 			Port: 5432,
 			Name: "mrfood",
 			User: "postgres",
+		},
+		Restaurant: struct {
+			GRPCAddr string `yaml:"grpc_addr"`
+		}{
+			GRPCAddr: "restaurant:50052",
 		},
 	}
 
@@ -104,6 +112,9 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+
+	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+	cfg.Restaurant.GRPCAddr = getEnv("REVIEW_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
 }
 
 func getEnv(key, defaultValue string) string {

@@ -19,6 +19,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -49,6 +50,9 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 }
 
 func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.SponsorshipResponse, error) {
+	if req.Tier < 0 || req.Tier > 4 {
+		return nil, status.Error(codes.InvalidArgument, "Tier must be between 0 and 4")
+	}
 
 	user, err := ExtractUserFromContext(ctx)
 	if err != nil {
@@ -65,7 +69,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		Categories: []string{},
 	}
 
-	response, err := s.sponsorService.Sponsor(ctx, sponsorship)
+	response, err := s.sponsorService.Sponsor(ctx, sponsorship, int(user.UserID))
 	if err != nil {
 		return nil, err
 	}
@@ -154,4 +158,16 @@ func (app *App) RunServer() {
 		slog.Error("failed", "error", err)
 		os.Exit(1)
 	}
+}
+
+func NewClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pb.NewRestaurantToSponsorServiceClient(conn), conn, nil
 }
