@@ -49,6 +49,22 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 	}, nil
 }
 
+func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
+
+	slog.Info("get restaurant sponsorship: ", req)
+
+	response, err := s.sponsorService.GetRestaurantSponsorship(ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.SponsorshipResponse{
+		Id:    int32(response.ID),
+		Tier:  int32(response.Tier),
+		Until: timestamppb.New(response.Until),
+	}, nil
+}
+
 func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.SponsorshipResponse, error) {
 	if req.Tier < 0 || req.Tier > 4 {
 		return nil, status.Error(codes.InvalidArgument, "Tier must be between 0 and 4")
@@ -64,7 +80,6 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	sponsorship := &models.Sponsorship{
 		ID:         int(req.Id),
 		Tier:       int(req.Tier),
-		Status:     true,
 		Until:      time.Now().AddDate(0, 1, 0),
 		Categories: []string{},
 	}

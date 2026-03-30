@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	models "MrFood/services/sponsor/pkg"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -37,7 +35,7 @@ func (r *Repository) GetRestaurantSponsorship(ctx context.Context, id int32) (*m
 	query := `
 		SELECT restaurant_id, tier, until
 		FROM sponsorship
-		WHERE restaurant_id = $1
+		WHERE restaurant_id = $1 AND until > NOW();
 	`
 
 	sponsorship := &models.SponsorshipResponse{}
@@ -67,29 +65,30 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer func(tx pgx.Tx, ctx context.Context) {
-		err := tx.Rollback(ctx)
+
+	defer func() {
 		if err != nil {
-			slog.Error("rollback transaction", "error", err)
-			return
+			_ = tx.Rollback(ctx)
+		} else {
+			err = tx.Commit(ctx)
 		}
-	}(tx, ctx)
+	}()
 
 	query := `
-		INSERT INTO sponsorship (restaurant_id, tier, status, until)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO sponsorship (restaurant_id, tier, until)
+		VALUES ($1, $2, $3)
 		RETURNING restaurant_id, tier, until
 	`
 
-	var (
-		restaurantId int32
-		tier         int32
-		until        time.Time
-	)
-	err = tx.QueryRow(ctx, query, request.ID, request.Tier, true, time.Now().AddDate(0, 1, 0)).Scan(&restaurantId, &tier, &until)
+	var restaurantId int32
+	var tier int32
+	var until time.Time
+
+	err = tx.QueryRow(ctx, query, request.ID, request.Tier, time.Now().AddDate(0, 1, 0)).
+		Scan(&restaurantId, &tier, &until)
+
 	if err != nil {
 		return nil, fmt.Errorf("create restaurant: %w", err)
 	}
-
 	return &models.SponsorshipResponse{ID: int(restaurantId), Tier: int(tier), Until: until}, nil
 }

@@ -46,7 +46,7 @@ services:
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - sponsor_db_data:/var/lib/postgresql/data
-      - ./sponsor/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sponsor/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *sponsor-db-config
     healthcheck:

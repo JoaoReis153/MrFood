@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS sponsorship(
     restaurant_id INT PRIMARY KEY,
     tier INT,
-    status BOOLEAN,
     until DATE
 );
 
