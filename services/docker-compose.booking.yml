@@ -1,0 +1,60 @@
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - app-network
+
+x-booking-db-config: &booking-db-config
+  DB_HOST: booking_db
+  DB_NAME: ${BOOKING_POSTGRES_DB}
+  DB_USER: ${BOOKING_POSTGRES_USER}
+  DB_PASS: ${BOOKING_POSTGRES_PASSWORD}
+  POSTGRES_DB: ${BOOKING_POSTGRES_DB}
+  POSTGRES_USER: ${BOOKING_POSTGRES_USER}
+  POSTGRES_PASSWORD: ${BOOKING_POSTGRES_PASSWORD}
+
+x-pg-healthcheck: &pg-healthcheck
+  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  interval: 5s
+  timeout: 5s
+  retries: 5
+
+services:
+  booking:
+    build: ./booking/
+    ports: ["${BOOKING_SERVER_PORT}:${BOOKING_SERVER_PORT}"]
+    <<: *common
+    environment:
+      # Database
+      <<: *booking-db-config
+      APP_SERVER_PORT: ${BOOKING_SERVER_PORT}
+      DB_MIN_CONNS: 4
+      DB_MAX_CONNS: 20
+      DB_MAX_CONN_LIFETIME: 15m
+      DB_HEALTH_CHECK_PERIOD: 1m
+      # App
+      APP_LOG_LEVEL: debug
+    depends_on:
+      booking_db:
+        condition: service_healthy
+    volumes:
+      - ./booking:/app
+
+  booking_db:
+    image: postgres:16
+    ports: ["${BOOKING_DB_PORT}:5432"]
+    <<: *common
+    command: postgres -c ssl=off -c log_statement=ddl
+    volumes:
+      - booking_db_data:/var/lib/postgresql/data
+      - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    environment:
+      <<: *booking-db-config
+    healthcheck:
+      <<: *pg-healthcheck
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  booking_db_data:

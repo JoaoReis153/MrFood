@@ -4,7 +4,7 @@ info:
   seq: 4
 
 grpc:
-  url: localhost:50060
+  url: localhost:50053
   method: /proto.BookingService/CreateBooking
   methodType: unary
   protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
@@ -18,4 +18,6 @@ grpc:
         "nanos": 0
       }
     }
-  auth: inherit
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc0Nzk1NDYyLCJuYmYiOjE3NzQ3OTQ1NjIsImlhdCI6MTc3NDc5NDU2MiwianRpIjoiOTU0NzFmMzgtMWVlOC00MjM3LTljYzMtY2RmZDBjMzQyNjU0IiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYSIsInRva2VuX3ZlcnNpb24iOjEsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.NlVg58ogYDJDnLZNxfbat5lLzcr720UpwJyFxO31p7Y

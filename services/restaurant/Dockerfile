@@ -11,6 +11,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /restaurant .
-COPY --from=builder /app/db_setup.sql .
-EXPOSE 8080
+EXPOSE 50052
 CMD ["./restaurant"]
