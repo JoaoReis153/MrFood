@@ -23,6 +23,10 @@ service RestaurantToReviewService {
   rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
 }
 
+service ReviewToRestaurantService {
+  rpc GetRestaurantId(GetRestaurantRequest) returns (GetRestaurantResponse);
+}
+
 
 message RestaurantStats {
   int32 restaurant_id = 1;
@@ -117,4 +121,12 @@ message CompareRestaurantDetailsRequest {
 message CompareRestaurantDetailsResponse {
   RestaurantDetails restaurant1 = 1;
   RestaurantDetails restaurant2 = 2;
+}
+
+message GetRestaurantRequest {
+  int32 restaurant_id = 1;
+}
+
+message GetRestaurantResponse {
+  int32 restaurant_id = 1;
 }

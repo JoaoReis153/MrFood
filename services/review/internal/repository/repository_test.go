@@ -309,15 +309,15 @@ func TestUpdateReview(t *testing.T) {
 
 		repo := &Repository{db: mock}
 
-		up := models.UpdateReview{ReviewID: 1, Comment: nil, Rating: nil}
+		up := models.UpdateReview{ReviewID: 1, UserID: 7, Comment: nil, Rating: nil}
 
 		mock.ExpectQuery(`UPDATE review`).
-			WithArgs(up.Comment, up.Rating, up.ReviewID).
+			WithArgs(up.Comment, up.Rating, up.ReviewID, up.UserID).
 			WillReturnError(pgx.ErrNoRows)
 
 		_, err = repo.UpdateReview(ctx, up)
-		if !errors.Is(err, models.ErrReviewNotFound) {
-			t.Fatalf("expected ErrReviewNotFound, got %v", err)
+		if !errors.Is(err, models.ErrForbidden) {
+			t.Fatalf("expected ErrForbidden, got %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet expectations: %v", err)
@@ -333,9 +333,9 @@ func TestUpdateReview(t *testing.T) {
 
 		repo := &Repository{db: mock}
 
-		up := models.UpdateReview{ReviewID: 1}
+		up := models.UpdateReview{ReviewID: 1, UserID: 7}
 		mock.ExpectQuery(`UPDATE review`).
-			WithArgs(up.Comment, up.Rating, up.ReviewID).
+			WithArgs(up.Comment, up.Rating, up.ReviewID, up.UserID).
 			WillReturnError(errors.New("update failed"))
 
 		_, err = repo.UpdateReview(ctx, up)
@@ -358,14 +358,14 @@ func TestUpdateReview(t *testing.T) {
 
 		comment := "new comment"
 		rating := int32(4)
-		up := models.UpdateReview{ReviewID: 1, Comment: &comment, Rating: &rating}
+		up := models.UpdateReview{ReviewID: 1, UserID: 7, Comment: &comment, Rating: &rating}
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{"review_id", "restaurant_id", "user_id", "comment", "rating", "created_at"}).
 			AddRow(int32(1), int32(2), int32(3), comment, rating, now)
 
 		mock.ExpectQuery(`UPDATE review`).
-			WithArgs(up.Comment, up.Rating, up.ReviewID).
+			WithArgs(up.Comment, up.Rating, up.ReviewID, up.UserID).
 			WillReturnRows(rows)
 
 		got, err := repo.UpdateReview(ctx, up)
@@ -394,10 +394,10 @@ func TestDeleteReview(t *testing.T) {
 		repo := &Repository{db: mock}
 
 		mock.ExpectExec(`DELETE FROM review`).
-			WithArgs(int32(1)).
+			WithArgs(int32(1), int32(9)).
 			WillReturnError(errors.New("delete failed"))
 
-		err = repo.DeleteReview(ctx, 1)
+		err = repo.DeleteReview(ctx, 1, 9)
 		if err == nil || !strings.Contains(err.Error(), "delete failed") {
 			t.Fatalf("expected delete failed error, got %v", err)
 		}
@@ -416,12 +416,12 @@ func TestDeleteReview(t *testing.T) {
 		repo := &Repository{db: mock}
 
 		mock.ExpectExec(`DELETE FROM review`).
-			WithArgs(int32(1)).
+			WithArgs(int32(1), int32(9)).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 
-		err = repo.DeleteReview(ctx, 1)
-		if !errors.Is(err, models.ErrReviewNotFound) {
-			t.Fatalf("expected ErrReviewNotFound, got %v", err)
+		err = repo.DeleteReview(ctx, 1, 9)
+		if !errors.Is(err, models.ErrForbidden) {
+			t.Fatalf("expected ErrForbidden, got %v", err)
 		}
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Fatalf("unmet expectations: %v", err)
@@ -438,10 +438,10 @@ func TestDeleteReview(t *testing.T) {
 		repo := &Repository{db: mock}
 
 		mock.ExpectExec(`DELETE FROM review`).
-			WithArgs(int32(1)).
+			WithArgs(int32(1), int32(9)).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
 
-		err = repo.DeleteReview(ctx, 1)
+		err = repo.DeleteReview(ctx, 1, 9)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -514,7 +514,7 @@ func TestGetRestaurantStats(t *testing.T) {
 		restaurantID := int32(5)
 
 		rows := pgxmock.NewRows([]string{"average_rating", "review_count"}).
-			AddRow(4.5, 12)
+			AddRow(4.5, int32(12))
 
 		mock.ExpectQuery(`SELECT average_rating, review_count FROM restaurant_stats`).
 			WithArgs(restaurantID).

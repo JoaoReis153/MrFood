@@ -10,8 +10,10 @@ import (
 	pb "MrFood/services/review/internal/api/grpc/pb"
 	models "MrFood/services/review/pkg"
 
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -20,7 +22,7 @@ type mockReviewService struct {
 	GetReviewsFn         func(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error)
 	CreateReviewFn       func(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReviewFn       func(ctx context.Context, review models.UpdateReview) (models.Review, error)
-	DeleteReviewFn       func(ctx context.Context, reviewID int32) error
+	DeleteReviewFn       func(ctx context.Context, deleteReq models.DeleteReview) error
 	GetRestaurantStatsFn func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
 }
 
@@ -33,11 +35,24 @@ func (m *mockReviewService) CreateReview(ctx context.Context, review models.Revi
 func (m *mockReviewService) UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error) {
 	return m.UpdateReviewFn(ctx, review)
 }
-func (m *mockReviewService) DeleteReview(ctx context.Context, reviewID int32) error {
-	return m.DeleteReviewFn(ctx, reviewID)
+func (m *mockReviewService) DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error {
+	return m.DeleteReviewFn(ctx, deleteReq)
 }
 func (m *mockReviewService) GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
 	return m.GetRestaurantStatsFn(ctx, restaurantID)
+}
+
+func authenticatedContext(t *testing.T, userID string) context.Context {
+	t.Helper()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{UserID: userID})
+	tokenStr, err := token.SignedString([]byte("test-secret"))
+	if err != nil {
+		t.Fatalf("failed to sign token: %v", err)
+	}
+
+	md := metadata.Pairs("authorization", "Bearer "+tokenStr)
+	return metadata.NewIncomingContext(context.Background(), md)
 }
 
 func TestServer_GetReviews_Success(t *testing.T) {
@@ -118,7 +133,7 @@ func TestServer_GetReviews_DefaultsAndError(t *testing.T) {
 }
 
 func TestServer_CreateReview_Success(t *testing.T) {
-	ctx := context.Background()
+	ctx := authenticatedContext(t, "2")
 	now := time.Now()
 
 	ms := &mockReviewService{
@@ -151,7 +166,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 }
 
 func TestServer_CreateReview_Error(t *testing.T) {
-	ctx := context.Background()
+	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
 		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) {
@@ -171,7 +186,7 @@ func TestServer_CreateReview_Error(t *testing.T) {
 }
 
 func TestServer_UpdateReview_Success(t *testing.T) {
-	ctx := context.Background()
+	ctx := authenticatedContext(t, "2")
 	now := time.Now()
 
 	ms := &mockReviewService{
@@ -217,7 +232,7 @@ func TestServer_UpdateReview_Success(t *testing.T) {
 }
 
 func TestServer_UpdateReview_Error(t *testing.T) {
-	ctx := context.Background()
+	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
 		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
@@ -237,12 +252,12 @@ func TestServer_UpdateReview_Error(t *testing.T) {
 }
 
 func TestServer_DeleteReview_Success(t *testing.T) {
-	ctx := context.Background()
+	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
-		DeleteReviewFn: func(ctx context.Context, reviewID int32) error {
-			if reviewID != 7 {
-				t.Fatalf("expected reviewID 7, got %d", reviewID)
+		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error {
+			if deleteReq.ReviewID != 7 || deleteReq.UserID != 2 {
+				t.Fatalf("unexpected delete request: %+v", deleteReq)
 			}
 			return nil
 		},
@@ -259,10 +274,10 @@ func TestServer_DeleteReview_Success(t *testing.T) {
 }
 
 func TestServer_DeleteReview_Error(t *testing.T) {
-	ctx := context.Background()
+	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
-		DeleteReviewFn: func(ctx context.Context, reviewID int32) error {
+		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error {
 			return models.ErrReviewNotFound
 		},
 	}
@@ -375,7 +390,7 @@ func TestRunServer_Smoke(t *testing.T) {
 			UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
 				return models.Review{}, nil
 			},
-			DeleteReviewFn: func(ctx context.Context, reviewID int32) error { return nil },
+			DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error { return nil },
 			GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
 				return models.RestaurantStats{}, nil
 			},
