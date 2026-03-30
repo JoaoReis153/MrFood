@@ -10,14 +10,13 @@ grpc:
   protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "user_id": 38,
-      "restaurant_id": 121,
+      "restaurant_id": 3,
       "quantity": 2,
       "time_start": {
-        "seconds": 1774350000,
+        "seconds": 1774602001,
         "nanos": 0
       }
     }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc0Nzk1NDYyLCJuYmYiOjE3NzQ3OTQ1NjIsImlhdCI6MTc3NDc5NDU2MiwianRpIjoiOTU0NzFmMzgtMWVlOC00MjM3LTljYzMtY2RmZDBjMzQyNjU0IiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYSIsInRva2VuX3ZlcnNpb24iOjEsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.NlVg58ogYDJDnLZNxfbat5lLzcr720UpwJyFxO31p7Y
+    token: placeTokenHere
