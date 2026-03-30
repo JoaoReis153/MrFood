@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+
+service SearchService {
+  rpc SearchPaginated(SearchPaginatedRequest) returns (SearchPaginatedResponse);
+}
+
+message SearchPaginatedRequest {
+  optional int32 page = 1;
+  optional int32 limit = 2;
+
+  optional string category = 3;
+  optional string name_suffix = 4;
+  optional string full_name = 5;
+
+  optional double latitude = 6;
+  optional double longitude = 7;
+  optional double radius_meters = 8;
+}
+
+message SearchPaginatedResponse {
+  repeated RestaurantSearchResult data = 1;
+  Pagination pagination = 2;
+}
+
+message RestaurantSearchResult {
+  int32 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  repeated string categories = 6;
+  optional string media_url = 7;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 pages = 4;
+}
