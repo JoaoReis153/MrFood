@@ -1,19 +1,16 @@
-version: "3.9"
-
 x-common: &common
   restart: unless-stopped
   networks:
     - app-network
 
 x-review-db-config: &review-db-config
-  DB_HOST: review_db
-  DB_PORT: 5432                     
-  DB_NAME: ${REVIEW_POSTGRES_DB}
-  DB_USER: ${REVIEW_POSTGRES_USER}
-  DB_PASSWORD: ${REVIEW_POSTGRES_PASSWORD}
+  POSTGRES_HOST: review_db
+  POSTGRES_DB: ${REVIEW_POSTGRES_DB}
+  POSTGRES_USER: ${REVIEW_POSTGRES_USER}
+  POSTGRES_PASSWORD: ${REVIEW_POSTGRES_PASSWORD}
 
 x-pg-healthcheck: &pg-healthcheck
-  test: ["CMD-SHELL", "pg_isready -U $$DB_USER -d $$DB_NAME"]
+  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   interval: 5s
   timeout: 5s
   retries: 5
@@ -21,11 +18,12 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   review:
     build: ./review/
-    ports:
-      - "${REVIEW_SERVER_PORT}:${REVIEW_SERVER_PORT}"
+    ports: ["${REVIEW_SERVER_PORT}:${REVIEW_SERVER_PORT}"]
     <<: *common
     environment:
       <<: *review-db-config
+      APP_SERVER_PORT: ${REVIEW_SERVER_PORT}
+      REVIEW_TO_RESTAURANT_GRPC_ADDR: "restaurant:${RESTAURANT_SERVER_PORT}"
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m
@@ -37,8 +35,7 @@ services:
 
   review_db:
     image: postgres:16
-    ports:
-      - "${REVIEW_POSTGRES_PORT}:5432"
+    ports: ["${REVIEW_POSTGRES_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:

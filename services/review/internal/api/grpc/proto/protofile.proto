@@ -15,14 +15,15 @@ service ReviewService {
   rpc UpdateReview (UpdateReviewRequest) returns (UpdateReviewResponse);
   // Delete a review by its ID
   rpc DeleteReview (DeleteReviewRequest) returns (DeleteReviewResponse);
-}
-
-// ReviewToDetailsService defines the gRPC service for fetching restaurant details related to reviews.
-service ReviewToDetailsService {
-  // Get restaurant stats such as average rating and review count
+    // Get restaurant stats such as average rating and review count
   rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
 }
 
+// ReviewToRestaurantService defines the gRPC service for fetching restaurant existence in RestaurantDetails service.
+service ReviewToRestaurantService {
+  // Get restaurant details to verify existence before creating a review
+  rpc GetRestaurantId(GetRestaurantRequest) returns (GetRestaurantResponse);
+}
 // ===================================================
 // ==================== Models =======================
 // ===================================================
@@ -79,6 +80,10 @@ message GetRestaurantStatsRequest {
   int32 restaurant_id = 1;
 }
 
+message GetRestaurantRequest {
+  int32 restaurant_id = 1;
+}
+
 // ===================================================
 // ================== Responses ======================
 // ===================================================
@@ -100,4 +105,8 @@ message DeleteReviewResponse {}
 
 message GetRestaurantStatsResponse {
   RestaurantStats restaurant_stats = 1;
+}
+
+message GetRestaurantResponse {
+  int32 restaurant_id = 1;
 }

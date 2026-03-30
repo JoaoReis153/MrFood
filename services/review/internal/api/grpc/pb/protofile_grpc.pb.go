@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ReviewService_GetReviews_FullMethodName   = "/proto.ReviewService/GetReviews"
-	ReviewService_CreateReview_FullMethodName = "/proto.ReviewService/CreateReview"
-	ReviewService_UpdateReview_FullMethodName = "/proto.ReviewService/UpdateReview"
-	ReviewService_DeleteReview_FullMethodName = "/proto.ReviewService/DeleteReview"
+	ReviewService_GetReviews_FullMethodName         = "/proto.ReviewService/GetReviews"
+	ReviewService_CreateReview_FullMethodName       = "/proto.ReviewService/CreateReview"
+	ReviewService_UpdateReview_FullMethodName       = "/proto.ReviewService/UpdateReview"
+	ReviewService_DeleteReview_FullMethodName       = "/proto.ReviewService/DeleteReview"
+	ReviewService_GetRestaurantStats_FullMethodName = "/proto.ReviewService/GetRestaurantStats"
 )
 
 // ReviewServiceClient is the client API for ReviewService service.
@@ -39,6 +40,8 @@ type ReviewServiceClient interface {
 	UpdateReview(ctx context.Context, in *UpdateReviewRequest, opts ...grpc.CallOption) (*UpdateReviewResponse, error)
 	// Delete a review by its ID
 	DeleteReview(ctx context.Context, in *DeleteReviewRequest, opts ...grpc.CallOption) (*DeleteReviewResponse, error)
+	// Get restaurant stats such as average rating and review count
+	GetRestaurantStats(ctx context.Context, in *GetRestaurantStatsRequest, opts ...grpc.CallOption) (*GetRestaurantStatsResponse, error)
 }
 
 type reviewServiceClient struct {
@@ -89,6 +92,16 @@ func (c *reviewServiceClient) DeleteReview(ctx context.Context, in *DeleteReview
 	return out, nil
 }
 
+func (c *reviewServiceClient) GetRestaurantStats(ctx context.Context, in *GetRestaurantStatsRequest, opts ...grpc.CallOption) (*GetRestaurantStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRestaurantStatsResponse)
+	err := c.cc.Invoke(ctx, ReviewService_GetRestaurantStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReviewServiceServer is the server API for ReviewService service.
 // All implementations must embed UnimplementedReviewServiceServer
 // for forward compatibility.
@@ -103,6 +116,8 @@ type ReviewServiceServer interface {
 	UpdateReview(context.Context, *UpdateReviewRequest) (*UpdateReviewResponse, error)
 	// Delete a review by its ID
 	DeleteReview(context.Context, *DeleteReviewRequest) (*DeleteReviewResponse, error)
+	// Get restaurant stats such as average rating and review count
+	GetRestaurantStats(context.Context, *GetRestaurantStatsRequest) (*GetRestaurantStatsResponse, error)
 	mustEmbedUnimplementedReviewServiceServer()
 }
 
@@ -124,6 +139,9 @@ func (UnimplementedReviewServiceServer) UpdateReview(context.Context, *UpdateRev
 }
 func (UnimplementedReviewServiceServer) DeleteReview(context.Context, *DeleteReviewRequest) (*DeleteReviewResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteReview not implemented")
+}
+func (UnimplementedReviewServiceServer) GetRestaurantStats(context.Context, *GetRestaurantStatsRequest) (*GetRestaurantStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRestaurantStats not implemented")
 }
 func (UnimplementedReviewServiceServer) mustEmbedUnimplementedReviewServiceServer() {}
 func (UnimplementedReviewServiceServer) testEmbeddedByValue()                       {}
@@ -218,6 +236,24 @@ func _ReviewService_DeleteReview_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReviewService_GetRestaurantStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewServiceServer).GetRestaurantStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewService_GetRestaurantStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewServiceServer).GetRestaurantStats(ctx, req.(*GetRestaurantStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReviewService_ServiceDesc is the grpc.ServiceDesc for ReviewService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -241,114 +277,118 @@ var ReviewService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "DeleteReview",
 			Handler:    _ReviewService_DeleteReview_Handler,
 		},
+		{
+			MethodName: "GetRestaurantStats",
+			Handler:    _ReviewService_GetRestaurantStats_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/api/grpc/proto/protofile.proto",
 }
 
 const (
-	ReviewToDetailsService_GetRestaurantStats_FullMethodName = "/proto.ReviewToDetailsService/GetRestaurantStats"
+	ReviewToRestaurantService_GetRestaurantId_FullMethodName = "/proto.ReviewToRestaurantService/GetRestaurantId"
 )
 
-// ReviewToDetailsServiceClient is the client API for ReviewToDetailsService service.
+// ReviewToRestaurantServiceClient is the client API for ReviewToRestaurantService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ReviewToDetailsService defines the gRPC service for fetching restaurant details related to reviews.
-type ReviewToDetailsServiceClient interface {
-	// Get restaurant stats such as average rating and review count
-	GetRestaurantStats(ctx context.Context, in *GetRestaurantStatsRequest, opts ...grpc.CallOption) (*GetRestaurantStatsResponse, error)
+// ReviewToRestaurantService defines the gRPC service for fetching restaurant existence in RestaurantDetails service.
+type ReviewToRestaurantServiceClient interface {
+	// Get restaurant details to verify existence before creating a review
+	GetRestaurantId(ctx context.Context, in *GetRestaurantRequest, opts ...grpc.CallOption) (*GetRestaurantResponse, error)
 }
 
-type reviewToDetailsServiceClient struct {
+type reviewToRestaurantServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewReviewToDetailsServiceClient(cc grpc.ClientConnInterface) ReviewToDetailsServiceClient {
-	return &reviewToDetailsServiceClient{cc}
+func NewReviewToRestaurantServiceClient(cc grpc.ClientConnInterface) ReviewToRestaurantServiceClient {
+	return &reviewToRestaurantServiceClient{cc}
 }
 
-func (c *reviewToDetailsServiceClient) GetRestaurantStats(ctx context.Context, in *GetRestaurantStatsRequest, opts ...grpc.CallOption) (*GetRestaurantStatsResponse, error) {
+func (c *reviewToRestaurantServiceClient) GetRestaurantId(ctx context.Context, in *GetRestaurantRequest, opts ...grpc.CallOption) (*GetRestaurantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetRestaurantStatsResponse)
-	err := c.cc.Invoke(ctx, ReviewToDetailsService_GetRestaurantStats_FullMethodName, in, out, cOpts...)
+	out := new(GetRestaurantResponse)
+	err := c.cc.Invoke(ctx, ReviewToRestaurantService_GetRestaurantId_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ReviewToDetailsServiceServer is the server API for ReviewToDetailsService service.
-// All implementations must embed UnimplementedReviewToDetailsServiceServer
+// ReviewToRestaurantServiceServer is the server API for ReviewToRestaurantService service.
+// All implementations must embed UnimplementedReviewToRestaurantServiceServer
 // for forward compatibility.
 //
-// ReviewToDetailsService defines the gRPC service for fetching restaurant details related to reviews.
-type ReviewToDetailsServiceServer interface {
-	// Get restaurant stats such as average rating and review count
-	GetRestaurantStats(context.Context, *GetRestaurantStatsRequest) (*GetRestaurantStatsResponse, error)
-	mustEmbedUnimplementedReviewToDetailsServiceServer()
+// ReviewToRestaurantService defines the gRPC service for fetching restaurant existence in RestaurantDetails service.
+type ReviewToRestaurantServiceServer interface {
+	// Get restaurant details to verify existence before creating a review
+	GetRestaurantId(context.Context, *GetRestaurantRequest) (*GetRestaurantResponse, error)
+	mustEmbedUnimplementedReviewToRestaurantServiceServer()
 }
 
-// UnimplementedReviewToDetailsServiceServer must be embedded to have
+// UnimplementedReviewToRestaurantServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedReviewToDetailsServiceServer struct{}
+type UnimplementedReviewToRestaurantServiceServer struct{}
 
-func (UnimplementedReviewToDetailsServiceServer) GetRestaurantStats(context.Context, *GetRestaurantStatsRequest) (*GetRestaurantStatsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetRestaurantStats not implemented")
+func (UnimplementedReviewToRestaurantServiceServer) GetRestaurantId(context.Context, *GetRestaurantRequest) (*GetRestaurantResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRestaurantId not implemented")
 }
-func (UnimplementedReviewToDetailsServiceServer) mustEmbedUnimplementedReviewToDetailsServiceServer() {
+func (UnimplementedReviewToRestaurantServiceServer) mustEmbedUnimplementedReviewToRestaurantServiceServer() {
 }
-func (UnimplementedReviewToDetailsServiceServer) testEmbeddedByValue() {}
+func (UnimplementedReviewToRestaurantServiceServer) testEmbeddedByValue() {}
 
-// UnsafeReviewToDetailsServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ReviewToDetailsServiceServer will
+// UnsafeReviewToRestaurantServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ReviewToRestaurantServiceServer will
 // result in compilation errors.
-type UnsafeReviewToDetailsServiceServer interface {
-	mustEmbedUnimplementedReviewToDetailsServiceServer()
+type UnsafeReviewToRestaurantServiceServer interface {
+	mustEmbedUnimplementedReviewToRestaurantServiceServer()
 }
 
-func RegisterReviewToDetailsServiceServer(s grpc.ServiceRegistrar, srv ReviewToDetailsServiceServer) {
-	// If the following call panics, it indicates UnimplementedReviewToDetailsServiceServer was
+func RegisterReviewToRestaurantServiceServer(s grpc.ServiceRegistrar, srv ReviewToRestaurantServiceServer) {
+	// If the following call panics, it indicates UnimplementedReviewToRestaurantServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&ReviewToDetailsService_ServiceDesc, srv)
+	s.RegisterService(&ReviewToRestaurantService_ServiceDesc, srv)
 }
 
-func _ReviewToDetailsService_GetRestaurantStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRestaurantStatsRequest)
+func _ReviewToRestaurantService_GetRestaurantId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ReviewToDetailsServiceServer).GetRestaurantStats(ctx, in)
+		return srv.(ReviewToRestaurantServiceServer).GetRestaurantId(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ReviewToDetailsService_GetRestaurantStats_FullMethodName,
+		FullMethod: ReviewToRestaurantService_GetRestaurantId_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReviewToDetailsServiceServer).GetRestaurantStats(ctx, req.(*GetRestaurantStatsRequest))
+		return srv.(ReviewToRestaurantServiceServer).GetRestaurantId(ctx, req.(*GetRestaurantRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ReviewToDetailsService_ServiceDesc is the grpc.ServiceDesc for ReviewToDetailsService service.
+// ReviewToRestaurantService_ServiceDesc is the grpc.ServiceDesc for ReviewToRestaurantService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ReviewToDetailsService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.ReviewToDetailsService",
-	HandlerType: (*ReviewToDetailsServiceServer)(nil),
+var ReviewToRestaurantService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ReviewToRestaurantService",
+	HandlerType: (*ReviewToRestaurantServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetRestaurantStats",
-			Handler:    _ReviewToDetailsService_GetRestaurantStats_Handler,
+			MethodName: "GetRestaurantId",
+			Handler:    _ReviewToRestaurantService_GetRestaurantId_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

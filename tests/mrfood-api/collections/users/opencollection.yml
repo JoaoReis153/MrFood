@@ -2,9 +2,30 @@ opencollection: 1.0.0
 
 info:
   name: users
+config:
+  protobuf:
+    protoFiles:
+      - type: file
+        path: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
+      - type: file
+        path: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
+      - type: file
+        path: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
+      - type: file
+        path: ../../../../services/review/internal/api/grpc/proto/protofile.proto
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
 bundled: false
 extensions:
   bruno:
     ignore:
-    - node_modules
-    - .git
+      - node_modules
+      - .git

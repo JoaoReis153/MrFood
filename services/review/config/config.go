@@ -33,10 +33,15 @@ type DBConfig struct {
 	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 }
 
+type Restaurant struct {
+	GRPCAddr string `yaml:"grpc_addr" validate:"required"`
+}
+
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	Log    LogConfig    `yaml:"log"`
-	DB     DBConfig     `yaml:"db"`
+	Server     ServerConfig `yaml:"server"`
+	Log        LogConfig    `yaml:"log"`
+	DB         DBConfig     `yaml:"db"`
+	Restaurant Restaurant   `yaml:"restaurant"`
 }
 
 var (
@@ -64,6 +69,9 @@ func Load(_ context.Context) (*Config, error) {
 			MaxConns:          20,
 			MaxConnLifetime:   15 * time.Minute,
 			HealthCheckPeriod: 1 * time.Minute,
+		},
+		Restaurant: Restaurant{
+			GRPCAddr: "localhost:50052",
 		},
 	}
 
@@ -93,12 +101,15 @@ func overrideWithEnv(cfg *Config) {
 	// Log config
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
+	//grpc address
+	cfg.Restaurant.GRPCAddr = getEnv("REVIEW_TO_RESTAURANT_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
+
 	// Database config
-	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
-	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
-	cfg.DB.Name = getEnv("DB_NAME", cfg.DB.Name)
-	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("DB_PASSWORD", cfg.DB.Password)
+	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
+	cfg.DB.Name = getEnv("POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
 }
 
 func validateConfig(cfg *Config) error {

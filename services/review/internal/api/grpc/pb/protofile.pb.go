@@ -502,6 +502,50 @@ func (x *GetRestaurantStatsRequest) GetRestaurantId() int32 {
 	return 0
 }
 
+type GetRestaurantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRestaurantRequest) Reset() {
+	*x = GetRestaurantRequest{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRestaurantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRestaurantRequest) ProtoMessage() {}
+
+func (x *GetRestaurantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRestaurantRequest.ProtoReflect.Descriptor instead.
+func (*GetRestaurantRequest) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetRestaurantRequest) GetRestaurantId() int32 {
+	if x != nil {
+		return x.RestaurantId
+	}
+	return 0
+}
+
 type GetReviewsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Reviews       []*Review              `protobuf:"bytes,1,rep,name=reviews,proto3" json:"reviews,omitempty"`
@@ -512,7 +556,7 @@ type GetReviewsResponse struct {
 
 func (x *GetReviewsResponse) Reset() {
 	*x = GetReviewsResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -524,7 +568,7 @@ func (x *GetReviewsResponse) String() string {
 func (*GetReviewsResponse) ProtoMessage() {}
 
 func (x *GetReviewsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -537,7 +581,7 @@ func (x *GetReviewsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReviewsResponse.ProtoReflect.Descriptor instead.
 func (*GetReviewsResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetReviewsResponse) GetReviews() []*Review {
@@ -563,7 +607,7 @@ type CreateReviewResponse struct {
 
 func (x *CreateReviewResponse) Reset() {
 	*x = CreateReviewResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +619,7 @@ func (x *CreateReviewResponse) String() string {
 func (*CreateReviewResponse) ProtoMessage() {}
 
 func (x *CreateReviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +632,7 @@ func (x *CreateReviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateReviewResponse.ProtoReflect.Descriptor instead.
 func (*CreateReviewResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{9}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CreateReviewResponse) GetReview() *Review {
@@ -607,7 +651,7 @@ type UpdateReviewResponse struct {
 
 func (x *UpdateReviewResponse) Reset() {
 	*x = UpdateReviewResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -619,7 +663,7 @@ func (x *UpdateReviewResponse) String() string {
 func (*UpdateReviewResponse) ProtoMessage() {}
 
 func (x *UpdateReviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -632,7 +676,7 @@ func (x *UpdateReviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateReviewResponse.ProtoReflect.Descriptor instead.
 func (*UpdateReviewResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{10}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UpdateReviewResponse) GetReview() *Review {
@@ -650,7 +694,7 @@ type DeleteReviewResponse struct {
 
 func (x *DeleteReviewResponse) Reset() {
 	*x = DeleteReviewResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -662,7 +706,7 @@ func (x *DeleteReviewResponse) String() string {
 func (*DeleteReviewResponse) ProtoMessage() {}
 
 func (x *DeleteReviewResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -675,7 +719,7 @@ func (x *DeleteReviewResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteReviewResponse.ProtoReflect.Descriptor instead.
 func (*DeleteReviewResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{11}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{12}
 }
 
 type GetRestaurantStatsResponse struct {
@@ -687,7 +731,7 @@ type GetRestaurantStatsResponse struct {
 
 func (x *GetRestaurantStatsResponse) Reset() {
 	*x = GetRestaurantStatsResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +743,7 @@ func (x *GetRestaurantStatsResponse) String() string {
 func (*GetRestaurantStatsResponse) ProtoMessage() {}
 
 func (x *GetRestaurantStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,7 +756,7 @@ func (x *GetRestaurantStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRestaurantStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetRestaurantStatsResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{12}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetRestaurantStatsResponse) GetRestaurantStats() *RestaurantStats {
@@ -720,6 +764,50 @@ func (x *GetRestaurantStatsResponse) GetRestaurantStats() *RestaurantStats {
 		return x.RestaurantStats
 	}
 	return nil
+}
+
+type GetRestaurantResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRestaurantResponse) Reset() {
+	*x = GetRestaurantResponse{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRestaurantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRestaurantResponse) ProtoMessage() {}
+
+func (x *GetRestaurantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRestaurantResponse.ProtoReflect.Descriptor instead.
+func (*GetRestaurantResponse) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetRestaurantResponse) GetRestaurantId() int32 {
+	if x != nil {
+		return x.RestaurantId
+	}
+	return 0
 }
 
 var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
@@ -765,6 +853,8 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x13DeleteReviewRequest\x12\x1b\n" +
 	"\treview_id\x18\x01 \x01(\x05R\breviewId\"@\n" +
 	"\x19GetRestaurantStatsRequest\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\";\n" +
+	"\x14GetRestaurantRequest\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\"p\n" +
 	"\x12GetReviewsResponse\x12'\n" +
 	"\areviews\x18\x01 \x03(\v2\r.proto.ReviewR\areviews\x121\n" +
@@ -777,15 +867,18 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x06review\x18\x01 \x01(\v2\r.proto.ReviewR\x06review\"\x16\n" +
 	"\x14DeleteReviewResponse\"_\n" +
 	"\x1aGetRestaurantStatsResponse\x12A\n" +
-	"\x10restaurant_stats\x18\x01 \x01(\v2\x16.proto.RestaurantStatsR\x0frestaurantStats2\xad\x02\n" +
+	"\x10restaurant_stats\x18\x01 \x01(\v2\x16.proto.RestaurantStatsR\x0frestaurantStats\"<\n" +
+	"\x15GetRestaurantResponse\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId2\x88\x03\n" +
 	"\rReviewService\x12A\n" +
 	"\n" +
 	"GetReviews\x12\x18.proto.GetReviewsRequest\x1a\x19.proto.GetReviewsResponse\x12G\n" +
 	"\fCreateReview\x12\x1a.proto.CreateReviewRequest\x1a\x1b.proto.CreateReviewResponse\x12G\n" +
 	"\fUpdateReview\x12\x1a.proto.UpdateReviewRequest\x1a\x1b.proto.UpdateReviewResponse\x12G\n" +
-	"\fDeleteReview\x12\x1a.proto.DeleteReviewRequest\x1a\x1b.proto.DeleteReviewResponse2s\n" +
-	"\x16ReviewToDetailsService\x12Y\n" +
-	"\x12GetRestaurantStats\x12 .proto.GetRestaurantStatsRequest\x1a!.proto.GetRestaurantStatsResponseB\bZ\x06/pb;pbb\x06proto3"
+	"\fDeleteReview\x12\x1a.proto.DeleteReviewRequest\x1a\x1b.proto.DeleteReviewResponse\x12Y\n" +
+	"\x12GetRestaurantStats\x12 .proto.GetRestaurantStatsRequest\x1a!.proto.GetRestaurantStatsResponse2i\n" +
+	"\x19ReviewToRestaurantService\x12L\n" +
+	"\x0fGetRestaurantId\x12\x1b.proto.GetRestaurantRequest\x1a\x1c.proto.GetRestaurantResponseB\bZ\x06/pb;pbb\x06proto3"
 
 var (
 	file_internal_api_grpc_proto_protofile_proto_rawDescOnce sync.Once
@@ -799,7 +892,7 @@ func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescData
 }
 
-var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 	(*Review)(nil),                     // 0: proto.Review
 	(*RestaurantStats)(nil),            // 1: proto.RestaurantStats
@@ -809,15 +902,17 @@ var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 	(*UpdateReviewRequest)(nil),        // 5: proto.UpdateReviewRequest
 	(*DeleteReviewRequest)(nil),        // 6: proto.DeleteReviewRequest
 	(*GetRestaurantStatsRequest)(nil),  // 7: proto.GetRestaurantStatsRequest
-	(*GetReviewsResponse)(nil),         // 8: proto.GetReviewsResponse
-	(*CreateReviewResponse)(nil),       // 9: proto.CreateReviewResponse
-	(*UpdateReviewResponse)(nil),       // 10: proto.UpdateReviewResponse
-	(*DeleteReviewResponse)(nil),       // 11: proto.DeleteReviewResponse
-	(*GetRestaurantStatsResponse)(nil), // 12: proto.GetRestaurantStatsResponse
-	(*timestamppb.Timestamp)(nil),      // 13: google.protobuf.Timestamp
+	(*GetRestaurantRequest)(nil),       // 8: proto.GetRestaurantRequest
+	(*GetReviewsResponse)(nil),         // 9: proto.GetReviewsResponse
+	(*CreateReviewResponse)(nil),       // 10: proto.CreateReviewResponse
+	(*UpdateReviewResponse)(nil),       // 11: proto.UpdateReviewResponse
+	(*DeleteReviewResponse)(nil),       // 12: proto.DeleteReviewResponse
+	(*GetRestaurantStatsResponse)(nil), // 13: proto.GetRestaurantStatsResponse
+	(*GetRestaurantResponse)(nil),      // 14: proto.GetRestaurantResponse
+	(*timestamppb.Timestamp)(nil),      // 15: google.protobuf.Timestamp
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
-	13, // 0: proto.Review.created_at:type_name -> google.protobuf.Timestamp
+	15, // 0: proto.Review.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 1: proto.GetReviewsResponse.reviews:type_name -> proto.Review
 	2,  // 2: proto.GetReviewsResponse.pagination:type_name -> proto.Pagination
 	0,  // 3: proto.CreateReviewResponse.review:type_name -> proto.Review
@@ -827,14 +922,16 @@ var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	4,  // 7: proto.ReviewService.CreateReview:input_type -> proto.CreateReviewRequest
 	5,  // 8: proto.ReviewService.UpdateReview:input_type -> proto.UpdateReviewRequest
 	6,  // 9: proto.ReviewService.DeleteReview:input_type -> proto.DeleteReviewRequest
-	7,  // 10: proto.ReviewToDetailsService.GetRestaurantStats:input_type -> proto.GetRestaurantStatsRequest
-	8,  // 11: proto.ReviewService.GetReviews:output_type -> proto.GetReviewsResponse
-	9,  // 12: proto.ReviewService.CreateReview:output_type -> proto.CreateReviewResponse
-	10, // 13: proto.ReviewService.UpdateReview:output_type -> proto.UpdateReviewResponse
-	11, // 14: proto.ReviewService.DeleteReview:output_type -> proto.DeleteReviewResponse
-	12, // 15: proto.ReviewToDetailsService.GetRestaurantStats:output_type -> proto.GetRestaurantStatsResponse
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
+	7,  // 10: proto.ReviewService.GetRestaurantStats:input_type -> proto.GetRestaurantStatsRequest
+	8,  // 11: proto.ReviewToRestaurantService.GetRestaurantId:input_type -> proto.GetRestaurantRequest
+	9,  // 12: proto.ReviewService.GetReviews:output_type -> proto.GetReviewsResponse
+	10, // 13: proto.ReviewService.CreateReview:output_type -> proto.CreateReviewResponse
+	11, // 14: proto.ReviewService.UpdateReview:output_type -> proto.UpdateReviewResponse
+	12, // 15: proto.ReviewService.DeleteReview:output_type -> proto.DeleteReviewResponse
+	13, // 16: proto.ReviewService.GetRestaurantStats:output_type -> proto.GetRestaurantStatsResponse
+	14, // 17: proto.ReviewToRestaurantService.GetRestaurantId:output_type -> proto.GetRestaurantResponse
+	12, // [12:18] is the sub-list for method output_type
+	6,  // [6:12] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
 	6,  // [6:6] is the sub-list for extension extendee
 	0,  // [0:6] is the sub-list for field type_name
@@ -853,7 +950,7 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

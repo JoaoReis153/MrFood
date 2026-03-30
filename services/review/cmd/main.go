@@ -13,15 +13,16 @@ import (
 func main() {
 	setupLogger(config.Get(context.Background()).Log.Level)
 	config.Get(context.Background())
-	application := app.New()
+	app := app.New()
 
-	err := application.ConnectDb()
+	err := app.ConnectDb()
 	if err != nil {
 		log.Fatalf("DB connection failed: %v", err)
 	}
-	defer application.DB.Close()
-	application.InitDependencies()
-	app.RunServer(application.Service)
+	defer app.DB.Close()
+	defer app.Close()
+	app.InitDependencies()
+	app.RunServer()
 }
 
 func setupLogger(logLevel string) {

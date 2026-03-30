@@ -90,11 +90,9 @@ func (r *Repository) CreateReview(ctx context.Context, review models.Review) (mo
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" && pgErr.ConstraintName == "unique_user_restaurant" {
-				slog.Error("Review already exists for this user and restaurant", "error", err)
 				return models.Review{}, models.ErrReviewAlreadyExists
 			}
 		}
-		slog.Error("Failed to create review", "error", err)
 		return models.Review{}, err
 	}
 	return review, nil
@@ -106,12 +104,13 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 		"SET comment = COALESCE($1, comment), "+
 		"rating = COALESCE($2, rating) "+
 		"WHERE review_id = $3 "+
+		"AND user_id = $4 "+
 		"RETURNING review_id, restaurant_id, user_id, comment, rating, created_at",
-		review.Comment, review.Rating, review.ReviewID).
+		review.Comment, review.Rating, review.ReviewID, review.UserID).
 		Scan(&updated.ReviewID, &updated.RestaurantID, &updated.UserID, &updated.Comment, &updated.Rating, &updated.CreatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return models.Review{}, models.ErrReviewNotFound
+			return models.Review{}, models.ErrForbidden
 		}
 		slog.Error("Failed to update review", "error", err)
 		return models.Review{}, err
@@ -119,15 +118,15 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 	return updated, nil
 }
 
-func (r *Repository) DeleteReview(ctx context.Context, reviewID int32) error {
-	result, err := r.db.Exec(ctx, "DELETE FROM review WHERE review_id = $1", reviewID)
+func (r *Repository) DeleteReview(ctx context.Context, reviewID int32, userID int32) error {
+	result, err := r.db.Exec(ctx, "DELETE FROM review WHERE review_id = $1 AND user_id = $2", reviewID, userID)
 	if err != nil {
 		slog.Error("Failed to delete review", "error", err)
 		return err
 	}
 	rows := result.RowsAffected()
 	if rows == 0 {
-		return models.ErrReviewNotFound
+		return models.ErrForbidden
 	}
 	return nil
 }

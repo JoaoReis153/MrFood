@@ -1,16 +1,16 @@
 info:
-  name: Register
+  name: Login
   type: grpc
-  seq: 4
+  seq: 5
 
 grpc:
   url: localhost:50051
-  method: /proto.AuthService/RegisterProcess
+  method: /proto.AuthService/LoginProcess
   methodType: unary
   protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
-  message: |
+  message: |-
     {
-      "username": "banana2",
       "email": "banana12@gmail.com",
       "password": "bananapass"
     }
+  auth: inherit
