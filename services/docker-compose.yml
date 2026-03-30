@@ -3,3 +3,7 @@ include:
   - docker-compose.restaurant.yml
   - docker-compose.booking.yml
   - docker-compose.kong.yml
+
+networks:
+  app-network: 
+    driver: bridge

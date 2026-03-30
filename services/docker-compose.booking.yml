@@ -2,7 +2,6 @@ x-common: &common
   restart: unless-stopped
   networks:
     - app-network
-    - kong-net
 
 x-booking-db-config: &booking-db-config
   DB_HOST: booking_db
@@ -52,12 +51,6 @@ services:
       <<: *booking-db-config
     healthcheck:
       <<: *pg-healthcheck
-
-networks:
-  app-network:
-    driver: bridge
-  kong-net:
-    driver: bridge
 
 volumes:
   booking_db_data:
