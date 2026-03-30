@@ -25,7 +25,7 @@ func TestGetReviews(t *testing.T) {
 		defer mock.Close()
 
 		repo := &Repository{db: mock}
-		restaurantID := 10
+		restaurantID := int32(10)
 
 		// SELECT review_count ... returns no rows
 		mock.ExpectQuery(`SELECT review_count FROM restaurant_stats`).
@@ -56,7 +56,7 @@ func TestGetReviews(t *testing.T) {
 		defer mock.Close()
 
 		repo := &Repository{db: mock}
-		restaurantID := 10
+		restaurantID := int32(10)
 
 		mock.ExpectQuery(`SELECT review_count FROM restaurant_stats`).
 			WithArgs(restaurantID).
@@ -79,7 +79,7 @@ func TestGetReviews(t *testing.T) {
 		defer mock.Close()
 
 		repo := &Repository{db: mock}
-		restaurantID := 10
+		restaurantID := int32(10)
 
 		rows := pgxmock.NewRows([]string{"review_count"}).AddRow(0)
 		mock.ExpectQuery(`SELECT review_count FROM restaurant_stats`).
@@ -109,7 +109,7 @@ func TestGetReviews(t *testing.T) {
 		defer mock.Close()
 
 		repo := &Repository{db: mock}
-		restaurantID := 10
+		restaurantID := int32(10)
 		page, limit := 1, 5
 		offset := (page - 1) * limit
 
@@ -139,7 +139,7 @@ func TestGetReviews(t *testing.T) {
 		defer mock.Close()
 
 		repo := &Repository{db: mock}
-		restaurantID := 10
+		restaurantID := int32(10)
 		page, limit := 1, 5
 		offset := (page - 1) * limit
 
@@ -171,7 +171,7 @@ func TestGetReviews(t *testing.T) {
 		defer mock.Close()
 
 		repo := &Repository{db: mock}
-		restaurantID := 10
+		restaurantID := int32(10)
 		page, limit := 1, 2
 		offset := (page - 1) * limit
 
@@ -183,8 +183,8 @@ func TestGetReviews(t *testing.T) {
 		now := time.Now()
 		rows := pgxmock.NewRows(
 			[]string{"review_id", "restaurant_id", "user_id", "comment", "rating", "created_at"},
-		).AddRow(int32(1), int32(restaurantID), int32(5), "good", int32(4), now).
-			AddRow(int32(2), int32(restaurantID), int32(6), "great", int32(5), now.Add(-time.Hour))
+		).AddRow(int32(1), restaurantID, int32(5), "good", int32(4), now).
+			AddRow(int32(2), restaurantID, int32(6), "great", int32(5), now.Add(-time.Hour))
 
 		mock.ExpectQuery(`SELECT review_id, restaurant_id, user_id, comment, rating, created_at FROM review`).
 			WithArgs(restaurantID, limit, offset).

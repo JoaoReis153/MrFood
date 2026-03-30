@@ -19,14 +19,14 @@ import (
 )
 
 type mockReviewService struct {
-	GetReviewsFn         func(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error)
+	GetReviewsFn         func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
 	CreateReviewFn       func(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReviewFn       func(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReviewFn       func(ctx context.Context, deleteReq models.DeleteReview) error
 	GetRestaurantStatsFn func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
 }
 
-func (m *mockReviewService) GetReviews(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error) {
+func (m *mockReviewService) GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 	return m.GetReviewsFn(ctx, restaurantID, page, limit)
 }
 func (m *mockReviewService) CreateReview(ctx context.Context, review models.Review) (models.Review, error) {
@@ -60,7 +60,7 @@ func TestServer_GetReviews_Success(t *testing.T) {
 
 	now := time.Now()
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 			if restaurantID != 5 || page != 2 || limit != 3 {
 				t.Fatalf("unexpected args: id=%d page=%d limit=%d", restaurantID, page, limit)
 			}
@@ -109,7 +109,7 @@ func TestServer_GetReviews_DefaultsAndError(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 			if page != 1 || limit != 10 {
 				t.Fatalf("expected default page=1 limit=10, got page=%d limit=%d", page, limit)
 			}
@@ -375,7 +375,7 @@ func TestRunServer_Smoke(t *testing.T) {
 	s := grpc.NewServer()
 	pb.RegisterReviewServiceServer(s, &server{
 		svc: &mockReviewService{
-			GetReviewsFn: func(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error) {
+			GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 				return models.ReviewsPage{
 					Reviews: []models.Review{},
 					Pagination: models.Pagination{

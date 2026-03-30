@@ -8,7 +8,7 @@ import (
 )
 
 type ReviewRepository interface {
-	GetReviews(ctx context.Context, restaurantID, page, limit int) ([]models.Review, int, error)
+	GetReviews(ctx context.Context, restaurantID int32, page, limit int) ([]models.Review, int, error)
 	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReview(ctx context.Context, reviewID int32, userID int32) error
@@ -28,7 +28,7 @@ func New(repo ReviewRepository, restaurantClient RestaurantClient) *Service {
 	return &Service{repo: repo, restaurantClient: restaurantClient}
 }
 
-func (s *Service) GetReviews(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error) {
+func (s *Service) GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 	if restaurantID <= 0 {
 		slog.Error("Restaurant ID is not valid: value must be a positive integer", "restaurantID", restaurantID)
 		return models.ReviewsPage{}, models.ErrInvalidRestaurantID
@@ -43,12 +43,8 @@ func (s *Service) GetReviews(ctx context.Context, restaurantID, page, limit int)
 		slog.Error("Failed to get restaurant details", "restaurantID", restaurantID, "error", err)
 		return models.ReviewsPage{}, err
 	}
-	if restaurant.RestaurantID == 0 {
-		slog.Error("Restaurant not found", "restaurantID", restaurantID)
-		return models.ReviewsPage{}, models.ErrRestaurantNotFound
-	}
 
-	reviews, total, err := s.repo.GetReviews(ctx, restaurantID, page, limit)
+	reviews, total, err := s.repo.GetReviews(ctx, restaurant.RestaurantID, page, limit)
 	if err != nil {
 		return models.ReviewsPage{}, err
 	}
@@ -81,6 +77,12 @@ func (s *Service) CreateReview(ctx context.Context, review models.Review) (model
 		slog.Error("User ID is not valid: value must be a positive integer", "userID", review.UserID)
 		return models.Review{}, models.ErrInvalidUserID
 	}
+	restaurant, err := s.restaurantClient.GetRestaurant(ctx, review.RestaurantID)
+	if err != nil {
+		slog.Error("Failed to get restaurant details", "restaurantID", restaurant.RestaurantID, "error", err)
+		return models.Review{}, err
+	}
+
 	return s.repo.CreateReview(ctx, review)
 }
 

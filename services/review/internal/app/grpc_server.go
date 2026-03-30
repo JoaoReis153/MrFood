@@ -43,7 +43,7 @@ func NewRestaurantClient(target string) (*RestaurantClient, *grpc.ClientConn, er
 }
 
 type ReviewService interface {
-	GetReviews(ctx context.Context, restaurantID, page, limit int) (models.ReviewsPage, error)
+	GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
 	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error
@@ -91,7 +91,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 	if limit == 0 {
 		limit = 10
 	}
-	results, err := s.svc.GetReviews(ctx, int(req.GetRestaurantId()), page, limit)
+	results, err := s.svc.GetReviews(ctx, int32(req.GetRestaurantId()), page, limit)
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
@@ -132,7 +132,7 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 	}
 	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
-		RestaurantID: req.GetRestaurantId(),
+		RestaurantID: int32(req.GetRestaurantId()),
 		UserID:       user_id,
 		Rating:       req.GetRating(),
 		Comment:      req.GetComment(),

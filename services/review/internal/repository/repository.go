@@ -25,7 +25,7 @@ func New(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetReviews(ctx context.Context, restaurantID, page, limit int) ([]models.Review, int, error) {
+func (r *Repository) GetReviews(ctx context.Context, restaurantID int32, page, limit int) ([]models.Review, int, error) {
 	offset := (page - 1) * limit
 	var total int
 	err := r.db.QueryRow(ctx,

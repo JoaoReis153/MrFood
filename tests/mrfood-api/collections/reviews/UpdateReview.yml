@@ -7,12 +7,13 @@ grpc:
   url: localhost:50055
   method: /proto.ReviewService/UpdateReview
   methodType: unary
+  protoFilePath: ../../../../services/review/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "review_id": 1,
+      "review_id": 5,
       "rating": 4,
       "comment": "Nice!"
     }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc0ODI2MjE3LCJuYmYiOjE3NzQ4MjUzMTcsImlhdCI6MTc3NDgyNTMxNywianRpIjoiMDRkNjgxZWMtNTAwZi00YzE3LWE0M2YtM2IxZGFkMTI5NDc1IiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYSIsInRva2VuX3ZlcnNpb24iOjEsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.eDxwXl_Oy5WRkLlOXFpELGOf4KSn7FiT7JlS8ecKcmQ
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIzIiwiZXhwIjoxNzc0ODg5NTk4LCJuYmYiOjE3NzQ4ODg2OTgsImlhdCI6MTc3NDg4ODY5OCwianRpIjoiNjU2YTllMGQtMzVlOC00YmRkLWJkYjgtYzZkZjc3NGQxMzU1IiwidXNlcl9pZCI6IjMiLCJ1c2VybmFtZSI6ImJhbmFuYTIiLCJ0b2tlbl92ZXJzaW9uIjoyLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.qorGFggyxfSW3TAkutfS-5rk-7NRfkix7OLsIBc1vvs
