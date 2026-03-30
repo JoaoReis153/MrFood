@@ -25,6 +25,7 @@ message WorkingHoursResponse {
   int32 restaurant_id = 1;
   google.protobuf.Timestamp time_start = 2;
   google.protobuf.Timestamp time_end = 3;
+  int32 max_slots = 4;
 }
 
 message CreateBookingRequest {

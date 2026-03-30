@@ -79,6 +79,7 @@ type WorkingHoursResponse struct {
 	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	TimeEnd       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time_end,json=timeEnd,proto3" json:"time_end,omitempty"`
+	MaxSlots      int32                  `protobuf:"varint,4,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -132,6 +133,13 @@ func (x *WorkingHoursResponse) GetTimeEnd() *timestamppb.Timestamp {
 		return x.TimeEnd
 	}
 	return nil
+}
+
+func (x *WorkingHoursResponse) GetMaxSlots() int32 {
+	if x != nil {
+		return x.MaxSlots
+	}
+	return 0
 }
 
 type CreateBookingRequest struct {
@@ -326,12 +334,13 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x13WorkingHoursRequest\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
 	"\n" +
-	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\xad\x01\n" +
+	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\xca\x01\n" +
 	"\x14WorkingHoursResponse\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
 	"\n" +
 	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\x125\n" +
-	"\btime_end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd\"\x92\x01\n" +
+	"\btime_end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd\x12\x1b\n" +
+	"\tmax_slots\x18\x04 \x01(\x05R\bmaxSlots\"\x92\x01\n" +
 	"\x14CreateBookingRequest\x12#\n" +
 	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x1a\n" +
 	"\bquantity\x18\x02 \x01(\x05R\bquantity\x129\n" +

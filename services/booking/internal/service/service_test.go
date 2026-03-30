@@ -20,6 +20,7 @@ func (m *mockGRPCClient) GetWorkingHours(ctx context.Context, req *pb.WorkingHou
 		RestaurantId: req.RestaurantId,
 		TimeStart:    timestamppb.New(time.Date(2026, 3, 28, 9, 0, 0, 0, time.UTC)),
 		TimeEnd:      timestamppb.New(time.Date(2026, 3, 28, 18, 0, 0, 0, time.UTC)),
+		MaxSlots:     15,
 	}, nil
 }
 
@@ -27,10 +28,7 @@ type mockRepo struct {
 	bookings map[int32]int32 // bookingID -> userID
 }
 
-func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
-	if booking.PeopleCount > MAX_SLOTS {
-		return 0, ErrInvalidBooking
-	}
+func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.CreateBooking) (int32, error) {
 	return 42, nil
 }
 
@@ -55,13 +53,13 @@ func TestCreateBooking_EdgeCases(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		booking   *models.Booking
+		booking   *models.CreateBooking
 		expectErr error
 		expectID  int32
 	}{
 		{
 			name: "PeopleCount exceeds MAX_SLOTS",
-			booking: &models.Booking{
+			booking: &models.CreateBooking{
 				UserID:       1,
 				RestaurantID: 1,
 				TimeStart:    time.Date(2026, 3, 28, 10, 0, 0, 0, time.UTC),
@@ -71,7 +69,7 @@ func TestCreateBooking_EdgeCases(t *testing.T) {
 		},
 		{
 			name: "Time before working hours",
-			booking: &models.Booking{
+			booking: &models.CreateBooking{
 				UserID:       1,
 				RestaurantID: 1,
 				TimeStart:    time.Date(2026, 3, 28, 8, 0, 0, 0, time.UTC),
@@ -81,7 +79,7 @@ func TestCreateBooking_EdgeCases(t *testing.T) {
 		},
 		{
 			name: "Time after working hours",
-			booking: &models.Booking{
+			booking: &models.CreateBooking{
 				UserID:       1,
 				RestaurantID: 1,
 				TimeStart:    time.Date(2026, 3, 28, 19, 0, 0, 0, time.UTC),
@@ -91,7 +89,7 @@ func TestCreateBooking_EdgeCases(t *testing.T) {
 		},
 		{
 			name: "Successful booking",
-			booking: &models.Booking{
+			booking: &models.CreateBooking{
 				UserID:       1,
 				RestaurantID: 1,
 				TimeStart:    time.Date(2026, 3, 28, 10, 0, 0, 0, time.UTC),

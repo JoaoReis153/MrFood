@@ -15,7 +15,7 @@ import (
 func TestCreateBooking(t *testing.T) {
 	ctx := context.Background()
 
-	baseBooking := &models.Booking{
+	baseBooking := &models.CreateBooking{
 		UserID:       1,
 		RestaurantID: 10,
 		TimeStart:    time.Now(),
@@ -32,7 +32,7 @@ func TestCreateBooking(t *testing.T) {
 
 		repo := New(mock)
 
-		booking := &models.Booking{
+		booking := &models.CreateBooking{
 			UserID:       1,
 			RestaurantID: 1,
 			TimeStart:    time.Now(),
