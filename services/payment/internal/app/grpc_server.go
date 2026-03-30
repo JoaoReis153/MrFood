@@ -1,0 +1,57 @@
+package app
+
+import (
+	"MrFood/services/payment/config"
+	"context"
+	"fmt"
+	"log/slog"
+	"net"
+	"os"
+	"strconv"
+
+	pb "MrFood/services/payment/internal/api/grpc/pb"
+
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+)
+
+type Server struct {
+	pb.UnimplementedTemplateServiceServer
+}
+
+func (s *Server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
+	return &pb.Pong{
+		Id: 1,
+	}, nil
+}
+
+func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
+	lis, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Server.Port))
+	if err != nil {
+		slog.Error("failed", "error", err)
+		os.Exit(1)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterTemplateServiceServer(s, &Server{})
+
+	slog.Info("gRPC server listening", "port", cfg.Server.Port)
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		if err := s.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+			return fmt.Errorf("serve: %w", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		<-ctx.Done()
+		slog.Info("shutting down gRPC server...")
+		s.GracefulStop()
+		return nil
+	})
+
+	return g.Wait()
+}

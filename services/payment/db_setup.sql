@@ -1,0 +1,2 @@
+-- Initial schema for payment.
+-- Replace with service-specific tables.
