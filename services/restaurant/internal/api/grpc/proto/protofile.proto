@@ -15,6 +15,10 @@ service RestaurantService {
   rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse);
 }
 
+service RestaurantToSponsorService {
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (GetRestaurantSponsorshipResponse);
+}
+
 service RestaurantToBookingService {
   rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
 }
@@ -117,4 +121,14 @@ message CompareRestaurantDetailsRequest {
 message CompareRestaurantDetailsResponse {
   RestaurantDetails restaurant1 = 1;
   RestaurantDetails restaurant2 = 2;
+}
+
+message GetRestaurantSponsorshipRequest {
+  int32 id = 1;
+}
+
+message GetRestaurantSponsorshipResponse {
+  int32 id = 1;
+  repeated string categories = 2;
+  int32 owner_id = 3;
 }

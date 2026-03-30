@@ -27,6 +27,7 @@ import (
 type server struct {
 	pb.UnimplementedRestaurantServiceServer
 	pb.UnimplementedRestaurantToBookingServiceServer
+	pb.UnimplementedRestaurantToSponsorServiceServer
 	restaurantService restaurantService
 }
 
@@ -180,6 +181,21 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 	}, nil
 }
 
+func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.GetRestaurantSponsorshipResponse, error) {
+	slog.Info("fetching restaurant details", "restaurant_id", req.GetId())
+
+	restaurant, err := s.restaurantService.GetRestaurantByID(ctx, req.GetId())
+	if err != nil {
+		return nil, mapServiceError(err)
+	}
+
+	return &pb.GetRestaurantSponsorshipResponse{
+		Id:         restaurant.ID,
+		Categories: restaurant.Categories,
+		OwnerId:    restaurant.OwnerID,
+	}, nil
+}
+
 func (app *App) RunServer() {
 	cfg := config.Get(context.Background())
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -197,6 +213,7 @@ func (app *App) RunServer() {
 
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)
+	pb.RegisterRestaurantToSponsorServiceServer(s, srv)
 
 	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
