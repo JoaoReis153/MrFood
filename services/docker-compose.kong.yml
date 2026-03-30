@@ -1,13 +1,11 @@
-version: "3.8"
-
 services:
   kong:
     image: '${GW_IMAGE:-kong/kong-gateway:3.13.0.2}'
     container_name: kong
     restart: on-failure
     networks:
-      - kong-net
-
+      - app-network
+      
     environment:
       KONG_DATABASE: "off"                         # Disable database
       KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # Path to config file

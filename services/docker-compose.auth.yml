@@ -2,10 +2,9 @@ x-common: &common
   restart: unless-stopped
   networks:
     - app-network
-    - kong-net
 
 x-auth-db-config: &auth-db-config
-  DB_HOST: auth_db
+  POSTGRES_HOST: auth_db
   POSTGRES_DB: mrfood_auth
   POSTGRES_USER: ${AUTH_POSTGRES_USER}
   POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
@@ -49,7 +48,7 @@ services:
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - auth_db_data:/var/lib/postgresql/data
-      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *auth-db-config
     healthcheck:
@@ -66,10 +65,5 @@ services:
       timeout: 5s
       retries: 5
 
-networks:
-  app-network:
-    driver: bridge
-  kong-net:
-    driver: bridge
 volumes:
   auth_db_data:
