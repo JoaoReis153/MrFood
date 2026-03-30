@@ -11,7 +11,8 @@ type mockReviewRepo struct {
 	getReviewsFn   func(ctx context.Context, restaurantID, page, limit int) ([]models.Review, int, error)
 	createReviewFn func(ctx context.Context, review models.Review) (models.Review, error)
 	updateReviewFn func(ctx context.Context, review models.UpdateReview) (models.Review, error)
-	deleteReviewFn func(ctx context.Context, reviewID int32) error
+	deleteReviewFn func(ctx context.Context, reviewID int32, userID int32) error
+	getStatsFn     func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
 }
 
 func (m *mockReviewRepo) GetReviews(ctx context.Context, rID, p, l int) ([]models.Review, int, error) {
@@ -23,16 +24,20 @@ func (m *mockReviewRepo) CreateReview(ctx context.Context, r models.Review) (mod
 func (m *mockReviewRepo) UpdateReview(ctx context.Context, r models.UpdateReview) (models.Review, error) {
 	return m.updateReviewFn(ctx, r)
 }
-func (m *mockReviewRepo) DeleteReview(ctx context.Context, id int32) error {
-	return m.deleteReviewFn(ctx, id)
+func (m *mockReviewRepo) DeleteReview(ctx context.Context, id int32, userID int32) error {
+	return m.deleteReviewFn(ctx, id, userID)
 }
 
-type mockStatsRepo struct {
-	getStatsFn func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
-}
-
-func (m *mockStatsRepo) GetRestaurantStats(ctx context.Context, id int32) (models.RestaurantStats, error) {
+func (m *mockReviewRepo) GetRestaurantStats(ctx context.Context, id int32) (models.RestaurantStats, error) {
 	return m.getStatsFn(ctx, id)
+}
+
+type mockRestaurantClient struct {
+	getRestaurantFn func(ctx context.Context, restaurantID int32) (models.Restaurant, error)
+}
+
+func (m *mockRestaurantClient) GetRestaurant(ctx context.Context, restaurantID int32) (models.Restaurant, error) {
+	return m.getRestaurantFn(ctx, restaurantID)
 }
 
 func TestGetReviews(t *testing.T) {
@@ -58,7 +63,12 @@ func TestGetReviews(t *testing.T) {
 				return nil, 0, errors.New("query error")
 			},
 		}
-		svc := New(mockRepo, nil)
+		mockClient := &mockRestaurantClient{
+			getRestaurantFn: func(ctx context.Context, restaurantID int32) (models.Restaurant, error) {
+				return models.Restaurant{RestaurantID: restaurantID}, nil
+			},
+		}
+		svc := New(mockRepo, mockClient)
 		_, err := svc.GetReviews(context.Background(), 1, 1, 10)
 		if err == nil || err.Error() != "query error" {
 			t.Fatalf("expected query error, got %v", err)
@@ -71,7 +81,12 @@ func TestGetReviews(t *testing.T) {
 				return make([]models.Review, 5), 15, nil
 			},
 		}
-		svc := New(mockRepo, nil)
+		mockClient := &mockRestaurantClient{
+			getRestaurantFn: func(ctx context.Context, restaurantID int32) (models.Restaurant, error) {
+				return models.Restaurant{RestaurantID: restaurantID}, nil
+			},
+		}
+		svc := New(mockRepo, mockClient)
 		res, err := svc.GetReviews(context.Background(), 1, 1, 5)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -119,6 +134,10 @@ func TestCreateReview(t *testing.T) {
 				r.ReviewID = 123
 				return r, nil
 			},
+			deleteReviewFn: func(ctx context.Context, reviewID int32, userID int32) error { return nil },
+			getStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+				return models.RestaurantStats{}, nil
+			},
 		}
 		s := New(mockRepo, nil)
 		res, err := s.CreateReview(context.Background(), models.Review{Rating: 5, Comment: "OK", RestaurantID: 1, UserID: 1})
@@ -159,6 +178,10 @@ func TestUpdateReview(t *testing.T) {
 			updateReviewFn: func(ctx context.Context, r models.UpdateReview) (models.Review, error) {
 				return models.Review{}, errors.New("update fail")
 			},
+			deleteReviewFn: func(ctx context.Context, reviewID int32, userID int32) error { return nil },
+			getStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+				return models.RestaurantStats{}, nil
+			},
 		}
 		s := New(mockRepo, nil)
 		_, err := s.UpdateReview(context.Background(), models.UpdateReview{ReviewID: 1})
@@ -171,20 +194,34 @@ func TestUpdateReview(t *testing.T) {
 func TestDeleteReview(t *testing.T) {
 	t.Run("invalid ID", func(t *testing.T) {
 		svc := &Service{}
-		err := svc.DeleteReview(context.Background(), 0)
+		err := svc.DeleteReview(context.Background(), models.DeleteReview{ReviewID: 0, UserID: 1})
 		if !errors.Is(err, models.ErrInvalidReviewID) {
 			t.Fatalf("expected ErrInvalidReviewID")
 		}
 	})
 
+	t.Run("invalid user ID", func(t *testing.T) {
+		svc := &Service{}
+		err := svc.DeleteReview(context.Background(), models.DeleteReview{ReviewID: 1, UserID: 0})
+		if !errors.Is(err, models.ErrInvalidUserID) {
+			t.Fatalf("expected ErrInvalidUserID")
+		}
+	})
+
 	t.Run("success", func(t *testing.T) {
 		mockRepo := &mockReviewRepo{
-			deleteReviewFn: func(ctx context.Context, id int32) error {
+			deleteReviewFn: func(ctx context.Context, id int32, userID int32) error {
+				if id != 1 || userID != 2 {
+					t.Fatalf("unexpected delete args: id=%d userID=%d", id, userID)
+				}
 				return nil
+			},
+			getStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+				return models.RestaurantStats{}, nil
 			},
 		}
 		svc := New(mockRepo, nil)
-		if err := svc.DeleteReview(context.Background(), 1); err != nil {
+		if err := svc.DeleteReview(context.Background(), models.DeleteReview{ReviewID: 1, UserID: 2}); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 	})
@@ -200,12 +237,13 @@ func TestGetRestaurantStats(t *testing.T) {
 	})
 
 	t.Run("repo error", func(t *testing.T) {
-		mockStats := &mockStatsRepo{
+		mockRepo := &mockReviewRepo{
 			getStatsFn: func(ctx context.Context, id int32) (models.RestaurantStats, error) {
 				return models.RestaurantStats{}, errors.New("stats error")
 			},
+			deleteReviewFn: func(ctx context.Context, reviewID int32, userID int32) error { return nil },
 		}
-		svc := New(nil, mockStats)
+		svc := New(mockRepo, nil)
 		_, err := svc.GetRestaurantStats(context.Background(), 1)
 		if err == nil || err.Error() != "stats error" {
 			t.Fatalf("expected stats error")

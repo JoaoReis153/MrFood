@@ -61,6 +61,10 @@ func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int32
 			slog.Error("Restaurant service unavailable", "restaurantID", restaurantID, "error", err)
 			return models.Restaurant{}, models.ErrRestaurantServiceUnavailable
 		}
+		if code == codes.NotFound {
+			slog.Info("Restaurant not found", "restaurantID", restaurantID)
+			return models.Restaurant{}, models.ErrRestaurantNotFound
+		}
 		slog.Error("Failed to get restaurant", "restaurantID", restaurantID, "error", err)
 		return models.Restaurant{}, err
 	}
