@@ -4,8 +4,8 @@ services:
     container_name: kong
     restart: on-failure
     networks:
-      - kong-net
-
+      - app-network
+      
     environment:
       KONG_DATABASE: "off"                         # Disable database
       KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # Path to config file

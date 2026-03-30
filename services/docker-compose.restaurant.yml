@@ -49,9 +49,5 @@ services:
     healthcheck:
       <<: *pg-healthcheck
 
-networks:
-  app-network:
-    driver: bridge
-
 volumes:
   restaurant_db_data:
