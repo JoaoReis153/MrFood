@@ -1,7 +1,7 @@
 info:
   name: update restaurant
   type: grpc
-  seq: 7
+  seq: 3
 
 grpc:
   url: localhost:50052

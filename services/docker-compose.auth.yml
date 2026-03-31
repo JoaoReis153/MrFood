@@ -2,7 +2,6 @@ x-common: &common
   restart: unless-stopped
   networks:
     - app-network
-    - kong-net
 
 x-auth-db-config: &auth-db-config
   POSTGRES_HOST: auth_db
@@ -66,10 +65,5 @@ services:
       timeout: 5s
       retries: 5
 
-networks:
-  app-network:
-    driver: bridge
-  kong-net:
-    driver: bridge
 volumes:
   auth_db_data:

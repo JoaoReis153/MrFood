@@ -7,12 +7,13 @@
 package pb
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -1178,6 +1179,8 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 	if File_internal_api_grpc_proto_protofile_proto != nil {
 		return
 	}
+	file_internal_api_grpc_proto_protofile_proto_msgTypes[8].OneofWrappers = []any{}
+	file_internal_api_grpc_proto_protofile_proto_msgTypes[11].OneofWrappers = []any{}
 	file_internal_api_grpc_proto_protofile_proto_msgTypes[8].OneofWrappers = []any{}
 	file_internal_api_grpc_proto_protofile_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
