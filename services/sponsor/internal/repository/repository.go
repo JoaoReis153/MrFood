@@ -8,7 +8,8 @@ import (
 
 	models "MrFood/services/sponsor/pkg"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
@@ -18,11 +19,17 @@ var (
 	ErrDatabaseRollback    = errors.New("database is rollbacked")
 )
 
-type Repository struct {
-	DB *pgxpool.Pool
+type DB interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
-func New(db *pgxpool.Pool) *Repository {
+type Repository struct {
+	DB DB
+}
+
+func New(db DB) *Repository {
 	return &Repository{DB: db}
 }
 
@@ -40,11 +47,17 @@ func (r *Repository) GetRestaurantSponsorship(ctx context.Context, id int32) (*m
 
 	sponsorship := &models.SponsorshipResponse{}
 
+	var idTemp int32
+	var tierTemp int32
+
 	err := r.DB.QueryRow(ctx, query, id).Scan(
-		&sponsorship.ID,
-		&sponsorship.Tier,
+		&idTemp,
+		&tierTemp,
 		&sponsorship.Until,
 	)
+
+	sponsorship.ID = int(idTemp)
+	sponsorship.Tier = int(tierTemp)
 
 	if err != nil {
 		return nil, ErrSponsorshipNotFound
@@ -69,11 +82,17 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 
 	sponsorship := &models.SponsorshipResponse{}
 
+	var idTemp int32
+	var tierTemp int32
+
 	err := r.DB.QueryRow(ctx, query_select, request.ID).Scan(
-		&sponsorship.ID,
-		&sponsorship.Tier,
+		&idTemp,
+		&tierTemp,
 		&sponsorship.Until,
 	)
+
+	sponsorship.ID = int(idTemp)
+	sponsorship.Tier = int(tierTemp)
 
 	if request.Tier <= sponsorship.Tier {
 		return nil, errors.New("Tier can only be upgraded")
