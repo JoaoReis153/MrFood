@@ -114,7 +114,7 @@ func TestSponsor_InvalidOwner(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Nil(t, resp)
-	assert.Equal(t, "Invalid restaurant owner", err.Error())
+	assert.Equal(t, "invalid restaurant owner", err.Error())
 
 	mockRepo.AssertNotCalled(t, "Sponsor")
 }
