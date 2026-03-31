@@ -4,7 +4,7 @@ from typing import Dict, Iterable, List, Set
 
 import pandas as pd
 
-from csv_processing.process_auth import collect_source_user_ids, stream_auth_csv
+from csv_processing.process_auth import collect_gplus_user_id_map, stream_auth_csv
 from csv_processing.process_review import generate_reviews_stream
 from csv_processing.process_restaurant import build_restaurant_data_from_csv
 from csv_processing.service_seed_common import OUTPUT_DIR, print_progress_end, print_progress_start, print_progress_step
@@ -277,6 +277,7 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         return
 
     # For restaurant and review, use streaming CSV directly to avoid loading DataFrames.
+    gplus_user_id_to_user_id: Dict[str, int] = {}
     gplus_place_id_to_restaurant_id: Dict[str, int] = {}
     restaurant_count = 0
 
@@ -285,6 +286,13 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         stream_auth_csv(
             DATA_DIR / DATASET_FILES["users"],
             OUTPUT_DIR / "auth" / "app_user.csv",
+            nrows=rows,
+        )
+
+    if "review" in services:
+        print("\n✓ Collecting user ID mapping for reviews")
+        gplus_user_id_to_user_id = collect_gplus_user_id_map(
+            DATA_DIR / DATASET_FILES["users"],
             nrows=rows,
         )
 
@@ -331,6 +339,7 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         total_reviews = min(source_review_rows, 1000000)  # Use source row count as upper bound
         reviews_stream = generate_reviews_stream(
             reviews_csv_path=DATA_DIR / DATASET_FILES["reviews"],
+            gplus_user_id_to_user_id=gplus_user_id_to_user_id,
             gplus_place_id_to_restaurant_id=gplus_place_id_to_restaurant_id,
             nrows=rows,
         )

@@ -1,7 +1,7 @@
 import csv
 import re
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -20,11 +20,11 @@ def slugify_username(name: object, fallback_prefix: str, index: int) -> str:
 
 
 def build_user_id(raw_user_id: object, index: int) -> str:
-    """Build a stable user_id from source gPlusUserId with deterministic fallback."""
-    source_id = clean_text(raw_user_id)
-    if source_id:
-        return source_id
-    return f"missing_gplus_user_{index}"
+    """Build a DB-safe user_id value.
+
+    The auth schema uses INTEGER, so we generate sequential IDs.
+    """
+    return str(index)
 
 
 def build_auth_users(users_df: pd.DataFrame) -> List[dict]:
@@ -126,3 +126,17 @@ def collect_source_user_ids(users_csv_path: Path, nrows: Optional[int] = None) -
                 break
             ids.append(build_user_id(row.get("gPlusUserId"), idx))
     return ids
+
+
+def collect_gplus_user_id_map(users_csv_path: Path, nrows: Optional[int] = None) -> Dict[str, int]:
+    """Collect mapping from source gPlusUserId to generated integer user_id."""
+    user_map: Dict[str, int] = {}
+    with users_csv_path.open("r", newline="", encoding="utf-8") as input_fp:
+        reader = csv.DictReader(input_fp)
+        for idx, row in enumerate(reader, start=1):
+            if nrows is not None and idx > nrows:
+                break
+            gplus_user_id = clean_text(row.get("gPlusUserId"))
+            if gplus_user_id:
+                user_map[gplus_user_id] = idx
+    return user_map

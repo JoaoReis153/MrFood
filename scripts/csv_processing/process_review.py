@@ -35,15 +35,17 @@ def _parse_created_at(row: dict) -> str:
 
 def generate_reviews_stream(
     reviews_csv_path: Path,
+    gplus_user_id_to_user_id: Dict[str, int],
     gplus_place_id_to_restaurant_id: Dict[str, int],
     nrows: Optional[int] = None,
 ) -> Iterator[dict]:
-    """Yield reviews matching review table schema, using gPlusPlaceId and gPlusUserId (as INT) directly."""
-    if not gplus_place_id_to_restaurant_id:
+    """Yield reviews matching review table schema using gPlus ID mappings to DB-safe INT IDs."""
+    if not gplus_place_id_to_restaurant_id or not gplus_user_id_to_user_id:
         return
 
     seen_pairs = set()
     available_restaurant_ids = list(gplus_place_id_to_restaurant_id.values())
+    available_user_ids = list(gplus_user_id_to_user_id.values())
     
     if not available_restaurant_ids:
         return
@@ -58,11 +60,7 @@ def generate_reviews_stream(
             gplus_place_id = str(row.get("gPlusPlaceId") or "").strip()
             gplus_user_id = str(row.get("gPlusUserId") or "").strip()
 
-            # Parse gPlusUserId as INT for user_id
-            try:
-                user_id = int(float(gplus_user_id)) if gplus_user_id else None
-            except (ValueError, TypeError):
-                user_id = None
+            user_id = gplus_user_id_to_user_id.get(gplus_user_id) if gplus_user_id else None
 
             # Try to find matching restaurant
             restaurant_id = gplus_place_id_to_restaurant_id.get(gplus_place_id) if gplus_place_id else None
@@ -71,10 +69,12 @@ def generate_reviews_stream(
             if not restaurant_id:
                 if not available_restaurant_ids:
                     continue
-                restaurant_id = available_restaurant_ids[source_idx % len(available_restaurant_ids)]
+                restaurant_id = available_restaurant_ids[(source_idx - 1) % len(available_restaurant_ids)]
 
             if not user_id:
-                continue
+                if not available_user_ids:
+                    continue
+                user_id = available_user_ids[(source_idx - 1) % len(available_user_ids)]
 
             pair = (restaurant_id, user_id)
             if pair in seen_pairs:

@@ -12,7 +12,7 @@ CSV_SERVICES ?= all
 CSV_ROWS ?= 200
 CSV_FULL ?=
 
-.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-booking load-all setup build run stop down restart logs test clean clean-volumes clean-all
+.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run stop down restart logs test clean clean-volumes clean-all
 
 help:
 	@echo "MrFood Make Commands"
@@ -22,6 +22,7 @@ help:
 	@echo "  make setup                              - Start services and load all data"
 	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
 	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
+	@echo "  make load-reviews                       - Load review seed data into database"
 	@echo "  make load-all                           - Load all seed data into databases"
 	@echo ""
 	@echo "Service Management:"
@@ -92,16 +93,15 @@ load-restaurant:
 	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurant_categories(restaurant_id, category) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurant_categories.csv
 	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('restaurants', 'id'), COALESCE((SELECT MAX(id) FROM restaurants), 1), (SELECT COUNT(*) > 0 FROM restaurants));"
 
-## Load booking data into database
-load-booking:
-	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -c "TRUNCATE TABLE booking, restaurant_slots RESTART IDENTITY CASCADE;"
-	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -c "\\copy booking(id, user_id, restaurant_id, time_start, time_end, people_count) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/booking/booking.csv
-	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('booking', 'id'), COALESCE((SELECT MAX(id) FROM booking), 1), (SELECT COUNT(*) > 0 FROM booking));"
-
 ## Load all seed data into databases
 
+load-reviews:
+	$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "TRUNCATE TABLE review, restaurant_stats RESTART IDENTITY CASCADE;"
+	$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "\\copy review(review_id, restaurant_id, user_id, comment, rating, created_at) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/review/review.csv
+	$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('review', 'review_id'), COALESCE((SELECT MAX(review_id) FROM review), 1), (SELECT COUNT(*) > 0 FROM review));"
+
 load-all:
-	@$(MAKE) --no-print-directory -j 2 load-auth load-restaurant
+	@$(MAKE) --no-print-directory -j 2 load-auth load-restaurant 
 	@echo "✓ All data loaded successfully"
 
 ## Complete setup: start services and load all data
