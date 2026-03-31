@@ -265,7 +265,7 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
 
     datasets = load_datasets(dataset_keys, nrows=rows)
     user_count = None
-    restaurants = None
+    restaurant_count = 0
 
     if "auth" in services or "booking" in services:
         if "auth" in services:
@@ -281,29 +281,31 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
 
     if "restaurant" in services or "booking" in services:
         print("\n✓ Processing restaurants")
-        restaurants = build_restaurant_data(
+        restaurants_stream = build_restaurant_data(
             datasets["places"],
             datasets["reviews"],
             datasets["tripadvisor"],
         )
         if "restaurant" in services:
-            write_restaurant_csvs(
-                restaurants,
+            restaurant_count, _, _ = write_restaurant_csvs(
+                restaurants_stream,
                 OUTPUT_DIR / "restaurant" / "restaurants.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_working_hours.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_categories.csv",
             )
+        else:
+            restaurant_count = sum(1 for _ in restaurants_stream)
 
     if "booking" in services:
         print("\n✓ Processing bookings")
         if user_count is None:
             user_count = count_users(DATASET_FILES["users"], nrows=rows)
 
-        total_bookings = resolve_max_bookings(user_count, len(restaurants), requested_max=max_bookings)
+        total_bookings = resolve_max_bookings(user_count, restaurant_count, requested_max=max_bookings)
         booking_stream = generate_bookings_stream(
             user_count=user_count,
-            restaurants=restaurants,
-            max_bookings=total_bookings,
+            restaurant_count=restaurant_count,
+            total_bookings=total_bookings,
         )
         write_booking_csv_stream(booking_stream, OUTPUT_DIR / "booking" / "booking.csv", total=total_bookings)
 

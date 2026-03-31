@@ -86,13 +86,9 @@ def write_restaurant_csvs(
     """Write restaurant data to CSV files from an iterable to keep memory usage low."""
     restaurants_file.parent.mkdir(parents=True, exist_ok=True)
 
-    # First pass: count restaurants for progress reporting
-    restaurants_list = list(restaurants)
-    total_restaurants = len(restaurants_list)
-
     print_progress_start("Writing restaurant CSV files")
-    last_pct = 0
 
+    restaurants_count = 0
     working_hours_count = 0
     categories_count = 0
 
@@ -129,11 +125,7 @@ def write_restaurant_csvs(
         working_hours_writer.writeheader()
         categories_writer.writeheader()
 
-        if total_restaurants == 0:
-            print_progress_end("Writing restaurant CSV files")
-            return 0, 0, 0
-
-        for index, restaurant in enumerate(restaurants_list, start=1):
+        for restaurants_count, restaurant in enumerate(restaurants, start=1):
             restaurants_writer.writerow(
                 {
                     "id": restaurant.id,
@@ -158,9 +150,6 @@ def write_restaurant_csvs(
                 categories_writer.writerow({"restaurant_id": restaurant.id, "category": value})
                 categories_count += 1
 
-            last_pct = print_progress_step("Writing restaurant CSV files", index, total_restaurants, last_pct)
+    print_progress_end("Writing restaurant CSV files")
 
-    if last_pct < 100:
-        print_progress_end("Writing restaurant CSV files")
-
-    return len(restaurants_list), working_hours_count, categories_count
+    return restaurants_count, working_hours_count, categories_count

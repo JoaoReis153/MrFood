@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Iterator, List, Optional
+from typing import Iterator, Optional
 
 DEFAULT_MAX_BOOKINGS = 250000
 
@@ -17,22 +17,18 @@ def resolve_max_bookings(user_count: int, restaurant_count: int, requested_max: 
 
 def generate_bookings_stream(
     user_count: int,
-    restaurants: List,
-    max_bookings: Optional[int] = None,
+    restaurant_count: int,
+    total_bookings: int,
 ) -> Iterator[dict]:
     """Yield booking records without storing the full output in memory."""
-    if user_count <= 0 or not restaurants:
-        return
-
-    total_bookings = resolve_max_bookings(user_count, len(restaurants), requested_max=max_bookings)
-    if total_bookings <= 0:
+    if user_count <= 0 or restaurant_count <= 0 or total_bookings <= 0:
         return
 
     base_date = datetime(2026, 4, 1)
 
     for row_idx in range(total_bookings):
         user_id = (row_idx % user_count) + 1
-        restaurant = restaurants[(row_idx * 7) % len(restaurants)]
+        restaurant_id = ((row_idx * 7) % restaurant_count) + 1
 
         day_offset = row_idx % 120
         hour = 11 + (row_idx % 10)
@@ -47,7 +43,7 @@ def generate_bookings_stream(
         yield {
             "id": row_idx + 1,
             "user_id": user_id,
-            "restaurant_id": restaurant.id,
+            "restaurant_id": restaurant_id,
             "time_start": time_start.strftime("%Y-%m-%d %H:%M:%S"),
             "time_end": time_end.strftime("%Y-%m-%d %H:%M:%S"),
             "people_count": people_count,
