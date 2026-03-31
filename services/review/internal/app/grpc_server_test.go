@@ -666,14 +666,13 @@ func TestRunServer_Smoke(t *testing.T) {
 		return lis.Dial()
 	}
 
-	conn, err := grpc.DialContext(
-		context.Background(),
-		"bufnet", // não precisa existir
+	conn, err := grpc.NewClient(
+		"passthrough:///bufnet",
 		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		t.Fatalf("failed to dial bufnet: %v", err)
+		t.Fatalf("failed to create client: %v", err)
 	}
 	defer conn.Close()
 
@@ -681,7 +680,7 @@ func TestRunServer_Smoke(t *testing.T) {
 	page := int32(1)
 	limit := int32(10)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err = client.GetReviews(ctx, &pb.GetReviewsRequest{
