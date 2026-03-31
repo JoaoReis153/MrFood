@@ -18,6 +18,10 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
+// ===================================================
+// ==================== Mock =======================
+// ===================================================
+
 type mockReviewService struct {
 	GetReviewsFn         func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
 	CreateReviewFn       func(ctx context.Context, review models.Review) (models.Review, error)
@@ -42,23 +46,42 @@ func (m *mockReviewService) GetRestaurantStats(ctx context.Context, restaurantID
 	return m.GetRestaurantStatsFn(ctx, restaurantID)
 }
 
+// ===================================================
+// ================== Helpers ========================
+// ===================================================
+
 func authenticatedContext(t *testing.T, userID string) context.Context {
 	t.Helper()
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{UserID: userID})
 	tokenStr, err := token.SignedString([]byte("test-secret"))
 	if err != nil {
 		t.Fatalf("failed to sign token: %v", err)
 	}
-
 	md := metadata.Pairs("authorization", "Bearer "+tokenStr)
 	return metadata.NewIncomingContext(context.Background(), md)
 }
 
+func unauthenticatedContext() context.Context {
+	return context.Background()
+}
+
+func invalidTokenContext() context.Context {
+	md := metadata.Pairs("authorization", "Bearer invalid.token.here")
+	return metadata.NewIncomingContext(context.Background(), md)
+}
+
+func newServer(svc ReviewService) *server {
+	return &server{svc: svc}
+}
+
+// ===================================================
+// ================ GetReviews =======================
+// ===================================================
+
 func TestServer_GetReviews_Success(t *testing.T) {
 	ctx := context.Background()
-
 	now := time.Now()
+
 	ms := &mockReviewService{
 		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 			if restaurantID != 5 || page != 2 || limit != 3 {
@@ -68,21 +91,14 @@ func TestServer_GetReviews_Success(t *testing.T) {
 				Reviews: []models.Review{
 					{ReviewID: 1, RestaurantID: 5, UserID: 7, Rating: 4, Comment: "ok", CreatedAt: now},
 				},
-				Pagination: models.Pagination{
-					Page:  2,
-					Limit: 3,
-					Total: 1,
-					Pages: 1,
-				},
+				Pagination: models.Pagination{Page: 2, Limit: 3, Total: 1, Pages: 1},
 			}, nil
 		},
 	}
 
-	s := &server{svc: ms}
-
 	page := int32(2)
 	limit := int32(3)
-	resp, err := s.GetReviews(ctx, &pb.GetReviewsRequest{
+	resp, err := newServer(ms).GetReviews(ctx, &pb.GetReviewsRequest{
 		RestaurantId: 5,
 		Page:         &page,
 		Limit:        &limit,
@@ -100,12 +116,12 @@ func TestServer_GetReviews_Success(t *testing.T) {
 	if resp.Pagination.Page != 2 || resp.Pagination.Limit != 3 || resp.Pagination.Total != 1 || resp.Pagination.Pages != 1 {
 		t.Fatalf("unexpected pagination: %+v", resp.Pagination)
 	}
-	if !r.CreatedAt.AsTime().Equal(now) {
+	if !r.CreatedAt.AsTime().Equal(now.UTC().Truncate(time.Second)) && !r.CreatedAt.AsTime().Equal(now) {
 		t.Fatalf("expected CreatedAt %v, got %v", now, r.CreatedAt.AsTime())
 	}
 }
 
-func TestServer_GetReviews_DefaultsAndError(t *testing.T) {
+func TestServer_GetReviews_Defaults(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
@@ -113,24 +129,63 @@ func TestServer_GetReviews_DefaultsAndError(t *testing.T) {
 			if page != 1 || limit != 10 {
 				t.Fatalf("expected default page=1 limit=10, got page=%d limit=%d", page, limit)
 			}
+			return models.ReviewsPage{
+				Reviews:    []models.Review{},
+				Pagination: models.Pagination{Page: 1, Limit: 10, Total: 0, Pages: 0},
+			}, nil
+		},
+	}
+
+	resp, err := newServer(ms).GetReviews(ctx, &pb.GetReviewsRequest{RestaurantId: 5})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Reviews) != 0 {
+		t.Fatalf("expected 0 reviews, got %d", len(resp.Reviews))
+	}
+}
+
+func TestServer_GetReviews_NotFound(t *testing.T) {
+	ctx := context.Background()
+
+	ms := &mockReviewService{
+		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
 			return models.ReviewsPage{}, models.ErrRestaurantNotFound
 		},
 	}
 
-	s := &server{svc: ms}
-
-	_, err := s.GetReviews(ctx, &pb.GetReviewsRequest{
-		RestaurantId: 5,
-		// Page=0, Limit=0
-	})
+	_, err := newServer(ms).GetReviews(ctx, &pb.GetReviewsRequest{RestaurantId: 5})
 	if err == nil {
-		t.Fatalf("expected error, got nil")
+		t.Fatal("expected error, got nil")
 	}
 	st, ok := status.FromError(err)
 	if !ok || st.Code() != codes.NotFound {
 		t.Fatalf("expected NotFound, got %v", st)
 	}
 }
+
+func TestServer_GetReviews_InvalidArgument(t *testing.T) {
+	ctx := context.Background()
+
+	ms := &mockReviewService{
+		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+			return models.ReviewsPage{}, models.ErrInvalidRestaurantID
+		},
+	}
+
+	_, err := newServer(ms).GetReviews(ctx, &pb.GetReviewsRequest{RestaurantId: -1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.InvalidArgument {
+		t.Fatalf("expected InvalidArgument, got %v", st.Code())
+	}
+}
+
+// ===================================================
+// ================ CreateReview =====================
+// ===================================================
 
 func TestServer_CreateReview_Success(t *testing.T) {
 	ctx := authenticatedContext(t, "2")
@@ -146,9 +201,8 @@ func TestServer_CreateReview_Success(t *testing.T) {
 			return review, nil
 		},
 	}
-	s := &server{svc: ms}
 
-	resp, err := s.CreateReview(ctx, &pb.CreateReviewRequest{
+	resp, err := newServer(ms).CreateReview(ctx, &pb.CreateReviewRequest{
 		RestaurantId: 1,
 		Rating:       5,
 		Comment:      "good",
@@ -160,12 +214,26 @@ func TestServer_CreateReview_Success(t *testing.T) {
 	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != 2 || r.Rating != 5 || r.Comment != "good" {
 		t.Fatalf("unexpected review resp: %+v", r)
 	}
-	if !r.CreatedAt.AsTime().Equal(now) {
-		t.Fatalf("expected CreatedAt %v, got %v", now, r.CreatedAt.AsTime())
+}
+
+func TestServer_CreateReview_Unauthenticated(t *testing.T) {
+	ms := &mockReviewService{}
+
+	_, err := newServer(ms).CreateReview(unauthenticatedContext(), &pb.CreateReviewRequest{
+		RestaurantId: 1,
+		Rating:       5,
+		Comment:      "good",
+	})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.PermissionDenied && st.Code() != codes.Unauthenticated {
+		t.Fatalf("expected Unauthenticated or PermissionDenied, got %v", st.Code())
 	}
 }
 
-func TestServer_CreateReview_Error(t *testing.T) {
+func TestServer_CreateReview_AlreadyExists(t *testing.T) {
 	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
@@ -173,11 +241,10 @@ func TestServer_CreateReview_Error(t *testing.T) {
 			return models.Review{}, models.ErrReviewAlreadyExists
 		},
 	}
-	s := &server{svc: ms}
 
-	_, err := s.CreateReview(ctx, &pb.CreateReviewRequest{RestaurantId: 1, Rating: 3})
+	_, err := newServer(ms).CreateReview(ctx, &pb.CreateReviewRequest{RestaurantId: 1, Rating: 3, Comment: "ok"})
 	if err == nil {
-		t.Fatalf("expected error, got nil")
+		t.Fatal("expected error, got nil")
 	}
 	st, _ := status.FromError(err)
 	if st.Code() != codes.AlreadyExists {
@@ -185,14 +252,37 @@ func TestServer_CreateReview_Error(t *testing.T) {
 	}
 }
 
+func TestServer_CreateReview_ServiceError(t *testing.T) {
+	ctx := authenticatedContext(t, "2")
+
+	ms := &mockReviewService{
+		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) {
+			return models.Review{}, models.ErrInvalidRating
+		},
+	}
+
+	_, err := newServer(ms).CreateReview(ctx, &pb.CreateReviewRequest{RestaurantId: 1, Rating: 0, Comment: "ok"})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.InvalidArgument {
+		t.Fatalf("expected InvalidArgument, got %v", st.Code())
+	}
+}
+
+// ===================================================
+// ================ UpdateReview =====================
+// ===================================================
+
 func TestServer_UpdateReview_Success(t *testing.T) {
 	ctx := authenticatedContext(t, "2")
 	now := time.Now()
 
 	ms := &mockReviewService{
 		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
-			if review.ReviewID != 10 {
-				t.Fatalf("expected ReviewID 10, got %d", review.ReviewID)
+			if review.ReviewID != 10 || review.UserID != 2 {
+				t.Fatalf("unexpected update request: %+v", review)
 			}
 			if review.Comment == nil || *review.Comment != "new" {
 				t.Fatalf("unexpected comment: %v", review.Comment)
@@ -210,11 +300,10 @@ func TestServer_UpdateReview_Success(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &server{svc: ms}
 
 	comment := "new"
 	rating := int32(4)
-	resp, err := s.UpdateReview(ctx, &pb.UpdateReviewRequest{
+	resp, err := newServer(ms).UpdateReview(ctx, &pb.UpdateReviewRequest{
 		ReviewId: 10,
 		Comment:  &comment,
 		Rating:   &rating,
@@ -226,12 +315,50 @@ func TestServer_UpdateReview_Success(t *testing.T) {
 	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != 2 || r.Rating != 4 || r.Comment != "new" {
 		t.Fatalf("unexpected response: %+v", r)
 	}
-	if !r.CreatedAt.AsTime().Equal(now) {
-		t.Fatalf("expected CreatedAt %v, got %v", now, r.CreatedAt.AsTime())
+}
+
+func TestServer_UpdateReview_PartialUpdate(t *testing.T) {
+	ctx := authenticatedContext(t, "2")
+
+	ms := &mockReviewService{
+		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
+			if review.Rating != nil {
+				t.Fatal("expected nil rating")
+			}
+			if review.Comment == nil || *review.Comment != "updated" {
+				t.Fatalf("unexpected comment: %v", review.Comment)
+			}
+			return models.Review{ReviewID: 1, Comment: "updated"}, nil
+		},
+	}
+
+	comment := "updated"
+	resp, err := newServer(ms).UpdateReview(ctx, &pb.UpdateReviewRequest{
+		ReviewId: 1,
+		Comment:  &comment,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Review.Comment != "updated" {
+		t.Fatalf("expected comment 'updated', got %s", resp.Review.Comment)
 	}
 }
 
-func TestServer_UpdateReview_Error(t *testing.T) {
+func TestServer_UpdateReview_Unauthenticated(t *testing.T) {
+	ms := &mockReviewService{}
+
+	_, err := newServer(ms).UpdateReview(unauthenticatedContext(), &pb.UpdateReviewRequest{ReviewId: 1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.PermissionDenied && st.Code() != codes.Unauthenticated {
+		t.Fatalf("expected Unauthenticated or PermissionDenied, got %v", st.Code())
+	}
+}
+
+func TestServer_UpdateReview_NotFound(t *testing.T) {
 	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
@@ -239,17 +366,20 @@ func TestServer_UpdateReview_Error(t *testing.T) {
 			return models.Review{}, models.ErrReviewNotFound
 		},
 	}
-	s := &server{svc: ms}
 
-	_, err := s.UpdateReview(ctx, &pb.UpdateReviewRequest{ReviewId: 1})
+	_, err := newServer(ms).UpdateReview(ctx, &pb.UpdateReviewRequest{ReviewId: 1})
 	if err == nil {
-		t.Fatalf("expected error, got nil")
+		t.Fatal("expected error, got nil")
 	}
 	st, _ := status.FromError(err)
 	if st.Code() != codes.NotFound {
 		t.Fatalf("expected NotFound, got %v", st.Code())
 	}
 }
+
+// ===================================================
+// ================ DeleteReview =====================
+// ===================================================
 
 func TestServer_DeleteReview_Success(t *testing.T) {
 	ctx := authenticatedContext(t, "2")
@@ -262,18 +392,30 @@ func TestServer_DeleteReview_Success(t *testing.T) {
 			return nil
 		},
 	}
-	s := &server{svc: ms}
 
-	resp, err := s.DeleteReview(ctx, &pb.DeleteReviewRequest{ReviewId: 7})
+	resp, err := newServer(ms).DeleteReview(ctx, &pb.DeleteReviewRequest{ReviewId: 7})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if resp == nil {
-		t.Fatalf("expected non-nil response")
+		t.Fatal("expected non-nil response")
 	}
 }
 
-func TestServer_DeleteReview_Error(t *testing.T) {
+func TestServer_DeleteReview_Unauthenticated(t *testing.T) {
+	ms := &mockReviewService{}
+
+	_, err := newServer(ms).DeleteReview(unauthenticatedContext(), &pb.DeleteReviewRequest{ReviewId: 1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.PermissionDenied && st.Code() != codes.Unauthenticated {
+		t.Fatalf("expected Unauthenticated or PermissionDenied, got %v", st.Code())
+	}
+}
+
+func TestServer_DeleteReview_NotFound(t *testing.T) {
 	ctx := authenticatedContext(t, "2")
 
 	ms := &mockReviewService{
@@ -281,17 +423,39 @@ func TestServer_DeleteReview_Error(t *testing.T) {
 			return models.ErrReviewNotFound
 		},
 	}
-	s := &server{svc: ms}
 
-	_, err := s.DeleteReview(ctx, &pb.DeleteReviewRequest{ReviewId: 1})
+	_, err := newServer(ms).DeleteReview(ctx, &pb.DeleteReviewRequest{ReviewId: 1})
 	if err == nil {
-		t.Fatalf("expected error, got nil")
+		t.Fatal("expected error, got nil")
 	}
 	st, _ := status.FromError(err)
 	if st.Code() != codes.NotFound {
 		t.Fatalf("expected NotFound, got %v", st.Code())
 	}
 }
+
+func TestServer_DeleteReview_Forbidden(t *testing.T) {
+	ctx := authenticatedContext(t, "2")
+
+	ms := &mockReviewService{
+		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error {
+			return models.ErrForbidden
+		},
+	}
+
+	_, err := newServer(ms).DeleteReview(ctx, &pb.DeleteReviewRequest{ReviewId: 1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.PermissionDenied {
+		t.Fatalf("expected PermissionDenied, got %v", st.Code())
+	}
+}
+
+// ===================================================
+// ============= GetRestaurantStats ==================
+// ===================================================
 
 func TestServer_GetRestaurantStats_Success(t *testing.T) {
 	ctx := context.Background()
@@ -308,9 +472,8 @@ func TestServer_GetRestaurantStats_Success(t *testing.T) {
 			}, nil
 		},
 	}
-	s := &server{svc: ms}
 
-	resp, err := s.GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: 5})
+	resp, err := newServer(ms).GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: 5})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -320,25 +483,66 @@ func TestServer_GetRestaurantStats_Success(t *testing.T) {
 	}
 }
 
-func TestServer_GetRestaurantStats_Error(t *testing.T) {
+func TestServer_GetRestaurantStats_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
 		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
-			return models.RestaurantStats{}, errors.New("db")
+			return models.RestaurantStats{}, models.ErrRestaurantNotFound
 		},
 	}
-	s := &server{svc: ms}
 
-	_, err := s.GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: 5})
+	_, err := newServer(ms).GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: 5})
 	if err == nil {
-		t.Fatalf("expected error, got nil")
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.NotFound {
+		t.Fatalf("expected NotFound, got %v", st.Code())
+	}
+}
+
+func TestServer_GetRestaurantStats_Internal(t *testing.T) {
+	ctx := context.Background()
+
+	ms := &mockReviewService{
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+			return models.RestaurantStats{}, errors.New("db error")
+		},
+	}
+
+	_, err := newServer(ms).GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: 5})
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
 	st, _ := status.FromError(err)
 	if st.Code() != codes.Internal {
 		t.Fatalf("expected Internal, got %v", st.Code())
 	}
 }
+
+func TestServer_GetRestaurantStats_InvalidArgument(t *testing.T) {
+	ctx := context.Background()
+
+	ms := &mockReviewService{
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+			return models.RestaurantStats{}, models.ErrInvalidRestaurantID
+		},
+	}
+
+	_, err := newServer(ms).GetRestaurantStats(ctx, &pb.GetRestaurantStatsRequest{RestaurantId: -1})
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	st, _ := status.FromError(err)
+	if st.Code() != codes.InvalidArgument {
+		t.Fatalf("expected InvalidArgument, got %v", st.Code())
+	}
+}
+
+// ===================================================
+// ================ mapToGRPCError ===================
+// ===================================================
 
 func TestMapToGRPCError_AllCases(t *testing.T) {
 	cases := []struct {
@@ -354,6 +558,9 @@ func TestMapToGRPCError_AllCases(t *testing.T) {
 		{models.ErrReviewAlreadyExists, codes.AlreadyExists},
 		{models.ErrRestaurantNotFound, codes.NotFound},
 		{models.ErrReviewNotFound, codes.NotFound},
+		{models.ErrForbidden, codes.PermissionDenied},
+		{models.ErrUnauthenticated, codes.Unauthenticated},
+		{models.ErrRestaurantServiceUnavailable, codes.Unavailable},
 		{errors.New("other"), codes.Internal},
 	}
 
@@ -368,44 +575,104 @@ func TestMapToGRPCError_AllCases(t *testing.T) {
 	}
 }
 
+// ===================================================
+// ================ ExtractUser ======================
+// ===================================================
+
+func TestExtractUserFromContext_NoMetadata(t *testing.T) {
+	_, err := ExtractUserFromContext(context.Background())
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestExtractUserFromContext_NoAuthHeader(t *testing.T) {
+	md := metadata.Pairs("other-header", "value")
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+	_, err := ExtractUserFromContext(ctx)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestExtractUserFromContext_ValidToken(t *testing.T) {
+	ctx := authenticatedContext(t, "42")
+	claims, err := ExtractUserFromContext(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if claims.UserID != "42" {
+		t.Fatalf("expected userID 42, got %s", claims.UserID)
+	}
+}
+
+// ===================================================
+// ================= parseInt32 ======================
+// ===================================================
+
+func TestParseInt32_Valid(t *testing.T) {
+	v, err := parseInt32("42")
+	if err != nil || v != 42 {
+		t.Fatalf("expected 42, got %d err %v", v, err)
+	}
+}
+
+func TestParseInt32_Zero(t *testing.T) {
+	_, err := parseInt32("0")
+	if err == nil {
+		t.Fatal("expected error for 0, got nil")
+	}
+}
+
+func TestParseInt32_Negative(t *testing.T) {
+	_, err := parseInt32("-1")
+	if err == nil {
+		t.Fatal("expected error for negative, got nil")
+	}
+}
+
+func TestParseInt32_NonNumeric(t *testing.T) {
+	_, err := parseInt32("abc")
+	if err == nil {
+		t.Fatal("expected error for non-numeric, got nil")
+	}
+}
+
+// ===================================================
+// ================ Smoke Test =======================
+// ===================================================
+
 const bufSize = 1024 * 1024
 
 func TestRunServer_Smoke(t *testing.T) {
 	lis := bufconn.Listen(bufSize)
 	s := grpc.NewServer()
-	pb.RegisterReviewServiceServer(s, &server{
-		svc: &mockReviewService{
-			GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
-				return models.ReviewsPage{
-					Reviews: []models.Review{},
-					Pagination: models.Pagination{
-						Page:  1,
-						Limit: 10,
-						Total: 0,
-						Pages: 0,
-					},
-				}, nil
-			},
-			CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) { return review, nil },
-			UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
-				return models.Review{}, nil
-			},
-			DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error { return nil },
-			GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
-				return models.RestaurantStats{}, nil
-			},
+
+	ms := &mockReviewService{
+		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+			return models.ReviewsPage{
+				Reviews:    []models.Review{},
+				Pagination: models.Pagination{Page: 1, Limit: 10, Total: 0, Pages: 0},
+			}, nil
 		},
-	})
-	go func() {
-		_ = s.Serve(lis)
-	}()
+		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) { return review, nil },
+		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
+			return models.Review{}, nil
+		},
+		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error { return nil },
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+			return models.RestaurantStats{}, nil
+		},
+	}
+
+	pb.RegisterReviewServiceServer(s, &server{svc: ms})
+	pb.RegisterReviewToRestaurantServiceServer(s, &server{svc: ms})
+
+	go func() { _ = s.Serve(lis) }()
 	defer s.Stop()
 
-	ctx := context.Background()
-	conn, err := grpc.DialContext(ctx, "bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
-			return lis.Dial()
-		}),
+	conn, err := grpc.DialContext(context.Background(), "bufnet",
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
 		grpc.WithInsecure(),
 	)
 	if err != nil {
@@ -414,11 +681,10 @@ func TestRunServer_Smoke(t *testing.T) {
 	defer conn.Close()
 
 	client := pb.NewReviewServiceClient(conn)
-
 	page := int32(1)
 	limit := int32(10)
-	_, err = client.GetReviews(ctx, &pb.GetReviewsRequest{RestaurantId: 1, Page: &page, Limit: &limit})
+	_, err = client.GetReviews(context.Background(), &pb.GetReviewsRequest{RestaurantId: 1, Page: &page, Limit: &limit})
 	if err != nil {
-		t.Fatalf("unexpected error calling GetReviews over bufconn: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

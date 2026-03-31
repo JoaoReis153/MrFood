@@ -268,7 +268,7 @@ func (app *App) RunServer() {
 func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, errors.New("no metadata")
+		return nil, models.ErrUnauthenticated
 	}
 
 	authHeader := md["authorization"]
