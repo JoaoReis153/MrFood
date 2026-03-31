@@ -1,9 +1,7 @@
 info:
-  name: Update restaurant
-  type: http
-  seq: 8
-  tags:
-  - Restaurants
+  name: update restaurant
+  type: grpc
+  seq: 3
 
 http:
   method: PUT
