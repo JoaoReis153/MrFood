@@ -6,7 +6,7 @@ import pandas as pd
 
 from csv_processing.process_auth import stream_auth_csv
 from csv_processing.process_booking import generate_bookings_stream, resolve_max_bookings
-from csv_processing.process_restaurant import build_restaurant_data
+from csv_processing.process_restaurant import build_restaurant_data_from_csv
 from csv_processing.service_seed_common import OUTPUT_DIR, print_progress_end, print_progress_start, print_progress_step
 from csv_processing.write_csv import write_booking_csv_stream, write_restaurant_csvs
 
@@ -268,7 +268,7 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
         print("\n✓ CSV generation completed for: auth")
         return
 
-    datasets = load_datasets(dataset_keys, nrows=rows)
+    # For restaurant and booking, use streaming CSV directly to avoid loading DataFrames
     user_count = None
     restaurant_count = 0
 
@@ -286,10 +286,12 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
 
     if "restaurant" in services or "booking" in services:
         print("\n✓ Processing restaurants")
-        restaurants_stream = build_restaurant_data(
-            datasets["places"],
-            datasets["reviews"],
-            datasets["tripadvisor"],
+        # Stream directly from CSV files instead of loading DataFrames
+        restaurants_stream = build_restaurant_data_from_csv(
+            DATA_DIR / DATASET_FILES["places"],
+            DATA_DIR / DATASET_FILES["reviews"],
+            DATA_DIR / DATASET_FILES["tripadvisor"],
+            nrows=rows,
         )
         if "restaurant" in services:
             restaurant_count, _, _ = write_restaurant_csvs(
@@ -298,7 +300,8 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
                 OUTPUT_DIR / "restaurant" / "restaurant_working_hours.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_categories.csv",
             )
-        else:
+        elif "booking" in services:
+            # Only booking requested: count restaurants from stream for booking generation
             restaurant_count = sum(1 for _ in restaurants_stream)
 
     if "booking" in services:

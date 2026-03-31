@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import csv
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 import pandas as pd
@@ -15,6 +17,42 @@ from .service_seed_common import (
     print_progress_start,
     print_progress_step,
 )
+
+
+def stream_reviews_csv(file_path: Path, nrows: Optional[int] = None) -> Iterable[dict]:
+    """Stream review records from CSV without loading into memory."""
+    count = 0
+    with file_path.open("r", newline="", encoding="utf-8") as fp:
+        reader = csv.DictReader(fp)
+        for row in reader:
+            if nrows is not None and count >= nrows:
+                break
+            yield row
+            count += 1
+
+
+def stream_places_csv(file_path: Path, nrows: Optional[int] = None) -> Iterable[dict]:
+    """Stream place records from CSV without loading into memory."""
+    count = 0
+    with file_path.open("r", newline="", encoding="utf-8") as fp:
+        reader = csv.DictReader(fp)
+        for row in reader:
+            if nrows is not None and count >= nrows:
+                break
+            yield row
+            count += 1
+
+
+def stream_tripadvisor_csv(file_path: Path, nrows: Optional[int] = None) -> Iterable[dict]:
+    """Stream tripadvisor records from CSV without loading into memory."""
+    count = 0
+    with file_path.open("r", newline="", encoding="utf-8") as fp:
+        reader = csv.DictReader(fp)
+        for row in reader:
+            if nrows is not None and count >= nrows:
+                break
+            yield row
+            count += 1
 
 
 @dataclass
@@ -87,20 +125,25 @@ def extract_categories(raw_value: object) -> List[str]:
     return categories
 
 
-def build_review_categories_map(reviews_df: pd.DataFrame) -> Dict[str, set[str]]:
-    """Index review categories by place ID for quick lookup."""
+def build_review_categories_map(reviews_stream: Iterable[dict]) -> Dict[str, set[str]]:
+    """Index review categories by place ID from streaming review records."""
     categories_map: Dict[str, set[str]] = {}
-    total_reviews = len(reviews_df)
+    
     print_progress_start("Indexing review categories")
     last_pct = 0
+    index = 0
+    
+    # Convert to list temporarily to get count for progress
+    reviews_list = list(reviews_stream)
+    total_reviews = len(reviews_list)
 
-    for index, row in enumerate(reviews_df.itertuples(index=False), start=1):
-        place_id = clean_id(getattr(row, "gPlusPlaceId", None))
+    for index, row in enumerate(reviews_list, start=1):
+        place_id = clean_id(row.get("gPlusPlaceId"))
         if not place_id:
             last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
             continue
 
-        categories = extract_categories(getattr(row, "categories", None))
+        categories = extract_categories(row.get("categories"))
         if not categories:
             last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
             continue
@@ -141,68 +184,100 @@ def build_place_working_hours(place_row: pd.Series) -> tuple:
     return None
 
 
+def build_place_working_hours_from_dict(place_dict: dict) -> tuple:
+    """Extract valid working hours from place dict record."""
+    day_names = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ]
+
+    # Find the first day with valid hours where close_time > open_time (no midnight crossing)
+    for day_name in day_names:
+        open_t, close_t = parse_hours_range(place_dict.get(f"hours_{day_name}"))
+        if open_t is not None and close_t is not None and open_t < close_t:
+            open_str = open_t.strftime("%H:%M:%S")
+            close_str = close_t.strftime("%H:%M:%S")
+            return (open_str, close_str)
+
+    # Return None if no valid hours found
+    return None
+
+
 def build_restaurants_stream(
-    places_df: pd.DataFrame,
-    reviews_df: pd.DataFrame,
-    tripadvisor_df: pd.DataFrame,
+    places_stream: Iterable[dict],
+    reviews_stream: Iterable[dict],
+    tripadvisor_stream: Iterable[dict],
     max_restaurants: Optional[int],
 ):
-    """Generate restaurants one at a time to keep memory usage constant."""
+    """Generate restaurants one at a time from streaming sources to keep memory usage constant."""
     seen_names: set[str] = set()
-    review_categories = build_review_categories_map(reviews_df)
-    review_place_ids = {clean_id(v) for v in reviews_df.get("gPlusPlaceId", pd.Series(dtype=str)).tolist() if clean_id(v)}
+    review_categories = build_review_categories_map(reviews_stream)
+    review_place_ids = set(review_categories.keys())
 
     next_id = 1
     total_restaurants = 0
 
     # Process places with reviews first (prioritized), then without
-    prioritized_indices = []
-    secondary_indices = []
-    total_places = len(places_df)
+    prioritized_places = []
+    secondary_places = []
+    
     print_progress_start("Preparing place priority list")
     last_pct = 0
+    places_count = 0
 
-    for index in range(total_places):
-        row_place_id = clean_id(places_df.iloc[index].get("gPlusPlaceId"))
+    for places_count, place_row in enumerate(places_stream, start=1):
+        row_place_id = clean_id(place_row.get("gPlusPlaceId"))
         if row_place_id and row_place_id in review_place_ids:
-            prioritized_indices.append(index)
+            prioritized_places.append(place_row)
         else:
-            secondary_indices.append(index)
-        last_pct = print_progress_step("Preparing place priority list", index + 1, total_places, last_pct)
+            secondary_places.append(place_row)
+        last_pct = print_progress_step("Preparing place priority list", places_count, places_count, last_pct)
 
     if last_pct < 100:
         print_progress_end("Preparing place priority list")
 
-    # Process prioritized places
-    place_limit = len(places_df) if max_restaurants is None else min(max_restaurants, len(places_df))
+    # Combine prioritized and secondary
+    all_places = prioritized_places + secondary_places
+    place_limit = len(all_places) if max_restaurants is None else min(max_restaurants, len(all_places))
+    
     print_progress_start("Building restaurants from places")
     last_pct = 0
 
-    for place_index in prioritized_indices:
+    for place_index, place_row in enumerate(all_places, start=1):
         if max_restaurants is not None and total_restaurants >= max_restaurants:
             break
 
-        row = places_df.iloc[place_index]
-        name = clean_text(row.get("name"), 100)
+        name = clean_text(place_row.get("name"), 100)
         normalized = normalize_name(name)
         if not name or normalized in seen_names:
             continue
 
-        if pd.isna(row.get("latitude")) or pd.isna(row.get("longitude")):
-            continue
+        latitude = place_row.get("latitude")
+        longitude = place_row.get("longitude")
+        if latitude is None or longitude is None:
+            try:
+                float(latitude)
+                float(longitude)
+            except (ValueError, TypeError):
+                continue
 
-        gplus_place_id = clean_id(row.get("gPlusPlaceId"))
+        gplus_place_id = clean_id(place_row.get("gPlusPlaceId"))
         categories = sorted(list(review_categories.get(gplus_place_id, set())))
 
         yield RestaurantRecord(
             id=next_id,
             name=name,
-            latitude=float(row.get("latitude")),
-            longitude=float(row.get("longitude")),
+            latitude=float(latitude),
+            longitude=float(longitude),
             address=compose_address([
-                row.get("address_line1"),
-                row.get("address_line2"),
-                row.get("address_line3"),
+                place_row.get("address_line1"),
+                place_row.get("address_line2"),
+                place_row.get("address_line3"),
             ]),
             media_url="",
             max_slots=50,
@@ -210,48 +285,7 @@ def build_restaurants_stream(
             owner_name="admin",
             sponsor_tier=0,
             source_place_id=gplus_place_id or None,
-            working_hours=build_place_working_hours(row),
-            categories=categories,
-        )
-        seen_names.add(normalized)
-        next_id += 1
-        total_restaurants += 1
-        last_pct = print_progress_step("Building restaurants from places", total_restaurants, place_limit, last_pct)
-
-    # Process remaining places
-    for place_index in secondary_indices:
-        if max_restaurants is not None and total_restaurants >= max_restaurants:
-            break
-
-        row = places_df.iloc[place_index]
-        name = clean_text(row.get("name"), 100)
-        normalized = normalize_name(name)
-        if not name or normalized in seen_names:
-            continue
-
-        if pd.isna(row.get("latitude")) or pd.isna(row.get("longitude")):
-            continue
-
-        gplus_place_id = clean_id(row.get("gPlusPlaceId"))
-        categories = sorted(list(review_categories.get(gplus_place_id, set())))
-
-        yield RestaurantRecord(
-            id=next_id,
-            name=name,
-            latitude=float(row.get("latitude")),
-            longitude=float(row.get("longitude")),
-            address=compose_address([
-                row.get("address_line1"),
-                row.get("address_line2"),
-                row.get("address_line3"),
-            ]),
-            media_url="",
-            max_slots=50,
-            owner_id=1,
-            owner_name="admin",
-            sponsor_tier=0,
-            source_place_id=gplus_place_id or None,
-            working_hours=build_place_working_hours(row),
+            working_hours=build_place_working_hours_from_dict(place_row),
             categories=categories,
         )
         seen_names.add(normalized)
@@ -263,7 +297,7 @@ def build_restaurants_stream(
         print_progress_end("Building restaurants from places")
 
     # Process TripAdvisor data
-    tripadvisor_limit = len(tripadvisor_df)
+    tripadvisor_limit = 1000000  # Large limit, will stop at max_restaurants
     if max_restaurants is not None:
         tripadvisor_limit = max(0, max_restaurants - total_restaurants)
 
@@ -271,22 +305,27 @@ def build_restaurants_stream(
     last_pct = 0
     added_tripadvisor = 0
 
-    for tripadvisor_index in range(len(tripadvisor_df)):
+    for tripadvisor_index, tripadvisor_row in enumerate(tripadvisor_stream, start=1):
         if max_restaurants is not None and total_restaurants >= max_restaurants:
             break
 
-        row = tripadvisor_df.iloc[tripadvisor_index]
-        name = clean_text(row.get("restaurant_name"), 100)
+        name = clean_text(tripadvisor_row.get("restaurant_name"), 100)
         normalized = normalize_name(name)
         if not name or normalized in seen_names:
             continue
 
-        if pd.isna(row.get("latitude")) or pd.isna(row.get("longitude")):
-            continue
+        latitude = tripadvisor_row.get("latitude")
+        longitude = tripadvisor_row.get("longitude")
+        if latitude is None or longitude is None:
+            try:
+                float(latitude)
+                float(longitude)
+            except (ValueError, TypeError):
+                continue
 
         categories: List[str] = []
         for field in ["top_tags", "cuisines", "meals", "features"]:
-            categories.extend(extract_categories(row.get(field)))
+            categories.extend(extract_categories(tripadvisor_row.get(field)))
 
         unique_categories: List[str] = []
         seen_categories: set[str] = set()
@@ -297,15 +336,15 @@ def build_restaurants_stream(
             seen_categories.add(key)
             unique_categories.append(category)
 
-        claimed = clean_text(row.get("claimed")).lower()
+        claimed = clean_text(tripadvisor_row.get("claimed")).lower()
         sponsor_tier = 1 if claimed == "claimed" else 0
 
         yield RestaurantRecord(
             id=next_id,
             name=name,
-            latitude=float(row.get("latitude")),
-            longitude=float(row.get("longitude")),
-            address=clean_text(row.get("address"), 100),
+            latitude=float(latitude),
+            longitude=float(longitude),
+            address=clean_text(tripadvisor_row.get("address"), 100),
             media_url="",
             max_slots=15,
             owner_id=1,
@@ -337,14 +376,37 @@ def build_restaurants(
     max_restaurants: Optional[int],
 ) -> List[RestaurantRecord]:
     """Build restaurants (legacy list-based method for compatibility)."""
-    return list(build_restaurants_stream(places_df, reviews_df, tripadvisor_df, max_restaurants))
+    # Convert DataFrames to dict streams for unified processing
+    places_stream = (row.to_dict() for _, row in places_df.iterrows())
+    reviews_stream = (row.to_dict() for _, row in reviews_df.iterrows())
+    tripadvisor_stream = (row.to_dict() for _, row in tripadvisor_df.iterrows())
+    
+    return list(build_restaurants_stream(places_stream, reviews_stream, tripadvisor_stream, max_restaurants))
+
+
+def build_restaurant_data_from_csv(places_path: Path, reviews_path: Path, tripadvisor_path: Path, nrows: Optional[int] = None) -> Iterable:
+    """Build restaurant records directly from CSV files (streaming, low memory)."""
+    places_stream = stream_places_csv(places_path, nrows)
+    reviews_stream = stream_reviews_csv(reviews_path, nrows)
+    tripadvisor_stream = stream_tripadvisor_csv(tripadvisor_path, nrows)
+    
+    return build_restaurants_stream(
+        places_stream=places_stream,
+        reviews_stream=reviews_stream,
+        tripadvisor_stream=tripadvisor_stream,
+        max_restaurants=None,
+    )
 
 
 def build_restaurant_data(places_df: pd.DataFrame, reviews_df: pd.DataFrame, tripadvisor_df: pd.DataFrame) -> Iterable:
     """Build restaurant records from places, reviews, and tripadvisor data (streaming)."""
+    places_stream = (row.to_dict() for _, row in places_df.iterrows())
+    reviews_stream = (row.to_dict() for _, row in reviews_df.iterrows())
+    tripadvisor_stream = (row.to_dict() for _, row in tripadvisor_df.iterrows())
+    
     return build_restaurants_stream(
-        places_df=places_df,
-        reviews_df=reviews_df,
-        tripadvisor_df=tripadvisor_df,
+        places_stream=places_stream,
+        reviews_stream=reviews_stream,
+        tripadvisor_stream=tripadvisor_stream,
         max_restaurants=None,
     )
