@@ -80,6 +80,34 @@ def write_booking_csv_stream(bookings: Iterable[dict], output_file: Path, total:
     return written
 
 
+def write_review_csv_stream(reviews: Iterable[dict], output_file: Path, total: Optional[int] = None) -> int:
+    """Write reviews from an iterator to keep memory usage low."""
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    print_progress_start("Writing review CSV")
+    last_pct = 0
+    written = 0
+
+    with output_file.open("w", newline="", encoding="utf-8") as fp:
+        writer = csv.DictWriter(
+            fp,
+            fieldnames=["review_id", "restaurant_id", "user_id", "comment", "rating", "created_at"],
+        )
+        writer.writeheader()
+
+        for written, review in enumerate(reviews, start=1):
+            writer.writerow(review)
+            if total is not None:
+                last_pct = print_progress_step("Writing review CSV", written, total, last_pct)
+
+    if total is None:
+        print_progress_end("Writing review CSV")
+    elif last_pct < 100:
+        print_progress_end("Writing review CSV")
+
+    return written
+
+
 def write_restaurant_csvs(
     restaurants: Iterable, restaurants_file: Path, working_hours_file: Path, categories_file: Path
 ) -> tuple:
@@ -92,6 +120,7 @@ def write_restaurant_csvs(
     working_hours_count = 0
     categories_count = 0
     restaurant_ids: List[str] = []
+    gplus_place_id_to_restaurant_id: dict = {}
 
     with (
         restaurants_file.open("w", newline="", encoding="utf-8") as restaurants_fp,
@@ -128,6 +157,8 @@ def write_restaurant_csvs(
 
         for restaurants_count, restaurant in enumerate(restaurants, start=1):
             restaurant_ids.append(str(restaurant.id))
+            if restaurant.source_place_id:
+                gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
             restaurants_writer.writerow(
                 {
                     "id": restaurant.id,
@@ -154,4 +185,4 @@ def write_restaurant_csvs(
 
     print_progress_end("Writing restaurant CSV files")
 
-    return restaurants_count, working_hours_count, categories_count, restaurant_ids
+    return restaurants_count, working_hours_count, categories_count, restaurant_ids, gplus_place_id_to_restaurant_id

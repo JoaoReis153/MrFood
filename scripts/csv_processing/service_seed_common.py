@@ -13,7 +13,9 @@ PROJECT_DIR = SCRIPT_DIR.parent
 DATA_DIR = PROJECT_DIR / "data"
 OUTPUT_DIR = SCRIPT_DIR / "processed_data"
 
-DEFAULT_PASSWORD_HASH = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+# Default password for seed users: "mrfood123" (bcrypt hashed)
+DEFAULT_PASSWORD = "mrfood123"
+DEFAULT_PASSWORD_HASH = "$2a$10$h7oCCYsXlom0bwjwYE7md.82mYEHrXlD9oq3tAJSKsqOTzkhfiR3q"
 WEEK_BASE_DATE = datetime(2026, 1, 5)  # Monday
 
 

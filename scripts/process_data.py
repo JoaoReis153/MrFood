@@ -5,10 +5,10 @@ from typing import Dict, Iterable, List, Set
 import pandas as pd
 
 from csv_processing.process_auth import collect_source_user_ids, stream_auth_csv
-from csv_processing.process_booking import generate_bookings_stream
+from csv_processing.process_review import generate_reviews_stream
 from csv_processing.process_restaurant import build_restaurant_data_from_csv
 from csv_processing.service_seed_common import OUTPUT_DIR, print_progress_end, print_progress_start, print_progress_step
-from csv_processing.write_csv import write_booking_csv_stream, write_restaurant_csvs
+from csv_processing.write_csv import write_restaurant_csvs, write_review_csv_stream
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = SCRIPT_DIR.parent
@@ -63,17 +63,17 @@ DATASET_USECOLS = {
 SERVICE_DATASET_REQUIREMENTS = {
     "auth": set(),
     "restaurant": {"places", "reviews", "tripadvisor"},
-    # Booking generation depends on generated users and restaurants.
-    "booking": {"places", "reviews", "tripadvisor"},
+    # Review generation depends on users, restaurants, and source review text/ratings.
+    "review": {"reviews", "places", "tripadvisor"},
 }
 
 SERVICE_SOURCE_FILE_REQUIREMENTS = {
     "auth": {"users"},
     "restaurant": {"places", "reviews", "tripadvisor"},
-    "booking": {"users", "places", "reviews", "tripadvisor"},
+    "review": {"users", "reviews", "places", "tripadvisor"},
 }
 
-SERVICE_ORDER = ["auth", "restaurant", "booking"]
+SERVICE_ORDER = ["auth", "restaurant", "review"]
 
 
 def read_csv(file_name: str, nrows: int = None, usecols: List[str] = None) -> pd.DataFrame:
@@ -202,9 +202,9 @@ def parse_args() -> argparse.Namespace:
         "-s",
         "--services",
         nargs="+",
-        choices=["all", "auth", "restaurant", "booking"],
+        choices=["all", "auth", "restaurant", "review"],
         default=["all"],
-        help="Services to generate: auth restaurant booking (default: all).",
+        help="Services to generate: auth restaurant review (default: all).",
     )
     parser.add_argument(
         "-n",
@@ -217,12 +217,6 @@ def parse_args() -> argparse.Namespace:
         "--full",
         action="store_true",
         help="Process full dataset (overrides --rows limit).",
-    )
-    parser.add_argument(
-        "--max-bookings",
-        type=int,
-        default=None,
-        help="Cap total bookings generated (default: bounded automatically).",
     )
     return parser.parse_args()
 
@@ -242,7 +236,21 @@ def count_users(file_name: str, nrows: int = None) -> int:
     return count
 
 
-def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookings: int = None):
+def count_csv_rows(file_name: str, nrows: int = None) -> int:
+    """Count rows in a source CSV file without loading it into memory."""
+    path = DATA_DIR / file_name
+    count = 0
+
+    with path.open("r", newline="", encoding="utf-8") as fp:
+        next(fp, None)
+        for count, _ in enumerate(fp, start=1):
+            if nrows is not None and count >= nrows:
+                break
+
+    return count
+
+
+def generate_csvs(selected_services: Iterable[str], rows: int = None):
     """Generate selected service CSV seed files."""
     if rows is not None and rows <= 0:
         raise ValueError("--rows must be greater than 0")
@@ -268,27 +276,19 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
         print("\n✓ CSV generation completed for: auth")
         return
 
-    # For restaurant and booking, use streaming CSV directly to avoid loading DataFrames
-    user_ids: List[str] = []
-    restaurant_ids: List[str] = []
+    # For restaurant and review, use streaming CSV directly to avoid loading DataFrames.
+    gplus_place_id_to_restaurant_id: Dict[str, int] = {}
     restaurant_count = 0
 
-    if "auth" in services or "booking" in services:
-        if "auth" in services:
-            print("\n✓ Processing auth users")
-            stream_auth_csv(
-                DATA_DIR / DATASET_FILES["users"],
-                OUTPUT_DIR / "auth" / "app_user.csv",
-                nrows=rows,
-            )
-        if "booking" in services:
-            print("\n✓ Collecting source user IDs for bookings")
-            user_ids = collect_source_user_ids(
-                DATA_DIR / DATASET_FILES["users"],
-                nrows=rows,
-            )
+    if "auth" in services:
+        print("\n✓ Processing auth users")
+        stream_auth_csv(
+            DATA_DIR / DATASET_FILES["users"],
+            OUTPUT_DIR / "auth" / "app_user.csv",
+            nrows=rows,
+        )
 
-    if "restaurant" in services or "booking" in services:
+    if "restaurant" in services or "review" in services:
         print("\n✓ Processing restaurants")
         # Stream directly from CSV files instead of loading DataFrames
         restaurants_stream = build_restaurant_data_from_csv(
@@ -298,40 +298,43 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
             nrows=rows,
         )
         if "restaurant" in services:
-            restaurant_count, _, _, restaurant_ids = write_restaurant_csvs(
+            restaurant_count, _, _, _, gplus_place_id_to_restaurant_id = write_restaurant_csvs(
                 restaurants_stream,
                 OUTPUT_DIR / "restaurant" / "restaurants.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_working_hours.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_categories.csv",
             )
-        elif "booking" in services:
-            # Only booking requested: collect restaurant IDs from stream for booking generation
-            restaurant_ids = [str(restaurant.id) for restaurant in restaurants_stream]
-            restaurant_count = len(restaurant_ids)
+        elif "review" in services:
+            # Only review requested: collect restaurant IDs from stream for review generation.
+            for restaurant in restaurants_stream:
+                if restaurant.source_place_id:
+                    gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
+            restaurant_count = len(gplus_place_id_to_restaurant_id)
 
-    if "booking" in services:
-        print("\n✓ Processing bookings")
-        if not user_ids:
-            user_ids = collect_source_user_ids(DATA_DIR / DATASET_FILES["users"], nrows=rows)
+    if "review" in services:
+        print("\n✓ Processing reviews")
 
-        if not restaurant_ids:
-            print("\n✓ Collecting restaurant IDs for bookings")
+        if restaurant_count <= 0:
+            print("\n✓ Collecting restaurant IDs for reviews")
             restaurants_stream = build_restaurant_data_from_csv(
                 DATA_DIR / DATASET_FILES["places"],
                 DATA_DIR / DATASET_FILES["reviews"],
                 DATA_DIR / DATASET_FILES["tripadvisor"],
                 nrows=rows,
             )
-            restaurant_ids = [str(restaurant.id) for restaurant in restaurants_stream]
-            restaurant_count = len(restaurant_ids)
+            for restaurant in restaurants_stream:
+                if restaurant.source_place_id:
+                    gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
+            restaurant_count = len(gplus_place_id_to_restaurant_id)
 
-        total_bookings = len(user_ids) * restaurant_count
-        booking_stream = generate_bookings_stream(
-            user_ids=user_ids,
-            restaurant_ids=restaurant_ids,
-            total_bookings=total_bookings,
+        source_review_rows = count_csv_rows(DATASET_FILES["reviews"], nrows=rows)
+        total_reviews = min(source_review_rows, 1000000)  # Use source row count as upper bound
+        reviews_stream = generate_reviews_stream(
+            reviews_csv_path=DATA_DIR / DATASET_FILES["reviews"],
+            gplus_place_id_to_restaurant_id=gplus_place_id_to_restaurant_id,
+            nrows=rows,
         )
-        write_booking_csv_stream(booking_stream, OUTPUT_DIR / "booking" / "booking.csv", total=total_bookings)
+        write_review_csv_stream(reviews_stream, OUTPUT_DIR / "review" / "review.csv", total=total_reviews)
 
     service_list = ", ".join(services)
     print(f"\n✓ CSV generation completed for: {service_list}")
@@ -340,5 +343,5 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
 if __name__ == "__main__":
     args = parse_args()
     rows = None if args.full else args.rows
-    generate_csvs(args.services, rows=rows, max_bookings=args.max_bookings)
+    generate_csvs(args.services, rows=rows)
 

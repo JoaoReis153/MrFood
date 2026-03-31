@@ -11,9 +11,8 @@ PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,pyt
 CSV_SERVICES ?= all
 CSV_ROWS ?= 200
 CSV_FULL ?=
-CSV_MAX_BOOKINGS ?=
 
-.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-booking load-auth load-restaurant load-booking load-all setup build run stop down restart logs test clean clean-volumes clean-all
+.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-booking load-all setup build run stop down restart logs test clean clean-volumes clean-all
 
 help:
 	@echo "MrFood Make Commands"
@@ -61,19 +60,19 @@ create_env:
 
 ## Generate CSV seed data (default 200 rows, use CSV_FULL=1 for full dataset)
 generate-csv:
-	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,) $(if $(CSV_MAX_BOOKINGS),--max-bookings $(CSV_MAX_BOOKINGS),)
+	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
 
 ## Generate only auth CSV seed files
 generate-csv-auth:
-	$(PYTHON) scripts/process_data.py --services auth $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,) $(if $(CSV_MAX_BOOKINGS),--max-bookings $(CSV_MAX_BOOKINGS),)
+	$(PYTHON) scripts/process_data.py --services auth $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
 
 ## Generate only restaurant CSV seed files
 generate-csv-restaurant:
-	$(PYTHON) scripts/process_data.py --services restaurant $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,) $(if $(CSV_MAX_BOOKINGS),--max-bookings $(CSV_MAX_BOOKINGS),)
+	$(PYTHON) scripts/process_data.py --services restaurant $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
 
-## Generate only booking CSV seed files
-generate-csv-booking:
-	$(PYTHON) scripts/process_data.py --services booking $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,) $(if $(CSV_MAX_BOOKINGS),--max-bookings $(CSV_MAX_BOOKINGS),)
+## Generate only review CSV seed files
+generate-csv-review:
+	$(PYTHON) scripts/process_data.py --services review $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
 
 # ============================================================================
 # DATA LOADING
@@ -102,7 +101,7 @@ load-booking:
 ## Load all seed data into databases
 
 load-all:
-	@$(MAKE) --no-print-directory -j 3 load-auth load-restaurant load-booking
+	@$(MAKE) --no-print-directory -j 2 load-auth load-restaurant
 	@echo "✓ All data loaded successfully"
 
 ## Complete setup: start services and load all data

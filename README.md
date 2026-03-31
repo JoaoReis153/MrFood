@@ -46,12 +46,10 @@ make generate-csv
 - Full dataset: `make generate-csv CSV_FULL=1` (processes all data)
 - Custom rows: `make generate-csv CSV_ROWS=1000`
 - Specific service: `make generate-csv CSV_SERVICES=restaurant`
-- Booking cap override: `make generate-csv CSV_MAX_BOOKINGS=500000`
 
-Notes:
+**Default Credentials:**
 
-- Booking generation is bounded by default on large datasets to avoid out-of-memory runs.
-- Use `CSV_MAX_BOOKINGS` if you need more or fewer booking rows.
+All generated users have the password `mrfood123`. See [SEED_DATA_CREDENTIALS.md](SEED_DATA_CREDENTIALS.md) for details.
 
 Generated files:
 
@@ -59,7 +57,7 @@ Generated files:
 - `scripts/processed_data/restaurant/restaurants.csv`
 - `scripts/processed_data/restaurant/restaurant_working_hours.csv`
 - `scripts/processed_data/restaurant/restaurant_categories.csv`
-- `scripts/processed_data/booking/booking.csv`
+- `scripts/processed_data/review/review.csv`
 
 ### 🚀 Quick Setup (Recommended)
 
@@ -95,7 +93,6 @@ Or load individual services:
 ```bash
 make load-auth
 make load-restaurant
-make load-booking
 ```
 
 `restaurant_slots` is automatically populated by the `handle_booking_insert` trigger defined in `services/booking/db_setup.sql`.
