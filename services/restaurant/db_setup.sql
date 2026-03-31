@@ -13,9 +13,10 @@ CREATE TABLE IF NOT EXISTS restaurants (
 
 CREATE TABLE IF NOT EXISTS restaurant_working_hours (
     id SERIAL PRIMARY KEY,
-
     restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
-    working_hour TIMESTAMPTZ NOT NULL
+    time_start TIME NOT NULL,
+    time_end TIME NOT NULL,
+    UNIQUE (restaurant_id)
 );
 
 CREATE TABLE IF NOT EXISTS restaurant_categories (
@@ -25,7 +26,7 @@ CREATE TABLE IF NOT EXISTS restaurant_categories (
 );
 
 CREATE INDEX IF NOT EXISTS idx_restaurant_working_hours_restaurant_id
-    ON restaurant_working_hours (restaurant_id,);
+    ON restaurant_working_hours (restaurant_id, time_start);
 
 CREATE INDEX IF NOT EXISTS idx_restaurant_categories_restaurant_id
     ON restaurant_categories (restaurant_id);

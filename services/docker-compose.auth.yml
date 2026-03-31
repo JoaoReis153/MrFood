@@ -5,7 +5,7 @@ x-common: &common
 
 x-auth-db-config: &auth-db-config
   POSTGRES_HOST: auth_db
-  POSTGRES_DB: mrfood_auth
+  POSTGRES_DB: ${AUTH_POSTGRES_DB}
   POSTGRES_USER: ${AUTH_POSTGRES_USER}
   POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
 
