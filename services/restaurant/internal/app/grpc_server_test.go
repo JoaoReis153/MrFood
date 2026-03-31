@@ -11,8 +11,12 @@ import (
 	models "MrFood/services/restaurant/pkg"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/golang-jwt/jwt/v5"
+	"google.golang.org/grpc"
 )
 
 type mockRestaurantService struct {
@@ -21,7 +25,33 @@ type mockRestaurantService struct {
 	createFn          func(context.Context, *models.Restaurant) (int32, error)
 	updateFn          func(context.Context, *models.Restaurant, int32) (*models.Restaurant, error)
 	compareFn         func(context.Context, int32, int32) (*models.Restaurant, *models.Restaurant, error)
-	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.TimeRange, error)
+	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error)
+}
+
+type fakeReviewRPCClient struct {
+	getStatsFn func(context.Context, *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error)
+}
+
+func (f *fakeReviewRPCClient) GetRestaurantStats(ctx context.Context, in *pb.GetRestaurantStatsRequest, _ ...grpc.CallOption) (*pb.GetRestaurantStatsResponse, error) {
+	if f.getStatsFn == nil {
+		return nil, nil
+	}
+	return f.getStatsFn(ctx, in)
+}
+
+func authContext(t *testing.T, userID, username string) context.Context {
+	t.Helper()
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    userID,
+		"username":   username,
+		"token_type": "access",
+	}).SignedString([]byte("secret"))
+	if err != nil {
+		t.Fatalf("failed creating token: %v", err)
+	}
+
+	md := metadata.Pairs("authorization", "Bearer "+token)
+	return metadata.NewIncomingContext(context.Background(), md)
 }
 
 func (m *mockRestaurantService) GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error) {
@@ -59,7 +89,7 @@ func (m *mockRestaurantService) CompareRestaurants(ctx context.Context, id1, id2
 	return m.compareFn(ctx, id1, id2)
 }
 
-func (m *mockRestaurantService) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+func (m *mockRestaurantService) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if m.getWorkingHoursFn == nil {
 		return nil, errors.New("not configured")
 	}
@@ -125,8 +155,8 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	end := start.Add(8 * time.Hour)
 
 	srv := &server{restaurantService: &mockRestaurantService{
-		getWorkingHoursFn: func(context.Context, int32, time.Time) (*models.TimeRange, error) {
-			return &models.TimeRange{TimeStart: start, TimeEnd: end}, nil
+		getWorkingHoursFn: func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error) {
+			return &models.WorkingHoursResponse{TimeStart: start, TimeEnd: end, MaxSlots: 40}, nil
 		},
 	}}
 
@@ -143,6 +173,31 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	}
 	if got := resp.GetTimeEnd().AsTime(); !got.Equal(end) {
 		t.Fatalf("expected %s, got %s", end, got)
+	}
+	if resp.GetMaxSlots() != 40 {
+		t.Fatalf("expected max slots 40, got %d", resp.GetMaxSlots())
+	}
+}
+
+func TestGetWorkingHoursWithoutTimestampUsesZeroTime(t *testing.T) {
+	called := false
+	srv := &server{restaurantService: &mockRestaurantService{
+		getWorkingHoursFn: func(_ context.Context, _ int32, ts time.Time) (*models.WorkingHoursResponse, error) {
+			called = true
+			if !ts.IsZero() {
+				t.Fatalf("expected zero timestamp, got %s", ts)
+			}
+			now := time.Now().UTC()
+			return &models.WorkingHoursResponse{TimeStart: now, TimeEnd: now}, nil
+		},
+	}}
+
+	_, err := srv.GetWorkingHours(context.Background(), &pb.WorkingHoursRequest{RestaurantId: 9})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !called {
+		t.Fatal("expected service call")
 	}
 }
 
@@ -201,4 +256,148 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	if pbModel.AverageRating != nil || pbModel.ReviewCount != nil {
 		t.Fatalf("expected nil optional stats, got rating=%v count=%v", pbModel.AverageRating, pbModel.ReviewCount)
 	}
+}
+
+func TestParseTimestampToProto(t *testing.T) {
+	if parseTimestampToProto("invalid") != nil {
+		t.Fatal("expected nil for invalid timestamp")
+	}
+	if parseTimestampToProto("2026-03-27 12:00:00") == nil {
+		t.Fatal("expected non-nil for SQL-like timestamp")
+	}
+}
+
+func TestParseInt32(t *testing.T) {
+	if _, err := parseInt32("0"); err == nil {
+		t.Fatal("expected validation error")
+	}
+	value, err := parseInt32("42")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if value != 42 {
+		t.Fatalf("expected 42, got %d", value)
+	}
+}
+
+func TestExtractUserFromContext(t *testing.T) {
+	if _, err := ExtractUserFromContext(context.Background()); err == nil {
+		t.Fatal("expected metadata error")
+	}
+
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("authorization", "Bearer bad-token"))
+	if _, err := ExtractUserFromContext(ctx); status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("expected unauthenticated for bad token, got %v", err)
+	}
+
+	ctx = authContext(t, "0", "mario")
+	if _, err := ExtractUserFromContext(ctx); status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("expected unauthenticated for invalid user id, got %v", err)
+	}
+
+	ctx = authContext(t, "7", "mario")
+	user, err := ExtractUserFromContext(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if user.UserID != 7 || user.Username != "mario" {
+		t.Fatalf("unexpected user info: %+v", user)
+	}
+}
+
+func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
+	createCalled := false
+	updateCalled := false
+	srv := &server{restaurantService: &mockRestaurantService{
+		createFn: func(_ context.Context, r *models.Restaurant) (int32, error) {
+			createCalled = true
+			if r.OwnerID != 5 || r.OwnerName != "owner" {
+				t.Fatalf("unexpected owner in create: %+v", r)
+			}
+			return 99, nil
+		},
+		updateFn: func(_ context.Context, r *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error) {
+			updateCalled = true
+			if requesterOwnerID != 5 || len(r.WorkingHours) != 1 {
+				t.Fatalf("unexpected update request: %+v owner=%d", r, requesterOwnerID)
+			}
+			return &models.Restaurant{ID: r.ID, Name: r.Name}, nil
+		},
+	}}
+
+	ctx := authContext(t, "5", "owner")
+	createResp, err := srv.CreateRestaurant(ctx, &pb.CreateRestaurantRequest{Name: "Nori", Address: "A", WorkingHours: []string{"2026-03-27T10:00:00Z"}})
+	if err != nil {
+		t.Fatalf("unexpected create error: %v", err)
+	}
+	if createResp.GetRestaurantId() != 99 || !createCalled {
+		t.Fatalf("unexpected create response: %+v", createResp)
+	}
+
+	_, err = srv.UpdateRestaurant(ctx, &pb.UpdateRestaurantRequest{Id: 99, Name: "Nori 2", WorkingHours: []*timestamppb.Timestamp{timestamppb.Now()}})
+	if err != nil {
+		t.Fatalf("unexpected update error: %v", err)
+	}
+	if !updateCalled {
+		t.Fatal("expected update call")
+	}
+}
+
+func TestCompareRestaurantDetailsAndMapInternal(t *testing.T) {
+	srv := &server{restaurantService: &mockRestaurantService{
+		compareFn: func(context.Context, int32, int32) (*models.Restaurant, *models.Restaurant, error) {
+			return &models.Restaurant{ID: 1}, &models.Restaurant{ID: 2}, nil
+		},
+	}}
+
+	resp, err := srv.CompareRestaurantDetails(context.Background(), &pb.CompareRestaurantDetailsRequest{RestaurantId_1: 1, RestaurantId_2: 2})
+	if err != nil {
+		t.Fatalf("unexpected compare error: %v", err)
+	}
+	if resp.GetRestaurant1().GetId() != 1 || resp.GetRestaurant2().GetId() != 2 {
+		t.Fatalf("unexpected compare response: %+v", resp)
+	}
+
+	if status.Code(mapServiceError(errors.New("boom"))) != codes.Internal {
+		t.Fatal("expected internal mapping")
+	}
+}
+
+func TestReviewStatsClientGetRestaurantStats(t *testing.T) {
+	client := &reviewStatsClient{client: &fakeReviewRPCClient{getStatsFn: func(context.Context, *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
+		return &pb.GetRestaurantStatsResponse{RestaurantStats: &pb.RestaurantStats{RestaurantId: 7, AverageRating: 4.2, ReviewCount: 11}}, nil
+	}}}
+
+	stats, err := client.GetRestaurantStats(context.Background(), 7)
+	if err != nil || stats == nil {
+		t.Fatalf("expected stats, got stats=%+v err=%v", stats, err)
+	}
+	if stats.RestaurantID != 7 || stats.ReviewCount != 11 {
+		t.Fatalf("unexpected stats: %+v", stats)
+	}
+
+	client = &reviewStatsClient{client: &fakeReviewRPCClient{getStatsFn: func(context.Context, *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
+		return nil, status.Error(codes.Unavailable, "down")
+	}}}
+
+	stats, err = client.GetRestaurantStats(context.Background(), 7)
+	if err != nil || stats != nil {
+		t.Fatalf("expected graceful nil stats on unavailable, got stats=%+v err=%v", stats, err)
+	}
+}
+
+func TestAppNewAndCloseAndInitPanic(t *testing.T) {
+	instance := New()
+	if instance == nil {
+		t.Fatal("expected app instance")
+	}
+
+	instance.Close()
+
+	defer func() {
+		if recover() == nil {
+			t.Fatal("expected panic when DB is nil")
+		}
+	}()
+	instance.InitDependencies()
 }

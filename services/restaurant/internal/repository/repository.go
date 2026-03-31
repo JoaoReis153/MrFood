@@ -22,10 +22,20 @@ var (
 )
 
 type Repository struct {
-	DB *pgxpool.Pool
+	DB dbExecutor
+}
+
+type dbExecutor interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 func New(db *pgxpool.Pool) *Repository {
+	return &Repository{DB: db}
+}
+
+func NewWithDB(db dbExecutor) *Repository {
 	return &Repository{DB: db}
 }
 
@@ -357,17 +367,14 @@ func (r *Repository) CompareRestaurants(ctx context.Context, id1, id2 int32) (*m
 	return restaurant1, restaurant2, nil
 }
 
-func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
 
-	exists, err := r.restaurantExists(ctx, restaurantID)
+	restaurant, err := r.GetRestaurantByID(ctx, restaurantID)
 	if err != nil {
 		return nil, err
-	}
-	if !exists {
-		return nil, ErrRestaurantNotFound
 	}
 
 	rows, err := r.DB.Query(ctx, `
@@ -408,7 +415,7 @@ func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, ti
 		return nil, ErrRestaurantNotFound
 	}
 
-	response := &models.TimeRange{TimeStart: hours[0], TimeEnd: hours[0]}
+	response := &models.WorkingHoursResponse{TimeStart: hours[0], TimeEnd: hours[0], MaxSlots: restaurant.MaxSlots}
 	if len(hours) > 1 {
 		response.TimeEnd = hours[1]
 	}

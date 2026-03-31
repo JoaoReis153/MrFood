@@ -37,7 +37,7 @@ type restaurantService interface {
 	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
 	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error)
 	CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error)
-	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error)
+	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error)
 }
 
 type reviewStatsClient struct {
@@ -191,6 +191,7 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 		RestaurantId: req.GetRestaurantId(),
 		TimeStart:    timestamppb.New(workingHours.TimeStart),
 		TimeEnd:      timestamppb.New(workingHours.TimeEnd),
+		MaxSlots:     workingHours.MaxSlots,
 	}, nil
 }
 

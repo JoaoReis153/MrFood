@@ -30,9 +30,10 @@ type RestaurantCreateRequest struct {
 	Categories   []string `json:"categories"`
 }
 
-type TimeRange struct {
+type WorkingHoursResponse struct {
 	TimeStart time.Time `json:"time_start"`
 	TimeEnd   time.Time `json:"time_end"`
+	MaxSlots  int32     `json:"max_slots"`
 }
 
 type RestaurantStats struct {
