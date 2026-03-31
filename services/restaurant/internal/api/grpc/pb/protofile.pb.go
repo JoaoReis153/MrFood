@@ -1181,8 +1181,6 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 	}
 	file_internal_api_grpc_proto_protofile_proto_msgTypes[8].OneofWrappers = []any{}
 	file_internal_api_grpc_proto_protofile_proto_msgTypes[11].OneofWrappers = []any{}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[8].OneofWrappers = []any{}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
