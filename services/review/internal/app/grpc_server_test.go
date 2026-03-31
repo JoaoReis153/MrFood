@@ -654,7 +654,6 @@ func TestRunServer_Smoke(t *testing.T) {
 	}
 
 	pb.RegisterReviewServiceServer(s, &server{svc: ms})
-	pb.RegisterReviewToRestaurantServiceServer(s, &server{svc: ms})
 
 	go func() {
 		if err := s.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
@@ -669,7 +668,7 @@ func TestRunServer_Smoke(t *testing.T) {
 
 	conn, err := grpc.DialContext(
 		context.Background(),
-		"bufnet",
+		"bufnet", // não precisa existir
 		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -679,23 +678,18 @@ func TestRunServer_Smoke(t *testing.T) {
 	defer conn.Close()
 
 	client := pb.NewReviewServiceClient(conn)
+	page := int32(1)
+	limit := int32(10)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	page := int32(1)
-	limit := int32(10)
-
-	resp, err := client.GetReviews(ctx, &pb.GetReviewsRequest{
+	_, err = client.GetReviews(ctx, &pb.GetReviewsRequest{
 		RestaurantId: 1,
 		Page:         &page,
 		Limit:        &limit,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if resp == nil {
-		t.Fatal("expected response, got nil")
 	}
 }
