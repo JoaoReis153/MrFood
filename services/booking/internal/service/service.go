@@ -11,8 +11,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const MAX_SLOTS int32 = 15
-
 var (
 	ErrInvalidBooking       = errors.New("invalid booking payload")
 	ErrBookingAlreadyExists = errors.New("booking already exists")
@@ -22,7 +20,7 @@ var (
 )
 
 type BookingRepository interface {
-	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
+	CreateBooking(ctx context.Context, booking *models.CreateBooking) (int32, error)
 	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
@@ -35,13 +33,7 @@ func New(repo BookingRepository, client pb.RestaurantToBookingServiceClient) *Se
 	return &Service{repo: repo, client: client}
 }
 
-func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
-	// check if people count is too high
-	if booking.PeopleCount > MAX_SLOTS {
-		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
-		return 0, ErrInvalidBooking
-	}
-
+func (s *Service) CreateBooking(ctx context.Context, booking *models.CreateBooking) (int32, error) {
 	// truncate start hour to minute 00 or 30
 	booking.TimeStart = booking.TimeStart.UTC().Truncate(30 * time.Minute)
 
@@ -51,6 +43,15 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 		return 0, err
 	}
 
+	// check if people count is too high
+	if booking.PeopleCount > working_hours.MaxSlots {
+		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "max_slots", working_hours.MaxSlots)
+		return 0, ErrInvalidBooking
+	}
+
+	booking.MaxSlots = working_hours.MaxSlots
+
+	// check if start time is valid
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {
 		slog.Error("Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
 		return 0, ErrInvalidBooking
@@ -89,8 +90,9 @@ func (s *Service) getWorkingHours(ctx context.Context, restaurantID int32, timeS
 	}
 
 	return &models.WorkingHours{
-		RestaurantID: res.RestaurantId,
-		TimeStart:    res.TimeStart.AsTime(),
-		TimeEnd:      res.TimeEnd.AsTime(),
+		RestaurantID: res.GetRestaurantId(),
+		TimeStart:    res.GetTimeStart().AsTime(),
+		TimeEnd:      res.GetTimeEnd().AsTime(),
+		MaxSlots:     res.GetMaxSlots(),
 	}, nil
 }

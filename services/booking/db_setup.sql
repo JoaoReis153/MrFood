@@ -28,15 +28,32 @@ CREATE INDEX IF NOT EXISTS idx_restaurant_slots ON restaurant_slots (restaurant_
 
 CREATE OR REPLACE FUNCTION handle_booking_insert()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_max_slots INT;
 BEGIN
-    UPDATE restaurant_slots
-    SET current_slots = current_slots + NEW.people_count
-    WHERE restaurant_id = NEW.restaurant_id
-      AND time_start = NEW.time_start;
+    v_max_slots := current_setting('app.max_slots')::int;
+
+    INSERT INTO restaurant_slots (
+        restaurant_id,
+        time_start,
+        time_end,
+        max_slots,
+        current_slots
+    )
+    VALUES (
+        NEW.restaurant_id,
+        NEW.time_start,
+        NEW.time_end,
+        v_max_slots,
+        NEW.people_count
+    )
+    ON CONFLICT (restaurant_id, time_start)
+    DO UPDATE
+    SET current_slots = restaurant_slots.current_slots + NEW.people_count
+    WHERE restaurant_slots.current_slots + NEW.people_count <= restaurant_slots.max_slots;
 
     IF NOT FOUND THEN
-        INSERT INTO restaurant_slots (restaurant_id, time_start, time_end, max_slots, current_slots)
-        VALUES (NEW.restaurant_id, NEW.time_start, NEW.time_end, 15, NEW.people_count);
+        RAISE EXCEPTION 'not enough slots';
     END IF;
 
     RETURN NEW;
