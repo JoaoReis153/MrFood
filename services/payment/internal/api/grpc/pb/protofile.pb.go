@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v3.19.6
-// source: proto/protofile.proto
+// source: internal/api/grpc/proto/protofile.proto
 
 package pb
 
@@ -21,83 +21,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PaginationRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// if you want to implement using cursor instead use
-	// something like string page_token = 1; instead of page
-	Page          int32 `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	Limit         int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PaginationRequest) Reset() {
-	*x = PaginationRequest{}
-	mi := &file_proto_protofile_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaginationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaginationRequest) ProtoMessage() {}
-
-func (x *PaginationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_protofile_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaginationRequest.ProtoReflect.Descriptor instead.
-func (*PaginationRequest) Descriptor() ([]byte, []int) {
-	return file_proto_protofile_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *PaginationRequest) GetPage() int32 {
-	if x != nil {
-		return x.Page
-	}
-	return 0
-}
-
-func (x *PaginationRequest) GetLimit() int32 {
-	if x != nil {
-		return x.Limit
-	}
-	return 0
-}
-
-type PaginationResponse struct {
+type PaymentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          []*Ping                `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	Ammount       float64                `protobuf:"fixed64,1,opt,name=ammount,proto3" json:"ammount,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PaginationResponse) Reset() {
-	*x = PaginationResponse{}
-	mi := &file_proto_protofile_proto_msgTypes[1]
+func (x *PaymentRequest) Reset() {
+	*x = PaymentRequest{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PaginationResponse) String() string {
+func (x *PaymentRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PaginationResponse) ProtoMessage() {}
+func (*PaymentRequest) ProtoMessage() {}
 
-func (x *PaginationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_protofile_proto_msgTypes[1]
+func (x *PaymentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -108,50 +53,40 @@ func (x *PaginationResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PaginationResponse.ProtoReflect.Descriptor instead.
-func (*PaginationResponse) Descriptor() ([]byte, []int) {
-	return file_proto_protofile_proto_rawDescGZIP(), []int{1}
+// Deprecated: Use PaymentRequest.ProtoReflect.Descriptor instead.
+func (*PaymentRequest) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PaginationResponse) GetData() []*Ping {
+func (x *PaymentRequest) GetAmmount() float64 {
 	if x != nil {
-		return x.Data
+		return x.Ammount
 	}
-	return nil
+	return 0
 }
 
-func (x *PaginationResponse) GetPagination() *Pagination {
-	if x != nil {
-		return x.Pagination
-	}
-	return nil
-}
-
-type Pagination struct {
+type PaymentResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Total         int32                  `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
-	Pages         int32                  `protobuf:"varint,4,opt,name=pages,proto3" json:"pages,omitempty"`
+	ReceiptId     int32                  `protobuf:"varint,1,opt,name=receipt_id,json=receiptId,proto3" json:"receipt_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Pagination) Reset() {
-	*x = Pagination{}
-	mi := &file_proto_protofile_proto_msgTypes[2]
+func (x *PaymentResponse) Reset() {
+	*x = PaymentResponse{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Pagination) String() string {
+func (x *PaymentResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Pagination) ProtoMessage() {}
+func (*PaymentResponse) ProtoMessage() {}
 
-func (x *Pagination) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_protofile_proto_msgTypes[2]
+func (x *PaymentResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -162,217 +97,78 @@ func (x *Pagination) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Pagination.ProtoReflect.Descriptor instead.
-func (*Pagination) Descriptor() ([]byte, []int) {
-	return file_proto_protofile_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use PaymentResponse.ProtoReflect.Descriptor instead.
+func (*PaymentResponse) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Pagination) GetPage() int32 {
+func (x *PaymentResponse) GetReceiptId() int32 {
 	if x != nil {
-		return x.Page
+		return x.ReceiptId
 	}
 	return 0
 }
 
-func (x *Pagination) GetLimit() int32 {
-	if x != nil {
-		return x.Limit
-	}
-	return 0
-}
+var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
-func (x *Pagination) GetTotal() int32 {
-	if x != nil {
-		return x.Total
-	}
-	return 0
-}
-
-func (x *Pagination) GetPages() int32 {
-	if x != nil {
-		return x.Pages
-	}
-	return 0
-}
-
-type Ping struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Ping) Reset() {
-	*x = Ping{}
-	mi := &file_proto_protofile_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Ping) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Ping) ProtoMessage() {}
-
-func (x *Ping) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_protofile_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Ping.ProtoReflect.Descriptor instead.
-func (*Ping) Descriptor() ([]byte, []int) {
-	return file_proto_protofile_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *Ping) GetId() int32 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-type Pong struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Pong) Reset() {
-	*x = Pong{}
-	mi := &file_proto_protofile_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Pong) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Pong) ProtoMessage() {}
-
-func (x *Pong) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_protofile_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Pong.ProtoReflect.Descriptor instead.
-func (*Pong) Descriptor() ([]byte, []int) {
-	return file_proto_protofile_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *Pong) GetId() int32 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-var File_proto_protofile_proto protoreflect.FileDescriptor
-
-const file_proto_protofile_proto_rawDesc = "" +
+const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/protofile.proto\x12\x05proto\"=\n" +
-	"\x11PaginationRequest\x12\x12\n" +
-	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"h\n" +
-	"\x12PaginationResponse\x12\x1f\n" +
-	"\x04data\x18\x01 \x03(\v2\v.proto.PingR\x04data\x121\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\"*\n" +
+	"\x0ePaymentRequest\x12\x18\n" +
+	"\aammount\x18\x01 \x01(\x01R\aammount\"0\n" +
+	"\x0fPaymentResponse\x12\x1d\n" +
 	"\n" +
-	"pagination\x18\x02 \x01(\v2\x11.proto.PaginationR\n" +
-	"pagination\"b\n" +
-	"\n" +
-	"Pagination\x12\x12\n" +
-	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x05R\x05total\x12\x14\n" +
-	"\x05pages\x18\x04 \x01(\x05R\x05pages\"\x16\n" +
-	"\x04Ping\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\"\x16\n" +
-	"\x04Pong\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id2\x84\x02\n" +
-	"\x0fTemplateService\x12$\n" +
-	"\bPingPong\x12\v.proto.Ping\x1a\v.proto.Pong\x12'\n" +
-	"\tManyPings\x12\v.proto.Ping\x1a\v.proto.Pong(\x01\x12'\n" +
-	"\tManyPongs\x12\v.proto.Ping\x1a\v.proto.Pong0\x01\x12-\n" +
-	"\rManyPingPongs\x12\v.proto.Ping\x1a\v.proto.Pong(\x010\x01\x12J\n" +
-	"\x13GetPaginatedExample\x12\x18.proto.PaginationRequest\x1a\x19.proto.PaginationResponseB\bZ\x06/pb;pbb\x06proto3"
+	"receipt_id\x18\x01 \x01(\x05R\treceiptId2N\n" +
+	"\x0ePaymentService\x12<\n" +
+	"\vMakePayment\x12\x15.proto.PaymentRequest\x1a\x16.proto.PaymentResponseB\bZ\x06/pb;pbb\x06proto3"
 
 var (
-	file_proto_protofile_proto_rawDescOnce sync.Once
-	file_proto_protofile_proto_rawDescData []byte
+	file_internal_api_grpc_proto_protofile_proto_rawDescOnce sync.Once
+	file_internal_api_grpc_proto_protofile_proto_rawDescData []byte
 )
 
-func file_proto_protofile_proto_rawDescGZIP() []byte {
-	file_proto_protofile_proto_rawDescOnce.Do(func() {
-		file_proto_protofile_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_protofile_proto_rawDesc), len(file_proto_protofile_proto_rawDesc)))
+func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
+	file_internal_api_grpc_proto_protofile_proto_rawDescOnce.Do(func() {
+		file_internal_api_grpc_proto_protofile_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)))
 	})
-	return file_proto_protofile_proto_rawDescData
+	return file_internal_api_grpc_proto_protofile_proto_rawDescData
 }
 
-var file_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_proto_protofile_proto_goTypes = []any{
-	(*PaginationRequest)(nil),  // 0: proto.PaginationRequest
-	(*PaginationResponse)(nil), // 1: proto.PaginationResponse
-	(*Pagination)(nil),         // 2: proto.Pagination
-	(*Ping)(nil),               // 3: proto.Ping
-	(*Pong)(nil),               // 4: proto.Pong
+var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
+	(*PaymentRequest)(nil),  // 0: proto.PaymentRequest
+	(*PaymentResponse)(nil), // 1: proto.PaymentResponse
 }
-var file_proto_protofile_proto_depIdxs = []int32{
-	3, // 0: proto.PaginationResponse.data:type_name -> proto.Ping
-	2, // 1: proto.PaginationResponse.pagination:type_name -> proto.Pagination
-	3, // 2: proto.TemplateService.PingPong:input_type -> proto.Ping
-	3, // 3: proto.TemplateService.ManyPings:input_type -> proto.Ping
-	3, // 4: proto.TemplateService.ManyPongs:input_type -> proto.Ping
-	3, // 5: proto.TemplateService.ManyPingPongs:input_type -> proto.Ping
-	0, // 6: proto.TemplateService.GetPaginatedExample:input_type -> proto.PaginationRequest
-	4, // 7: proto.TemplateService.PingPong:output_type -> proto.Pong
-	4, // 8: proto.TemplateService.ManyPings:output_type -> proto.Pong
-	4, // 9: proto.TemplateService.ManyPongs:output_type -> proto.Pong
-	4, // 10: proto.TemplateService.ManyPingPongs:output_type -> proto.Pong
-	1, // 11: proto.TemplateService.GetPaginatedExample:output_type -> proto.PaginationResponse
-	7, // [7:12] is the sub-list for method output_type
-	2, // [2:7] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
+	0, // 0: proto.PaymentService.MakePayment:input_type -> proto.PaymentRequest
+	1, // 1: proto.PaymentService.MakePayment:output_type -> proto.PaymentResponse
+	1, // [1:2] is the sub-list for method output_type
+	0, // [0:1] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_proto_protofile_proto_init() }
-func file_proto_protofile_proto_init() {
-	if File_proto_protofile_proto != nil {
+func init() { file_internal_api_grpc_proto_protofile_proto_init() }
+func file_internal_api_grpc_proto_protofile_proto_init() {
+	if File_internal_api_grpc_proto_protofile_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_protofile_proto_rawDesc), len(file_proto_protofile_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_protofile_proto_goTypes,
-		DependencyIndexes: file_proto_protofile_proto_depIdxs,
-		MessageInfos:      file_proto_protofile_proto_msgTypes,
+		GoTypes:           file_internal_api_grpc_proto_protofile_proto_goTypes,
+		DependencyIndexes: file_internal_api_grpc_proto_protofile_proto_depIdxs,
+		MessageInfos:      file_internal_api_grpc_proto_protofile_proto_msgTypes,
 	}.Build()
-	File_proto_protofile_proto = out.File
-	file_proto_protofile_proto_goTypes = nil
-	file_proto_protofile_proto_depIdxs = nil
+	File_internal_api_grpc_proto_protofile_proto = out.File
+	file_internal_api_grpc_proto_protofile_proto_goTypes = nil
+	file_internal_api_grpc_proto_protofile_proto_depIdxs = nil
 }

@@ -4,40 +4,14 @@ package proto;
 
 option go_package = "/pb;pb";
 
-service TemplateService {
-  rpc PingPong (Ping) returns (Pong);
-  rpc ManyPings (stream Ping) returns (Pong);
-  rpc ManyPongs (Ping) returns (stream Pong);
-  rpc ManyPingPongs (stream Ping) returns (stream Pong);
-  rpc GetPaginatedExample(PaginationRequest) returns (PaginationResponse);
-}
-//Important repeated = all data comes back in one response
-//Important stream = data comes back in multiple responses, one at a time
-
-message PaginationRequest {
-    //if you want to implement using cursor instead use
-    //something like string page_token = 1; instead of page
-  int32 page = 1;
-  int32 limit = 2;
-
+service PaymentService {
+  rpc MakePayment (PaymentRequest) returns (PaymentResponse);
 }
 
-message PaginationResponse {
-  repeated Ping data = 1;
-  Pagination pagination = 2;
+message PaymentRequest {
+  double ammount = 1;
 }
 
-message Pagination {
-  int32 page = 1;
-  int32 limit = 2;
-  int32 total = 3;
-  int32 pages = 4;
-}
-
-message Ping {
-  int32 id = 1;
-}
-
-message Pong {
-  int32 id = 1;
+message PaymentResponse {
+  int32 receipt_id = 1;
 }

@@ -16,6 +16,6 @@ func (r *Repository) Close(_ context.Context) error {
 	return nil
 }
 
-func (r *Repository) GetExample(id int) (*models.Example, error) {
+func (r *Repository) CreateReceipt(payment_request *models.PaymentRequest) (int32, error) {
 	return &models.Example{ID: id, Name: "Example"}, nil
 }

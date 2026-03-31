@@ -10,19 +10,20 @@ import (
 	"strconv"
 
 	pb "MrFood/services/payment/internal/api/grpc/pb"
+	models "MrFood/services/payment/pkg"
 
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
-type Server struct {
-	pb.UnimplementedTemplateServiceServer
+type paymentService interface {
+	CreateReceipt(ctx context.Context, payment_request *models.PaymentRequest) (int32, error)
+	GetReceiptByID(ctx context.Context, receipt_id int32) (*models.Receipt, error)
+	GetReceiptsByUser(ctx context.Context, user_id int32) ([]*models.Receipt, error)
 }
 
-func (s *Server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
-	return &pb.Pong{
-		Id: 1,
-	}, nil
+type Server struct {
+	pb.UnimplementedPaymentServiceServer
 }
 
 func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
@@ -33,7 +34,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterTemplateServiceServer(s, &Server{})
+	pb.RegisterPaymentServiceServer(s, &Server{})
 
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
 
