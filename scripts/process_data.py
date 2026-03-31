@@ -79,15 +79,20 @@ SERVICE_ORDER = ["auth", "restaurant", "booking"]
 def read_csv(file_name: str, nrows: int = None, usecols: List[str] = None) -> pd.DataFrame:
     """Read a CSV file from the data directory."""
     path = DATA_DIR / file_name
-    converters = {
-        "gPlusPlaceId": lambda x: str(x).strip() if pd.notna(x) else "",
-        "gPlusUserId": lambda x: str(x).strip() if pd.notna(x) else "",
-    }
 
     def read_with_engine(selected_usecols: List[str], python_engine: bool) -> pd.DataFrame:
+        dtype_candidates = {
+            "gPlusPlaceId": "string",
+            "gPlusUserId": "string",
+        }
+        if selected_usecols is None:
+            selected_dtype = dtype_candidates
+        else:
+            selected_dtype = {k: v for k, v in dtype_candidates.items() if k in selected_usecols}
+
         kwargs = {
             "nrows": nrows,
-            "converters": converters,
+            "dtype": selected_dtype if selected_dtype else None,
         }
         if selected_usecols is not None:
             kwargs["usecols"] = selected_usecols

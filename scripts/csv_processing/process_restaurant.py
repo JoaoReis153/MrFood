@@ -94,13 +94,13 @@ def build_review_categories_map(reviews_df: pd.DataFrame) -> Dict[str, set[str]]
     print_progress_start("Indexing review categories")
     last_pct = 0
 
-    for index, (_, row) in enumerate(reviews_df.iterrows(), start=1):
-        place_id = clean_id(row.get("gPlusPlaceId"))
+    for index, row in enumerate(reviews_df.itertuples(index=False), start=1):
+        place_id = clean_id(getattr(row, "gPlusPlaceId", None))
         if not place_id:
             last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
             continue
 
-        categories = extract_categories(row.get("categories"))
+        categories = extract_categories(getattr(row, "categories", None))
         if not categories:
             last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
             continue
