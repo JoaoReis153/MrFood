@@ -140,6 +140,9 @@ func overrideWithEnv(cfg *Config) {
 
 	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
 	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
+	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
+
+	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
 	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
 	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
@@ -165,6 +168,23 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	intVal, err := strconv.Atoi(value)
+	if err != nil {
+		slog.Warn("invalid int env var, using default",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.Int("default", defaultValue),
+		)
+		return defaultValue
+	}
+	return intVal
 }
 
 func getEnvInt32(key string, defaultValue int32) int32 {
