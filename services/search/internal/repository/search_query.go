@@ -10,17 +10,14 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 )
 
-// SearchRepository handles Elasticsearch queries for restaurants
 type SearchRepository struct {
 	es *elasticsearch.Client
 }
 
-// NewSearchRepository creates a new search repository
 func NewSearchRepository(es *elasticsearch.Client) *SearchRepository {
 	return &SearchRepository{es: es}
 }
 
-// SearchQuery represents a search request with filters
 type SearchQuery struct {
 	FullName     *string
 	NameSuffix   *string
@@ -32,7 +29,6 @@ type SearchQuery struct {
 	Limit        int32
 }
 
-// SearchResult represents a single search result
 type SearchResult struct {
 	ID         int32    `json:"id"`
 	Name       string   `json:"name"`

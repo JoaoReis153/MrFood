@@ -13,12 +13,10 @@ import (
 
 const indexName = "restaurants"
 
-// ElasticsearchClient wraps Elasticsearch connection
 type ElasticsearchClient struct {
 	client *elasticsearch.Client
 }
 
-// RestaurantDocument represents a restaurant in Elasticsearch
 type RestaurantDocument struct {
 	ID          int32    `json:"id"`
 	Name        string   `json:"name"`
@@ -34,18 +32,18 @@ type RestaurantDocument struct {
 	SponsorTier int32    `json:"sponsor_tier"`
 }
 
-// GeoPoint for geographical coordinates
 type GeoPoint struct {
 	Lat float64 `json:"lat"`
 	Lon float64 `json:"lon"`
 }
 
-// NewElasticsearchClient creates a new Elasticsearch client
 func NewElasticsearchClient(cfg *config.Config) (*ElasticsearchClient, error) {
-	addr := fmt.Sprintf("http://%s:%d", cfg.Elasticsearch.Host, cfg.Elasticsearch.Port)
+	addr := fmt.Sprintf("http://%s:%d", cfg.Elastic.Host, cfg.Elastic.Port)
 
 	client, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: []string{addr},
+		Username:  cfg.Elastic.Username,
+		Password:  cfg.Elastic.Password,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create client: %w", err)
@@ -67,7 +65,7 @@ func NewElasticsearchClient(cfg *config.Config) (*ElasticsearchClient, error) {
 
 // InitializeIndex creates the index with proper mappings
 func (ec *ElasticsearchClient) InitializeIndex(ctx context.Context) error {
-	res, err := ec.client.Indices.Exists([]string{indexName})
+	res, err := ec.client.Indices.Exists([]string{indexName}, ec.client.Indices.Exists.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("check index: %w", err)
 	}
@@ -111,7 +109,7 @@ func (ec *ElasticsearchClient) InitializeIndex(ctx context.Context) error {
 		return fmt.Errorf("encode mapping: %w", err)
 	}
 
-	res, err = ec.client.Indices.Create(indexName, ec.client.Indices.Create.WithBody(&buf))
+	res, err = ec.client.Indices.Create(indexName, ec.client.Indices.Create.WithBody(&buf), ec.client.Indices.Create.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("create index: %w", err)
 	}
@@ -125,7 +123,6 @@ func (ec *ElasticsearchClient) InitializeIndex(ctx context.Context) error {
 	return nil
 }
 
-// IndexRestaurant indexes a single restaurant document
 func (ec *ElasticsearchClient) IndexRestaurant(ctx context.Context, doc *RestaurantDocument) error {
 	data, err := json.Marshal(doc)
 	if err != nil {
@@ -134,9 +131,9 @@ func (ec *ElasticsearchClient) IndexRestaurant(ctx context.Context, doc *Restaur
 
 	res, err := ec.client.Index(
 		indexName,
+		bytes.NewReader(data),
 		ec.client.Index.WithDocumentID(fmt.Sprintf("%d", doc.ID)),
 		ec.client.Index.WithContext(ctx),
-		ec.client.Index.WithBody(bytes.NewReader(data)),
 	)
 	if err != nil {
 		return fmt.Errorf("index document: %w", err)
@@ -150,9 +147,8 @@ func (ec *ElasticsearchClient) IndexRestaurant(ctx context.Context, doc *Restaur
 	return nil
 }
 
-// DeleteRestaurant deletes a restaurant document
 func (ec *ElasticsearchClient) DeleteRestaurant(ctx context.Context, restaurantID int32) error {
-	res, err := ec.client.Delete(indexName, fmt.Sprintf("%d", restaurantID))
+	res, err := ec.client.Delete(indexName, fmt.Sprintf("%d", restaurantID), ec.client.Delete.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("delete document: %w", err)
 	}

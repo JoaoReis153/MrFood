@@ -1,2 +1,0 @@
--- Initial schema for search.
--- Replace with service-specific tables.

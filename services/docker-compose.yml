@@ -1,4 +1,6 @@
 include:
   - docker-compose.auth.yml
   - docker-compose.restaurant.yml
+  - docker-compose.search.yml
+  - docker-compose.cdc.yml
   - docker-compose.kong.yml

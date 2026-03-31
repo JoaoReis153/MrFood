@@ -10,7 +10,6 @@ import (
 	"io"
 	"math"
 	"strconv"
-	"strings"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 )
@@ -21,8 +20,10 @@ type Repository struct {
 }
 
 func New(ctx context.Context, cfg *config.Config) (*Repository, error) {
+	esAddr := fmt.Sprintf("http://%s:%d", cfg.Elastic.Host, cfg.Elastic.Port)
+
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{cfg.Elastic.URL},
+		Addresses: []string{esAddr},
 		Username:  cfg.Elastic.Username,
 		Password:  cfg.Elastic.Password,
 	})
@@ -41,7 +42,7 @@ func New(ctx context.Context, cfg *config.Config) (*Repository, error) {
 		return nil, fmt.Errorf("elastic info status=%d body=%s", infoRes.StatusCode, string(body))
 	}
 
-	if err := ensureIndex(ctx, es, cfg.Elastic.Index); err != nil {
+	if err := ensureSearchIndexExists(ctx, es, cfg.Elastic.Index); err != nil {
 		return nil, err
 	}
 
@@ -214,7 +215,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 	}, nil
 }
 
-func ensureIndex(ctx context.Context, es *elasticsearch.Client, index string) error {
+func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, index string) error {
 	existsRes, err := es.Indices.Exists([]string{index}, es.Indices.Exists.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("check index exists: %w", err)
@@ -224,44 +225,13 @@ func ensureIndex(ctx context.Context, es *elasticsearch.Client, index string) er
 	if existsRes.StatusCode == 200 {
 		return nil
 	}
+	if existsRes.StatusCode == 404 {
+		return fmt.Errorf("search index '%s' does not exist (expected to be managed by CDC service)", index)
+	}
+
 	if existsRes.StatusCode != 404 {
 		body, _ := io.ReadAll(existsRes.Body)
 		return fmt.Errorf("check index exists status=%d body=%s", existsRes.StatusCode, string(body))
-	}
-
-	mapping := `{
-	  "mappings": {
-	    "properties": {
-	      "id": { "type": "integer" },
-	      "name": {
-	        "type": "text",
-	        "fields": {
-	          "keyword": { "type": "keyword" }
-	        }
-	      },
-	      "address": { "type": "text" },
-	      "categories": { "type": "keyword" },
-	      "location": { "type": "geo_point" },
-	      "latitude": { "type": "double" },
-	      "longitude": { "type": "double" },
-	      "media_url": { "type": "keyword", "ignore_above": 2048 }
-	    }
-	  }
-	}`
-
-	createRes, err := es.Indices.Create(
-		index,
-		es.Indices.Create.WithContext(ctx),
-		es.Indices.Create.WithBody(strings.NewReader(mapping)),
-	)
-	if err != nil {
-		return fmt.Errorf("create index: %w", err)
-	}
-	defer createRes.Body.Close()
-
-	if createRes.IsError() {
-		body, _ := io.ReadAll(createRes.Body)
-		return fmt.Errorf("create index status=%d body=%s", createRes.StatusCode, string(body))
 	}
 
 	return nil
