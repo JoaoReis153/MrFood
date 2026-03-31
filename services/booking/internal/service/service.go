@@ -50,6 +50,7 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.CreateBooki
 	}
 
 	booking.MaxSlots = working_hours.MaxSlots
+	slog.Info("max_slots", "max_slots", booking.MaxSlots)
 
 	// check if start time is valid
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {

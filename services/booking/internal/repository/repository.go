@@ -86,8 +86,11 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBo
 		return 0, ErrInvalidBooking
 	}
 
-	_, err = tx.Exec(ctx, "SET LOCAL app.max_slots = $1", booking.MaxSlots)
+	query = fmt.Sprintf("SET LOCAL app.max_slots = %d", booking.MaxSlots)
+
+	_, err = tx.Exec(ctx, query)
 	if err != nil {
+		slog.Error("failed setting local var", "error", err)
 		return 0, err
 	}
 
@@ -101,6 +104,7 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBo
 
 	err = tx.QueryRow(ctx, query, booking.UserID, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).Scan(&booking_id)
 	if err != nil {
+		slog.Error("failed inserting booking")
 		return 0, err
 	}
 	if err := tx.Commit(ctx); err != nil {
