@@ -22,10 +22,12 @@ const (
 )
 
 type PaymentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ammount       float64                `protobuf:"fixed64,1,opt,name=ammount,proto3" json:"ammount,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Ammount            float64                `protobuf:"fixed64,1,opt,name=ammount,proto3" json:"ammount,omitempty"`
+	IdempotencyKey     string                 `protobuf:"bytes,2,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	PaymentDescription string                 `protobuf:"bytes,3,opt,name=payment_description,json=paymentDescription,proto3" json:"payment_description,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *PaymentRequest) Reset() {
@@ -63,6 +65,20 @@ func (x *PaymentRequest) GetAmmount() float64 {
 		return x.Ammount
 	}
 	return 0
+}
+
+func (x *PaymentRequest) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *PaymentRequest) GetPaymentDescription() string {
+	if x != nil {
+		return x.PaymentDescription
+	}
+	return ""
 }
 
 type PaymentResponse struct {
@@ -113,9 +129,11 @@ var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\"*\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\"\x84\x01\n" +
 	"\x0ePaymentRequest\x12\x18\n" +
-	"\aammount\x18\x01 \x01(\x01R\aammount\"0\n" +
+	"\aammount\x18\x01 \x01(\x01R\aammount\x12'\n" +
+	"\x0fidempotency_key\x18\x02 \x01(\tR\x0eidempotencyKey\x12/\n" +
+	"\x13payment_description\x18\x03 \x01(\tR\x12paymentDescription\"0\n" +
 	"\x0fPaymentResponse\x12\x1d\n" +
 	"\n" +
 	"receipt_id\x18\x01 \x01(\x05R\treceiptId2N\n" +

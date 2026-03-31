@@ -10,6 +10,8 @@ service PaymentService {
 
 message PaymentRequest {
   double ammount = 1;
+  string idempotency_key = 2;
+  string payment_description = 3;
 }
 
 message PaymentResponse {
