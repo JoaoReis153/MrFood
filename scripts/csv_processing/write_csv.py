@@ -81,10 +81,14 @@ def write_booking_csv_stream(bookings: Iterable[dict], output_file: Path, total:
 
 
 def write_restaurant_csvs(
-    restaurants: List, restaurants_file: Path, working_hours_file: Path, categories_file: Path
+    restaurants: Iterable, restaurants_file: Path, working_hours_file: Path, categories_file: Path
 ) -> tuple:
-    """Write restaurant data to CSV files."""
+    """Write restaurant data to CSV files from an iterable to keep memory usage low."""
     restaurants_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # First pass: count restaurants for progress reporting
+    restaurants_list = list(restaurants)
+    total_restaurants = len(restaurants_list)
 
     print_progress_start("Writing restaurant CSV files")
     last_pct = 0
@@ -125,12 +129,11 @@ def write_restaurant_csvs(
         working_hours_writer.writeheader()
         categories_writer.writeheader()
 
-        total_restaurants = len(restaurants)
         if total_restaurants == 0:
             print_progress_end("Writing restaurant CSV files")
             return 0, 0, 0
 
-        for index, restaurant in enumerate(restaurants, start=1):
+        for index, restaurant in enumerate(restaurants_list, start=1):
             restaurants_writer.writerow(
                 {
                     "id": restaurant.id,
@@ -160,4 +163,4 @@ def write_restaurant_csvs(
     if last_pct < 100:
         print_progress_end("Writing restaurant CSV files")
 
-    return len(restaurants), working_hours_count, categories_count
+    return len(restaurants_list), working_hours_count, categories_count

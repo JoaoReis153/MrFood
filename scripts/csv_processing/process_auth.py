@@ -1,10 +1,22 @@
 import csv
+import re
 from pathlib import Path
 from typing import List, Optional
 
 import pandas as pd
 
-from .service_seed_common import DEFAULT_PASSWORD_HASH, print_progress_end, print_progress_start, print_progress_step, slugify_username
+from .service_seed_common import DEFAULT_PASSWORD_HASH, clean_text, print_progress_end, print_progress_start, print_progress_step
+
+
+def slugify_username(name: object, fallback_prefix: str, index: int) -> str:
+    """Convert a name into a valid username slug."""
+    base = clean_text(name)
+    if not base:
+        return f"{fallback_prefix}_{index}"
+    slug = re.sub(r"[^a-zA-Z0-9_]+", "_", base).strip("_")
+    if not slug:
+        return f"{fallback_prefix}_{index}"
+    return slug[:50]
 
 
 def build_auth_users(users_df: pd.DataFrame) -> List[dict]:
