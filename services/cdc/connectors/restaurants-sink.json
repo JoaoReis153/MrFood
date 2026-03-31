@@ -1,0 +1,20 @@
+{
+  "name": "restaurants-elasticsearch-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+    "tasks.max": "1",
+    "topics": "restaurantdb.public.restaurants",
+    "connection.url": "http://elasticsearch:9200",
+    "key.ignore": "true",
+    "schema.ignore": "true",
+    "behavior.on.null.values": "delete",
+    "write.method": "upsert",
+    "type.name": "_doc",
+    "topic.index.map": "restaurantdb.public.restaurants:restaurants",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false"
+  }
+}
+
