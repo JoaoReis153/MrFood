@@ -6,15 +6,24 @@ import (
 	"MrFood/services/payment/internal/service"
 	"context"
 	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type App struct {
 	Service *service.Service
 	Repo    *repository.Repository
+	DB      *pgxpool.Pool
 }
 
 func New(ctx context.Context, cfg *config.Config) (*App, error) {
-	repo, err := repository.New(ctx, cfg)
+	conns, err := repository.NewConnections(ctx, cfg)
+
+	if err != nil {
+		return nil, fmt.Errorf("db: %w", err)
+	}
+
+	repo, err := repository.New(ctx, cfg, conns.DB)
 	if err != nil {
 		return nil, fmt.Errorf("repository: %w", err)
 	}
@@ -24,6 +33,7 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	return &App{
 		Repo:    repo,
 		Service: svc,
+		DB:      conns.DB,
 	}, nil
 }
 
