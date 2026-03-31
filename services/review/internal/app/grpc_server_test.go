@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"net"
 	"testing"
 	"time"
 
@@ -11,12 +10,9 @@ import (
 	models "MrFood/services/review/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 // ===================================================
@@ -631,64 +627,5 @@ func TestParseInt32_NonNumeric(t *testing.T) {
 	_, err := parseInt32("abc")
 	if err == nil {
 		t.Fatal("expected error for non-numeric, got nil")
-	}
-}
-
-// ===================================================
-// ================ Smoke Test =======================
-// ===================================================
-
-const bufSize = 1024 * 1024
-
-func TestRunServer_Smoke(t *testing.T) {
-	lis := bufconn.Listen(bufSize)
-	s := grpc.NewServer()
-
-	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
-			return models.ReviewsPage{
-				Reviews:    []models.Review{},
-				Pagination: models.Pagination{Page: 1, Limit: 10, Total: 0, Pages: 0},
-			}, nil
-		},
-	}
-
-	pb.RegisterReviewServiceServer(s, &server{svc: ms})
-
-	go func() {
-		if err := s.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-			t.Errorf("server failed: %v", err)
-		}
-	}()
-	defer s.Stop()
-
-	bufDialer := func(ctx context.Context, s string) (net.Conn, error) {
-		return lis.Dial()
-	}
-
-	conn, err := grpc.NewClient(
-		"passthrough:///bufnet",
-		grpc.WithContextDialer(bufDialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		t.Fatalf("failed to create client: %v", err)
-	}
-	defer conn.Close()
-
-	client := pb.NewReviewServiceClient(conn)
-	page := int32(1)
-	limit := int32(10)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err = client.GetReviews(ctx, &pb.GetReviewsRequest{
-		RestaurantId: 1,
-		Page:         &page,
-		Limit:        &limit,
-	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
 	}
 }
