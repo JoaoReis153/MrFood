@@ -2,7 +2,8 @@ include:
   - docker-compose.auth.yml
   - docker-compose.restaurant.yml
   - docker-compose.booking.yml  
-  - docker-compose.sponsor.yml
+  - docker-compose.sponsor.yml  - docker-compose.booking.yml
+  - docker-compose.review.yml
   - docker-compose.kong.yml
 
 networks:

@@ -10,7 +10,7 @@ grpc:
   protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
   message: |
     {
-      "username": "banana",
-      "email": "banana11@gmail.com",
+      "username": "banana2",
+      "email": "banana12@gmail.com",
       "password": "bananapass"
     }

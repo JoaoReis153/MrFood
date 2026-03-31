@@ -1,0 +1,54 @@
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - app-network
+
+x-review-db-config: &review-db-config
+  POSTGRES_HOST: review_db
+  POSTGRES_DB: ${REVIEW_POSTGRES_DB}
+  POSTGRES_USER: ${REVIEW_POSTGRES_USER}
+  POSTGRES_PASSWORD: ${REVIEW_POSTGRES_PASSWORD}
+
+x-pg-healthcheck: &pg-healthcheck
+  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  interval: 5s
+  timeout: 5s
+  retries: 5
+
+services:
+  review:
+    build: ./review/
+    ports: ["${REVIEW_SERVER_PORT}:${REVIEW_SERVER_PORT}"]
+    <<: *common
+    environment:
+      <<: *review-db-config
+      APP_SERVER_PORT: ${REVIEW_SERVER_PORT}
+      REVIEW_TO_RESTAURANT_GRPC_ADDR: "restaurant:${RESTAURANT_SERVER_PORT}"
+      DB_MIN_CONNS: 4
+      DB_MAX_CONNS: 20
+      DB_MAX_CONN_LIFETIME: 15m
+      DB_HEALTH_CHECK_PERIOD: 1m
+      APP_LOG_LEVEL: debug
+    depends_on:
+      review_db:
+        condition: service_healthy
+
+  review_db:
+    image: postgres:16
+    ports: ["${REVIEW_POSTGRES_PORT}:5432"]
+    <<: *common
+    command: postgres -c ssl=off -c log_statement=ddl
+    volumes:
+      - review_db_data:/var/lib/postgresql/data
+      - ./review/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    environment:
+      <<: *review-db-config
+    healthcheck:
+      <<: *pg-healthcheck
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  review_db_data:
