@@ -57,7 +57,7 @@ def stream_tripadvisor_csv(file_path: Path, nrows: Optional[int] = None) -> Iter
 
 @dataclass
 class RestaurantRecord:
-    id: int
+    id: str
     name: str
     latitude: float
     longitude: float
@@ -102,6 +102,17 @@ def compose_address(parts: List[object]) -> str:
     """Combine address parts into a single string."""
     filtered = [clean_text(p) for p in parts if clean_text(p)]
     return ", ".join(filtered)[:100]
+
+
+def parse_coordinate(value: object) -> Optional[float]:
+    """Parse a coordinate value; return None when empty or invalid."""
+    text = clean_text(value)
+    if not text:
+        return None
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return None
 
 
 def extract_categories(raw_value: object) -> List[str]:
@@ -219,7 +230,8 @@ def build_restaurants_stream(
     review_categories = build_review_categories_map(reviews_stream)
     review_place_ids = set(review_categories.keys())
 
-    next_id = 1
+    next_tripadvisor_id = 1
+    next_missing_place_id = 1
     total_restaurants = 0
 
     # Process places with reviews first (prioritized), then without
@@ -257,23 +269,25 @@ def build_restaurants_stream(
         if not name or normalized in seen_names:
             continue
 
-        latitude = place_row.get("latitude")
-        longitude = place_row.get("longitude")
+        latitude = parse_coordinate(place_row.get("latitude"))
+        longitude = parse_coordinate(place_row.get("longitude"))
         if latitude is None or longitude is None:
-            try:
-                float(latitude)
-                float(longitude)
-            except (ValueError, TypeError):
-                continue
+            continue
 
         gplus_place_id = clean_id(place_row.get("gPlusPlaceId"))
         categories = sorted(list(review_categories.get(gplus_place_id, set())))
 
+        if gplus_place_id:
+            restaurant_id = gplus_place_id
+        else:
+            restaurant_id = f"missing_gplus_place_{next_missing_place_id}"
+            next_missing_place_id += 1
+
         yield RestaurantRecord(
-            id=next_id,
+            id=restaurant_id,
             name=name,
-            latitude=float(latitude),
-            longitude=float(longitude),
+            latitude=latitude,
+            longitude=longitude,
             address=compose_address([
                 place_row.get("address_line1"),
                 place_row.get("address_line2"),
@@ -289,7 +303,6 @@ def build_restaurants_stream(
             categories=categories,
         )
         seen_names.add(normalized)
-        next_id += 1
         total_restaurants += 1
         last_pct = print_progress_step("Building restaurants from places", total_restaurants, place_limit, last_pct)
 
@@ -314,14 +327,10 @@ def build_restaurants_stream(
         if not name or normalized in seen_names:
             continue
 
-        latitude = tripadvisor_row.get("latitude")
-        longitude = tripadvisor_row.get("longitude")
+        latitude = parse_coordinate(tripadvisor_row.get("latitude"))
+        longitude = parse_coordinate(tripadvisor_row.get("longitude"))
         if latitude is None or longitude is None:
-            try:
-                float(latitude)
-                float(longitude)
-            except (ValueError, TypeError):
-                continue
+            continue
 
         categories: List[str] = []
         for field in ["top_tags", "cuisines", "meals", "features"]:
@@ -339,11 +348,13 @@ def build_restaurants_stream(
         claimed = clean_text(tripadvisor_row.get("claimed")).lower()
         sponsor_tier = 1 if claimed == "claimed" else 0
 
+        tripadvisor_id = f"tripadvisor_{next_tripadvisor_id}"
+
         yield RestaurantRecord(
-            id=next_id,
+            id=tripadvisor_id,
             name=name,
-            latitude=float(latitude),
-            longitude=float(longitude),
+            latitude=latitude,
+            longitude=longitude,
             address=clean_text(tripadvisor_row.get("address"), 100),
             media_url="",
             max_slots=15,
@@ -355,7 +366,7 @@ def build_restaurants_stream(
             categories=unique_categories[:10],
         )
         seen_names.add(normalized)
-        next_id += 1
+        next_tripadvisor_id += 1
         total_restaurants += 1
         added_tripadvisor += 1
         last_pct = print_progress_step(

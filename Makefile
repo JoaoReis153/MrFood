@@ -80,12 +80,14 @@ load-restaurant:
 
 ## Load booking data into database
 load-booking:
-	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -f /docker-entrypoint-initdb.d/init.sql
+	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -c "TRUNCATE TABLE booking, restaurant_slots RESTART IDENTITY CASCADE;"
 	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -c "\\copy booking(id, user_id, restaurant_id, time_start, time_end, people_count) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/booking/booking.csv
 	$(DC) exec -T booking_db psql -U "$(BOOKING_POSTGRES_USER)" -d "$(BOOKING_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('booking', 'id'), COALESCE((SELECT MAX(id) FROM booking), 1), (SELECT COUNT(*) > 0 FROM booking));"
 
 ## Load all seed data into databases
-load-all: load-auth load-restaurant load-booking
+
+load-all:
+	@$(MAKE) --no-print-directory -j 3 load-auth load-restaurant load-booking
 	@echo "✓ All data loaded successfully"
 
 ## Complete setup: start services and load all data

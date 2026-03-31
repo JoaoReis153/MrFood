@@ -1,34 +1,23 @@
 from datetime import datetime, timedelta
-from typing import Iterator, Optional
-
-DEFAULT_MAX_BOOKINGS = 250000
-
-
-def resolve_max_bookings(user_count: int, restaurant_count: int, requested_max: Optional[int] = None) -> int:
-    """Resolve booking count while keeping generation bounded for large datasets."""
-    if user_count <= 0 or restaurant_count <= 0:
-        return 0
-
-    theoretical = user_count * restaurant_count
-    if requested_max is not None:
-        return min(requested_max, theoretical)
-    return min(DEFAULT_MAX_BOOKINGS, theoretical)
-
+from typing import Iterator, List
 
 def generate_bookings_stream(
-    user_count: int,
-    restaurant_count: int,
+    user_ids: List[str],
+    restaurant_ids: List[str],
     total_bookings: int,
 ) -> Iterator[dict]:
     """Yield booking records without storing the full output in memory."""
+    user_count = len(user_ids)
+    restaurant_count = len(restaurant_ids)
+
     if user_count <= 0 or restaurant_count <= 0 or total_bookings <= 0:
         return
 
     base_date = datetime(2026, 4, 1)
 
     for row_idx in range(total_bookings):
-        user_id = (row_idx % user_count) + 1
-        restaurant_id = ((row_idx * 7) % restaurant_count) + 1
+        user_id = user_ids[row_idx % user_count]
+        restaurant_id = restaurant_ids[(row_idx * 7) % restaurant_count]
 
         day_offset = row_idx % 120
         hour = 11 + (row_idx % 10)

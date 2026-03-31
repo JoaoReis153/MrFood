@@ -4,8 +4,8 @@ from typing import Dict, Iterable, List, Set
 
 import pandas as pd
 
-from csv_processing.process_auth import stream_auth_csv
-from csv_processing.process_booking import generate_bookings_stream, resolve_max_bookings
+from csv_processing.process_auth import collect_source_user_ids, stream_auth_csv
+from csv_processing.process_booking import generate_bookings_stream
 from csv_processing.process_restaurant import build_restaurant_data_from_csv
 from csv_processing.service_seed_common import OUTPUT_DIR, print_progress_end, print_progress_start, print_progress_step
 from csv_processing.write_csv import write_booking_csv_stream, write_restaurant_csvs
@@ -29,7 +29,7 @@ DATASET_FILES = {
 }
 
 DATASET_USECOLS = {
-    "users": ["userName"],
+    "users": ["userName", "gPlusUserId"],
     "reviews": ["gPlusPlaceId", "categories"],
     "places": [
         "name",
@@ -269,20 +269,24 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
         return
 
     # For restaurant and booking, use streaming CSV directly to avoid loading DataFrames
-    user_count = None
+    user_ids: List[str] = []
+    restaurant_ids: List[str] = []
     restaurant_count = 0
 
     if "auth" in services or "booking" in services:
         if "auth" in services:
             print("\n✓ Processing auth users")
-            user_count = stream_auth_csv(
+            stream_auth_csv(
                 DATA_DIR / DATASET_FILES["users"],
                 OUTPUT_DIR / "auth" / "app_user.csv",
                 nrows=rows,
             )
-        elif "booking" in services:
-            print("\n✓ Counting users for bookings")
-            user_count = count_users(DATASET_FILES["users"], nrows=rows)
+        if "booking" in services:
+            print("\n✓ Collecting source user IDs for bookings")
+            user_ids = collect_source_user_ids(
+                DATA_DIR / DATASET_FILES["users"],
+                nrows=rows,
+            )
 
     if "restaurant" in services or "booking" in services:
         print("\n✓ Processing restaurants")
@@ -294,25 +298,37 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None, max_bookin
             nrows=rows,
         )
         if "restaurant" in services:
-            restaurant_count, _, _ = write_restaurant_csvs(
+            restaurant_count, _, _, restaurant_ids = write_restaurant_csvs(
                 restaurants_stream,
                 OUTPUT_DIR / "restaurant" / "restaurants.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_working_hours.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_categories.csv",
             )
         elif "booking" in services:
-            # Only booking requested: count restaurants from stream for booking generation
-            restaurant_count = sum(1 for _ in restaurants_stream)
+            # Only booking requested: collect restaurant IDs from stream for booking generation
+            restaurant_ids = [str(restaurant.id) for restaurant in restaurants_stream]
+            restaurant_count = len(restaurant_ids)
 
     if "booking" in services:
         print("\n✓ Processing bookings")
-        if user_count is None:
-            user_count = count_users(DATASET_FILES["users"], nrows=rows)
+        if not user_ids:
+            user_ids = collect_source_user_ids(DATA_DIR / DATASET_FILES["users"], nrows=rows)
 
-        total_bookings = resolve_max_bookings(user_count, restaurant_count, requested_max=max_bookings)
+        if not restaurant_ids:
+            print("\n✓ Collecting restaurant IDs for bookings")
+            restaurants_stream = build_restaurant_data_from_csv(
+                DATA_DIR / DATASET_FILES["places"],
+                DATA_DIR / DATASET_FILES["reviews"],
+                DATA_DIR / DATASET_FILES["tripadvisor"],
+                nrows=rows,
+            )
+            restaurant_ids = [str(restaurant.id) for restaurant in restaurants_stream]
+            restaurant_count = len(restaurant_ids)
+
+        total_bookings = len(user_ids) * restaurant_count
         booking_stream = generate_bookings_stream(
-            user_count=user_count,
-            restaurant_count=restaurant_count,
+            user_ids=user_ids,
+            restaurant_ids=restaurant_ids,
             total_bookings=total_bookings,
         )
         write_booking_csv_stream(booking_stream, OUTPUT_DIR / "booking" / "booking.csv", total=total_bookings)

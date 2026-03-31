@@ -91,6 +91,7 @@ def write_restaurant_csvs(
     restaurants_count = 0
     working_hours_count = 0
     categories_count = 0
+    restaurant_ids: List[str] = []
 
     with (
         restaurants_file.open("w", newline="", encoding="utf-8") as restaurants_fp,
@@ -126,6 +127,7 @@ def write_restaurant_csvs(
         categories_writer.writeheader()
 
         for restaurants_count, restaurant in enumerate(restaurants, start=1):
+            restaurant_ids.append(str(restaurant.id))
             restaurants_writer.writerow(
                 {
                     "id": restaurant.id,
@@ -152,4 +154,4 @@ def write_restaurant_csvs(
 
     print_progress_end("Writing restaurant CSV files")
 
-    return restaurants_count, working_hours_count, categories_count
+    return restaurants_count, working_hours_count, categories_count, restaurant_ids
