@@ -140,9 +140,6 @@ func overrideWithEnv(cfg *Config) {
 
 	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
 	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
-	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
-
-	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
 	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
