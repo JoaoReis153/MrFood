@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"net"
 	"testing"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
@@ -63,11 +63,6 @@ func authenticatedContext(t *testing.T, userID string) context.Context {
 
 func unauthenticatedContext() context.Context {
 	return context.Background()
-}
-
-func invalidTokenContext() context.Context {
-	md := metadata.Pairs("authorization", "Bearer invalid.token.here")
-	return metadata.NewIncomingContext(context.Background(), md)
 }
 
 func newServer(svc ReviewService) *server {
@@ -671,14 +666,16 @@ func TestRunServer_Smoke(t *testing.T) {
 	go func() { _ = s.Serve(lis) }()
 	defer s.Stop()
 
-	conn, err := grpc.DialContext(context.Background(), "bufnet",
-		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
-		grpc.WithInsecure(),
+	conn, err := grpc.NewClient(
+		"bufnet",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		t.Fatalf("failed to dial bufnet: %v", err)
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	client := pb.NewReviewServiceClient(conn)
 	page := int32(1)
