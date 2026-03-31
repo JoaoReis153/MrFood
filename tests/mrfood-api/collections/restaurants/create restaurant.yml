@@ -1,7 +1,9 @@
 info:
-  name: create restaurant
-  type: grpc
-  seq: 6
+  name: Create restaurant
+  type: http
+  seq: 7
+  tags:
+  - Restaurants
 
 grpc:
   url: localhost:50052

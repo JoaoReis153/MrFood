@@ -7,6 +7,12 @@ config:
     protoFiles:
       - type: file
         path: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
+      - type: file
+        path: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
+      - type: file
+        path: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
+      - type: file
+        path: ../../../../services/review/internal/api/grpc/proto/protofile.proto
   proxy:
     inherit: true
     config:

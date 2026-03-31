@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package proto;
+import "google/protobuf/timestamp.proto";
+
+option go_package = "/pb;pb";
+
+// ReviewService defines the gRPC service for handling review-related operations.
+service ReviewService {
+  // Get reviews for a specific restaurant with optional pagination
+  rpc GetReviews (GetReviewsRequest) returns (GetReviewsResponse);
+  // Create a new review for a restaurant
+  rpc CreateReview (CreateReviewRequest) returns (CreateReviewResponse);
+  // Update an existing review
+  rpc UpdateReview (UpdateReviewRequest) returns (UpdateReviewResponse);
+  // Delete a review by its ID
+  rpc DeleteReview (DeleteReviewRequest) returns (DeleteReviewResponse);
+    // Get restaurant stats such as average rating and review count
+  rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
+}
+
+// ReviewToRestaurantService defines the gRPC service for fetching restaurant existence in RestaurantDetails service.
+service ReviewToRestaurantService {
+  // Get restaurant details to verify existence before creating a review
+  rpc GetRestaurantId(GetRestaurantRequest) returns (GetRestaurantResponse);
+}
+// ===================================================
+// ==================== Models =======================
+// ===================================================
+
+message Review {
+  int32 review_id = 1;
+  int32 restaurant_id = 2;
+  int32 user_id = 3;
+  string comment = 4;
+  int32 rating = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message RestaurantStats {
+  int32 restaurant_id = 1;
+  double average_rating = 2;
+  int32 review_count = 3;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 pages = 4;
+}
+
+// ===================================================
+// =================== Requests ======================
+// ===================================================
+
+message GetReviewsRequest {
+  int32 restaurant_id = 1;
+  optional int32 page = 2;
+  optional int32 limit = 3;
+}
+
+message CreateReviewRequest {
+  int32 restaurant_id = 1;
+  string comment = 2;
+  int32 rating = 3;
+}
+
+message UpdateReviewRequest {
+  int32 review_id = 1;
+  optional string comment = 2;
+  optional int32 rating = 3;
+}
+
+message DeleteReviewRequest {
+  int32 review_id = 1;
+}
+
+message GetRestaurantStatsRequest {
+  int32 restaurant_id = 1;
+}
+
+message GetRestaurantRequest {
+  int32 restaurant_id = 1;
+}
+
+// ===================================================
+// ================== Responses ======================
+// ===================================================
+
+message GetReviewsResponse {
+  repeated Review reviews = 1;
+  Pagination pagination = 2;
+}
+
+message CreateReviewResponse {
+  Review review = 1;
+}
+
+message UpdateReviewResponse {
+  Review review = 1;
+}
+
+message DeleteReviewResponse {}
+
+message GetRestaurantStatsResponse {
+  RestaurantStats restaurant_stats = 1;
+}
+
+message GetRestaurantResponse {
+  int32 restaurant_id = 1;
+}
