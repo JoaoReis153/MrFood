@@ -4,6 +4,5 @@ use (
 	./services/auth
 	./services/booking
 	./services/restaurant
-	./services/review
 	./services/sponsor
 )

@@ -28,13 +28,11 @@ type server struct {
 	pb.UnimplementedRestaurantServiceServer
 	pb.UnimplementedRestaurantToBookingServiceServer
 	pb.UnimplementedRestaurantToSponsorServiceServer
-	pb.UnimplementedReviewToRestaurantServiceServer
 	restaurantService restaurantService
 }
 
 type restaurantService interface {
 	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
-	GetRestaurantID(ctx context.Context, id int32) (int32, error)
 	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
 	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error)
 	CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error)
@@ -89,18 +87,6 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 
 	return &pb.GetRestaurantDetailsResponse{
 		Restaurant: modelToPB(restaurant),
-	}, nil
-}
-
-func (s *server) GetRestaurantId(ctx context.Context, req *pb.GetRestaurantRequest) (*pb.GetRestaurantResponse, error) {
-	slog.Info("fetching restaurant id for review service", "restaurant_id", req.GetRestaurantId())
-	restaurantID, err := s.restaurantService.GetRestaurantID(ctx, req.GetRestaurantId())
-	if err != nil {
-		slog.Error("failed to get restaurant id", "error", err)
-		return nil, mapServiceError(err)
-	}
-	return &pb.GetRestaurantResponse{
-		RestaurantId: restaurantID,
 	}, nil
 }
 
@@ -228,7 +214,6 @@ func (app *App) RunServer() {
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)
 	pb.RegisterRestaurantToSponsorServiceServer(s, srv)
-	pb.RegisterReviewToRestaurantServiceServer(s, srv)
 
 	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {

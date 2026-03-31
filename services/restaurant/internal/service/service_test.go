@@ -14,7 +14,6 @@ type mockRepo struct {
 	getByNameFn       func(context.Context, string) (*models.Restaurant, error)
 	createFn          func(context.Context, *models.Restaurant) (int32, error)
 	getByIDFn         func(context.Context, int32) (*models.Restaurant, error)
-	getIDFn           func(context.Context, int32) (int32, error)
 	updateFn          func(context.Context, *models.Restaurant) (*models.Restaurant, error)
 	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.TimeRange, error)
 }
@@ -42,13 +41,6 @@ func (m *mockRepo) GetRestaurantByID(ctx context.Context, id int32) (*models.Res
 		return nil, repository.ErrRestaurantNotFound
 	}
 	return m.getByIDFn(ctx, id)
-}
-
-func (m *mockRepo) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
-	if m.getIDFn == nil {
-		return 0, repository.ErrRestaurantNotFound
-	}
-	return m.getIDFn(ctx, id)
 }
 
 func (m *mockRepo) UpdateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error) {
@@ -310,43 +302,5 @@ func TestGetRestaurantByIDIgnoresReviewStatsError(t *testing.T) {
 	}
 	if restaurant.AverageRating != nil || restaurant.ReviewCount != nil {
 		t.Fatalf("expected nil stats when review service fails: %+v", restaurant)
-	}
-}
-
-func TestGetRestaurantIDRejectsInvalidID(t *testing.T) {
-	svc := &Service{repo: &mockRepo{}}
-
-	_, err := svc.GetRestaurantID(context.Background(), 0)
-	if !errors.Is(err, ErrInvalidRestaurant) {
-		t.Fatalf("expected ErrInvalidRestaurant, got %v", err)
-	}
-}
-
-func TestGetRestaurantIDMapsNotFound(t *testing.T) {
-	svc := &Service{repo: &mockRepo{
-		getIDFn: func(context.Context, int32) (int32, error) {
-			return 0, repository.ErrRestaurantNotFound
-		},
-	}}
-
-	_, err := svc.GetRestaurantID(context.Background(), 7)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatalf("expected ErrNotFound, got %v", err)
-	}
-}
-
-func TestGetRestaurantIDSuccess(t *testing.T) {
-	svc := &Service{repo: &mockRepo{
-		getIDFn: func(context.Context, int32) (int32, error) {
-			return 7, nil
-		},
-	}}
-
-	id, err := svc.GetRestaurantID(context.Background(), 7)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if id != 7 {
-		t.Fatalf("expected id 7, got %d", id)
 	}
 }

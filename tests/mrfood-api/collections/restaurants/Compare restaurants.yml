@@ -1,17 +1,19 @@
 info:
-  name: Get restaurant details
+  name: Compare restaurants
   type: http
-  seq: 1
+  seq: 3
   tags:
     - Restaurants
 
 http:
   method: GET
-  url: "{{baseUrl}}/restaurants/:restaurantId"
+  url: "{{baseUrl}}/restaurants/compare"
   params:
-    - name: restaurantId
-      value: ""
-      type: path
+    - name: ids
+      value: "[]"
+      type: query
+      description: List of restaurant IDs
+      disabled: true
   auth:
     type: bearer
     token: "{{token}}"
@@ -24,14 +26,16 @@ settings:
 
 examples:
   - name: 200 Response
-    description: Restaurant details
+    description: Restaurant comparison
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId"
+      url: "{{baseUrl}}/restaurants/compare"
       method: GET
       params:
-        - name: restaurantId
-          value: ""
-          type: path
+        - name: ids
+          value: "[]"
+          type: query
+          description: List of restaurant IDs
+          disabled: true
     response:
       status: 200
       statusText: OK
@@ -42,28 +46,36 @@ examples:
         type: json
         data: |-
           {
-            "id": "12345",
-            "name": "Doce Sobral",
-            "tags": "Portuguese, Desserts",
-            "price": "$$$",
-            "phone": "+351 123 456 789",
-            "rating": 4.5,
-            "sponsored": false,
-            "location": {
-              "latitude": 40.7128,
-              "longitude": -74.006,
-              "address": "123 Sobral Street, Lisbon, Portugal"
-            }
+            "page": 1,
+            "limit": 5,
+            "data": [
+              {
+                "id": "12345",
+                "name": "Doce Sobral",
+                "tags": "Portuguese, Desserts",
+                "price": "$$$",
+                "phone": "+351 123 456 789",
+                "rating": 4.5,
+                "sponsored": false,
+                "location": {
+                  "latitude": 40.7128,
+                  "longitude": -74.006,
+                  "address": "123 Sobral Street, Lisbon, Portugal"
+                }
+              }
+            ]
           }
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId"
+      url: "{{baseUrl}}/restaurants/compare"
       method: GET
       params:
-        - name: restaurantId
-          value: ""
-          type: path
+        - name: ids
+          value: "[]"
+          type: query
+          description: List of restaurant IDs
+          disabled: true
     response:
       status: 400
       statusText: Bad Request
@@ -78,14 +90,16 @@ examples:
             "message": "Error message"
           }
   - name: 404 Response
-    description: Restaurant not found
+    description: One or more restaurants not found
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId"
+      url: "{{baseUrl}}/restaurants/compare"
       method: GET
       params:
-        - name: restaurantId
-          value: ""
-          type: path
+        - name: ids
+          value: "[]"
+          type: query
+          description: List of restaurant IDs
+          disabled: true
     response:
       status: 404
       statusText: Not Found
@@ -102,12 +116,14 @@ examples:
   - name: 500 Response
     description: Server Error
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId"
+      url: "{{baseUrl}}/restaurants/compare"
       method: GET
       params:
-        - name: restaurantId
-          value: ""
-          type: path
+        - name: ids
+          value: "[]"
+          type: query
+          description: List of restaurant IDs
+          disabled: true
     response:
       status: 500
       statusText: Internal Server Error

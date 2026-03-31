@@ -1,67 +1,45 @@
 _format_version: "3.0"
 
 services:
-- name: auth
-  host: auth
-  port: 50051
-  protocol: grpc
-
-  routes:
   - name: auth
-    protocols:
-    - http
-    - https
-    paths:
-    - /auth
+    host: auth
+    port: 50051
+    protocol: grpc
 
-  plugins:
-  - name: grpc-gateway
-    config:
-      proto: /etc/kong/proto/auth.proto
+    routes:
+      - name: auth
+        protocols:
+        - http
+        - https
+        paths:
+          - /auth
 
-- name: restaurant
-  host: restaurant
-  port: 50052
-  protocol: grpc
+    plugins:
+      - name: grpc-gateway
+        config:
+          proto: /etc/kong/proto/auth.proto
 
-  routes:
-  - name: restaurant
-    protocols:
-    - http
-    - https
-    paths:
-    - /restaurants
-
-  plugins:
-  - name: grpc-gateway
-    config:
-      proto: /etc/kong/proto/restaurant.proto
-  - name: jwt
-    config:
-      claims_to_verify:
-      - exp
-
-- name: booking
-  host: booking
-  port: 50053
-  protocol: grpc
-
-  routes:
   - name: booking
-    protocols:
-    - http
-    - https
-    paths:
-    - /reservations
+    host: booking
+    port: 50053
+    protocol: grpc
 
-  plugins:
-  - name: grpc-gateway
-    config:
-      proto: /etc/kong/proto/booking.proto
-  - name: jwt
-    config:
-      claims_to_verify:
-      - exp
+    routes:
+      - name: booking
+        protocols:
+        - http
+        - https
+        paths:
+          - /reservations
+
+    plugins:
+      - name: grpc-gateway
+        config:
+          proto: /etc/kong/proto/booking.proto
+      - name: jwt
+        config:
+          claims_to_verify:
+            - exp
 
 consumers:
   - username: my-client

@@ -2,26 +2,9 @@ opencollection: 1.0.0
 
 info:
   name: reviews
-config:
-  protobuf:
-    protoFiles:
-    - type: file
-      path: ../../../../services/review/internal/api/grpc/proto/protofile.proto
-    importPaths:
-    - path: //wsl.localhost/Debian/usr/include
-  proxy:
-    inherit: true
-    config:
-      protocol: http
-      hostname: ""
-      port: ""
-      auth:
-        username: ""
-        password: ""
-      bypassProxy: ""
 bundled: false
 extensions:
   bruno:
     ignore:
-    - node_modules
-    - .git
+      - node_modules
+      - .git

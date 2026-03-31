@@ -17,7 +17,6 @@ import (
 
 type mockRestaurantService struct {
 	getByIDFn         func(context.Context, int32) (*models.Restaurant, error)
-	getIDFn           func(context.Context, int32) (int32, error)
 	createFn          func(context.Context, *models.Restaurant) (int32, error)
 	updateFn          func(context.Context, *models.Restaurant, int32) (*models.Restaurant, error)
 	compareFn         func(context.Context, int32, int32) (*models.Restaurant, *models.Restaurant, error)
@@ -29,13 +28,6 @@ func (m *mockRestaurantService) GetRestaurantByID(ctx context.Context, id int32)
 		return nil, errors.New("not configured")
 	}
 	return m.getByIDFn(ctx, id)
-}
-
-func (m *mockRestaurantService) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
-	if m.getIDFn == nil {
-		return 0, errors.New("not configured")
-	}
-	return m.getIDFn(ctx, id)
 }
 
 func (m *mockRestaurantService) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error) {
@@ -88,35 +80,6 @@ func TestCreateRestaurantMissingMetadata(t *testing.T) {
 	_, err := srv.CreateRestaurant(context.Background(), &pb.CreateRestaurantRequest{Name: "Nori"})
 	if status.Code(err) != codes.Unauthenticated {
 		t.Fatalf("expected Unauthenticated, got %v", err)
-	}
-}
-
-func TestGetRestaurantIdSuccess(t *testing.T) {
-	srv := &server{restaurantService: &mockRestaurantService{
-		getIDFn: func(context.Context, int32) (int32, error) {
-			return 3, nil
-		},
-	}}
-
-	resp, err := srv.GetRestaurantId(context.Background(), &pb.GetRestaurantRequest{RestaurantId: 3})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if resp.GetRestaurantId() != 3 {
-		t.Fatalf("expected restaurant id 3, got %d", resp.GetRestaurantId())
-	}
-}
-
-func TestGetRestaurantIdMapsNotFound(t *testing.T) {
-	srv := &server{restaurantService: &mockRestaurantService{
-		getIDFn: func(context.Context, int32) (int32, error) {
-			return 0, service.ErrNotFound
-		},
-	}}
-
-	_, err := srv.GetRestaurantId(context.Background(), &pb.GetRestaurantRequest{RestaurantId: 99})
-	if status.Code(err) != codes.NotFound {
-		t.Fatalf("expected NotFound, got %v", err)
 	}
 }
 

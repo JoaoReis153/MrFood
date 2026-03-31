@@ -110,26 +110,6 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 	return restaurant, nil
 }
 
-func (r *Repository) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
-	if r.DB == nil {
-		return 0, ErrDatabaseNotSet
-	}
-	query := `
-		SELECT id
-		FROM restaurants
-		WHERE id = $1
-	`
-	var restaurantID int32
-	err := r.DB.QueryRow(ctx, query, id).Scan(&restaurantID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrRestaurantNotFound
-		}
-		return 0, fmt.Errorf("query restaurant ID: %w", err)
-	}
-	return restaurantID, nil
-}
-
 func (r *Repository) GetRestaurantByName(ctx context.Context, name string) (*models.Restaurant, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
