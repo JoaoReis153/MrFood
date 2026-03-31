@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"net"
 	"testing"
 	"time"
 
@@ -650,38 +651,51 @@ func TestRunServer_Smoke(t *testing.T) {
 				Pagination: models.Pagination{Page: 1, Limit: 10, Total: 0, Pages: 0},
 			}, nil
 		},
-		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) { return review, nil },
-		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
-			return models.Review{}, nil
-		},
-		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error { return nil },
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
-			return models.RestaurantStats{}, nil
-		},
 	}
 
 	pb.RegisterReviewServiceServer(s, &server{svc: ms})
 	pb.RegisterReviewToRestaurantServiceServer(s, &server{svc: ms})
 
-	go func() { _ = s.Serve(lis) }()
+	go func() {
+		if err := s.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+			t.Errorf("server failed: %v", err)
+		}
+	}()
 	defer s.Stop()
 
-	conn, err := grpc.NewClient(
+	bufDialer := func(ctx context.Context, s string) (net.Conn, error) {
+		return lis.Dial()
+	}
+
+	conn, err := grpc.DialContext(
+		context.Background(),
 		"bufnet",
+		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
 		t.Fatalf("failed to dial bufnet: %v", err)
 	}
-	defer func() {
-		_ = conn.Close()
-	}()
+	defer conn.Close()
 
 	client := pb.NewReviewServiceClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
 	page := int32(1)
 	limit := int32(10)
-	_, err = client.GetReviews(context.Background(), &pb.GetReviewsRequest{RestaurantId: 1, Page: &page, Limit: &limit})
+
+	resp, err := client.GetReviews(ctx, &pb.GetReviewsRequest{
+		RestaurantId: 1,
+		Page:         &page,
+		Limit:        &limit,
+	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if resp == nil {
+		t.Fatal("expected response, got nil")
 	}
 }
