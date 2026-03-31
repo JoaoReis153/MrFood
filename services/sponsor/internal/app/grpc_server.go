@@ -66,8 +66,8 @@ func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestau
 }
 
 func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.SponsorshipResponse, error) {
-	if req.Tier < 0 || req.Tier > 4 {
-		return nil, status.Error(codes.InvalidArgument, "Tier must be between 0 and 4")
+	if req.Tier < 1 || req.Tier > 4 {
+		return nil, status.Error(codes.InvalidArgument, "Tier must be between 1 and 4")
 	}
 
 	user, err := ExtractUserFromContext(ctx)

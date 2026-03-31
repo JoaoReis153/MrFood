@@ -5,13 +5,13 @@ info:
 
 grpc:
   url: localhost:50054
-  method: /proto.SponsorService/GetRestaurantSponsorship
+  method: /proto.SponsorService/Sponsor
   methodType: unary
   protoFilePath: ../../../../services/sponsor/internal/api/grpc/proto/protofile.proto
   message: |-
     {
       "id": "1",
-      "tier":"1"
+      "tier":"3"
     }
   auth:
     type: bearer

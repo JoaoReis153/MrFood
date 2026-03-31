@@ -29,11 +29,13 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, err
 	}
 
-	slog.Info("RESTAURANT", restaurant)
+	slog.Info("RESTAURANT", "data", restaurant)
 
 	if restaurant.OwnerID != owner {
-		return nil, errors.New("Invalid restaurant owner")
+		return nil, errors.New("invalid restaurant owner")
 	}
+
+	request.Categories = restaurant.Categories
 
 	return s.repo.Sponsor(ctx, request)
 }

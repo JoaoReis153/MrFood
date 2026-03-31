@@ -10,8 +10,7 @@ grpc:
   protoFilePath: ../../../../services/sponsor/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "id": "1",
-      "tier":"2"
+      "id": "1"
     }
   auth:
     type: bearer

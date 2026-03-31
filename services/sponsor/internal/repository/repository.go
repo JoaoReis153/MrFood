@@ -61,6 +61,24 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 		return nil, ErrDatabaseNotSet
 	}
 
+	query_select := `
+		SELECT restaurant_id, tier, until
+		FROM sponsorship
+		WHERE restaurant_id = $1 AND until > NOW();
+	`
+
+	sponsorship := &models.SponsorshipResponse{}
+
+	err := r.DB.QueryRow(ctx, query_select, request.ID).Scan(
+		&sponsorship.ID,
+		&sponsorship.Tier,
+		&sponsorship.Until,
+	)
+
+	if request.Tier <= sponsorship.Tier {
+		return nil, errors.New("Tier can only be upgraded")
+	}
+
 	tx, err := r.DB.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -73,10 +91,14 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 			err = tx.Commit(ctx)
 		}
 	}()
-
+	//ADD ONLY IF IT DOESNT EXISTS
 	query := `
 		INSERT INTO sponsorship (restaurant_id, tier, until)
 		VALUES ($1, $2, $3)
+		ON CONFLICT (restaurant_id)
+		DO UPDATE SET
+			tier = EXCLUDED.tier,
+			until = EXCLUDED.until
 		RETURNING restaurant_id, tier, until
 	`
 
@@ -84,11 +106,24 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 	var tier int32
 	var until time.Time
 
-	err = tx.QueryRow(ctx, query, request.ID, request.Tier, time.Now().AddDate(0, 1, 0)).
+	err = tx.QueryRow(ctx, query, request.ID, request.Tier, request.Until).
 		Scan(&restaurantId, &tier, &until)
 
 	if err != nil {
-		return nil, fmt.Errorf("create restaurant: %w", err)
+		return nil, fmt.Errorf("create sponsorship: %w", err)
 	}
+
+	for _, category := range request.Categories {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO restaurant_categories (restaurant_id, category)
+			VALUES ($1, $2)
+			ON CONFLICT DO NOTHING
+		`, request.ID, category)
+
+		if err != nil {
+			return nil, fmt.Errorf("insert category: %w", err)
+		}
+	}
+
 	return &models.SponsorshipResponse{ID: int(restaurantId), Tier: int(tier), Until: until}, nil
 }
