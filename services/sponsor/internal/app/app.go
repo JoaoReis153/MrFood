@@ -12,7 +12,7 @@ import (
 )
 
 type App struct {
-	Service        *service.Service
+	Service        SponsorService
 	Repo           *repository.Repository
 	DB             *pgxpool.Pool
 	RestaurantConn *grpc.ClientConn

@@ -3,7 +3,6 @@ package app
 import (
 	"MrFood/services/sponsor/config"
 	pb "MrFood/services/sponsor/internal/api/grpc/pb"
-	"MrFood/services/sponsor/internal/service"
 	"context"
 	"errors"
 	"fmt"
@@ -27,7 +26,7 @@ import (
 
 type server struct {
 	pb.UnimplementedSponsorServiceServer
-	sponsorService *service.Service
+	sponsorService SponsorService
 }
 
 type UserInfo struct {
@@ -43,6 +42,11 @@ type Claims struct {
 	TokenType    string `json:"token_type"` // access or refresh
 }
 
+type SponsorService interface {
+	GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
+	Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
+}
+
 func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 	return &pb.Pong{
 		Id: 1,
@@ -51,7 +55,7 @@ func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
 
-	slog.Info("get restaurant sponsorship: ", req)
+	slog.Info("get restaurant sponsorship", "request", req)
 
 	response, err := s.sponsorService.GetRestaurantSponsorship(ctx, req.Id)
 	if err != nil {
@@ -75,7 +79,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	slog.Info("USER: ", user.Username)
+	slog.Info("USER", "username", user.Username, "userID", user.UserID)
 
 	sponsorship := &models.Sponsorship{
 		ID:         int(req.Id),
@@ -89,7 +93,11 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		return nil, err
 	}
 
-	slog.Info("ADDED TO DATABASE: ", response.ID, response.Tier, response.Until)
+	slog.Info("ADDED TO DATABASE",
+		"id", response.ID,
+		"tier", response.Tier,
+		"until", response.Until,
+	)
 
 	return &pb.SponsorshipResponse{
 		Id:    int32(response.ID),
