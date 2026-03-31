@@ -1122,7 +1122,7 @@ func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescData
 }
 
-var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 	(*RestaurantStats)(nil),                  // 0: proto.RestaurantStats
 	(*GetRestaurantStatsRequest)(nil),        // 1: proto.GetRestaurantStatsRequest
@@ -1138,19 +1138,17 @@ var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 	(*RestaurantDetails)(nil),                // 11: proto.RestaurantDetails
 	(*CompareRestaurantDetailsRequest)(nil),  // 12: proto.CompareRestaurantDetailsRequest
 	(*CompareRestaurantDetailsResponse)(nil), // 13: proto.CompareRestaurantDetailsResponse
-	(*GetRestaurantRequest)(nil),             // 14: proto.GetRestaurantRequest
-	(*GetRestaurantResponse)(nil),            // 15: proto.GetRestaurantResponse
-	(*timestamppb.Timestamp)(nil),            // 16: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),            // 14: google.protobuf.Timestamp
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	0,  // 0: proto.GetRestaurantStatsResponse.restaurant_stats:type_name -> proto.RestaurantStats
-	16, // 1: proto.WorkingHoursRequest.time_start:type_name -> google.protobuf.Timestamp
-	16, // 2: proto.WorkingHoursResponse.time_start:type_name -> google.protobuf.Timestamp
-	16, // 3: proto.WorkingHoursResponse.time_end:type_name -> google.protobuf.Timestamp
+	14, // 1: proto.WorkingHoursRequest.time_start:type_name -> google.protobuf.Timestamp
+	14, // 2: proto.WorkingHoursResponse.time_start:type_name -> google.protobuf.Timestamp
+	14, // 3: proto.WorkingHoursResponse.time_end:type_name -> google.protobuf.Timestamp
 	11, // 4: proto.GetRestaurantDetailsResponse.restaurant:type_name -> proto.RestaurantDetails
-	16, // 5: proto.UpdateRestaurantRequest.working_hours:type_name -> google.protobuf.Timestamp
+	14, // 5: proto.UpdateRestaurantRequest.working_hours:type_name -> google.protobuf.Timestamp
 	11, // 6: proto.UpdateRestaurantResponse.restaurant:type_name -> proto.RestaurantDetails
-	16, // 7: proto.RestaurantDetails.working_hours:type_name -> google.protobuf.Timestamp
+	14, // 7: proto.RestaurantDetails.working_hours:type_name -> google.protobuf.Timestamp
 	11, // 8: proto.CompareRestaurantDetailsResponse.restaurant1:type_name -> proto.RestaurantDetails
 	11, // 9: proto.CompareRestaurantDetailsResponse.restaurant2:type_name -> proto.RestaurantDetails
 	5,  // 10: proto.RestaurantService.GetRestaurantDetails:input_type -> proto.GetRestaurantDetailsRequest
@@ -1159,16 +1157,14 @@ var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	12, // 13: proto.RestaurantService.CompareRestaurantDetails:input_type -> proto.CompareRestaurantDetailsRequest
 	3,  // 14: proto.RestaurantToBookingService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
 	1,  // 15: proto.RestaurantToReviewService.GetRestaurantStats:input_type -> proto.GetRestaurantStatsRequest
-	14, // 16: proto.ReviewToRestaurantService.GetRestaurantId:input_type -> proto.GetRestaurantRequest
-	6,  // 17: proto.RestaurantService.GetRestaurantDetails:output_type -> proto.GetRestaurantDetailsResponse
-	8,  // 18: proto.RestaurantService.CreateRestaurant:output_type -> proto.CreateRestaurantResponse
-	10, // 19: proto.RestaurantService.UpdateRestaurant:output_type -> proto.UpdateRestaurantResponse
-	13, // 20: proto.RestaurantService.CompareRestaurantDetails:output_type -> proto.CompareRestaurantDetailsResponse
-	4,  // 21: proto.RestaurantToBookingService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
-	2,  // 22: proto.RestaurantToReviewService.GetRestaurantStats:output_type -> proto.GetRestaurantStatsResponse
-	15, // 23: proto.ReviewToRestaurantService.GetRestaurantId:output_type -> proto.GetRestaurantResponse
-	17, // [17:24] is the sub-list for method output_type
-	10, // [10:17] is the sub-list for method input_type
+	6,  // 16: proto.RestaurantService.GetRestaurantDetails:output_type -> proto.GetRestaurantDetailsResponse
+	8,  // 17: proto.RestaurantService.CreateRestaurant:output_type -> proto.CreateRestaurantResponse
+	10, // 18: proto.RestaurantService.UpdateRestaurant:output_type -> proto.UpdateRestaurantResponse
+	13, // 19: proto.RestaurantService.CompareRestaurantDetails:output_type -> proto.CompareRestaurantDetailsResponse
+	4,  // 20: proto.RestaurantToBookingService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
+	2,  // 21: proto.RestaurantToReviewService.GetRestaurantStats:output_type -> proto.GetRestaurantStatsResponse
+	16, // [16:22] is the sub-list for method output_type
+	10, // [10:16] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
 	10, // [10:10] is the sub-list for extension extendee
 	0,  // [0:10] is the sub-list for field type_name
@@ -1187,7 +1183,7 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   4,
 		},
