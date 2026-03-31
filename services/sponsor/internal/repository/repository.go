@@ -95,7 +95,7 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 	sponsorship.Tier = int(tierTemp)
 
 	if request.Tier <= sponsorship.Tier {
-		return nil, errors.New("Tier can only be upgraded")
+		return nil, errors.New("tier can only be upgraded")
 	}
 
 	tx, err := r.DB.Begin(ctx)

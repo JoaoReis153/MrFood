@@ -7,7 +7,6 @@ import (
 	"time"
 
 	pb "MrFood/services/sponsor/internal/api/grpc/pb"
-	"MrFood/services/sponsor/pkg"
 	models "MrFood/services/sponsor/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,15 +18,15 @@ import (
 // Mock Sponsor Service
 // -----------------------------
 type mockSponsorService struct {
-	getFn     func(ctx context.Context, id int32) (*pkg.SponsorshipResponse, error)
-	sponsorFn func(ctx context.Context, s *pkg.Sponsorship, userID int) (*pkg.SponsorshipResponse, error)
+	getFn     func(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
+	sponsorFn func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
 }
 
-func (m *mockSponsorService) GetRestaurantSponsorship(ctx context.Context, id int32) (*pkg.SponsorshipResponse, error) {
+func (m *mockSponsorService) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
 	return m.getFn(ctx, id)
 }
 
-func (m *mockSponsorService) Sponsor(ctx context.Context, s *pkg.Sponsorship, userID int) (*pkg.SponsorshipResponse, error) {
+func (m *mockSponsorService) Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
 	return m.sponsorFn(ctx, s, userID)
 }
 
@@ -65,7 +64,7 @@ func TestPingPong(t *testing.T) {
 // -----------------------------
 func TestGetRestaurantSponsorship(t *testing.T) {
 	mock := &mockSponsorService{
-		getFn: func(ctx context.Context, id int32) (*pkg.SponsorshipResponse, error) {
+		getFn: func(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
 			return &models.SponsorshipResponse{
 				ID:    int(id),
 				Tier:  2,
@@ -83,7 +82,7 @@ func TestGetRestaurantSponsorship(t *testing.T) {
 
 func TestGetRestaurantSponsorship_Error(t *testing.T) {
 	mock := &mockSponsorService{
-		getFn: func(ctx context.Context, id int32) (*pkg.SponsorshipResponse, error) {
+		getFn: func(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
 			return nil, errors.New("db error")
 		},
 	}
@@ -99,7 +98,7 @@ func TestGetRestaurantSponsorship_Error(t *testing.T) {
 // -----------------------------
 func TestSponsor_Success(t *testing.T) {
 	mock := &mockSponsorService{
-		sponsorFn: func(ctx context.Context, s *pkg.Sponsorship, userID int) (*pkg.SponsorshipResponse, error) {
+		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
 			return &models.SponsorshipResponse{
 				ID:    int(s.ID),
 				Tier:  int(s.Tier),
@@ -132,7 +131,7 @@ func TestSponsor_NoAuth(t *testing.T) {
 
 func TestSponsor_ServiceError(t *testing.T) {
 	mock := &mockSponsorService{
-		sponsorFn: func(ctx context.Context, s *pkg.Sponsorship, userID int) (*pkg.SponsorshipResponse, error) {
+		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
 			return nil, errors.New("failed")
 		},
 	}

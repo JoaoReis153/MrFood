@@ -158,18 +158,6 @@ func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
 	return d
 }
 
-func parseDuration(s string) time.Duration {
-	// Support "30s", "30", "30s" etc.
-	s = strings.TrimSuffix(s, "s")
-	if d, err := time.ParseDuration(s + "s"); err == nil {
-		return d
-	}
-	if seconds, err := strconv.Atoi(s); err == nil {
-		return time.Duration(seconds) * time.Second
-	}
-	return 30 * time.Second
-}
-
 func Get(ctx context.Context) *Config {
 	once.Do(func() {
 		cfg, err := Load(ctx)
