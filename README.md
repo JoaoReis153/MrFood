@@ -105,20 +105,23 @@ make load-booking
 Create your environment file:
 
 ```bash
-cp services/env.tmpl services/.env
+make create_env
 ```
 
-Update the configuration inside /services/.env as needed.
+This creates `services/.env` from the template with sensible defaults.
 
 #### 🔐 JWT Secret
 
-Generate a JWT secret using:
+Generate JWT secrets using:
 
 ```bash
 openssl rand -base64 32
 ```
 
-Add it to your `/services/.env.`
+Set these values in `services/.env`:
+
+- `AUTH_JWT_ACCESS_TOKEN_SECRET`
+- `AUTH_JWT_REFRESH_TOKEN_SECRET`
 
 ## 🚀 Running the Services
 

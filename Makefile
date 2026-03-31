@@ -13,12 +13,13 @@ CSV_ROWS ?= 200
 CSV_FULL ?=
 CSV_MAX_BOOKINGS ?=
 
-.PHONY: help generate-csv generate-csv-auth generate-csv-restaurant generate-csv-booking load-auth load-restaurant load-booking load-all setup build run stop down restart logs test clean clean-volumes clean-all
+.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-booking load-auth load-restaurant load-booking load-all setup build run stop down restart logs test clean clean-volumes clean-all
 
 help:
 	@echo "MrFood Make Commands"
 	@echo ""
 	@echo "Setup & Data:"
+	@echo "  make create_env                         - Create services/.env from template"
 	@echo "  make setup                              - Start services and load all data"
 	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
 	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
@@ -39,6 +40,20 @@ help:
 	@echo "  make clean                              - Remove containers & images"
 	@echo "  make clean-volumes                      - Remove containers, images, volumes"
 	@echo "  make clean-all                          - Full reset (all containers, images, volumes)"
+
+# ============================================================================
+# ENVIRONMENT
+# ============================================================================
+
+## Create services/.env from services/env.tmpl
+create_env:
+	@if [ -f services/.env ]; then \
+		echo "services/.env already exists. No changes made."; \
+	else \
+		cp services/env.tmpl services/.env; \
+		echo "Created services/.env from services/env.tmpl"; \
+		echo "Fill AUTH_JWT_ACCESS_TOKEN_SECRET and AUTH_JWT_REFRESH_TOKEN_SECRET in services/.env"; \
+	fi
 
 # ============================================================================
 # DATA GENERATION
