@@ -1,0 +1,1164 @@
+restaurant_id,category
+199,Cheap Eats
+199,French
+199,Lunch
+199,Dinner
+199,Reservations
+199,Seating
+199,Wheelchair Accessible
+199,Serves Alcohol
+199,Accepts Credit Cards
+199,Table Service
+200,Cheap Eats
+201,Cheap Eats
+201,French
+201,European
+201,Dinner
+201,Lunch
+201,Drinks
+201,Reservations
+201,Seating
+201,Table Service
+201,Wheelchair Accessible
+202,Cheap Eats
+202,French
+202,Lunch
+202,Dinner
+202,Reservations
+202,Seating
+202,Serves Alcohol
+202,Table Service
+202,Wheelchair Accessible
+203,Mid-range
+203,French
+203,Lunch
+203,Dinner
+203,Reservations
+203,Seating
+203,Wheelchair Accessible
+203,Table Service
+204,Mid-range
+204,French
+204,Lunch
+204,Dinner
+204,Drinks
+205,Mid-range
+205,French
+205,European
+205,Lunch
+205,Dinner
+206,Mid-range
+206,French
+206,European
+206,Vegetarian Friendly
+207,Mid-range
+207,French
+207,Cafe
+207,Deli
+207,Contemporary
+207,Gastropub
+207,Lunch
+207,Dinner
+207,Drinks
+208,Mid-range
+208,French
+208,European
+208,Wine Bar
+208,After-hours
+208,Drinks
+208,Lunch
+208,Dinner
+208,Brunch
+209,Mid-range
+209,French
+209,Lunch
+209,Dinner
+209,Reservations
+209,Seating
+209,Table Service
+209,Serves Alcohol
+210,Cheap Eats
+210,French
+210,Fast food
+210,Lunch
+210,Dinner
+210,Takeout
+210,Wheelchair Accessible
+211,Chinese
+211,Japanese
+212,French
+212,American
+212,German
+213,Mid-range
+213,French
+213,International
+213,Lunch
+213,Dinner
+213,Drinks
+214,Mid-range
+214,Pizza
+215,Mid-range
+215,Italian
+215,French
+215,Pizza
+215,Dinner
+215,Takeout
+215,Reservations
+215,Wheelchair Accessible
+215,Table Service
+216,Mid-range
+216,French
+216,Lunch
+216,Dinner
+216,After-hours
+216,Takeout
+216,Reservations
+216,Seating
+216,Wheelchair Accessible
+216,Serves Alcohol
+217,Mid-range
+217,Italian
+217,French
+217,Pizza
+217,Lunch
+217,Dinner
+217,Takeout
+217,Reservations
+217,Outdoor Seating
+217,Seating
+218,Cheap Eats
+218,French
+218,European
+218,Breakfast
+218,Lunch
+218,Dinner
+218,Drinks
+219,Mid-range
+219,French
+219,Vegetarian Friendly
+220,Mid-range
+220,Japanese
+220,Sushi
+220,Asian
+220,Lunch
+220,Dinner
+220,After-hours
+220,Delivery
+220,Takeout
+220,Reservations
+222,French
+223,Fine Dining
+223,French
+223,European
+223,Lunch
+223,Dinner
+224,Mid-range
+224,French
+224,Cafe
+224,Accepts Credit Cards
+224,Seating
+225,Mid-range
+225,French
+225,European
+225,Vegetarian Friendly
+226,Mid-range
+226,French
+226,European
+226,Lunch
+226,Dinner
+226,Drinks
+226,Reservations
+226,Outdoor Seating
+226,Seating
+226,Serves Alcohol
+227,Mid-range
+227,French
+227,Lunch
+227,Reservations
+227,Seating
+227,Table Service
+228,Mid-range
+228,French
+228,Lunch
+228,Drinks
+228,Dinner
+229,Mid-range
+229,French
+229,Lunch
+229,Dinner
+229,Reservations
+229,Accepts Credit Cards
+229,Table Service
+229,Takeout
+229,Seating
+230,Mid-range
+230,French
+230,European
+230,Lunch
+230,Dinner
+230,Reservations
+230,Outdoor Seating
+230,Seating
+230,Highchairs Available
+230,Wheelchair Accessible
+231,French
+232,Mid-range
+232,French
+232,Lunch
+232,Dinner
+232,Reservations
+232,Seating
+232,Serves Alcohol
+232,Table Service
+234,Mid-range
+234,French
+234,Dinner
+234,Reservations
+234,Seating
+234,Table Service
+234,Serves Alcohol
+235,Mid-range
+235,French
+235,European
+235,Vegetarian Friendly
+236,Mid-range
+236,French
+236,American
+236,Brew Pub
+236,Cafe
+236,Bar
+236,Lunch
+236,Dinner
+236,Drinks
+236,Reservations
+237,Cheap Eats
+237,Italian
+237,Pizza
+237,Dinner
+237,Reservations
+238,Mid-range
+238,Italian
+238,French
+238,American
+238,Lunch
+238,Dinner
+238,After-hours
+238,Drinks
+239,Mid-range
+239,French
+239,European
+239,Lunch
+239,Dinner
+239,Breakfast
+239,Drinks
+240,Mid-range
+240,French
+240,Lunch
+240,Dinner
+240,Drinks
+241,Mid-range
+241,Delivery Only
+241,French
+241,European
+241,Asian
+241,Thai
+241,Vietnamese
+241,Lunch
+241,Breakfast
+241,Dinner
+242,Mid-range
+242,Lunch
+242,Dinner
+242,Reservations
+242,Seating
+242,Serves Alcohol
+242,Table Service
+242,Highchairs Available
+243,Mid-range
+243,French
+243,Vegetarian Friendly
+244,Mid-range
+244,French
+244,European
+244,Lunch
+244,Dinner
+244,After-hours
+244,Drinks
+245,Mid-range
+245,French
+245,Lunch
+245,Dinner
+245,Reservations
+245,Outdoor Seating
+245,Seating
+245,Wheelchair Accessible
+245,Table Service
+245,Serves Alcohol
+246,Mid-range
+246,French
+246,European
+246,Lunch
+246,Dinner
+246,Reservations
+246,Outdoor Seating
+246,Seating
+246,Wheelchair Accessible
+246,Serves Alcohol
+247,Mid-range
+247,French
+247,Dinner
+247,Lunch
+247,Reservations
+247,Seating
+247,Serves Alcohol
+247,Outdoor Seating
+247,Table Service
+248,Mid-range
+248,French
+248,Bar
+248,European
+248,Pub
+248,Lunch
+248,Dinner
+249,Cheap Eats
+249,Italian
+249,Breakfast
+249,Lunch
+249,Reservations
+249,Seating
+249,Table Service
+250,Mid-range
+250,French
+250,Lunch
+250,Brunch
+250,Takeout
+250,Reservations
+250,Wheelchair Accessible
+251,Mid-range
+251,French
+251,Polish
+251,European
+251,Breakfast
+251,Lunch
+251,Dinner
+251,Reservations
+251,Outdoor Seating
+251,Seating
+252,Mid-range
+252,French
+252,Grill
+252,Vegetarian Friendly
+253,Cheap Eats
+253,French
+253,Vegetarian Friendly
+253,Lunch
+253,Brunch
+254,Mid-range
+254,Italian
+254,French
+254,European
+254,Dinner
+254,Breakfast
+254,Lunch
+254,Brunch
+254,Reservations
+254,Outdoor Seating
+255,Mid-range
+255,French
+255,Lunch
+255,Dinner
+255,Reservations
+255,Seating
+255,Serves Alcohol
+255,Outdoor Seating
+255,Table Service
+256,French
+256,European
+257,Mid-range
+257,Italian
+257,French
+257,Lunch
+257,Dinner
+257,Takeout
+257,Reservations
+257,Seating
+257,Serves Alcohol
+257,Accepts Credit Cards
+258,Cheap Eats
+258,Italian
+258,Pizza
+258,Dinner
+259,Mid-range
+259,French
+259,Lunch
+259,Dinner
+259,Reservations
+259,Seating
+259,Serves Alcohol
+259,Table Service
+260,Mid-range
+260,French
+260,European
+260,Lunch
+260,Dinner
+260,Reservations
+260,Outdoor Seating
+260,Seating
+260,Highchairs Available
+260,Wheelchair Accessible
+262,Mid-range
+262,French
+262,Lunch
+262,Dinner
+262,Reservations
+262,Wheelchair Accessible
+262,Seating
+262,Table Service
+263,Mid-range
+263,French
+263,European
+263,Vegetarian Friendly
+264,Mid-range
+264,French
+264,Lunch
+264,Dinner
+264,Drinks
+265,Mid-range
+265,French
+265,Vegetarian Friendly
+265,Vegan Options
+266,Mid-range
+266,Pizza
+266,Fast food
+268,Middle Eastern
+269,Fine Dining
+269,French
+269,European
+269,Gluten Free Options
+270,Fine Dining
+270,French
+270,Lunch
+270,Dinner
+270,Reservations
+270,Seating
+270,Wheelchair Accessible
+270,Table Service
+271,Mid-range
+271,Chinese
+271,Japanese
+271,Asian
+271,Vietnamese
+271,Lunch
+271,Dinner
+271,Takeout
+271,Reservations
+271,Seating
+272,Fine Dining
+272,French
+272,Lunch
+272,Dinner
+272,After-hours
+272,Reservations
+272,Seating
+272,Serves Alcohol
+272,Accepts Credit Cards
+272,Table Service
+273,Mid-range
+273,French
+273,Vegetarian Friendly
+273,Lunch
+273,Dinner
+274,Mid-range
+274,Japanese
+274,Sushi
+274,Asian
+274,Lunch
+274,Dinner
+275,Mid-range
+275,Japanese
+275,Sushi
+275,Asian
+275,Lunch
+275,Dinner
+276,Cheap Eats
+276,Middle Eastern
+276,Pakistani
+276,Dinner
+276,Takeout
+276,Reservations
+276,Seating
+276,Wheelchair Accessible
+276,Table Service
+277,Mid-range
+277,Italian
+277,Dinner
+277,Reservations
+277,Seating
+277,Wheelchair Accessible
+277,Serves Alcohol
+277,Table Service
+278,Mid-range
+278,Italian
+278,Pizza
+278,Wine Bar
+279,Mid-range
+279,Lunch
+279,Dinner
+279,Seating
+280,Mid-range
+280,French
+280,Lunch
+280,Dinner
+280,Reservations
+280,Seating
+280,Wheelchair Accessible
+280,Serves Alcohol
+280,Table Service
+281,Cheap Eats
+281,French
+281,Lunch
+281,Dinner
+281,Reservations
+281,Seating
+281,Table Service
+282,Italian
+282,Pizza
+282,Dinner
+282,Seating
+282,Table Service
+283,Mid-range
+283,French
+283,Cafe
+283,Grill
+283,Reservations
+284,Reservations
+285,Mid-range
+285,French
+285,Reservations
+285,Seating
+285,Table Service
+286,Mid-range
+286,Indian
+286,Dinner
+287,Lunch
+287,Dinner
+288,Mid-range
+288,Italian
+288,Vegetarian Friendly
+288,Vegan Options
+289,African
+289,Reservations
+290,Fine Dining
+290,European
+290,Portuguese
+290,Dinner
+290,Lunch
+290,Reservations
+291,Reservations
+292,Mid-range
+292,French
+292,Lunch
+292,Dinner
+292,Reservations
+292,Seating
+292,Table Service
+294,Mid-range
+294,Lunch
+294,Dinner
+294,Reservations
+294,Seating
+294,Table Service
+295,Cheap Eats
+295,Japanese
+295,Sushi
+295,Asian
+295,Lunch
+295,Dinner
+295,Seating
+295,Wheelchair Accessible
+295,Serves Alcohol
+295,Accepts Credit Cards
+296,Cheap Eats
+296,French
+296,Street Food
+297,Cheap Eats
+297,Asian
+297,Thai
+297,Vietnamese
+297,Cambodian
+297,Lunch
+297,Dinner
+298,Mid-range
+298,French
+298,European
+298,Contemporary
+298,Dinner
+298,Lunch
+298,Drinks
+299,French
+299,Fast food
+299,Street Food
+300,Mid-range
+300,French
+300,Lunch
+300,Dinner
+300,Drinks
+301,French
+301,Moroccan
+301,Mediterranean
+301,Breakfast
+301,Lunch
+301,Dinner
+301,Reservations
+302,Mid-range
+302,Italian
+302,Pizza
+302,Lunch
+302,Dinner
+302,Takeout
+302,Reservations
+302,Seating
+302,Serves Alcohol
+302,Table Service
+303,Mid-range
+303,Indian
+303,Vegetarian Friendly
+303,Lunch
+303,Dinner
+304,Mid-range
+304,Lunch
+304,Dinner
+304,Takeout
+304,Reservations
+304,Seating
+304,Wheelchair Accessible
+305,Mid-range
+305,Japanese
+305,Asian
+305,Lunch
+305,Dinner
+305,Delivery
+305,Takeout
+305,Reservations
+305,Seating
+305,Serves Alcohol
+306,French
+306,Breakfast
+306,Lunch
+306,Dinner
+307,Cheap Eats
+307,Chinese
+307,Asian
+307,Lunch
+307,Dinner
+307,Seating
+307,Wheelchair Accessible
+307,Takeout
+307,Reservations
+307,Serves Alcohol
+308,Mid-range
+308,French
+308,Lunch
+308,Dinner
+308,Reservations
+308,Outdoor Seating
+308,Seating
+308,Serves Alcohol
+308,Table Service
+309,Mid-range
+309,French
+309,Steakhouse
+309,Lunch
+309,Dinner
+309,Reservations
+309,Outdoor Seating
+309,Seating
+309,Parking Available
+309,Validated Parking
+310,Cheap Eats
+310,Japanese
+310,Sushi
+310,Asian
+310,Lunch
+310,Dinner
+310,Takeout
+310,Delivery
+311,Fine Dining
+311,French
+311,European
+311,Healthy
+311,Lunch
+311,Dinner
+312,Mid-range
+312,Moroccan
+312,Mediterranean
+312,Middle Eastern
+312,Lunch
+312,Dinner
+312,Takeout
+312,Reservations
+312,Seating
+312,Wheelchair Accessible
+313,Mid-range
+313,French
+313,Vegetarian Friendly
+313,Lunch
+313,Dinner
+313,Drinks
+314,Mid-range
+314,Italian
+314,Lunch
+314,Dinner
+314,Takeout
+314,Reservations
+314,Seating
+314,Serves Alcohol
+314,Table Service
+315,Mid-range
+315,Italian
+315,Lunch
+315,Dinner
+315,After-hours
+315,Takeout
+315,Reservations
+315,Seating
+315,Serves Alcohol
+315,Table Service
+316,Mid-range
+316,Italian
+316,European
+316,Vegetarian Friendly
+316,Dinner
+316,Lunch
+317,Mid-range
+317,French
+317,Lunch
+317,Dinner
+318,Mid-range
+318,Italian
+318,Vegetarian Friendly
+318,Lunch
+318,Dinner
+319,Lunch
+319,Dinner
+320,Cheap Eats
+320,Chinese
+320,Japanese
+320,Sushi
+320,Asian
+320,Fusion
+320,Dinner
+320,Seating
+320,Parking Available
+320,Wheelchair Accessible
+321,Cheap Eats
+321,Japanese
+321,Sushi
+321,Asian
+321,Dinner
+321,Lunch
+321,Takeout
+321,Seating
+321,Reservations
+321,Wheelchair Accessible
+322,Mid-range
+322,French
+322,Bar
+322,Pub
+322,Dinner
+322,After-hours
+322,Drinks
+323,Cheap Eats
+323,Fast food
+323,Lunch
+323,Dinner
+323,Takeout
+323,Seating
+323,Wheelchair Accessible
+324,Mid-range
+324,European
+324,Portuguese
+324,Lunch
+324,Dinner
+324,Reservations
+325,Breakfast
+325,Lunch
+325,Dinner
+325,Brunch
+325,After-hours
+325,Wheelchair Accessible
+325,Reservations
+325,Table Service
+326,Mid-range
+326,French
+326,Bar
+326,European
+326,Pub
+326,Lunch
+326,Dinner
+326,Breakfast
+326,After-hours
+326,Drinks
+327,Cheap Eats
+327,Italian
+327,Pizza
+327,Lunch
+327,Dinner
+328,Mid-range
+328,Pizza
+328,Takeout
+328,Delivery
+328,Wheelchair Accessible
+329,Mid-range
+329,Italian
+329,Dinner
+329,Lunch
+329,Takeout
+329,Reservations
+329,Seating
+329,Serves Alcohol
+329,Table Service
+330,Mid-range
+330,Caribbean
+330,Breakfast
+330,Lunch
+330,Dinner
+330,Brunch
+330,Drinks
+331,Mid-range
+331,Japanese
+331,Asian
+331,Korean
+331,Dinner
+331,Lunch
+331,Buffet
+331,Parking Available
+331,Street Parking
+331,Serves Alcohol
+332,Cheap Eats
+332,Fast food
+332,Turkish
+333,Mid-range
+333,French
+333,Lunch
+333,Dinner
+333,Takeout
+333,Reservations
+333,Seating
+333,Wheelchair Accessible
+333,Serves Alcohol
+333,Table Service
+334,Mid-range
+334,Italian
+334,Mediterranean
+334,European
+335,Mid-range
+335,Japanese
+336,Mid-range
+336,French
+336,Lunch
+336,Dinner
+336,Reservations
+336,Seating
+336,Wheelchair Accessible
+336,Serves Alcohol
+336,Accepts Credit Cards
+336,Table Service
+337,Mid-range
+337,Moroccan
+337,Mediterranean
+337,Middle Eastern
+337,Lunch
+337,Dinner
+338,Japanese
+338,Thai
+339,Mid-range
+339,Japanese
+339,Sushi
+339,Asian
+339,Takeout
+339,Delivery
+340,Pizza
+341,Cheap Eats
+341,European
+341,Portuguese
+341,Dinner
+341,Lunch
+341,Reservations
+341,Seating
+341,Table Service
+342,Mid-range
+342,Italian
+342,Lunch
+342,Dinner
+342,Takeout
+342,Reservations
+342,Seating
+342,Wheelchair Accessible
+342,Serves Alcohol
+342,Accepts Credit Cards
+343,Cheap Eats
+343,French
+343,Fast food
+343,Vegetarian Friendly
+344,Mid-range
+344,Italian
+344,Pizza
+344,Dinner
+344,Lunch
+344,Takeout
+344,Delivery
+344,Wheelchair Accessible
+345,Fast food
+347,Mid-range
+347,French
+348,Mid-range
+348,French
+349,Mid-range
+349,Italian
+349,Pizza
+349,Fast food
+349,Lunch
+349,Dinner
+350,Mid-range
+350,French
+350,Vietnamese
+350,Lunch
+350,Dinner
+350,After-hours
+350,Drinks
+351,Cheap Eats
+352,Mid-range
+352,Pizza
+352,Dinner
+353,Cheap Eats
+353,Lunch
+353,Dinner
+354,Mid-range
+354,French
+354,Cajun & Creole
+354,Lunch
+354,Dinner
+355,Reservations
+356,Mid-range
+356,Fast food
+356,Lunch
+356,Dinner
+357,Mid-range
+357,Italian
+357,Lunch
+357,Dinner
+359,Mid-range
+359,Indian
+359,Middle Eastern
+359,Pakistani
+359,Lunch
+359,Dinner
+359,After-hours
+360,Mid-range
+360,Italian
+360,Pizza
+360,Vegetarian Friendly
+361,Cheap Eats
+361,Chinese
+361,Asian
+361,Thai
+361,Vietnamese
+361,Lunch
+361,Dinner
+362,Mid-range
+362,French
+362,American
+362,Pub
+362,Lunch
+362,Dinner
+362,After-hours
+363,Mid-range
+363,French
+363,Steakhouse
+363,Grill
+363,Healthy
+364,Dinner
+365,Cheap Eats
+365,Cafe
+366,Mid-range
+366,French
+366,American
+366,British
+366,Lunch
+366,Dinner
+366,Reservations
+366,Seating
+366,Parking Available
+366,Highchairs Available
+367,Cheap Eats
+367,Quick Bites
+367,French
+367,Lunch
+367,Dinner
+368,Mid-range
+368,Japanese
+368,Vegetarian Friendly
+368,Dinner
+369,Mid-range
+369,French
+369,Lunch
+369,Dinner
+369,Reservations
+369,Seating
+369,Wheelchair Accessible
+369,Serves Alcohol
+369,Table Service
+370,Cheap Eats
+370,Italian
+370,Pizza
+370,Dinner
+370,Takeout
+370,Wheelchair Accessible
+371,Cheap Eats
+371,Chinese
+371,Japanese
+371,Asian
+371,Lunch
+371,Dinner
+372,Mid-range
+372,Italian
+372,Pizza
+372,Lunch
+372,Dinner
+372,Takeout
+372,Reservations
+372,Seating
+372,Wheelchair Accessible
+372,Serves Alcohol
+373,Cheap Eats
+373,Cafe
+373,International
+373,European
+373,Swedish
+373,Scandinavian
+373,Lunch
+373,Drinks
+374,Cheap Eats
+374,Quick Bites
+374,American
+374,Fast food
+374,Dinner
+374,Takeout
+374,Seating
+374,Delivery
+374,Wheelchair Accessible
+375,Cheap Eats
+375,Turkish
+376,Mid-range
+376,Indian
+376,Grill
+376,Pakistani
+377,Mid-range
+377,French
+377,Lunch
+377,Reservations
+377,Seating
+377,Table Service
+377,Wheelchair Accessible
+377,Serves Alcohol
+378,Mid-range
+378,Italian
+378,Pizza
+378,Vegetarian Friendly
+379,Mid-range
+379,Italian
+379,Pizza
+379,Mediterranean
+379,Sicilian
+379,Southern-Italian
+380,Mid-range
+380,Chinese
+380,Japanese
+380,Sushi
+380,Asian
+380,Lunch
+380,Dinner
+380,Delivery
+380,Takeout
+380,Seating
+381,Mid-range
+381,French
+381,Lunch
+381,Reservations
+381,Seating
+381,Wheelchair Accessible
+381,Serves Alcohol
+381,Table Service
+382,Pizza
+383,Mid-range
+383,Asian
+383,Vietnamese
+383,Vegetarian Friendly
+383,Lunch
+383,Dinner
+384,Mid-range
+384,French
+384,Gastropub
+384,Vegetarian Friendly
+385,European
+385,Portuguese
+385,Reservations
+386,Mid-range
+386,Italian
+386,Vegetarian Friendly
+386,Lunch
+386,Dinner
+387,Mid-range
+387,Asian
+387,Vietnamese
+387,Dinner
+387,Lunch
+387,Takeout
+387,Reservations
+387,Seating
+387,Serves Alcohol
+387,Table Service
+388,Cheap Eats
+388,Fast food
+388,Turkish
+388,Middle Eastern
+388,Lunch
+388,Dinner
+388,Takeout
+389,Mid-range
+389,French
+389,Seafood
+389,European
+389,Healthy
+389,Lunch
+389,Dinner
+389,After-hours
+389,Reservations
+389,Seating
+390,Mid-range
+390,French
+390,Lunch
+390,Dinner
+390,Reservations
+390,Seating
+390,Serves Alcohol
+390,Table Service
+391,Mid-range
+391,Spanish
+391,Lunch
+391,Dinner
+391,Reservations
+391,Seating
+391,Serves Alcohol
+391,Table Service
+392,Mid-range
+392,Japanese
+392,Sushi
+392,Asian
+392,Lunch
+392,Dinner
+393,Cheap Eats
+393,French
+393,Lunch
+393,Dinner
