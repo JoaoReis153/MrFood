@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator, List, Optional
 
 
 def _parse_rating(raw_value: object) -> int:
@@ -35,20 +35,17 @@ def _parse_created_at(row: dict) -> str:
 
 def generate_reviews_stream(
     reviews_csv_path: Path,
-    gplus_user_id_to_user_id: Dict[str, int],
-    gplus_place_id_to_restaurant_id: Dict[str, int],
+    user_id_by_source: Dict[str, str],
+    restaurant_id_by_source: Dict[str, str],
+    available_user_ids: List[str],
+    available_restaurant_ids: List[str],
     nrows: Optional[int] = None,
 ) -> Iterator[dict]:
-    """Yield reviews matching review table schema using mapped integer IDs."""
-    if not gplus_place_id_to_restaurant_id or not gplus_user_id_to_user_id:
+    """Yield reviews matching review table schema using generated IDs."""
+    if not available_restaurant_ids or not available_user_ids:
         return
 
     seen_pairs = set()
-    available_restaurant_ids = list(gplus_place_id_to_restaurant_id.values())
-    available_user_ids = list(gplus_user_id_to_user_id.values())
-
-    if not available_restaurant_ids:
-        return
 
     with reviews_csv_path.open("r", newline="", encoding="utf-8") as fp:
         reader = csv.DictReader(fp)
@@ -57,20 +54,15 @@ def generate_reviews_stream(
             if nrows is not None and source_idx > nrows:
                 break
 
-            gplus_place_id = str(row.get("gPlusPlaceId") or "").strip()
-            gplus_user_id = str(row.get("gPlusUserId") or "").strip()
+            source_place_id = str(row.get("gPlusPlaceId") or "").strip()
+            source_user_id = str(row.get("gPlusUserId") or "").strip()
 
-            user_id = gplus_user_id_to_user_id.get(gplus_user_id) if gplus_user_id else None
-            restaurant_id = gplus_place_id_to_restaurant_id.get(gplus_place_id) if gplus_place_id else None
+            restaurant_id = restaurant_id_by_source.get(source_place_id) if source_place_id else None
+            user_id = user_id_by_source.get(source_user_id) if source_user_id else None
 
             if not restaurant_id:
-                if not available_restaurant_ids:
-                    continue
                 restaurant_id = available_restaurant_ids[(source_idx - 1) % len(available_restaurant_ids)]
-
             if not user_id:
-                if not available_user_ids:
-                    continue
                 user_id = available_user_ids[(source_idx - 1) % len(available_user_ids)]
 
             pair = (restaurant_id, user_id)

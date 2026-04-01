@@ -20,7 +20,10 @@ def slugify_username(name: object, fallback_prefix: str, index: int) -> str:
 
 
 def build_user_id(raw_user_id: object, index: int) -> str:
-    """Build a DB-safe integer-like user_id value."""
+    """Use source gplus_user_id when available; fallback to a counter."""
+    gplus_user_id = clean_text(raw_user_id)
+    if gplus_user_id:
+        return gplus_user_id
     return str(index)
 
 
@@ -49,7 +52,6 @@ def build_auth_users(users_df: pd.DataFrame) -> List[dict]:
         users.append(
             {
                 "user_id": build_user_id(row.get("gPlusUserId"), idx),
-                "gplus_user_id": clean_text(row.get("gPlusUserId")),
                 "username": username,
                 "password": DEFAULT_PASSWORD_HASH,
                 "email": email,
@@ -82,7 +84,7 @@ def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int
         output_file.open("w", newline="", encoding="utf-8") as output_fp,
     ):
         reader = csv.DictReader(input_fp)
-        writer = csv.DictWriter(output_fp, fieldnames=["user_id", "gplus_user_id", "username", "password", "email"])
+        writer = csv.DictWriter(output_fp, fieldnames=["user_id", "username", "password", "email"])
         writer.writeheader()
 
         for idx, row in enumerate(reader, start=1):
@@ -100,7 +102,6 @@ def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int
             writer.writerow(
                 {
                     "user_id": user_id,
-                    "gplus_user_id": clean_text(row.get("gPlusUserId")),
                     "username": username,
                     "password": DEFAULT_PASSWORD_HASH,
                     "email": email,
@@ -127,9 +128,9 @@ def collect_source_user_ids(users_csv_path: Path, nrows: Optional[int] = None) -
     return ids
 
 
-def collect_gplus_user_id_map(users_csv_path: Path, nrows: Optional[int] = None) -> Dict[str, int]:
-    """Collect mapping from source gPlusUserId to generated integer user_id."""
-    user_map: Dict[str, int] = {}
+def collect_gplus_user_id_map(users_csv_path: Path, nrows: Optional[int] = None) -> Dict[str, str]:
+    """Collect mapping from source gPlusUserId to generated user_id."""
+    user_id_map: Dict[str, str] = {}
     with users_csv_path.open("r", newline="", encoding="utf-8") as input_fp:
         reader = csv.DictReader(input_fp)
         for idx, row in enumerate(reader, start=1):
@@ -137,5 +138,5 @@ def collect_gplus_user_id_map(users_csv_path: Path, nrows: Optional[int] = None)
                 break
             gplus_user_id = clean_text(row.get("gPlusUserId"))
             if gplus_user_id:
-                user_map[gplus_user_id] = idx
-    return user_map
+                user_id_map[gplus_user_id] = build_user_id(row.get("gPlusUserId"), idx)
+    return user_id_map

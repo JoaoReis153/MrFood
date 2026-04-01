@@ -57,7 +57,7 @@ def stream_tripadvisor_csv(file_path: Path, nrows: Optional[int] = None) -> Iter
 
 @dataclass
 class RestaurantRecord:
-    id: int
+    id: str
     name: str
     latitude: float
     longitude: float
@@ -230,7 +230,7 @@ def build_restaurants_stream(
     review_categories = build_review_categories_map(reviews_stream)
     review_place_ids = set(review_categories.keys())
 
-    next_restaurant_id = 1
+    next_fallback_restaurant_id = 1
     total_restaurants = 0
 
     # Process places with reviews first (prioritized), then without
@@ -276,8 +276,9 @@ def build_restaurants_stream(
         gplus_place_id = clean_id(place_row.get("gPlusPlaceId"))
         categories = sorted(list(review_categories.get(gplus_place_id, set())))
 
-        restaurant_id = next_restaurant_id
-        next_restaurant_id += 1
+        restaurant_id = gplus_place_id or str(next_fallback_restaurant_id)
+        if not gplus_place_id:
+            next_fallback_restaurant_id += 1
 
         yield RestaurantRecord(
             id=restaurant_id,
@@ -344,8 +345,8 @@ def build_restaurants_stream(
         claimed = clean_text(tripadvisor_row.get("claimed")).lower()
         sponsor_tier = 1 if claimed == "claimed" else 0
 
-        restaurant_id = next_restaurant_id
-        next_restaurant_id += 1
+        restaurant_id = str(next_fallback_restaurant_id)
+        next_fallback_restaurant_id += 1
 
         yield RestaurantRecord(
             id=restaurant_id,

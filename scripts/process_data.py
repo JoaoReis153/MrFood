@@ -4,7 +4,7 @@ from typing import Dict, Iterable, List, Set
 
 import pandas as pd
 
-from csv_processing.process_auth import collect_gplus_user_id_map, stream_auth_csv
+from csv_processing.process_auth import collect_gplus_user_id_map, collect_source_user_ids, stream_auth_csv
 from csv_processing.process_review import generate_reviews_stream
 from csv_processing.process_restaurant import build_restaurant_data_from_csv
 from csv_processing.service_seed_common import OUTPUT_DIR, print_progress_end, print_progress_start, print_progress_step
@@ -277,8 +277,10 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         return
 
     # For restaurant and review, use streaming CSV directly to avoid loading DataFrames.
-    gplus_user_id_to_user_id: Dict[str, int] = {}
-    gplus_place_id_to_restaurant_id: Dict[str, int] = {}
+    user_id_by_source: Dict[str, str] = {}
+    restaurant_id_by_source: Dict[str, str] = {}
+    available_user_ids: List[str] = []
+    available_restaurant_ids: List[str] = []
     restaurant_count = 0
 
     if "auth" in services:
@@ -290,8 +292,12 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         )
 
     if "review" in services:
-        print("\n✓ Collecting user ID mapping for reviews")
-        gplus_user_id_to_user_id = collect_gplus_user_id_map(
+        print("\n✓ Collecting user IDs for reviews")
+        user_id_by_source = collect_gplus_user_id_map(
+            DATA_DIR / DATASET_FILES["users"],
+            nrows=rows,
+        )
+        available_user_ids = collect_source_user_ids(
             DATA_DIR / DATASET_FILES["users"],
             nrows=rows,
         )
@@ -306,18 +312,21 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
             nrows=rows,
         )
         if "restaurant" in services:
-            restaurant_count, _, _, _, gplus_place_id_to_restaurant_id = write_restaurant_csvs(
+            restaurant_count, _, _, restaurant_ids, source_to_restaurant_ids = write_restaurant_csvs(
                 restaurants_stream,
                 OUTPUT_DIR / "restaurant" / "restaurants.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_working_hours.csv",
                 OUTPUT_DIR / "restaurant" / "restaurant_categories.csv",
             )
+            available_restaurant_ids = restaurant_ids
+            restaurant_id_by_source = source_to_restaurant_ids
         elif "review" in services:
-            # Only review requested: collect restaurant IDs from stream for review generation.
+            # Only review requested: collect restaurant IDs and source-to-generated mapping.
             for restaurant in restaurants_stream:
+                available_restaurant_ids.append(str(restaurant.id))
                 if restaurant.source_place_id:
-                    gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
-            restaurant_count = len(gplus_place_id_to_restaurant_id)
+                    restaurant_id_by_source[restaurant.source_place_id] = str(restaurant.id)
+            restaurant_count = len(available_restaurant_ids)
 
     if "review" in services:
         print("\n✓ Processing reviews")
@@ -331,16 +340,19 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
                 nrows=rows,
             )
             for restaurant in restaurants_stream:
+                available_restaurant_ids.append(str(restaurant.id))
                 if restaurant.source_place_id:
-                    gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
-            restaurant_count = len(gplus_place_id_to_restaurant_id)
+                    restaurant_id_by_source[restaurant.source_place_id] = str(restaurant.id)
+            restaurant_count = len(available_restaurant_ids)
 
         source_review_rows = count_csv_rows(DATASET_FILES["reviews"], nrows=rows)
         total_reviews = min(source_review_rows, 1000000)  # Use source row count as upper bound
         reviews_stream = generate_reviews_stream(
             reviews_csv_path=DATA_DIR / DATASET_FILES["reviews"],
-            gplus_user_id_to_user_id=gplus_user_id_to_user_id,
-            gplus_place_id_to_restaurant_id=gplus_place_id_to_restaurant_id,
+            user_id_by_source=user_id_by_source,
+            restaurant_id_by_source=restaurant_id_by_source,
+            available_user_ids=available_user_ids,
+            available_restaurant_ids=available_restaurant_ids,
             nrows=rows,
         )
         write_review_csv_stream(reviews_stream, OUTPUT_DIR / "review" / "review.csv", total=total_reviews)

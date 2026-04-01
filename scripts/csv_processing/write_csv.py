@@ -13,7 +13,7 @@ def write_auth_csv(users: List[dict], output_file: Path) -> int:
     last_pct = 0
 
     with output_file.open("w", newline="", encoding="utf-8") as fp:
-        writer = csv.DictWriter(fp, fieldnames=["user_id", "gplus_user_id", "username", "password", "email"])
+        writer = csv.DictWriter(fp, fieldnames=["user_id", "username", "password", "email"])
         writer.writeheader()
 
         total = len(users)
@@ -129,7 +129,6 @@ def write_restaurant_csvs(
             restaurants_fp,
             fieldnames=[
                 "id",
-                "gplus_place_id",
                 "name",
                 "latitude",
                 "longitude",
@@ -154,7 +153,7 @@ def write_restaurant_csvs(
         for restaurants_count, restaurant in enumerate(restaurants, start=1):
             restaurant_ids.append(str(restaurant.id))
             if restaurant.source_place_id:
-                gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
+                gplus_place_id_to_restaurant_id[restaurant.source_place_id] = str(restaurant.id)
             
             # Extract opening and closing times from working_hours tuple or use defaults
             opening_time = "09:00:00"
@@ -165,7 +164,6 @@ def write_restaurant_csvs(
             restaurants_writer.writerow(
                 {
                     "id": restaurant.id,
-                    "gplus_place_id": restaurant.source_place_id or "",
                     "name": restaurant.name,
                     "latitude": restaurant.latitude,
                     "longitude": restaurant.longitude,

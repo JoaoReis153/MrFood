@@ -81,20 +81,14 @@ generate-csv-review:
 
 ## Load auth data into database
 load-auth:
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "mrfood_auth" -c "ALTER TABLE app_user ADD COLUMN IF NOT EXISTS gplus_user_id TEXT;"
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "mrfood_auth" -c "CREATE UNIQUE INDEX IF NOT EXISTS idx_app_user_gplus_user_id_unique ON app_user (gplus_user_id) WHERE gplus_user_id IS NOT NULL;"
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "mrfood_auth" -c "TRUNCATE TABLE app_user RESTART IDENTITY CASCADE;"
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "mrfood_auth" -c "\\copy app_user(user_id, gplus_user_id, username, password, email) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/auth/app_user.csv
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "mrfood_auth" -c "SELECT setval(pg_get_serial_sequence('app_user', 'user_id'), COALESCE((SELECT MAX(user_id) FROM app_user), 1), (SELECT COUNT(*) > 0 FROM app_user));"
+	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "$(AUTH_POSTGRES_DB)" -c "TRUNCATE TABLE app_user CASCADE;"
+	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "$(AUTH_POSTGRES_DB)" -c "\\copy app_user(user_id, username, password, email) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/auth/app_user.csv
 
 ## Load restaurant data into database
 load-restaurant:
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS gplus_place_id TEXT;"
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "CREATE UNIQUE INDEX IF NOT EXISTS idx_restaurants_gplus_place_id_unique ON restaurants (gplus_place_id) WHERE gplus_place_id IS NOT NULL;"
 	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "TRUNCATE TABLE restaurant_categories, restaurants RESTART IDENTITY CASCADE;"
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurants(id, gplus_place_id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurants.csv
+	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurants(id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurants.csv
 	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurant_categories(restaurant_id, category) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurant_categories.csv
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('restaurants', 'id'), COALESCE((SELECT MAX(id) FROM restaurants), 1), (SELECT COUNT(*) > 0 FROM restaurants));"
 
 ## Load all seed data into databases
 

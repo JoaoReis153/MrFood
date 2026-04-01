@@ -3,8 +3,8 @@ DROP TABLE IF EXISTS restaurant_stats;
 
 CREATE TABLE IF NOT EXISTS review(
     review_id     SERIAL PRIMARY KEY,
-    restaurant_id INT NOT NULL,
-    user_id       INT NOT NULL,
+    restaurant_id NUMERIC(22, 0) NOT NULL,
+    user_id       NUMERIC(22, 0) NOT NULL,
     comment       VARCHAR(100) NOT NULL,
     rating        INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
     created_at    TIMESTAMP DEFAULT NOW() NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS review(
 );
 
 CREATE TABLE IF NOT EXISTS restaurant_stats(
-    restaurant_id  INT PRIMARY KEY,
+    restaurant_id  NUMERIC(22, 0) PRIMARY KEY,
     average_rating DECIMAL(3,2) NOT NULL,
     review_count INT NOT NULL
 );
@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS idx_review_restaurant_rating ON review(restaurant_id,
 
 CREATE OR REPLACE FUNCTION update_restaurant_stats() RETURNS TRIGGER AS $$
 DECLARE
-    target_id INT;
+    target_id NUMERIC(22, 0);
     v_avg DECIMAL(3,2);
     v_count INT;
 BEGIN

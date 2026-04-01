@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS restaurants (
-    id SERIAL PRIMARY KEY,
-    gplus_place_id TEXT UNIQUE,
+    id NUMERIC(22, 0) PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
@@ -16,7 +15,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
 
 CREATE TABLE IF NOT EXISTS restaurant_categories (
     id SERIAL PRIMARY KEY,
-    restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+    restaurant_id NUMERIC(22, 0) NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
     category TEXT NOT NULL
 );
 
