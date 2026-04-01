@@ -1,0 +1,10 @@
+info:
+  name: Untitled
+  type: grpc
+  seq: 1
+
+grpc:
+  url: ""
+  method: ""
+  message: "{}"
+  auth: inherit

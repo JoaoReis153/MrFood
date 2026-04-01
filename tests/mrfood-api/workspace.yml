@@ -14,6 +14,8 @@ collections:
     path: "collections/reviews"
   - name: "users"
     path: "collections/users"
+  - name: "sponsor"
+    path: "collections/sponsor"
 
 specs:
 
