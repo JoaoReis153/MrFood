@@ -4,13 +4,12 @@
 
 To run the services locally, Docker and Docker Compose are required.
 
-### 🐳 Docker
+Recommended first-time setup order:
 
-Install Docker on your machine following the instructions [here](https://docs.docker.com/get-docker/).
-
-### 🐳 Docker Compose
-
-Install Docker Compose on your machine following the instructions [here](https://docs.docker.com/compose/install/).
+1. Create env file: make create_env
+2. Set JWT secrets in services/.env
+3. Generate CSV data: make generate-csv
+4. Start and load services: make setup
 
 ### 📂 Data Preparation
 
@@ -67,6 +66,13 @@ Start everything with one command - starts all services and loads all data:
 make setup
 ```
 
+Before running make setup for the first time, make sure you already ran:
+
+```bash
+make create_env
+make generate-csv
+```
+
 This runs:
 
 1. `make run` - Starts all services and databases
@@ -85,6 +91,14 @@ make run
 **Step 2: Load data**
 
 ```bash
+make load-all
+```
+
+If you changed database schemas and are re-running setup, reset volumes first so init SQL is reapplied:
+
+```bash
+make clean-volumes
+make run
 make load-all
 ```
 
