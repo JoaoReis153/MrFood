@@ -16,11 +16,11 @@ import (
 )
 
 type mockService struct {
-	createFn func(ctx context.Context, booking *models.CreateBooking) (int32, error)
+	createFn func(ctx context.Context, booking *models.Booking) (int32, error)
 	deleteFn func(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
-func (m *mockService) CreateBooking(ctx context.Context, b *models.CreateBooking) (int32, error) {
+func (m *mockService) CreateBooking(ctx context.Context, b *models.Booking) (int32, error) {
 	return m.createFn(ctx, b)
 }
 
@@ -88,7 +88,7 @@ func TestCreateBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				createFn: func(ctx context.Context, b *models.CreateBooking) (int32, error) {
+				createFn: func(ctx context.Context, b *models.Booking) (int32, error) {
 					return 0, service.ErrInvalidBooking
 				},
 			},
@@ -105,7 +105,7 @@ func TestCreateBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				createFn: func(ctx context.Context, b *models.CreateBooking) (int32, error) {
+				createFn: func(ctx context.Context, b *models.Booking) (int32, error) {
 					return 0, service.ErrBookingAlreadyExists
 				},
 			},
@@ -122,7 +122,7 @@ func TestCreateBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				createFn: func(ctx context.Context, b *models.CreateBooking) (int32, error) {
+				createFn: func(ctx context.Context, b *models.Booking) (int32, error) {
 					if b.UserID != 1 {
 						t.Fatalf("expected userID 1, got %d", b.UserID)
 					}

@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const MAX_SLOTS int32 = 15
+
 var (
 	ErrInvalidBooking       = errors.New("invalid booking arguments")
 	ErrBookingAlreadyExists = errors.New("booking already exists")
@@ -32,7 +34,7 @@ func New(db DB) *Repository {
 	return &Repository{DB: db}
 }
 
-func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBooking) (int32, error) {
+func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
 	tx, err := r.DB.Begin(ctx)
 	if err != nil {
 		return 0, err
@@ -43,22 +45,23 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBo
 
 	// check if booking already exists
 	query := `
-		SELECT EXISTS(
-			SELECT 1
-			FROM booking
-			WHERE restaurant_id = $1
-			AND time_start = $2
-			AND user_id = $3
-		);
+		SELECT 1
+		FROM booking
+		WHERE restaurant_id = $1
+		AND time_start = $2
+		AND user_id = $3
+		LIMIT 1;
 	`
 
-	var exists bool
+	var exists int32
 
 	err = tx.QueryRow(ctx, query, booking.RestaurantID, booking.TimeStart, booking.UserID).Scan(&exists)
+
 	if err != nil && err != pgx.ErrNoRows {
 		return 0, err
 	}
-	if exists {
+
+	if exists > 0 {
 		return 0, ErrBookingAlreadyExists
 	}
 
@@ -70,13 +73,14 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBo
 		AND time_start = $2
 		FOR UPDATE
 	`
+
 	var max_slots, current_slots int32
 
 	err = tx.QueryRow(ctx, query, booking.RestaurantID, booking.TimeStart).Scan(&max_slots, &current_slots)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			max_slots = booking.MaxSlots
+			max_slots = MAX_SLOTS
 			current_slots = 0
 		} else {
 			return 0, err
@@ -84,14 +88,6 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBo
 	} else if booking.PeopleCount > max_slots-current_slots {
 		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "available_slots", max_slots-current_slots)
 		return 0, ErrInvalidBooking
-	}
-
-	query = fmt.Sprintf("SET LOCAL app.max_slots = %d", booking.MaxSlots)
-
-	_, err = tx.Exec(ctx, query)
-	if err != nil {
-		slog.Error("failed setting local var", "error", err)
-		return 0, err
 	}
 
 	// create booking
@@ -103,10 +99,11 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.CreateBo
 	var booking_id int32
 
 	err = tx.QueryRow(ctx, query, booking.UserID, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).Scan(&booking_id)
+
 	if err != nil {
-		slog.Error("failed inserting booking")
 		return 0, err
 	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}

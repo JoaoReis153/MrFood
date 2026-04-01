@@ -25,7 +25,7 @@ import (
 )
 
 type bookingService interface {
-	CreateBooking(ctx context.Context, booking *models.CreateBooking) (int32, error)
+	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
 	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
@@ -91,7 +91,7 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 
 	slog.Info("received booking CREATION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
-	booking := &models.CreateBooking{
+	booking := &models.Booking{
 		UserID:       user_id,
 		RestaurantID: req.RestaurantId,
 		TimeStart:    req.TimeStart.AsTime(),
