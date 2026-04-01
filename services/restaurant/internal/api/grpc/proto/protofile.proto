@@ -23,6 +23,10 @@ service RestaurantToReviewService {
   rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
 }
 
+service RestaurantToSponsorService {
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (GetRestaurantSponsorshipResponse);
+}
+
 service ReviewToRestaurantService {
   rpc GetRestaurantId(GetRestaurantRequest) returns (GetRestaurantResponse);
 }
@@ -129,4 +133,14 @@ message GetRestaurantRequest {
 
 message GetRestaurantResponse {
   int32 restaurant_id = 1;
+}
+
+message GetRestaurantSponsorshipRequest {
+  int32 id = 1;
+}
+
+message GetRestaurantSponsorshipResponse {
+  int32 id = 1;
+  repeated string categories = 2;
+  int32 owner_id = 3;
 }
