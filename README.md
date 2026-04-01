@@ -1,6 +1,6 @@
 # MrFood
 
-## 📦 Setup
+## Setup
 To run the services locally, Docker and Docker Compose are required.
 
 Create your environment file:
@@ -11,16 +11,20 @@ cp services/env.tmpl services/.env
 
 Update the configuration inside /services/.env as needed.
 
-## 🔐 JWT Secret
+### JWT Secret
 
 Generate a JWT secret using:
 
 ```bash
 openssl rand -base64 32
 ```
-Add it to your `/services/.env.`
+Run the command 2 times, and add each output to your `/services/.env.`, specifically "AUTH_JWT_ACCESS_TOKEN_SECRET" and "AUTH_JWT_REFRESH_TOKEN_SECRET".
 
-## 🚀 Running the Services
+### Dependencies
+
+In order to run the code, `protobuf-compiler` and `protobuf-devel` must be installed on the machine.
+
+## Running the Services
 
 You can build and run the services using Make:
 
@@ -37,7 +41,7 @@ To stop services:
 make stop
 ```
 
-## 🧹 Cleanup
+## Cleanup
 
 Stop and remove containers:
 ```bash
@@ -47,7 +51,7 @@ Remove containers and images (project only):
 ```bash
 make clean
 ```
-Remove everything including volumes (⚠️ deletes data):
+Remove everything including volumes (deletes data):
 ```bash
 make clean-volumes
 ```
