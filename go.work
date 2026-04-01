@@ -4,5 +4,5 @@ use (
 	./services/auth
 	./services/booking
 	./services/restaurant
-	./services/review_service
+	./services/review
 )
