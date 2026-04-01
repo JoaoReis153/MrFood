@@ -5,7 +5,15 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from .service_seed_common import DEFAULT_PASSWORD_HASH, clean_text, print_progress_end, print_progress_start, print_progress_step
+from .service_seed_common import (
+    DEFAULT_PASSWORD_HASH,
+    clean_id,
+    clean_text,
+    hash_to_bigint,
+    print_progress_end,
+    print_progress_start,
+    print_progress_step,
+)
 
 
 def slugify_username(name: object, fallback_prefix: str, index: int) -> str:
@@ -20,49 +28,11 @@ def slugify_username(name: object, fallback_prefix: str, index: int) -> str:
 
 
 def build_user_id(raw_user_id: object, index: int) -> str:
-    """Use source gplus_user_id when available; fallback to a counter."""
-    gplus_user_id = clean_text(raw_user_id)
+    """Hash source gplus_user_id into BIGINT range; fallback to a counter."""
+    gplus_user_id = clean_id(raw_user_id)
     if gplus_user_id:
-        return gplus_user_id
+        return hash_to_bigint(gplus_user_id)
     return str(index)
-
-
-def build_auth_users(users_df: pd.DataFrame) -> List[dict]:
-    """Build auth user records from users dataframe."""
-    users = []
-    used_usernames: set[str] = set()
-    used_emails: set[str] = set()
-
-    for idx, (_, row) in enumerate(users_df.iterrows(), start=1):
-        username_base = slugify_username(row.get("userName"), "user", idx)
-        username = username_base
-        suffix = 1
-
-        while username.lower() in used_usernames:
-            candidate = f"{username_base}_{suffix}"
-            username = candidate[:50]
-            suffix += 1
-
-        email = f"{username.lower()}@mrfood.local"
-        while email.lower() in used_emails:
-            suffix += 1
-            email = f"{username.lower()}{suffix}@mrfood.local"
-        email = email[:100]
-
-        users.append(
-            {
-                "user_id": build_user_id(row.get("gPlusUserId"), idx),
-                "username": username,
-                "password": DEFAULT_PASSWORD_HASH,
-                "email": email,
-            }
-        )
-
-        used_usernames.add(username.lower())
-        used_emails.add(email.lower())
-
-    return users
-
 
 def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int] = None) -> int:
     """Generate auth CSV directly from source users CSV using constant memory."""
@@ -136,7 +106,7 @@ def collect_gplus_user_id_map(users_csv_path: Path, nrows: Optional[int] = None)
         for idx, row in enumerate(reader, start=1):
             if nrows is not None and idx > nrows:
                 break
-            gplus_user_id = clean_text(row.get("gPlusUserId"))
+            gplus_user_id = clean_id(row.get("gPlusUserId"))
             if gplus_user_id:
                 user_id_map[gplus_user_id] = build_user_id(row.get("gPlusUserId"), idx)
     return user_id_map

@@ -3,6 +3,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional
 
+from .service_seed_common import clean_id
+
 
 def _parse_rating(raw_value: object) -> int:
     """Parse source rating into a SQL-safe 1..5 integer."""
@@ -54,8 +56,8 @@ def generate_reviews_stream(
             if nrows is not None and source_idx > nrows:
                 break
 
-            source_place_id = str(row.get("gPlusPlaceId") or "").strip()
-            source_user_id = str(row.get("gPlusUserId") or "").strip()
+            source_place_id = clean_id(row.get("gPlusPlaceId"))
+            source_user_id = clean_id(row.get("gPlusUserId"))
 
             restaurant_id = restaurant_id_by_source.get(source_place_id) if source_place_id else None
             user_id = user_id_by_source.get(source_user_id) if source_user_id else None

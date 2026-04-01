@@ -12,6 +12,7 @@ import pandas as pd
 from .service_seed_common import (
     clean_id,
     clean_text,
+    hash_to_bigint,
     normalize_name,
     print_progress_end,
     print_progress_start,
@@ -115,6 +116,17 @@ def parse_coordinate(value: object) -> Optional[float]:
         return None
 
 
+def build_restaurant_id(
+    raw_place_id: object,
+    next_fallback_restaurant_id: int,
+) -> tuple[str, Optional[str], int]:
+    """Hash gPlusPlaceId into BIGINT range, fallback to a counter otherwise."""
+    gplus_place_id = clean_id(raw_place_id)
+    if gplus_place_id:
+        return hash_to_bigint(gplus_place_id), gplus_place_id, next_fallback_restaurant_id
+    return str(next_fallback_restaurant_id), None, next_fallback_restaurant_id + 1
+
+
 def extract_categories(raw_value: object) -> List[str]:
     """Extract unique categories from a delimited string."""
     text = clean_text(raw_value)
@@ -139,34 +151,23 @@ def extract_categories(raw_value: object) -> List[str]:
 def build_review_categories_map(reviews_stream: Iterable[dict]) -> Dict[str, set[str]]:
     """Index review categories by place ID from streaming review records."""
     categories_map: Dict[str, set[str]] = {}
-    
-    print_progress_start("Indexing review categories")
-    last_pct = 0
-    index = 0
-    
-    # Convert to list temporarily to get count for progress
-    reviews_list = list(reviews_stream)
-    total_reviews = len(reviews_list)
 
-    for index, row in enumerate(reviews_list, start=1):
+    print_progress_start("Indexing review categories")
+
+    for row in reviews_stream:
         place_id = clean_id(row.get("gPlusPlaceId"))
         if not place_id:
-            last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
             continue
 
         categories = extract_categories(row.get("categories"))
         if not categories:
-            last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
             continue
 
         bucket = categories_map.setdefault(place_id, set())
         for category in categories:
             bucket.add(category)
 
-        last_pct = print_progress_step("Indexing review categories", index, total_reviews, last_pct)
-
-    if last_pct < 100:
-        print_progress_end("Indexing review categories")
+    print_progress_end("Indexing review categories")
 
     return categories_map
 
@@ -243,6 +244,7 @@ def build_restaurants_stream(
 
     for places_count, place_row in enumerate(places_stream, start=1):
         row_place_id = clean_id(place_row.get("gPlusPlaceId"))
+
         if row_place_id and row_place_id in review_place_ids:
             prioritized_places.append(place_row)
         else:
@@ -254,6 +256,8 @@ def build_restaurants_stream(
 
     # Combine prioritized and secondary
     all_places = prioritized_places + secondary_places
+    tripadvisor_rows = list(tripadvisor_stream)
+
     place_limit = len(all_places) if max_restaurants is None else min(max_restaurants, len(all_places))
     
     print_progress_start("Building restaurants from places")
@@ -273,12 +277,11 @@ def build_restaurants_stream(
         if latitude is None or longitude is None:
             continue
 
-        gplus_place_id = clean_id(place_row.get("gPlusPlaceId"))
-        categories = sorted(list(review_categories.get(gplus_place_id, set())))
-
-        restaurant_id = gplus_place_id or str(next_fallback_restaurant_id)
-        if not gplus_place_id:
-            next_fallback_restaurant_id += 1
+        restaurant_id, source_place_id, next_fallback_restaurant_id = build_restaurant_id(
+            place_row.get("gPlusPlaceId"),
+            next_fallback_restaurant_id,
+        )
+        categories = sorted(list(review_categories.get(source_place_id or "", set())))
 
         yield RestaurantRecord(
             id=restaurant_id,
@@ -295,7 +298,7 @@ def build_restaurants_stream(
             owner_id=1,
             owner_name="admin",
             sponsor_tier=0,
-            source_place_id=gplus_place_id or None,
+            source_place_id=source_place_id,
             working_hours=build_place_working_hours_from_dict(place_row),
             categories=categories,
         )
@@ -307,15 +310,15 @@ def build_restaurants_stream(
         print_progress_end("Building restaurants from places")
 
     # Process TripAdvisor data
-    tripadvisor_limit = 1000000  # Large limit, will stop at max_restaurants
+    tripadvisor_limit = len(tripadvisor_rows)
     if max_restaurants is not None:
-        tripadvisor_limit = max(0, max_restaurants - total_restaurants)
+        tripadvisor_limit = min(tripadvisor_limit, max(0, max_restaurants - total_restaurants))
 
     print_progress_start("Building restaurants from TripAdvisor")
     last_pct = 0
     added_tripadvisor = 0
 
-    for tripadvisor_index, tripadvisor_row in enumerate(tripadvisor_stream, start=1):
+    for tripadvisor_index, tripadvisor_row in enumerate(tripadvisor_rows, start=1):
         if max_restaurants is not None and total_restaurants >= max_restaurants:
             break
 
@@ -345,8 +348,10 @@ def build_restaurants_stream(
         claimed = clean_text(tripadvisor_row.get("claimed")).lower()
         sponsor_tier = 1 if claimed == "claimed" else 0
 
-        restaurant_id = str(next_fallback_restaurant_id)
-        next_fallback_restaurant_id += 1
+        restaurant_id, source_place_id, next_fallback_restaurant_id = build_restaurant_id(
+            None,
+            next_fallback_restaurant_id,
+        )
 
         yield RestaurantRecord(
             id=restaurant_id,
@@ -359,7 +364,7 @@ def build_restaurants_stream(
             owner_id=1,
             owner_name="admin",
             sponsor_tier=sponsor_tier,
-            source_place_id=None,
+            source_place_id=source_place_id,
             working_hours=[],
             categories=unique_categories[:10],
         )

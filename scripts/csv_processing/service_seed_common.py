@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -75,6 +76,20 @@ def clean_id(value: object) -> str:
         return text[:-2]
 
     return text
+
+
+def hash_to_bigint(value: object) -> str:
+    """Hash a source identifier into a positive signed BIGINT range."""
+    text = clean_id(value)
+    if not text:
+        return ""
+
+    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    # Keep value in PostgreSQL BIGINT positive range: 1..2^63-1
+    number = int.from_bytes(digest[:8], "big") & ((1 << 63) - 1)
+    if number == 0:
+        number = 1
+    return str(number)
 
 
 def normalize_name(name: str) -> str:
