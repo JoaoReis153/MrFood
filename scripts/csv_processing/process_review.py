@@ -39,14 +39,14 @@ def generate_reviews_stream(
     gplus_place_id_to_restaurant_id: Dict[str, int],
     nrows: Optional[int] = None,
 ) -> Iterator[dict]:
-    """Yield reviews matching review table schema using gPlus ID mappings to DB-safe INT IDs."""
+    """Yield reviews matching review table schema using mapped integer IDs."""
     if not gplus_place_id_to_restaurant_id or not gplus_user_id_to_user_id:
         return
 
     seen_pairs = set()
     available_restaurant_ids = list(gplus_place_id_to_restaurant_id.values())
     available_user_ids = list(gplus_user_id_to_user_id.values())
-    
+
     if not available_restaurant_ids:
         return
 
@@ -61,11 +61,8 @@ def generate_reviews_stream(
             gplus_user_id = str(row.get("gPlusUserId") or "").strip()
 
             user_id = gplus_user_id_to_user_id.get(gplus_user_id) if gplus_user_id else None
-
-            # Try to find matching restaurant
             restaurant_id = gplus_place_id_to_restaurant_id.get(gplus_place_id) if gplus_place_id else None
 
-            # Fallback: distribute unmatched reviews across available restaurants
             if not restaurant_id:
                 if not available_restaurant_ids:
                     continue

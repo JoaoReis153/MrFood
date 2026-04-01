@@ -1,5 +1,6 @@
 CREATE TABLE app_user(
      user_id serial PRIMARY KEY,
+     gplus_user_id TEXT UNIQUE,
      username VARCHAR(50) NOT NULL UNIQUE,
      password VARCHAR(60) NOT NULL,
      email VARCHAR(100) NOT NULL UNIQUE

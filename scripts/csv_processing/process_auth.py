@@ -20,10 +20,7 @@ def slugify_username(name: object, fallback_prefix: str, index: int) -> str:
 
 
 def build_user_id(raw_user_id: object, index: int) -> str:
-    """Build a DB-safe user_id value.
-
-    The auth schema uses INTEGER, so we generate sequential IDs.
-    """
+    """Build a DB-safe integer-like user_id value."""
     return str(index)
 
 
@@ -52,6 +49,7 @@ def build_auth_users(users_df: pd.DataFrame) -> List[dict]:
         users.append(
             {
                 "user_id": build_user_id(row.get("gPlusUserId"), idx),
+                "gplus_user_id": clean_text(row.get("gPlusUserId")),
                 "username": username,
                 "password": DEFAULT_PASSWORD_HASH,
                 "email": email,
@@ -84,7 +82,7 @@ def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int
         output_file.open("w", newline="", encoding="utf-8") as output_fp,
     ):
         reader = csv.DictReader(input_fp)
-        writer = csv.DictWriter(output_fp, fieldnames=["user_id", "username", "password", "email"])
+        writer = csv.DictWriter(output_fp, fieldnames=["user_id", "gplus_user_id", "username", "password", "email"])
         writer.writeheader()
 
         for idx, row in enumerate(reader, start=1):
@@ -102,6 +100,7 @@ def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int
             writer.writerow(
                 {
                     "user_id": user_id,
+                    "gplus_user_id": clean_text(row.get("gPlusUserId")),
                     "username": username,
                     "password": DEFAULT_PASSWORD_HASH,
                     "email": email,

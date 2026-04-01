@@ -13,7 +13,7 @@ def write_auth_csv(users: List[dict], output_file: Path) -> int:
     last_pct = 0
 
     with output_file.open("w", newline="", encoding="utf-8") as fp:
-        writer = csv.DictWriter(fp, fieldnames=["user_id", "username", "password", "email"])
+        writer = csv.DictWriter(fp, fieldnames=["user_id", "gplus_user_id", "username", "password", "email"])
         writer.writeheader()
 
         total = len(users)
@@ -117,24 +117,25 @@ def write_restaurant_csvs(
     print_progress_start("Writing restaurant CSV files")
 
     restaurants_count = 0
-    working_hours_count = 0
     categories_count = 0
     restaurant_ids: List[str] = []
     gplus_place_id_to_restaurant_id: dict = {}
 
     with (
         restaurants_file.open("w", newline="", encoding="utf-8") as restaurants_fp,
-        working_hours_file.open("w", newline="", encoding="utf-8") as working_hours_fp,
         categories_file.open("w", newline="", encoding="utf-8") as categories_fp,
     ):
         restaurants_writer = csv.DictWriter(
             restaurants_fp,
             fieldnames=[
                 "id",
+                "gplus_place_id",
                 "name",
                 "latitude",
                 "longitude",
                 "address",
+                "opening_time",
+                "closing_time",
                 "media_url",
                 "max_slots",
                 "owner_id",
@@ -142,30 +143,35 @@ def write_restaurant_csvs(
                 "sponsor_tier",
             ],
         )
-        working_hours_writer = csv.DictWriter(
-            working_hours_fp,
-            fieldnames=["restaurant_id", "time_start", "time_end"],
-        )
         categories_writer = csv.DictWriter(
             categories_fp,
             fieldnames=["restaurant_id", "category"],
         )
 
         restaurants_writer.writeheader()
-        working_hours_writer.writeheader()
         categories_writer.writeheader()
 
         for restaurants_count, restaurant in enumerate(restaurants, start=1):
             restaurant_ids.append(str(restaurant.id))
             if restaurant.source_place_id:
                 gplus_place_id_to_restaurant_id[restaurant.source_place_id] = int(restaurant.id)
+            
+            # Extract opening and closing times from working_hours tuple or use defaults
+            opening_time = "09:00:00"
+            closing_time = "17:00:00"
+            if restaurant.working_hours:
+                opening_time, closing_time = restaurant.working_hours
+            
             restaurants_writer.writerow(
                 {
                     "id": restaurant.id,
+                    "gplus_place_id": restaurant.source_place_id or "",
                     "name": restaurant.name,
                     "latitude": restaurant.latitude,
                     "longitude": restaurant.longitude,
                     "address": restaurant.address,
+                    "opening_time": opening_time,
+                    "closing_time": closing_time,
                     "media_url": restaurant.media_url,
                     "max_slots": restaurant.max_slots,
                     "owner_id": restaurant.owner_id,
@@ -174,15 +180,10 @@ def write_restaurant_csvs(
                 }
             )
 
-            if restaurant.working_hours:
-                time_start, time_end = restaurant.working_hours
-                working_hours_writer.writerow({"restaurant_id": restaurant.id, "time_start": time_start, "time_end": time_end})
-                working_hours_count += 1
-
             for value in restaurant.categories:
                 categories_writer.writerow({"restaurant_id": restaurant.id, "category": value})
                 categories_count += 1
 
     print_progress_end("Writing restaurant CSV files")
 
-    return restaurants_count, working_hours_count, categories_count, restaurant_ids, gplus_place_id_to_restaurant_id
+    return restaurants_count, 0, categories_count, restaurant_ids, gplus_place_id_to_restaurant_id
