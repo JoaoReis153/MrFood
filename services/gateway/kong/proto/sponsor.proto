@@ -15,7 +15,7 @@ service SponsorService {
 
   rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse) {
     option (google.api.http) = {
-      get: "/sponsor/sponsorship/{id}"
+      get: "/sponsor/{id}"
       body: "*"
     };
   };
