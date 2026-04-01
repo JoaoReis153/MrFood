@@ -129,10 +129,6 @@ Generate JWT secrets using:
 openssl rand -base64 32
 ```
 
-Set these values in `services/.env`:
-
-- `AUTH_JWT_ACCESS_TOKEN_SECRET`
-- `AUTH_JWT_REFRESH_TOKEN_SECRET`
 - Run the command 2 times and add each output to your `/services/.env.`, specifically `AUTH_JWT_ACCESS_TOKEN_SECRET` and `AUTH_JWT_REFRESH_TOKEN_SECRET`;
 
 - Update the `secret` field in `services/gateway/kong/kong.yml` with the same value that was given to `AUTH_JWT_ACCESS_TOKEN_SECRET`.
