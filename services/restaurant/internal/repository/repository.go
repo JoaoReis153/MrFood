@@ -162,9 +162,15 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	}(tx, ctx)
 
 	query := `
-		INSERT INTO restaurants (name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier)
-		VALUES ($1, $2, $3, $4, $5::time, $6::time, $7, $8, $9, $10, $11)
-		RETURNING id
+		INSERT INTO restaurants (id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier)
+		VALUES (
+			COALESCE(
+				(SELECT MAX(id) + 1 FROM restaurants WHERE id <= 2147483647),
+				1
+			),
+			$1, $2, $3, $4, $5::time, $6::time, $7, $8, $9, $10, $11
+		)
+		RETURNING id::int4
 	`
 
 	var newID int32
