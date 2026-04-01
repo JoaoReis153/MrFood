@@ -13,39 +13,6 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-type fakeRows struct {
-	values  []time.Time
-	nextIdx int
-	scanErr error
-	iterErr error
-	closed  bool
-}
-
-func (r *fakeRows) Next() bool {
-	return r.nextIdx < len(r.values)
-}
-
-func (r *fakeRows) Scan(dest ...any) error {
-	if r.scanErr != nil {
-		return r.scanErr
-	}
-	ptr, ok := dest[0].(*time.Time)
-	if !ok {
-		return errors.New("invalid destination type")
-	}
-	*ptr = r.values[r.nextIdx]
-	r.nextIdx++
-	return nil
-}
-
-func (r *fakeRows) Err() error {
-	return r.iterErr
-}
-
-func (r *fakeRows) Close() {
-	r.closed = true
-}
-
 func newMockRepo(t *testing.T) (*Repository, pgxmock.PgxPoolIface) {
 	t.Helper()
 
@@ -58,16 +25,10 @@ func newMockRepo(t *testing.T) (*Repository, pgxmock.PgxPoolIface) {
 }
 
 func expectGetRestaurantByIDQueries(mock pgxmock.PgxPoolIface, id int32, maxSlots int32) {
-	mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, owner_name,sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
+	mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address,\s+TO_CHAR\(opening_time, 'HH24:MI:SS'\), TO_CHAR\(closing_time, 'HH24:MI:SS'\),\s+media_url, max_slots, owner_id, owner_name, sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
 		WithArgs(id).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "latitude", "longitude", "address", "media_url", "max_slots", "owner_id", "owner_name", "sponsor_tier"}).
-			AddRow(id, "Nori", 41.0, -8.0, "Somewhere", nil, maxSlots, 5, "owner", 0))
-
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
-		WithArgs(id).
-		WillReturnRows(pgxmock.NewRows([]string{"working_hour"}).
-			AddRow(time.Date(2026, 3, 27, 9, 0, 0, 0, time.UTC)).
-			AddRow(time.Date(2026, 3, 27, 17, 0, 0, 0, time.UTC)))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "name", "latitude", "longitude", "address", "opening_time", "closing_time", "media_url", "max_slots", "owner_id", "owner_name", "sponsor_tier"}).
+			AddRow(id, "Nori", 41.0, -8.0, "Somewhere", "09:00:00", "17:00:00", nil, maxSlots, 5, "owner", 0))
 
 	mock.ExpectQuery(`(?s)SELECT category\s+FROM restaurant_categories\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
 		WithArgs(id).
@@ -129,8 +90,8 @@ func TestGetRestaurantByIDSuccess(t *testing.T) {
 	if got.ID != 1 || got.Name != "Nori" || got.MaxSlots != 50 {
 		t.Fatalf("unexpected restaurant: %+v", got)
 	}
-	if len(got.WorkingHours) != 2 || len(got.Categories) != 2 {
-		t.Fatalf("expected working hours and categories to be loaded: %+v", got)
+	if got.OpeningTime != "09:00:00" || got.ClosingTime != "17:00:00" || len(got.Categories) != 2 {
+		t.Fatalf("expected opening/closing time and categories to be loaded: %+v", got)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -140,7 +101,7 @@ func TestGetRestaurantByIDSuccess(t *testing.T) {
 
 func TestGetRestaurantByIDNotFound(t *testing.T) {
 	repo, mock := newMockRepo(t)
-	mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, owner_name,sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
+	mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address,\s+TO_CHAR\(opening_time, 'HH24:MI:SS'\), TO_CHAR\(closing_time, 'HH24:MI:SS'\),\s+media_url, max_slots, owner_id, owner_name, sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
 		WithArgs(int32(404)).
 		WillReturnError(pgx.ErrNoRows)
 
@@ -155,36 +116,17 @@ func TestGetRestaurantByIDNotFound(t *testing.T) {
 }
 
 func TestGetRestaurantByIDQueryErrors(t *testing.T) {
-	t.Run("working hours query error", func(t *testing.T) {
+	t.Run("categories query error", func(t *testing.T) {
 		repo, mock := newMockRepo(t)
-		mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, owner_name,sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
+		mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address,\s+TO_CHAR\(opening_time, 'HH24:MI:SS'\), TO_CHAR\(closing_time, 'HH24:MI:SS'\),\s+media_url, max_slots, owner_id, owner_name, sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
 			WithArgs(int32(1)).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "latitude", "longitude", "address", "media_url", "max_slots", "owner_id", "owner_name", "sponsor_tier"}).
-				AddRow(int32(1), "Nori", 41.0, -8.0, "Somewhere", nil, int32(10), int32(5), "owner", int32(0)))
-		mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "latitude", "longitude", "address", "opening_time", "closing_time", "media_url", "max_slots", "owner_id", "owner_name", "sponsor_tier"}).
+				AddRow(int32(1), "Nori", 41.0, -8.0, "Somewhere", "09:00:00", "17:00:00", nil, int32(10), int32(5), "owner", int32(0)))
+		mock.ExpectQuery(`(?s)SELECT category\s+FROM restaurant_categories\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
 			WithArgs(int32(1)).
 			WillReturnError(errors.New("query failed"))
 
 		_, err := repo.GetRestaurantByID(context.Background(), 1)
-		if err == nil || !strings.Contains(err.Error(), "query working hours") {
-			t.Fatalf("expected working hours query error, got %v", err)
-		}
-	})
-
-	t.Run("categories query error", func(t *testing.T) {
-		repo, mock := newMockRepo(t)
-		mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, owner_name,sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
-			WithArgs(int32(2)).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "latitude", "longitude", "address", "media_url", "max_slots", "owner_id", "owner_name", "sponsor_tier"}).
-				AddRow(int32(2), "Nori", 41.0, -8.0, "Somewhere", nil, int32(10), int32(5), "owner", int32(0)))
-		mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
-			WithArgs(int32(2)).
-			WillReturnRows(pgxmock.NewRows([]string{"working_hour"}))
-		mock.ExpectQuery(`(?s)SELECT category\s+FROM restaurant_categories\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
-			WithArgs(int32(2)).
-			WillReturnError(errors.New("query failed"))
-
-		_, err := repo.GetRestaurantByID(context.Background(), 2)
 		if err == nil || !strings.Contains(err.Error(), "query categories") {
 			t.Fatalf("expected categories query error, got %v", err)
 		}
@@ -262,24 +204,23 @@ func TestGetRestaurantByNamePaths(t *testing.T) {
 func TestCreateRestaurantSuccess(t *testing.T) {
 	repo, mock := newMockRepo(t)
 	model := &models.Restaurant{
-		Name:         "Nori",
-		Latitude:     41,
-		Longitude:    -8,
-		Address:      "Somewhere",
-		MaxSlots:     30,
-		OwnerID:      8,
-		OwnerName:    "mario",
-		SponsorTier:  1,
-		WorkingHours: []string{"2026-03-27T10:00:00Z"},
-		Categories:   []string{" sushi ", ""},
+		Name:        "Nori",
+		Latitude:    41,
+		Longitude:   -8,
+		Address:     "Somewhere",
+		OpeningTime: "10:00:00",
+		ClosingTime: "20:00:00",
+		MaxSlots:    30,
+		OwnerID:     8,
+		OwnerName:   "mario",
+		SponsorTier: 1,
+		Categories:  []string{" sushi ", ""},
 	}
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`(?s)INSERT INTO restaurants`).
-		WithArgs("Nori", 41.0, -8.0, "Somewhere", pgxmock.AnyArg(), int32(30), int32(8), "mario", int32(1)).
+		WithArgs("Nori", 41.0, -8.0, "Somewhere", "10:00:00", "20:00:00", pgxmock.AnyArg(), int32(30), int32(8), "mario", int32(1)).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(12)))
-	mock.ExpectExec(`(?s)INSERT INTO restaurant_working_hours`).WithArgs(int32(12), time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)).
-		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectExec(`(?s)INSERT INTO restaurant_categories`).WithArgs(int32(12), "sushi").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
@@ -298,23 +239,22 @@ func TestCreateRestaurantSuccess(t *testing.T) {
 	}
 }
 
-func TestCreateRestaurantInvalidTimestampRollsBack(t *testing.T) {
+func TestCreateRestaurantInsertRestaurantErrorRollsBack(t *testing.T) {
 	repo, mock := newMockRepo(t)
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`(?s)INSERT INTO restaurants`).
-		WithArgs("Nori", 0.0, 0.0, "", pgxmock.AnyArg(), int32(0), int32(1), "mario", int32(0)).
-		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(12)))
+		WithArgs("Nori", 0.0, 0.0, "", "", "", pgxmock.AnyArg(), int32(0), int32(1), "mario", int32(0)).
+		WillReturnError(errors.New("insert failed"))
 	mock.ExpectRollback()
 
 	_, err := repo.CreateRestaurant(context.Background(), &models.Restaurant{
-		Name:         "Nori",
-		OwnerID:      1,
-		OwnerName:    "mario",
-		WorkingHours: []string{"bad-ts"},
+		Name:      "Nori",
+		OwnerID:   1,
+		OwnerName: "mario",
 	})
-	if err == nil || !strings.Contains(err.Error(), "invalid timestamp") {
-		t.Fatalf("expected invalid timestamp error, got %v", err)
+	if err == nil || !strings.Contains(err.Error(), "create restaurant") {
+		t.Fatalf("expected create restaurant error, got %v", err)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -347,13 +287,8 @@ func TestUpdateRestaurantSuccess(t *testing.T) {
 	mock.ExpectQuery(`(?s)SELECT EXISTS\(SELECT 1 FROM restaurants WHERE id = \$1\)`).WithArgs(int32(7)).
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectExec(`(?s)UPDATE restaurants SET`).
-		WithArgs("new", "addr", 42.5, -8.6, "https://img", int32(60), int32(7)).
+		WithArgs("new", "addr", 42.5, -8.6, "https://img", "09:00:00", "18:00:00", int32(60), int32(7)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-	mock.ExpectExec(`(?s)DELETE FROM restaurant_working_hours WHERE restaurant_id = \$1`).WithArgs(int32(7)).
-		WillReturnResult(pgxmock.NewResult("DELETE", 2))
-	mock.ExpectExec(`(?s)INSERT INTO restaurant_working_hours`).
-		WithArgs(int32(7), time.Date(2026, 3, 27, 9, 0, 0, 0, time.UTC)).
-		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectExec(`(?s)DELETE FROM restaurant_categories WHERE restaurant_id = \$1`).WithArgs(int32(7)).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
 	mock.ExpectExec(`(?s)INSERT INTO restaurant_categories`).WithArgs(int32(7), "asian").
@@ -364,15 +299,16 @@ func TestUpdateRestaurantSuccess(t *testing.T) {
 	mock.ExpectRollback()
 
 	updated, err := repo.UpdateRestaurant(context.Background(), &models.Restaurant{
-		ID:           7,
-		Name:         "new",
-		Address:      "addr",
-		Latitude:     42.5,
-		Longitude:    -8.6,
-		MediaURL:     "https://img",
-		MaxSlots:     60,
-		WorkingHours: []string{"2026-03-27T09:00:00Z"},
-		Categories:   []string{"asian"},
+		ID:          7,
+		Name:        "new",
+		Address:     "addr",
+		Latitude:    42.5,
+		Longitude:   -8.6,
+		MediaURL:    "https://img",
+		OpeningTime: "09:00:00",
+		ClosingTime: "18:00:00",
+		MaxSlots:    60,
+		Categories:  []string{"asian"},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -387,21 +323,18 @@ func TestUpdateRestaurantSuccess(t *testing.T) {
 }
 
 func TestGetWorkingHoursPaths(t *testing.T) {
-	t.Run("primary query", func(t *testing.T) {
+	t.Run("same day window", func(t *testing.T) {
 		repo, mock := newMockRepo(t)
 		expectGetRestaurantByIDQueries(mock, 3, 55)
 		start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
-		end := start.Add(8 * time.Hour)
-
-		mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1 AND working_hour >= \$2\s+ORDER BY working_hour\s+LIMIT 2`).
-			WithArgs(int32(3), start).
-			WillReturnRows(pgxmock.NewRows([]string{"working_hour"}).AddRow(start).AddRow(end))
 
 		resp, err := repo.GetWorkingHours(context.Background(), 3, start)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if !resp.TimeStart.Equal(start) || !resp.TimeEnd.Equal(end) || resp.MaxSlots != 55 {
+		wantStart := time.Date(2026, 3, 27, 9, 0, 0, 0, time.UTC)
+		wantEnd := time.Date(2026, 3, 27, 17, 0, 0, 0, time.UTC)
+		if !resp.TimeStart.Equal(wantStart) || !resp.TimeEnd.Equal(wantEnd) || resp.MaxSlots != 55 {
 			t.Fatalf("unexpected response: %+v", resp)
 		}
 
@@ -410,27 +343,25 @@ func TestGetWorkingHoursPaths(t *testing.T) {
 		}
 	})
 
-	t.Run("fallback query", func(t *testing.T) {
+	t.Run("overnight window", func(t *testing.T) {
 		repo, mock := newMockRepo(t)
-		expectGetRestaurantByIDQueries(mock, 4, 10)
-		start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
-
-		mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1 AND working_hour >= \$2\s+ORDER BY working_hour\s+LIMIT 2`).
-			WithArgs(int32(4), start).
-			WillReturnRows(pgxmock.NewRows([]string{"working_hour"}))
-
-		fallbackStart := time.Date(2026, 3, 28, 9, 0, 0, 0, time.UTC)
-		fallbackEnd := fallbackStart.Add(6 * time.Hour)
-		mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1\s+ORDER BY working_hour\s+LIMIT 2`).
+		mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address,\s+TO_CHAR\(opening_time, 'HH24:MI:SS'\), TO_CHAR\(closing_time, 'HH24:MI:SS'\),\s+media_url, max_slots, owner_id, owner_name, sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
 			WithArgs(int32(4)).
-			WillReturnRows(pgxmock.NewRows([]string{"working_hour"}).AddRow(fallbackStart).AddRow(fallbackEnd))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "name", "latitude", "longitude", "address", "opening_time", "closing_time", "media_url", "max_slots", "owner_id", "owner_name", "sponsor_tier"}).
+				AddRow(int32(4), "Night Bar", 41.0, -8.0, "Somewhere", "22:00:00", "02:00:00", nil, int32(10), int32(5), "owner", int32(0)))
+		mock.ExpectQuery(`(?s)SELECT category\s+FROM restaurant_categories\s+WHERE restaurant_id = \$1\s+ORDER BY id`).
+			WithArgs(int32(4)).
+			WillReturnRows(pgxmock.NewRows([]string{"category"}))
+		start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
 
 		resp, err := repo.GetWorkingHours(context.Background(), 4, start)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if !resp.TimeStart.Equal(fallbackStart) || !resp.TimeEnd.Equal(fallbackEnd) {
-			t.Fatalf("unexpected fallback response: %+v", resp)
+		wantStart := time.Date(2026, 3, 27, 22, 0, 0, 0, time.UTC)
+		wantEnd := time.Date(2026, 3, 28, 2, 0, 0, 0, time.UTC)
+		if !resp.TimeStart.Equal(wantStart) || !resp.TimeEnd.Equal(wantEnd) {
+			t.Fatalf("unexpected overnight response: %+v", resp)
 		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -439,17 +370,12 @@ func TestGetWorkingHoursPaths(t *testing.T) {
 	})
 }
 
-func TestGetWorkingHoursNotFoundWhenNoHours(t *testing.T) {
+func TestGetWorkingHoursNotFoundWhenRestaurantMissing(t *testing.T) {
 	repo, mock := newMockRepo(t)
-	expectGetRestaurantByIDQueries(mock, 6, 20)
-	start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
-
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1 AND working_hour >= \$2\s+ORDER BY working_hour\s+LIMIT 2`).
-		WithArgs(int32(6), start).
-		WillReturnRows(pgxmock.NewRows([]string{"working_hour"}))
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1\s+ORDER BY working_hour\s+LIMIT 2`).
+	mock.ExpectQuery(`(?s)SELECT id, name, latitude, longitude, address,\s+TO_CHAR\(opening_time, 'HH24:MI:SS'\), TO_CHAR\(closing_time, 'HH24:MI:SS'\),\s+media_url, max_slots, owner_id, owner_name, sponsor_tier\s+FROM restaurants\s+WHERE id = \$1`).
 		WithArgs(int32(6)).
-		WillReturnRows(pgxmock.NewRows([]string{"working_hour"}))
+		WillReturnError(pgx.ErrNoRows)
+	start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
 
 	_, err := repo.GetWorkingHours(context.Background(), 6, start)
 	if !errors.Is(err, ErrRestaurantNotFound) {
@@ -535,7 +461,7 @@ func TestCreateRestaurantCommitError(t *testing.T) {
 	repo, mock := newMockRepo(t)
 	mock.ExpectBegin()
 	mock.ExpectQuery(`(?s)INSERT INTO restaurants`).
-		WithArgs("Nori", 0.0, 0.0, "", pgxmock.AnyArg(), int32(0), int32(1), "", int32(0)).
+		WithArgs("Nori", 0.0, 0.0, "", "", "", pgxmock.AnyArg(), int32(0), int32(1), "", int32(0)).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(3)))
 	mock.ExpectCommit().WillReturnError(errors.New("commit failed"))
 	mock.ExpectRollback()
@@ -547,19 +473,17 @@ func TestCreateRestaurantCommitError(t *testing.T) {
 }
 
 func TestCreateRestaurantExecErrors(t *testing.T) {
-	t.Run("working hour insert", func(t *testing.T) {
+	t.Run("insert restaurant", func(t *testing.T) {
 		repo, mock := newMockRepo(t)
 		mock.ExpectBegin()
 		mock.ExpectQuery(`(?s)INSERT INTO restaurants`).
-			WithArgs("Nori", 0.0, 0.0, "", pgxmock.AnyArg(), int32(0), int32(1), "", int32(0)).
-			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(3)))
-		mock.ExpectExec(`(?s)INSERT INTO restaurant_working_hours`).WithArgs(int32(3), time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)).
+			WithArgs("Nori", 0.0, 0.0, "", "", "", pgxmock.AnyArg(), int32(0), int32(1), "", int32(0)).
 			WillReturnError(errors.New("insert failed"))
 		mock.ExpectRollback()
 
-		_, err := repo.CreateRestaurant(context.Background(), &models.Restaurant{Name: "Nori", OwnerID: 1, WorkingHours: []string{"2026-03-27T10:00:00Z"}})
-		if err == nil || !strings.Contains(err.Error(), "create working hour") {
-			t.Fatalf("expected working hour insert error, got %v", err)
+		_, err := repo.CreateRestaurant(context.Background(), &models.Restaurant{Name: "Nori", OwnerID: 1})
+		if err == nil || !strings.Contains(err.Error(), "create restaurant") {
+			t.Fatalf("expected create restaurant error, got %v", err)
 		}
 	})
 
@@ -567,7 +491,7 @@ func TestCreateRestaurantExecErrors(t *testing.T) {
 		repo, mock := newMockRepo(t)
 		mock.ExpectBegin()
 		mock.ExpectQuery(`(?s)INSERT INTO restaurants`).
-			WithArgs("Nori", 0.0, 0.0, "", pgxmock.AnyArg(), int32(0), int32(1), "", int32(0)).
+			WithArgs("Nori", 0.0, 0.0, "", "", "", pgxmock.AnyArg(), int32(0), int32(1), "", int32(0)).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(3)))
 		mock.ExpectExec(`(?s)INSERT INTO restaurant_categories`).WithArgs(int32(3), "sushi").
 			WillReturnError(errors.New("insert failed"))
@@ -619,70 +543,19 @@ func TestUpdateRestaurantMutationErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("working hours parse error", func(t *testing.T) {
+	t.Run("update opening time format error", func(t *testing.T) {
 		repo, mock := newMockRepo(t)
 		mock.ExpectBegin()
 		mock.ExpectQuery(`(?s)SELECT EXISTS\(SELECT 1 FROM restaurants WHERE id = \$1\)`).WithArgs(int32(1)).
 			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
-		mock.ExpectExec(`(?s)DELETE FROM restaurant_working_hours WHERE restaurant_id = \$1`).WithArgs(int32(1)).
-			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+		mock.ExpectExec(`(?s)UPDATE restaurants SET`).WillReturnError(errors.New("update failed"))
 		mock.ExpectRollback()
 
-		_, err := repo.UpdateRestaurant(context.Background(), &models.Restaurant{ID: 1, WorkingHours: []string{"bad-ts"}})
-		if err == nil || !strings.Contains(err.Error(), "invalid timestamp") {
-			t.Fatalf("expected parse timestamp error, got %v", err)
+		_, err := repo.UpdateRestaurant(context.Background(), &models.Restaurant{ID: 1, OpeningTime: "bad"})
+		if err == nil || !strings.Contains(err.Error(), "update restaurant") {
+			t.Fatalf("expected update restaurant error, got %v", err)
 		}
 	})
-}
-
-func TestGetWorkingHoursFallbackQueryError(t *testing.T) {
-	repo, mock := newMockRepo(t)
-	expectGetRestaurantByIDQueries(mock, 10, 30)
-	start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
-
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1 AND working_hour >= \$2\s+ORDER BY working_hour\s+LIMIT 2`).
-		WithArgs(int32(10), start).
-		WillReturnRows(pgxmock.NewRows([]string{"working_hour"}))
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1\s+ORDER BY working_hour\s+LIMIT 2`).
-		WithArgs(int32(10)).
-		WillReturnError(errors.New("fallback failed"))
-
-	_, err := repo.GetWorkingHours(context.Background(), 10, start)
-	if err == nil || !strings.Contains(err.Error(), "query working hours fallback") {
-		t.Fatalf("expected fallback query error, got %v", err)
-	}
-}
-
-func TestGetWorkingHoursSingleSlot(t *testing.T) {
-	repo, mock := newMockRepo(t)
-	expectGetRestaurantByIDQueries(mock, 8, 33)
-	start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
-
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1 AND working_hour >= \$2\s+ORDER BY working_hour\s+LIMIT 2`).
-		WithArgs(int32(8), start).
-		WillReturnRows(pgxmock.NewRows([]string{"working_hour"}).AddRow(start))
-
-	resp, err := repo.GetWorkingHours(context.Background(), 8, start)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !resp.TimeStart.Equal(resp.TimeEnd) {
-		t.Fatalf("expected same start/end for one slot, got %+v", resp)
-	}
-}
-
-func TestGetWorkingHoursQueryError(t *testing.T) {
-	repo, mock := newMockRepo(t)
-	expectGetRestaurantByIDQueries(mock, 9, 22)
-	start := time.Date(2026, 3, 27, 10, 0, 0, 0, time.UTC)
-	mock.ExpectQuery(`(?s)SELECT working_hour\s+FROM restaurant_working_hours\s+WHERE restaurant_id = \$1 AND working_hour >= \$2\s+ORDER BY working_hour\s+LIMIT 2`).
-		WithArgs(int32(9), start).
-		WillReturnError(errors.New("query failed"))
-
-	_, err := repo.GetWorkingHours(context.Background(), 9, start)
-	if err == nil || !strings.Contains(err.Error(), "query working hours from timestamp") {
-		t.Fatalf("expected query error, got %v", err)
-	}
 }
 
 func TestRestaurantExistsError(t *testing.T) {
@@ -705,46 +578,11 @@ func TestNullableString(t *testing.T) {
 	}
 }
 
-func TestParseTimestamp(t *testing.T) {
-	rfc := "2026-03-27T10:00:00Z"
-	parsed, err := parseTimestamp(rfc)
-	if err != nil {
-		t.Fatalf("unexpected error parsing RFC3339: %v", err)
+func TestParseClock(t *testing.T) {
+	if _, err := parseClock("09:30:00"); err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
 	}
-	if parsed.UTC().Format(time.RFC3339) != rfc {
-		t.Fatalf("expected %s, got %s", rfc, parsed.UTC().Format(time.RFC3339))
-	}
-
-	if _, err := parseTimestamp("not-a-timestamp"); err == nil {
-		t.Fatal("expected parsing error for invalid timestamp")
-	}
-}
-
-func TestScanWorkingHoursSuccess(t *testing.T) {
-	t1 := time.Date(2026, 3, 27, 8, 0, 0, 0, time.UTC)
-	t2 := t1.Add(2 * time.Hour)
-	rows := &fakeRows{values: []time.Time{t1, t2}}
-
-	hours, err := scanWorkingHours(rows)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(hours) != 2 {
-		t.Fatalf("expected 2 rows, got %d", len(hours))
-	}
-	if !rows.closed {
-		t.Fatal("expected rows.Close to be called")
-	}
-}
-
-func TestScanWorkingHoursErrors(t *testing.T) {
-	scanRows := &fakeRows{values: []time.Time{time.Now()}, scanErr: errors.New("scan failed")}
-	if _, err := scanWorkingHours(scanRows); err == nil {
-		t.Fatal("expected scan error")
-	}
-
-	iterRows := &fakeRows{iterErr: errors.New("iterator failed")}
-	if _, err := scanWorkingHours(iterRows); err == nil {
-		t.Fatal("expected iterator error")
+	if _, err := parseClock("9:30"); err == nil {
+		t.Fatal("expected parse error for invalid clock format")
 	}
 }

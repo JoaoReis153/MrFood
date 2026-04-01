@@ -224,14 +224,14 @@ func TestMapServiceError(t *testing.T) {
 }
 
 func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
-	timestamp := "2026-03-27T12:00:00Z"
 	rating := 4.6
 	count := int32(19)
 	model := &models.Restaurant{
 		ID:            1,
 		Name:          "Sushi",
 		MediaURL:      "https://example.com/image.jpg",
-		WorkingHours:  []string{timestamp},
+		OpeningTime:   "09:00:00",
+		ClosingTime:   "17:00:00",
 		AverageRating: &rating,
 		ReviewCount:   &count,
 	}
@@ -243,8 +243,8 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	if pbModel.GetMediaUrl() == "" {
 		t.Fatal("expected media url to be mapped")
 	}
-	if len(pbModel.GetWorkingHours()) != 1 {
-		t.Fatalf("expected one working hour, got %d", len(pbModel.GetWorkingHours()))
+	if pbModel.GetOpeningTime() != "09:00:00" || pbModel.GetClosingTime() != "17:00:00" {
+		t.Fatalf("expected opening/closing time to be mapped, got open=%s close=%s", pbModel.GetOpeningTime(), pbModel.GetClosingTime())
 	}
 	if pbModel.GetAverageRating() != 4.6 || pbModel.GetReviewCount() != 19 {
 		t.Fatalf("expected stats to be mapped, got rating=%v count=%v", pbModel.GetAverageRating(), pbModel.GetReviewCount())
@@ -255,15 +255,6 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	pbModel = modelToPB(model)
 	if pbModel.AverageRating != nil || pbModel.ReviewCount != nil {
 		t.Fatalf("expected nil optional stats, got rating=%v count=%v", pbModel.AverageRating, pbModel.ReviewCount)
-	}
-}
-
-func TestParseTimestampToProto(t *testing.T) {
-	if parseTimestampToProto("invalid") != nil {
-		t.Fatal("expected nil for invalid timestamp")
-	}
-	if parseTimestampToProto("2026-03-27 12:00:00") == nil {
-		t.Fatal("expected non-nil for SQL-like timestamp")
 	}
 }
 
@@ -314,11 +305,14 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 			if r.OwnerID != 5 || r.OwnerName != "owner" {
 				t.Fatalf("unexpected owner in create: %+v", r)
 			}
+			if r.OpeningTime != "10:00:00" || r.ClosingTime != "18:00:00" {
+				t.Fatalf("unexpected opening/closing in create: %+v", r)
+			}
 			return 99, nil
 		},
 		updateFn: func(_ context.Context, r *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error) {
 			updateCalled = true
-			if requesterOwnerID != 5 || len(r.WorkingHours) != 1 {
+			if requesterOwnerID != 5 || r.OpeningTime != "11:00:00" || r.ClosingTime != "20:00:00" {
 				t.Fatalf("unexpected update request: %+v owner=%d", r, requesterOwnerID)
 			}
 			return &models.Restaurant{ID: r.ID, Name: r.Name}, nil
@@ -326,7 +320,7 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 	}}
 
 	ctx := authContext(t, "5", "owner")
-	createResp, err := srv.CreateRestaurant(ctx, &pb.CreateRestaurantRequest{Name: "Nori", Address: "A", WorkingHours: []string{"2026-03-27T10:00:00Z"}})
+	createResp, err := srv.CreateRestaurant(ctx, &pb.CreateRestaurantRequest{Name: "Nori", Address: "A", OpeningTime: "10:00:00", ClosingTime: "18:00:00"})
 	if err != nil {
 		t.Fatalf("unexpected create error: %v", err)
 	}
@@ -334,12 +328,110 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 		t.Fatalf("unexpected create response: %+v", createResp)
 	}
 
-	_, err = srv.UpdateRestaurant(ctx, &pb.UpdateRestaurantRequest{Id: 99, Name: "Nori 2", WorkingHours: []*timestamppb.Timestamp{timestamppb.Now()}})
+	_, err = srv.UpdateRestaurant(ctx, &pb.UpdateRestaurantRequest{Id: 99, Name: "Nori 2", OpeningTime: "11:00:00", ClosingTime: "20:00:00"})
 	if err != nil {
 		t.Fatalf("unexpected update error: %v", err)
 	}
 	if !updateCalled {
 		t.Fatal("expected update call")
+	}
+}
+
+func TestCreateRestaurantValidation(t *testing.T) {
+	tests := []struct {
+		name      string
+		req       *pb.CreateRestaurantRequest
+		wantCode  codes.Code
+		createHit bool
+	}{
+		{
+			name: "invalid latitude",
+			req: &pb.CreateRestaurantRequest{
+				Name:        "Nori",
+				Latitude:    91,
+				Longitude:   1,
+				OpeningTime: "12:00:00",
+				ClosingTime: "18:00:00",
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "invalid longitude",
+			req: &pb.CreateRestaurantRequest{
+				Name:        "Nori",
+				Latitude:    45,
+				Longitude:   -181,
+				OpeningTime: "12:00:00",
+				ClosingTime: "18:00:00",
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "missing opening time",
+			req: &pb.CreateRestaurantRequest{
+				Name:        "Nori",
+				Latitude:    45,
+				Longitude:   1,
+				ClosingTime: "18:00:00",
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "invalid opening time format",
+			req: &pb.CreateRestaurantRequest{
+				Name:        "Nori",
+				Latitude:    45,
+				Longitude:   1,
+				OpeningTime: "12:00",
+				ClosingTime: "18:00:00",
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "duplicate categories",
+			req: &pb.CreateRestaurantRequest{
+				Name:        "Nori",
+				Latitude:    45,
+				Longitude:   1,
+				OpeningTime: "12:00:00",
+				ClosingTime: "18:00:00",
+				Categories:  []string{"Sushi", " sushi "},
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "valid opening and closing time",
+			req: &pb.CreateRestaurantRequest{
+				Name:        "Nori",
+				Latitude:    45,
+				Longitude:   1,
+				OpeningTime: "12:00:00",
+				ClosingTime: "18:00:00",
+				Categories:  []string{"Sushi", "Ramen"},
+			},
+			wantCode:  codes.OK,
+			createHit: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			createCalled := false
+			srv := &server{restaurantService: &mockRestaurantService{
+				createFn: func(_ context.Context, _ *models.Restaurant) (int32, error) {
+					createCalled = true
+					return 1, nil
+				},
+			}}
+
+			_, err := srv.CreateRestaurant(authContext(t, "5", "owner"), tt.req)
+			if status.Code(err) != tt.wantCode {
+				t.Fatalf("expected %s, got err=%v", tt.wantCode, err)
+			}
+			if createCalled != tt.createHit {
+				t.Fatalf("expected create called=%v, got %v", tt.createHit, createCalled)
+			}
+		})
 	}
 }
 

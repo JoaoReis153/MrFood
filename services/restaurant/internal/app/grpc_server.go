@@ -111,15 +111,20 @@ func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantR
 	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwner.UserID)
 
 	restaurant := &models.Restaurant{
-		OwnerID:      requesterOwner.UserID,
-		OwnerName:    requesterOwner.Username,
-		Name:         req.GetName(),
-		Address:      req.GetAddress(),
-		WorkingHours: req.GetWorkingHours(),
-		Categories:   req.GetCategories(),
-		Latitude:     req.GetLatitude(),
-		Longitude:    req.GetLongitude(),
-		MaxSlots:     req.GetMaxSlots(),
+		OwnerID:     requesterOwner.UserID,
+		OwnerName:   requesterOwner.Username,
+		Name:        req.GetName(),
+		Address:     req.GetAddress(),
+		OpeningTime: req.GetOpeningTime(),
+		ClosingTime: req.GetClosingTime(),
+		Categories:  req.GetCategories(),
+		Latitude:    req.GetLatitude(),
+		Longitude:   req.GetLongitude(),
+		MaxSlots:    req.GetMaxSlots(),
+	}
+
+	if err := restaurant.ValidateCreateRequest(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	newRestaurantID, err := s.restaurantService.CreateRestaurant(ctx, restaurant)
@@ -141,19 +146,15 @@ func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantR
 	}
 
 	changes := &models.Restaurant{
-		ID:         req.GetId(),
-		Name:       req.GetName(),
-		Address:    req.GetAddress(),
-		Categories: req.GetCategories(),
-		Latitude:   req.GetLatitude(),
-		Longitude:  req.GetLongitude(),
-		MaxSlots:   req.GetMaxSlots(),
-	}
-	for _, wh := range req.GetWorkingHours() {
-		if wh == nil {
-			continue
-		}
-		changes.WorkingHours = append(changes.WorkingHours, wh.AsTime().UTC().Format(time.RFC3339))
+		ID:          req.GetId(),
+		Name:        req.GetName(),
+		Address:     req.GetAddress(),
+		Categories:  req.GetCategories(),
+		Latitude:    req.GetLatitude(),
+		Longitude:   req.GetLongitude(),
+		MaxSlots:    req.GetMaxSlots(),
+		OpeningTime: req.GetOpeningTime(),
+		ClosingTime: req.GetClosingTime(),
 	}
 
 	updatedRestaurant, err := s.restaurantService.UpdateRestaurant(ctx, changes, requestOwner.UserID)
@@ -298,6 +299,8 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 		Latitude:    restaurant.Latitude,
 		Longitude:   restaurant.Longitude,
 		Address:     restaurant.Address,
+		OpeningTime: restaurant.OpeningTime,
+		ClosingTime: restaurant.ClosingTime,
 		Categories:  restaurant.Categories,
 		MaxSlots:    restaurant.MaxSlots,
 		OwnerId:     restaurant.OwnerID,
@@ -319,24 +322,7 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 		response.ReviewCount = &reviewCount
 	}
 
-	for _, wh := range restaurant.WorkingHours {
-		if ts := parseTimestampToProto(wh); ts != nil {
-			response.WorkingHours = append(response.WorkingHours, ts)
-		}
-	}
-
 	return response
-}
-
-func parseTimestampToProto(value string) *timestamppb.Timestamp {
-	layouts := []string{time.RFC3339, "2006-01-02 15:04:05"}
-	for _, layout := range layouts {
-		parsed, err := time.Parse(layout, value)
-		if err == nil {
-			return timestamppb.New(parsed.UTC())
-		}
-	}
-	return nil
 }
 
 func mapServiceError(err error) error {
