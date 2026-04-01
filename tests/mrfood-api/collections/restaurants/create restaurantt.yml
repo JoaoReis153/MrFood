@@ -10,21 +10,20 @@ grpc:
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "name": "suffoco",
-      "latitude": 398.60973567158106,
-      "longitude": 865.8200740672938,
-      "address": "tepesco",
+      "name": "ver5",
+      "latitude": 861.0153091051654,
+      "longitude": 20.226016353542708,
+      "address": "creo",
       "working_hours": [
-        "2026-03-27T09:00:00Z",
-        "2026-03-27T18:00:00Z"
+        "2026-03-27 12:00:00"
       ],
       "categories": [
-        "calamitas",
-        "calamitas"
+        "tamisium",
+        "tamisium"
       ],
-      "max_slots": 377,
-      "has_media": true
+      "max_slots": 84,
+      "has_media": false
     }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc1MDA3NzAzLCJuYmYiOjE3NzUwMDY4MDMsImlhdCI6MTc3NTAwNjgwMywianRpIjoiNzVjMDU2ZTUtZWU3Yy00M2JkLTg1NjYtZTNkMjZiOWFhMTAyIiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYTIiLCJ0b2tlbl92ZXJzaW9uIjoxLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.hPybsvtubW0pvCiM3sAQwFbg4CpEa8I9s5JkhvwG438
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc0OTk4MDQ0LCJuYmYiOjE3NzQ5OTcxNDQsImlhdCI6MTc3NDk5NzE0NCwianRpIjoiOTBhMzU3MjYtNWE5Ny00MTg3LWE2OTktOTZmZmViMDdlNGIyIiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYTIiLCJ0b2tlbl92ZXJzaW9uIjoxLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.ovkkBoJcu3rOFZSuEovq6z_jQvJduLbF_j675ec5EH0

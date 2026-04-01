@@ -10,7 +10,7 @@ http:
   url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
   params:
     - name: restaurantId
-      value: ""
+      value: "1"
       type: path
   body:
     type: json
@@ -27,6 +27,11 @@ http:
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: localhost:8000
 
 settings:
   encodeUrl: true

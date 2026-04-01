@@ -15,7 +15,7 @@ import (
 func TestCreateBooking(t *testing.T) {
 	ctx := context.Background()
 
-	baseBooking := &models.CreateBooking{
+	baseBooking := &models.Booking{
 		UserID:       1,
 		RestaurantID: 10,
 		TimeStart:    time.Now(),
@@ -32,7 +32,7 @@ func TestCreateBooking(t *testing.T) {
 
 		repo := New(mock)
 
-		booking := &models.CreateBooking{
+		booking := &models.Booking{
 			UserID:       1,
 			RestaurantID: 1,
 			TimeStart:    time.Now(),
@@ -42,9 +42,9 @@ func TestCreateBooking(t *testing.T) {
 
 		mock.ExpectBegin()
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`SELECT 1 FROM booking`).
 			WithArgs(booking.RestaurantID, booking.TimeStart, booking.UserID).
-			WillReturnRows(pgxmock.NewRows([]string{"1"}).AddRow(true))
+			WillReturnRows(pgxmock.NewRows([]string{"1"}).AddRow(int32(1)))
 
 		mock.ExpectRollback()
 
@@ -68,7 +68,7 @@ func TestCreateBooking(t *testing.T) {
 
 		mock.ExpectBegin()
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`SELECT 1 FROM booking`).
 			WithArgs(booking.RestaurantID, booking.TimeStart, booking.UserID).
 			WillReturnError(pgx.ErrNoRows)
 
@@ -95,7 +95,7 @@ func TestCreateBooking(t *testing.T) {
 
 		mock.ExpectBegin()
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`SELECT 1 FROM booking`).
 			WithArgs(booking.RestaurantID, booking.TimeStart, booking.UserID).
 			WillReturnError(pgx.ErrNoRows)
 
@@ -124,17 +124,13 @@ func TestCreateBooking(t *testing.T) {
 
 		mock.ExpectBegin()
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`SELECT 1 FROM booking`).
 			WithArgs(booking.RestaurantID, booking.TimeStart, booking.UserID).
 			WillReturnError(pgx.ErrNoRows)
 
 		mock.ExpectQuery(`SELECT .* FROM restaurant_slots`).
 			WithArgs(booking.RestaurantID, booking.TimeStart).
 			WillReturnError(pgx.ErrNoRows)
-
-		mock.ExpectExec(`SET LOCAL app.max_slots`).
-			WithArgs(booking.MaxSlots).
-			WillReturnResult(pgxmock.NewResult("SET", 0))
 
 		mock.ExpectQuery(`INSERT INTO booking`).
 			WithArgs(booking.UserID, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).
@@ -163,14 +159,11 @@ func TestCreateBooking(t *testing.T) {
 
 		mock.ExpectBegin()
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`SELECT 1 FROM booking`).
 			WillReturnError(pgx.ErrNoRows)
 
 		mock.ExpectQuery(`SELECT max_slots, current_slots FROM restaurant_slots`).
 			WillReturnError(pgx.ErrNoRows)
-
-		mock.ExpectExec(`SET LOCAL app.max_slots`).
-			WillReturnResult(pgxmock.NewResult("SET", 0))
 
 		mock.ExpectQuery(`INSERT INTO booking`).
 			WillReturnError(errors.New("insert failed"))
@@ -191,17 +184,14 @@ func TestCreateBooking(t *testing.T) {
 
 		mock.ExpectBegin()
 
-		mock.ExpectQuery(`SELECT EXISTS`).
+		mock.ExpectQuery(`SELECT 1 FROM booking`).
 			WillReturnError(pgx.ErrNoRows)
 
 		mock.ExpectQuery(`SELECT max_slots, current_slots FROM restaurant_slots`).
 			WillReturnError(pgx.ErrNoRows)
 
-		mock.ExpectExec(`SET LOCAL app.max_slots`).
-			WillReturnResult(pgxmock.NewResult("SET", 0))
-
 		mock.ExpectQuery(`INSERT INTO booking`).
-			WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(1))
 
 		mock.ExpectCommit().WillReturnError(errors.New("commit failed"))
 
