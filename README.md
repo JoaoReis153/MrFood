@@ -121,7 +121,7 @@ make create_env
 
 This creates `services/.env` from the template with sensible defaults.
 
-#### 🔐 JWT Secret
+### JWT Secret
 
 Generate JWT secrets using:
 
@@ -129,12 +129,15 @@ Generate JWT secrets using:
 openssl rand -base64 32
 ```
 
-Set these values in `services/.env`:
+- Run the command 2 times and add each output to your `/services/.env.`, specifically `AUTH_JWT_ACCESS_TOKEN_SECRET` and `AUTH_JWT_REFRESH_TOKEN_SECRET`;
 
-- `AUTH_JWT_ACCESS_TOKEN_SECRET`
-- `AUTH_JWT_REFRESH_TOKEN_SECRET`
+- Update the `secret` field in `services/gateway/kong/kong.yml` with the same value that was given to `AUTH_JWT_ACCESS_TOKEN_SECRET`.
 
-## 🚀 Running the Services
+### Dependencies
+
+In order to run the code, `protobuf-compiler` and `protobuf-devel` must be installed on the machine.
+
+## Running the Services
 
 ### Available Commands
 
@@ -177,12 +180,6 @@ Stop services:
 
 ```bash
 make stop
-```
-
-Restart services:
-
-```bash
-make restart
 ```
 
 ## 🧹 Cleanup
