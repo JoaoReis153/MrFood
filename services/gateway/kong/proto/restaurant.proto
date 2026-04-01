@@ -3,26 +3,25 @@ syntax = "proto3";
 package proto;
 
 option go_package = "/pb;pb";
-import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 
 service RestaurantService {
   rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse){
     option (google.api.http) = {
-      get: "/restaurants/details"
-      body: "*"
+      get: "/restaurants/{id}"
     };
   };
 
   rpc CreateRestaurant(CreateRestaurantRequest) returns (CreateRestaurantResponse){
     option (google.api.http) = {
-      post: "/restaurants/create"
+      post: "/restaurants"
       body: "*"
     };
   };
 
   rpc UpdateRestaurant(UpdateRestaurantRequest) returns (UpdateRestaurantResponse){
     option (google.api.http) = {
-      put: "/restaurants/update"
+      put: "/restaurants/{id}"
       body: "*"
     };
   };
@@ -63,7 +62,6 @@ message CreateRestaurantResponse {
   string presigned_url = 2;
 }
 
-m
 message UpdateRestaurantRequest {
   int32 id = 1;
   string name = 2;
@@ -89,13 +87,13 @@ message RestaurantDetails {
   string opening_time = 6;
   string closing_time = 7;
   repeated string categories = 8;
-  optional string media_url = 9;
+  string media_url = 9;
   int32 max_slots = 10;
   int32 owner_id = 11;
   string owner_name = 12;
   int32 sponsor_tier = 13;
-  optional double average_rating = 14;
-  optional int32 review_count = 15;
+  double average_rating = 14;
+  int32 review_count = 15;
 
 }
 
