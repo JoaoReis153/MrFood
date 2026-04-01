@@ -82,6 +82,27 @@ services:
       claims_to_verify:
       - exp
 
+- name: sponsor
+  host: sponsor
+  port: 50054
+  protocol: grpc
+  routes:
+  - name: sponsor
+    protocols:
+    - http
+    - https
+    paths:
+    - /sponsor
+
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/sponsor.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+
 consumers:
 - username: my-client
   jwt_secrets:
