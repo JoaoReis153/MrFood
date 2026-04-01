@@ -1,0 +1,62 @@
+info:
+  name: Refresh token
+  type: http
+  seq: 6
+  tags:
+    - Users
+
+http:
+  method: POST
+  url: http://localhost:8000/auth/refresh
+  body:
+    type: json
+    data: |-
+      {
+        "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxMCIsImV4cCI6MTc3NTAzNTAwNiwibmJmIjoxNzc1MDM0MTA2LCJpYXQiOjE3NzUwMzQxMDYsImp0aSI6IjRlZjAyYTJhLWYzY2ItNGJiYS04NWE4LThiZTViNDk5ZWRjNyIsInVzZXJfaWQiOiIxMCIsInVzZXJuYW1lIjoiZWR1IiwidG9rZW5fdmVyc2lvbiI6MSwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.Ey9KtnVPhWeKrZ7GGXJXm1xilg7qyIYBADBRhiftZGM"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: User logged out successfully
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "message": "Logged out successfully"
+          }
+  - name: 401 Response
+    description: Unauthorized (invalid or missing token)
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
