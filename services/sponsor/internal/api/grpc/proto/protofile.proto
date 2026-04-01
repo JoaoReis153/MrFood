@@ -6,7 +6,6 @@ option go_package = "/pb;pb";
 import "google/protobuf/timestamp.proto";
 
 service SponsorService {
-  rpc PingPong (Ping) returns (Pong);
   rpc Sponsor (SponsorshipRequest) returns (SponsorshipResponse);
   rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse);
 }
@@ -37,32 +36,4 @@ message GetRestaurantSponsorshipResponse {
   int32 id = 1;
   repeated string categories = 2;
   int32 owner_id = 3;
-}
-
-message PaginationRequest {
-    //if you want to implement using cursor instead use
-    //something like string page_token = 1; instead of page
-  int32 page = 1;
-  int32 limit = 2;
-
-}
-
-message PaginationResponse {
-  repeated Ping data = 1;
-  Pagination pagination = 2;
-}
-
-message Pagination {
-  int32 page = 1;
-  int32 limit = 2;
-  int32 total = 3;
-  int32 pages = 4;
-}
-
-message Ping {
-  int32 id = 1;
-}
-
-message Pong {
-  int32 id = 1;
 }

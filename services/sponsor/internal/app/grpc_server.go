@@ -47,12 +47,6 @@ type SponsorService interface {
 	Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
 }
 
-func (s *server) PingPong(ctx context.Context, req *pb.Ping) (*pb.Pong, error) {
-	return &pb.Pong{
-		Id: 1,
-	}, nil
-}
-
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
 
 	slog.Info("get restaurant sponsorship", "request", req)

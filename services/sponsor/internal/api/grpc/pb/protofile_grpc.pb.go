@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion8
 
 const (
-	SponsorService_PingPong_FullMethodName                 = "/proto.SponsorService/PingPong"
 	SponsorService_Sponsor_FullMethodName                  = "/proto.SponsorService/Sponsor"
 	SponsorService_GetRestaurantSponsorship_FullMethodName = "/proto.SponsorService/GetRestaurantSponsorship"
 )
@@ -28,7 +27,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SponsorServiceClient interface {
-	PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error)
 	Sponsor(ctx context.Context, in *SponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error)
 	GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error)
 }
@@ -39,16 +37,6 @@ type sponsorServiceClient struct {
 
 func NewSponsorServiceClient(cc grpc.ClientConnInterface) SponsorServiceClient {
 	return &sponsorServiceClient{cc}
-}
-
-func (c *sponsorServiceClient) PingPong(ctx context.Context, in *Ping, opts ...grpc.CallOption) (*Pong, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Pong)
-	err := c.cc.Invoke(ctx, SponsorService_PingPong_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *sponsorServiceClient) Sponsor(ctx context.Context, in *SponsorshipRequest, opts ...grpc.CallOption) (*SponsorshipResponse, error) {
@@ -75,7 +63,6 @@ func (c *sponsorServiceClient) GetRestaurantSponsorship(ctx context.Context, in 
 // All implementations must embed UnimplementedSponsorServiceServer
 // for forward compatibility
 type SponsorServiceServer interface {
-	PingPong(context.Context, *Ping) (*Pong, error)
 	Sponsor(context.Context, *SponsorshipRequest) (*SponsorshipResponse, error)
 	GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*SponsorshipResponse, error)
 	mustEmbedUnimplementedSponsorServiceServer()
@@ -85,9 +72,6 @@ type SponsorServiceServer interface {
 type UnimplementedSponsorServiceServer struct {
 }
 
-func (UnimplementedSponsorServiceServer) PingPong(context.Context, *Ping) (*Pong, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PingPong not implemented")
-}
 func (UnimplementedSponsorServiceServer) Sponsor(context.Context, *SponsorshipRequest) (*SponsorshipResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sponsor not implemented")
 }
@@ -105,24 +89,6 @@ type UnsafeSponsorServiceServer interface {
 
 func RegisterSponsorServiceServer(s grpc.ServiceRegistrar, srv SponsorServiceServer) {
 	s.RegisterService(&SponsorService_ServiceDesc, srv)
-}
-
-func _SponsorService_PingPong_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Ping)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SponsorServiceServer).PingPong(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SponsorService_PingPong_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SponsorServiceServer).PingPong(ctx, req.(*Ping))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _SponsorService_Sponsor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -168,10 +134,6 @@ var SponsorService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "proto.SponsorService",
 	HandlerType: (*SponsorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "PingPong",
-			Handler:    _SponsorService_PingPong_Handler,
-		},
 		{
 			MethodName: "Sponsor",
 			Handler:    _SponsorService_Sponsor_Handler,

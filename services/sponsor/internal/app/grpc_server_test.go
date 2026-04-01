@@ -50,16 +50,6 @@ func createAuthContext(userID string, username string) context.Context {
 }
 
 // -----------------------------
-// PingPong Tests
-// -----------------------------
-func TestPingPong(t *testing.T) {
-	s := &server{}
-	resp, err := s.PingPong(context.Background(), &pb.Ping{})
-	require.NoError(t, err)
-	require.Equal(t, int32(1), resp.Id)
-}
-
-// -----------------------------
 // GetRestaurantSponsorship Tests
 // -----------------------------
 func TestGetRestaurantSponsorship(t *testing.T) {
