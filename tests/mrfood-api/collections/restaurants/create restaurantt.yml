@@ -1,0 +1,30 @@
+info:
+  name: create restaurantt
+  type: grpc
+  seq: 2
+
+grpc:
+  url: localhost:50052
+  method: /proto.RestaurantService/CreateRestaurant
+  methodType: unary
+  protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "name": "suffoco",
+      "latitude": 398.60973567158106,
+      "longitude": 865.8200740672938,
+      "address": "tepesco",
+      "working_hours": [
+        "2026-03-27T09:00:00Z",
+        "2026-03-27T18:00:00Z"
+      ],
+      "categories": [
+        "calamitas",
+        "calamitas"
+      ],
+      "max_slots": 377,
+      "has_media": true
+    }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc1MDA3NzAzLCJuYmYiOjE3NzUwMDY4MDMsImlhdCI6MTc3NTAwNjgwMywianRpIjoiNzVjMDU2ZTUtZWU3Yy00M2JkLTg1NjYtZTNkMjZiOWFhMTAyIiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYTIiLCJ0b2tlbl92ZXJzaW9uIjoxLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.hPybsvtubW0pvCiM3sAQwFbg4CpEa8I9s5JkhvwG438

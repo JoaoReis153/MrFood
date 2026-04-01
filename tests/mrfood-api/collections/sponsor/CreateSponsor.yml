@@ -1,0 +1,18 @@
+info:
+  name: CreateSponsor
+  type: grpc
+  seq: 1
+
+grpc:
+  url: localhost:50054
+  method: /proto.SponsorService/Sponsor
+  methodType: unary
+  protoFilePath: ../../../../services/sponsor/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "id": 2,
+      "tier": 2
+    }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc1MDA3NzAzLCJuYmYiOjE3NzUwMDY4MDMsImlhdCI6MTc3NTAwNjgwMywianRpIjoiNzVjMDU2ZTUtZWU3Yy00M2JkLTg1NjYtZTNkMjZiOWFhMTAyIiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYTIiLCJ0b2tlbl92ZXJzaW9uIjoxLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.hPybsvtubW0pvCiM3sAQwFbg4CpEa8I9s5JkhvwG438
