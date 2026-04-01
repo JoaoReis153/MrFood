@@ -22,10 +22,20 @@ var (
 )
 
 type Repository struct {
-	DB *pgxpool.Pool
+	DB dbExecutor
+}
+
+type dbExecutor interface {
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 func New(db *pgxpool.Pool) *Repository {
+	return &Repository{DB: db}
+}
+
+func NewWithDB(db dbExecutor) *Repository {
 	return &Repository{DB: db}
 }
 
@@ -35,7 +45,9 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 	}
 
 	query := `
-		SELECT id, name, latitude, longitude, address, media_url, max_slots, owner_id, owner_name,sponsor_tier
+		SELECT id, name, latitude, longitude, address,
+		       TO_CHAR(opening_time, 'HH24:MI:SS'), TO_CHAR(closing_time, 'HH24:MI:SS'),
+		       media_url, max_slots, owner_id, owner_name, sponsor_tier
 		FROM restaurants
 		WHERE id = $1
 	`
@@ -49,6 +61,8 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 		&restaurant.Latitude,
 		&restaurant.Longitude,
 		&restaurant.Address,
+		&restaurant.OpeningTime,
+		&restaurant.ClosingTime,
 		&mediaURL,
 		&restaurant.MaxSlots,
 		&restaurant.OwnerID,
@@ -61,28 +75,6 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 
 	if mediaURL != nil {
 		restaurant.MediaURL = *mediaURL
-	}
-
-	hoursRows, err := r.DB.Query(ctx, `
-		SELECT working_hour
-		FROM restaurant_working_hours
-		WHERE restaurant_id = $1
-		ORDER BY id
-	`, id)
-	if err != nil {
-		return nil, fmt.Errorf("query working hours: %w", err)
-	}
-	defer hoursRows.Close()
-
-	for hoursRows.Next() {
-		var workingHour time.Time
-		if err := hoursRows.Scan(&workingHour); err != nil {
-			return nil, fmt.Errorf("scan working hour: %w", err)
-		}
-		restaurant.WorkingHours = append(restaurant.WorkingHours, workingHour.UTC().Format(time.RFC3339))
-	}
-	if hoursRows.Err() != nil {
-		return nil, fmt.Errorf("iterate working hours: %w", hoursRows.Err())
 	}
 
 	categoriesRows, err := r.DB.Query(ctx, `
@@ -108,6 +100,26 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 	}
 
 	return restaurant, nil
+}
+
+func (r *Repository) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
+	if r.DB == nil {
+		return 0, ErrDatabaseNotSet
+	}
+	query := `
+		SELECT id
+		FROM restaurants
+		WHERE id = $1
+	`
+	var restaurantID int32
+	err := r.DB.QueryRow(ctx, query, id).Scan(&restaurantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrRestaurantNotFound
+		}
+		return 0, fmt.Errorf("query restaurant ID: %w", err)
+	}
+	return restaurantID, nil
 }
 
 func (r *Repository) GetRestaurantByName(ctx context.Context, name string) (*models.Restaurant, error) {
@@ -150,8 +162,8 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	}(tx, ctx)
 
 	query := `
-		INSERT INTO restaurants (name, latitude, longitude, address, media_url, max_slots, owner_id,owner_name,sponsor_tier)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO restaurants (name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier)
+		VALUES ($1, $2, $3, $4, $5::time, $6::time, $7, $8, $9, $10, $11)
 		RETURNING id
 	`
 
@@ -161,6 +173,8 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 		restaurant.Latitude,
 		restaurant.Longitude,
 		restaurant.Address,
+		restaurant.OpeningTime,
+		restaurant.ClosingTime,
 		nullableString(restaurant.MediaURL),
 		restaurant.MaxSlots,
 		restaurant.OwnerID,
@@ -169,20 +183,6 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	).Scan(&newID)
 	if err != nil {
 		return 0, fmt.Errorf("create restaurant: %w", err)
-	}
-
-	for _, ts := range restaurant.WorkingHours {
-		parsedTS, err := parseTimestamp(ts)
-		if err != nil {
-			return 0, err
-		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO restaurant_working_hours (restaurant_id, working_hour) VALUES ($1, $2)`,
-			newID,
-			parsedTS.UTC(),
-		); err != nil {
-			return 0, fmt.Errorf("create working hour: %w", err)
-		}
 	}
 
 	for _, category := range restaurant.Categories {
@@ -235,8 +235,8 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 		return nil, ErrRestaurantNotFound
 	}
 
-	setClauses := make([]string, 0, 8)
-	args := make([]any, 0, 9)
+	setClauses := make([]string, 0, 10)
+	args := make([]any, 0, 11)
 	argPos := 1
 
 	if restaurant.Name != "" {
@@ -264,6 +264,16 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 		args = append(args, restaurant.MediaURL)
 		argPos++
 	}
+	if restaurant.OpeningTime != "" {
+		setClauses = append(setClauses, fmt.Sprintf("opening_time = $%d::time", argPos))
+		args = append(args, restaurant.OpeningTime)
+		argPos++
+	}
+	if restaurant.ClosingTime != "" {
+		setClauses = append(setClauses, fmt.Sprintf("closing_time = $%d::time", argPos))
+		args = append(args, restaurant.ClosingTime)
+		argPos++
+	}
 	if restaurant.MaxSlots > 0 {
 		setClauses = append(setClauses, fmt.Sprintf("max_slots = $%d", argPos))
 		args = append(args, restaurant.MaxSlots)
@@ -275,25 +285,6 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 		updateQuery := fmt.Sprintf("UPDATE restaurants SET %s WHERE id = $%d", strings.Join(setClauses, ", "), argPos)
 		if _, err := tx.Exec(ctx, updateQuery, args...); err != nil {
 			return nil, fmt.Errorf("update restaurant: %w", err)
-		}
-	}
-
-	if len(restaurant.WorkingHours) > 0 {
-		if _, err := tx.Exec(ctx, `DELETE FROM restaurant_working_hours WHERE restaurant_id = $1`, restaurant.ID); err != nil {
-			return nil, fmt.Errorf("delete working hours: %w", err)
-		}
-		for _, ts := range restaurant.WorkingHours {
-			parsedTS, err := parseTimestamp(ts)
-			if err != nil {
-				return nil, err
-			}
-			if _, err := tx.Exec(ctx,
-				`INSERT INTO restaurant_working_hours (restaurant_id, working_hour) VALUES ($1, $2)`,
-				restaurant.ID,
-				parsedTS.UTC(),
-			); err != nil {
-				return nil, fmt.Errorf("insert working hour: %w", err)
-			}
 		}
 	}
 
@@ -337,63 +328,37 @@ func (r *Repository) CompareRestaurants(ctx context.Context, id1, id2 int32) (*m
 	return restaurant1, restaurant2, nil
 }
 
-func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
 
-	exists, err := r.restaurantExists(ctx, restaurantID)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, ErrRestaurantNotFound
-	}
-
-	rows, err := r.DB.Query(ctx, `
-		SELECT working_hour
-		FROM restaurant_working_hours
-		WHERE restaurant_id = $1 AND working_hour >= $2
-		ORDER BY working_hour
-		LIMIT 2
-	`, restaurantID, timeStart.UTC())
-	if err != nil {
-		return nil, fmt.Errorf("query working hours from timestamp: %w", err)
-	}
-
-	hours, err := scanWorkingHours(rows)
+	restaurant, err := r.GetRestaurantByID(ctx, restaurantID)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(hours) == 0 {
-		rows, err = r.DB.Query(ctx, `
-			SELECT working_hour
-			FROM restaurant_working_hours
-			WHERE restaurant_id = $1
-			ORDER BY working_hour
-			LIMIT 2
-		`, restaurantID)
-		if err != nil {
-			return nil, fmt.Errorf("query working hours fallback: %w", err)
-		}
-
-		hours, err = scanWorkingHours(rows)
-		if err != nil {
-			return nil, err
-		}
+	openingTime, err := parseClock(restaurant.OpeningTime)
+	if err != nil {
+		return nil, fmt.Errorf("parse opening time: %w", err)
+	}
+	closingTime, err := parseClock(restaurant.ClosingTime)
+	if err != nil {
+		return nil, fmt.Errorf("parse closing time: %w", err)
 	}
 
-	if len(hours) == 0 {
-		return nil, ErrRestaurantNotFound
+	base := timeStart.UTC()
+	if base.IsZero() {
+		base = time.Now().UTC()
 	}
 
-	response := &models.TimeRange{TimeStart: hours[0], TimeEnd: hours[0]}
-	if len(hours) > 1 {
-		response.TimeEnd = hours[1]
+	start := time.Date(base.Year(), base.Month(), base.Day(), openingTime.Hour(), openingTime.Minute(), openingTime.Second(), 0, time.UTC)
+	end := time.Date(base.Year(), base.Month(), base.Day(), closingTime.Hour(), closingTime.Minute(), closingTime.Second(), 0, time.UTC)
+	if !end.After(start) {
+		end = end.Add(24 * time.Hour)
 	}
 
-	return response, nil
+	return &models.WorkingHoursResponse{TimeStart: start, TimeEnd: end, MaxSlots: restaurant.MaxSlots}, nil
 }
 
 func (r *Repository) restaurantExists(ctx context.Context, restaurantID int32) (bool, error) {
@@ -404,30 +369,6 @@ func (r *Repository) restaurantExists(ctx context.Context, restaurantID int32) (
 	return exists, nil
 }
 
-func scanWorkingHours(rows interface {
-	Next() bool
-	Scan(dest ...any) error
-	Err() error
-	Close()
-}) ([]time.Time, error) {
-	defer rows.Close()
-
-	workingHours := make([]time.Time, 0, 2)
-	for rows.Next() {
-		var value time.Time
-		if err := rows.Scan(&value); err != nil {
-			return nil, fmt.Errorf("scan working hour: %w", err)
-		}
-		workingHours = append(workingHours, value.UTC())
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate working hours: %w", err)
-	}
-
-	return workingHours, nil
-}
-
 func nullableString(value string) *string {
 	if strings.TrimSpace(value) == "" {
 		return nil
@@ -435,12 +376,10 @@ func nullableString(value string) *string {
 	return &value
 }
 
-func parseTimestamp(ts string) (time.Time, error) {
-	layouts := []string{time.RFC3339, "2006-01-02 15:04:05"}
-	for _, layout := range layouts {
-		if parsed, err := time.Parse(layout, ts); err == nil {
-			return parsed, nil
-		}
+func parseClock(value string) (time.Time, error) {
+	parsed, err := time.Parse(time.TimeOnly, value)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid clock value %q", value)
 	}
-	return time.Time{}, fmt.Errorf("invalid timestamp %q, expected RFC3339", ts)
+	return parsed, nil
 }

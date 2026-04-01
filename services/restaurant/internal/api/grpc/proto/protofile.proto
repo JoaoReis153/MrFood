@@ -23,6 +23,13 @@ service RestaurantToReviewService {
   rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
 }
 
+service ReviewToRestaurantService {
+  rpc GetRestaurantId(GetRestaurantRequest) returns (GetRestaurantResponse);
+}
+
+service RestaurantToSponsorService {
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (GetRestaurantSponsorshipResponse);
+}
 
 message RestaurantStats {
   int32 restaurant_id = 1;
@@ -38,9 +45,6 @@ message GetRestaurantStatsResponse {
   RestaurantStats restaurant_stats = 1;
 }
 
-
-
-
 message WorkingHoursRequest {
   int32 restaurant_id = 1;
   google.protobuf.Timestamp time_start = 2;
@@ -50,6 +54,7 @@ message WorkingHoursResponse {
   int32 restaurant_id = 1;
   google.protobuf.Timestamp time_start = 2;
   google.protobuf.Timestamp time_end = 3;
+  int32 max_slots = 4;
 }
 
 message GetRestaurantDetailsRequest {
@@ -65,10 +70,11 @@ message CreateRestaurantRequest {
   double latitude = 2;
   double longitude = 3;
   string address = 4;
-  repeated string working_hours = 5;
-  repeated string categories = 6;
-  int32 max_slots = 7;
-  bool has_media = 8;
+  string opening_time = 5;
+  string closing_time = 6;
+  repeated string categories = 7;
+  int32 max_slots = 8;
+  bool has_media = 9;
 }
 
 message CreateRestaurantResponse {
@@ -82,9 +88,10 @@ message UpdateRestaurantRequest {
   double latitude = 3;
   double longitude = 4;
   string address = 5;
-  repeated google.protobuf.Timestamp working_hours = 6;
-  repeated string categories = 7;
-  int32 max_slots = 8;
+  string opening_time = 6;
+  string closing_time = 7;
+  repeated string categories = 8;
+  int32 max_slots = 9;
 }
 
 message UpdateRestaurantResponse {
@@ -97,15 +104,16 @@ message RestaurantDetails {
   double latitude = 3;
   double longitude = 4;
   string address = 5;
-  repeated google.protobuf.Timestamp working_hours = 6;
-  repeated string categories = 7;
-  optional string media_url = 8;
-  int32 max_slots = 9;
-  int32 owner_id = 10;
-  string owner_name = 11;
-  int32 sponsor_tier = 12;
-  optional double average_rating = 13;
-  optional int32 review_count = 14;
+  string opening_time = 6;
+  string closing_time = 7;
+  repeated string categories = 8;
+  optional string media_url = 9;
+  int32 max_slots = 10;
+  int32 owner_id = 11;
+  string owner_name = 12;
+  int32 sponsor_tier = 13;
+  optional double average_rating = 14;
+  optional int32 review_count = 15;
 
 }
 
@@ -117,4 +125,22 @@ message CompareRestaurantDetailsRequest {
 message CompareRestaurantDetailsResponse {
   RestaurantDetails restaurant1 = 1;
   RestaurantDetails restaurant2 = 2;
+}
+
+message GetRestaurantRequest {
+  int32 restaurant_id = 1;
+}
+
+message GetRestaurantResponse {
+  int32 restaurant_id = 1;
+}
+
+message GetRestaurantSponsorshipRequest {
+  int32 id = 1;
+}
+
+message GetRestaurantSponsorshipResponse {
+  int32 id = 1;
+  repeated string categories = 2;
+  int32 owner_id = 3;
 }
