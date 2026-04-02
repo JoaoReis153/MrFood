@@ -22,33 +22,33 @@ var (
 
 type Review struct {
 	ReviewID     int32     `json:"id"`
-	RestaurantID int32     `json:"restaurant_id"`
-	UserID       int32     `json:"user_id"`
+	RestaurantID int64     `json:"restaurant_id"`
+	UserID       int64     `json:"user_id"`
 	Rating       int32     `json:"rating"`
 	Comment      string    `json:"comment"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
 type CreateReview struct {
-	RestaurantID int32  `json:"restaurant_id"`
+	RestaurantID int64  `json:"restaurant_id"`
 	Rating       int32  `json:"rating"`
 	Comment      string `json:"comment"`
 }
 
 type UpdateReview struct {
 	ReviewID int32   `json:"id"`
-	UserID   int32   `json:"user_id,omitempty"`
+	UserID   int64   `json:"user_id,omitempty"`
 	Rating   *int32  `json:"rating,omitempty"`
 	Comment  *string `json:"comment,omitempty"`
 }
 
 type DeleteReview struct {
 	ReviewID int32 `json:"id"`
-	UserID   int32 `json:"user_id"`
+	UserID   int64 `json:"user_id"`
 }
 
 type RestaurantStats struct {
-	RestaurantID  int32   `json:"restaurant_id"`
+	RestaurantID  int64   `json:"restaurant_id"`
 	AverageRating float64 `json:"average_rating"`
 	ReviewCount   int32   `json:"review_count"`
 }
@@ -59,5 +59,5 @@ type ReviewsPage struct {
 }
 
 type Restaurant struct {
-	RestaurantID int32 `json:"restaurant_id"`
+	RestaurantID int64 `json:"restaurant_id"`
 }

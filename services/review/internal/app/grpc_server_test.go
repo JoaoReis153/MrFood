@@ -20,14 +20,14 @@ import (
 // ===================================================
 
 type mockReviewService struct {
-	GetReviewsFn         func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
+	GetReviewsFn         func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error)
 	CreateReviewFn       func(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReviewFn       func(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReviewFn       func(ctx context.Context, deleteReq models.DeleteReview) error
-	GetRestaurantStatsFn func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
+	GetRestaurantStatsFn func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error)
 }
 
-func (m *mockReviewService) GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+func (m *mockReviewService) GetReviews(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 	return m.GetReviewsFn(ctx, restaurantID, page, limit)
 }
 func (m *mockReviewService) CreateReview(ctx context.Context, review models.Review) (models.Review, error) {
@@ -39,7 +39,7 @@ func (m *mockReviewService) UpdateReview(ctx context.Context, review models.Upda
 func (m *mockReviewService) DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error {
 	return m.DeleteReviewFn(ctx, deleteReq)
 }
-func (m *mockReviewService) GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+func (m *mockReviewService) GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 	return m.GetRestaurantStatsFn(ctx, restaurantID)
 }
 
@@ -75,7 +75,7 @@ func TestServer_GetReviews_Success(t *testing.T) {
 	now := time.Now()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			if restaurantID != 5 || page != 2 || limit != 3 {
 				t.Fatalf("unexpected args: id=%d page=%d limit=%d", restaurantID, page, limit)
 			}
@@ -117,7 +117,7 @@ func TestServer_GetReviews_Defaults(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			if page != 1 || limit != 10 {
 				t.Fatalf("expected default page=1 limit=10, got page=%d limit=%d", page, limit)
 			}
@@ -141,7 +141,7 @@ func TestServer_GetReviews_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			return models.ReviewsPage{}, models.ErrRestaurantNotFound
 		},
 	}
@@ -160,7 +160,7 @@ func TestServer_GetReviews_InvalidArgument(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			return models.ReviewsPage{}, models.ErrInvalidRestaurantID
 		},
 	}
@@ -453,7 +453,7 @@ func TestServer_GetRestaurantStats_Success(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			if restaurantID != 5 {
 				t.Fatalf("expected id 5, got %d", restaurantID)
 			}
@@ -479,7 +479,7 @@ func TestServer_GetRestaurantStats_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			return models.RestaurantStats{}, models.ErrRestaurantNotFound
 		},
 	}
@@ -498,7 +498,7 @@ func TestServer_GetRestaurantStats_Internal(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			return models.RestaurantStats{}, errors.New("db error")
 		},
 	}
@@ -517,7 +517,7 @@ func TestServer_GetRestaurantStats_InvalidArgument(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			return models.RestaurantStats{}, models.ErrInvalidRestaurantID
 		},
 	}
@@ -603,28 +603,28 @@ func TestExtractUserFromContext_ValidToken(t *testing.T) {
 // ===================================================
 
 func TestParseInt32_Valid(t *testing.T) {
-	v, err := parseInt32("42")
+	v, err := parseInt64("42")
 	if err != nil || v != 42 {
 		t.Fatalf("expected 42, got %d err %v", v, err)
 	}
 }
 
 func TestParseInt32_Zero(t *testing.T) {
-	_, err := parseInt32("0")
+	_, err := parseInt64("0")
 	if err == nil {
 		t.Fatal("expected error for 0, got nil")
 	}
 }
 
 func TestParseInt32_Negative(t *testing.T) {
-	_, err := parseInt32("-1")
+	_, err := parseInt64("-1")
 	if err == nil {
 		t.Fatal("expected error for negative, got nil")
 	}
 }
 
 func TestParseInt32_NonNumeric(t *testing.T) {
-	_, err := parseInt32("abc")
+	_, err := parseInt64("abc")
 	if err == nil {
 		t.Fatal("expected error for non-numeric, got nil")
 	}

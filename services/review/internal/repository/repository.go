@@ -25,7 +25,7 @@ func New(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetReviews(ctx context.Context, restaurantID int32, page, limit int) ([]models.Review, int, error) {
+func (r *Repository) GetReviews(ctx context.Context, restaurantID int64, page, limit int) ([]models.Review, int, error) {
 	offset := (page - 1) * limit
 	var total int
 	err := r.db.QueryRow(ctx,
@@ -118,7 +118,7 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 	return updated, nil
 }
 
-func (r *Repository) DeleteReview(ctx context.Context, reviewID int32, userID int32) error {
+func (r *Repository) DeleteReview(ctx context.Context, reviewID int32, userID int64) error {
 	result, err := r.db.Exec(ctx, "DELETE FROM review WHERE review_id = $1 AND user_id = $2", reviewID, userID)
 	if err != nil {
 		slog.Error("Failed to delete review", "error", err)
@@ -131,7 +131,7 @@ func (r *Repository) DeleteReview(ctx context.Context, reviewID int32, userID in
 	return nil
 }
 
-func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 	var stats models.RestaurantStats
 	stats.RestaurantID = restaurantID
 	err := r.db.QueryRow(ctx, "SELECT average_rating, review_count FROM restaurant_stats WHERE restaurant_id = $1", restaurantID).

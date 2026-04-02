@@ -135,7 +135,7 @@ func TestGetRestaurantSponsorship_Success(t *testing.T) {
 		queryRowFn: func(ctx context.Context, sql string, args ...any) pgx.Row {
 			return &fakeRow{
 				scanFn: func(dest ...any) error {
-					*(dest[0].(*int32)) = 1
+					*(dest[0].(*int64)) = 1
 					*(dest[1].(*int32)) = 2
 					*(dest[2].(*time.Time)) = now
 					return nil
@@ -177,7 +177,7 @@ func TestSponsor_TierNotUpgraded(t *testing.T) {
 		queryRowFn: func(ctx context.Context, sql string, args ...any) pgx.Row {
 			return &fakeRow{
 				scanFn: func(dest ...any) error {
-					*(dest[0].(*int32)) = 1
+					*(dest[0].(*int64)) = 1
 					*(dest[1].(*int32)) = 3 // existing tier
 					*(dest[2].(*time.Time)) = time.Now()
 					return nil
@@ -204,7 +204,7 @@ func TestSponsor_Success(t *testing.T) {
 		queryRowFn: func(ctx context.Context, sql string, args ...any) pgx.Row {
 			return &fakeRow{
 				scanFn: func(dest ...any) error {
-					*(dest[0].(*int32)) = 1
+					*(dest[0].(*int64)) = 1
 					*(dest[1].(*int32)) = 5
 					*(dest[2].(*time.Time)) = now
 					return nil

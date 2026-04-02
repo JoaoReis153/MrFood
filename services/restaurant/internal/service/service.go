@@ -24,23 +24,23 @@ type Service struct {
 }
 
 type reviewStatsClient interface {
-	GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error)
+	GetRestaurantStats(ctx context.Context, restaurantID int64) (*models.RestaurantStats, error)
 }
 
 type restaurantRepository interface {
 	GetRestaurantByName(ctx context.Context, name string) (*models.Restaurant, error)
-	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
-	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
-	GetRestaurantID(ctx context.Context, id int32) (int32, error)
+	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int64, error)
+	GetRestaurantByID(ctx context.Context, id int64) (*models.Restaurant, error)
+	GetRestaurantID(ctx context.Context, id int64) (int64, error)
 	UpdateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error)
-	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error)
+	GetWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHoursResponse, error)
 }
 
 func New(repo *repository.Repository, reviewStats reviewStatsClient) *Service {
 	return &Service{repo: repo, reviewStats: reviewStats}
 }
 
-func (s *Service) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error) {
+func (s *Service) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int64, error) {
 	if restaurant == nil || restaurant.OwnerID <= 0 || strings.TrimSpace(restaurant.Name) == "" {
 		return 0, ErrInvalidRestaurant
 	}
@@ -59,7 +59,7 @@ func (s *Service) CreateRestaurant(ctx context.Context, restaurant *models.Resta
 	return s.repo.CreateRestaurant(ctx, restaurant)
 }
 
-func (s *Service) UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error) {
+func (s *Service) UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int64) (*models.Restaurant, error) {
 	if changes == nil || changes.ID <= 0 || requesterOwnerID <= 0 {
 		return nil, ErrInvalidRestaurant
 	}
@@ -95,7 +95,7 @@ func (s *Service) UpdateRestaurant(ctx context.Context, changes *models.Restaura
 	return s.repo.UpdateRestaurant(ctx, changes)
 }
 
-func (s *Service) GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error) {
+func (s *Service) GetRestaurantByID(ctx context.Context, id int64) (*models.Restaurant, error) {
 	if id <= 0 {
 		return nil, ErrInvalidRestaurant
 	}
@@ -111,7 +111,7 @@ func (s *Service) GetRestaurantByID(ctx context.Context, id int32) (*models.Rest
 	return s.enrichWithReviewStats(ctx, restaurant)
 }
 
-func (s *Service) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
+func (s *Service) GetRestaurantID(ctx context.Context, id int64) (int64, error) {
 	if id <= 0 {
 		return 0, ErrInvalidRestaurant
 	}
@@ -126,7 +126,7 @@ func (s *Service) GetRestaurantID(ctx context.Context, id int32) (int32, error) 
 	return restaurantID, nil
 }
 
-func (s *Service) CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error) {
+func (s *Service) CompareRestaurants(ctx context.Context, id1, id2 int64) (*models.Restaurant, *models.Restaurant, error) {
 	if id1 <= 0 || id2 <= 0 {
 		return nil, nil, ErrInvalidRestaurant
 	}
@@ -147,7 +147,7 @@ func (s *Service) CompareRestaurants(ctx context.Context, id1, id2 int32) (*mode
 	return r1, r2, nil
 }
 
-func (s *Service) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
+func (s *Service) GetWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if restaurantID <= 0 {
 		return nil, ErrInvalidRestaurant
 	}

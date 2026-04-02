@@ -18,15 +18,15 @@ import (
 // Mock Sponsor Service
 // -----------------------------
 type mockSponsorService struct {
-	getFn     func(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
-	sponsorFn func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
+	getFn     func(ctx context.Context, id int64) (*models.SponsorshipResponse, error)
+	sponsorFn func(ctx context.Context, s *models.Sponsorship, userID int64) (*models.SponsorshipResponse, error)
 }
 
-func (m *mockSponsorService) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+func (m *mockSponsorService) GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 	return m.getFn(ctx, id)
 }
 
-func (m *mockSponsorService) Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
+func (m *mockSponsorService) Sponsor(ctx context.Context, s *models.Sponsorship, userID int64) (*models.SponsorshipResponse, error) {
 	return m.sponsorFn(ctx, s, userID)
 }
 
@@ -54,9 +54,9 @@ func createAuthContext(userID string, username string) context.Context {
 // -----------------------------
 func TestGetRestaurantSponsorship(t *testing.T) {
 	mock := &mockSponsorService{
-		getFn: func(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+		getFn: func(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 			return &models.SponsorshipResponse{
-				ID:    int(id),
+				ID:    id,
 				Tier:  2,
 				Until: time.Now(),
 			}, nil
@@ -66,13 +66,13 @@ func TestGetRestaurantSponsorship(t *testing.T) {
 	s := &server{sponsorService: mock}
 	resp, err := s.GetRestaurantSponsorship(context.Background(), &pb.GetRestaurantSponsorshipRequest{Id: 10})
 	require.NoError(t, err)
-	require.Equal(t, int32(10), resp.Id)
+	require.Equal(t, int64(10), resp.Id)
 	require.Equal(t, int32(2), resp.Tier)
 }
 
 func TestGetRestaurantSponsorship_Error(t *testing.T) {
 	mock := &mockSponsorService{
-		getFn: func(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+		getFn: func(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 			return nil, errors.New("db error")
 		},
 	}
@@ -88,9 +88,9 @@ func TestGetRestaurantSponsorship_Error(t *testing.T) {
 // -----------------------------
 func TestSponsor_Success(t *testing.T) {
 	mock := &mockSponsorService{
-		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
+		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int64) (*models.SponsorshipResponse, error) {
 			return &models.SponsorshipResponse{
-				ID:    int(s.ID),
+				ID:    s.ID,
 				Tier:  int(s.Tier),
 				Until: s.Until,
 			}, nil
@@ -101,7 +101,7 @@ func TestSponsor_Success(t *testing.T) {
 	ctx := createAuthContext("1", "john")
 	resp, err := s.Sponsor(ctx, &pb.SponsorshipRequest{Id: 5, Tier: 2})
 	require.NoError(t, err)
-	require.Equal(t, int32(5), resp.Id)
+	require.Equal(t, int64(5), resp.Id)
 	require.Equal(t, int32(2), resp.Tier)
 }
 
@@ -121,7 +121,7 @@ func TestSponsor_NoAuth(t *testing.T) {
 
 func TestSponsor_ServiceError(t *testing.T) {
 	mock := &mockSponsorService{
-		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
+		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int64) (*models.SponsorshipResponse, error) {
 			return nil, errors.New("failed")
 		},
 	}
@@ -140,7 +140,7 @@ func TestExtractUserFromContext_Success(t *testing.T) {
 	ctx := createAuthContext("42", "alice")
 	user, err := ExtractUserFromContext(ctx)
 	require.NoError(t, err)
-	require.Equal(t, int32(42), user.UserID)
+	require.Equal(t, int64(42), user.UserID)
 	require.Equal(t, "alice", user.Username)
 }
 

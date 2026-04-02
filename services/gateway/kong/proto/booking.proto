@@ -22,7 +22,7 @@ service BookingService {
 }
 
 message CreateBookingRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
   int32 quantity = 2;
   google.protobuf.Timestamp time_start = 3;
 }

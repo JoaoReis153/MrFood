@@ -83,7 +83,7 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt32(claims.UserID)
+	user_id, err := parseInt64(claims.UserID)
 
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt32(claims.UserID)
+	user_id, err := parseInt64(claims.UserID)
 
 	if err != nil {
 		return nil, err
@@ -173,15 +173,15 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	return claims, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
+func parseInt64(value string) (int64, error) {
+	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	if v < 1 {
-		return 0, errors.New("out of int32 range")
+		return 0, errors.New("out of int64 range")
 	}
-	return int32(v), nil
+	return v, nil
 }
 
 func mapServiceError(err error) error {

@@ -43,14 +43,14 @@ func NewRestaurantClient(target string) (*RestaurantClient, *grpc.ClientConn, er
 }
 
 type ReviewService interface {
-	GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
+	GetReviews(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error)
 	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error
-	GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
+	GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error)
 }
 
-func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int32) (models.Restaurant, error) {
+func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int64) (models.Restaurant, error) {
 	ctx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
 	defer cancel()
 
@@ -91,7 +91,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 	if limit == 0 {
 		limit = 10
 	}
-	results, err := s.svc.GetReviews(ctx, int32(req.GetRestaurantId()), page, limit)
+	results, err := s.svc.GetReviews(ctx, req.GetRestaurantId(), page, limit)
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
@@ -125,14 +125,14 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	user_id, err := parseInt32(claims.UserID)
+	user_id, err := parseInt64(claims.UserID)
 	if err != nil {
 		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
 		return nil, mapToGRPCError(err)
 	}
 	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
-		RestaurantID: int32(req.GetRestaurantId()),
+		RestaurantID: req.GetRestaurantId(),
 		UserID:       user_id,
 		Rating:       req.GetRating(),
 		Comment:      req.GetComment(),
@@ -162,7 +162,7 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 		slog.Error("Failed to extract user from context", "error", err)
 		return nil, mapToGRPCError(err)
 	}
-	user_id, err := parseInt32(claims.UserID)
+	user_id, err := parseInt64(claims.UserID)
 	if err != nil {
 		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
 		return nil, mapToGRPCError(err)
@@ -205,7 +205,7 @@ func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	userID, err := parseInt32(claims.UserID)
+	userID, err := parseInt64(claims.UserID)
 	if err != nil {
 		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
 		return nil, mapToGRPCError(err)
@@ -291,15 +291,15 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	return claims, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
+func parseInt64(value string) (int64, error) {
+	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	if v < 1 {
-		return 0, errors.New("out of int32 range")
+		return 0, errors.New("out of int64 range")
 	}
-	return int32(v), nil
+	return v, nil
 }
 
 func mapToGRPCError(err error) error {
