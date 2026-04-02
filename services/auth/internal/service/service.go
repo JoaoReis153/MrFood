@@ -6,9 +6,14 @@ import (
 	"MrFood/services/auth/internal/repository"
 	"MrFood/services/auth/pkg"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+var ErrDuplicateUser = errors.New("user already exists")
 
 type Service struct {
 	repo       userStore
@@ -32,6 +37,10 @@ func (s *Service) StoreUser(ctx context.Context, user *pkg.User) (*pkg.User, err
 
 	userId, returnedUsername, err := s.repo.CreateUser(ctx, user.Username, user.Password, user.Email)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, ErrDuplicateUser
+		}
 		slog.Error("create user failed", "error", err)
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
