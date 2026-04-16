@@ -35,7 +35,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Create services/.env
         run: |
@@ -98,12 +97,13 @@ jobs:
 
       - name: Upload Bruno reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bruno-reports
           path: |
             tests/mrfood-api/reports/bruno-junit.xml
             tests/mrfood-api/reports/bruno-report.json
+          if-no-files-found: warn
 
       - name: Dump service logs on failure
         if: failure()
