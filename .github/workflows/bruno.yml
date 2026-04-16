@@ -80,17 +80,44 @@ jobs:
 
       - name: Wait for API gateway
         run: |
-          for i in {1..60}; do
-            if curl -fsS http://localhost:8000/auth/ping/1 >/dev/null; then
-              echo "Gateway is ready"
-              exit 0
+          ready=0
+          for i in {1..90}; do
+            status=$(curl -sS -o /tmp/gateway-auth-ping-body.txt -w "%{http_code}" http://localhost:8000/auth/ping/1 || true)
+
+            if [ "$status" = "200" ]; then
+              echo "Gateway and auth upstream are ready"
+              ready=1
+              break
             fi
-            echo "Waiting for gateway... ($i/60)"
+
+            echo "Waiting for gateway/auth upstream... ($i/90) status=$status"
+
+            if [ "$status" = "503" ]; then
+              echo "Gateway is up but auth upstream is not ready yet"
+            fi
+
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "--- docker compose ps ---"
+              docker compose -f services/docker-compose.yml ps || true
+              echo "--- auth logs (tail) ---"
+              docker compose -f services/docker-compose.yml logs --tail=80 auth || true
+              echo "--- kong logs (tail) ---"
+              docker compose -f services/docker-compose.yml logs --tail=80 kong || true
+            fi
+
             sleep 5
           done
-          echo "Gateway did not become ready in time"
-          docker compose -f services/docker-compose.yml logs --tail=200
-          exit 1
+
+          if [ "$ready" -ne 1 ]; then
+            echo "Gateway/auth upstream did not become ready in time"
+            echo "--- gateway ping response body ---"
+            cat /tmp/gateway-auth-ping-body.txt || true
+            echo "--- docker compose ps ---"
+            docker compose -f services/docker-compose.yml ps || true
+            echo "--- full service logs (tail) ---"
+            docker compose -f services/docker-compose.yml logs --tail=300 || true
+            exit 1
+          fi
 
       - name: Run Bruno tests
         run: make test-bruno
