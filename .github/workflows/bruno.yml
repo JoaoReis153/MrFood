@@ -45,8 +45,8 @@ jobs:
           AUTH_POSTGRES_USER=mrfood_auth_user
           AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
           AUTH_REDIS_PASS=
-          AUTH_JWT_ACCESS_TOKEN_SECRET=test-access-secret-for-ci
-          AUTH_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci
+          AUTH_JWT_ACCESS_TOKEN_SECRET=test-access-secret-for-ci-0123456789
+          AUTH_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci-0123456789
 
           RESTAURANT_SERVER_PORT=50052
           RESTAURANT_POSTGRES_PORT=5433
