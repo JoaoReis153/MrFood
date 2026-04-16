@@ -6,6 +6,7 @@ on:
     paths:
       - 'tests/mrfood-api/**'
       - '.github/workflows/bruno.yml'
+      - 'Makefile'
       - 'services/**'
   workflow_dispatch:
 
@@ -28,6 +29,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Create services/.env
         run: |
@@ -86,10 +88,7 @@ jobs:
           exit 1
 
       - name: Run Bruno tests
-        working-directory: tests/mrfood-api/collections/ci
-        run: |
-          mkdir -p ../../reports
-          npx --yes @usebruno/cli@latest run -r --tests-only --reporter-junit ../../reports/bruno-junit.xml --reporter-json ../../reports/bruno-report.json
+        run: make test-bruno
 
       - name: Upload Bruno reports
         if: always()
