@@ -1,6 +1,12 @@
 name: Bruno API Tests
 
 on:
+  push:
+    paths:
+      - 'tests/mrfood-api/**'
+      - '.github/workflows/bruno.yml'
+      - 'Makefile'
+      - 'services/**'
   pull_request:
     branches: [main]
     paths:
