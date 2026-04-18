@@ -183,8 +183,8 @@ func TestGetReviews(t *testing.T) {
 		now := time.Now()
 		rows := pgxmock.NewRows(
 			[]string{"review_id", "restaurant_id", "user_id", "comment", "rating", "created_at"},
-		).AddRow(int32(1), restaurantID, int64(5), "good", int32(4), now).
-			AddRow(int32(2), restaurantID, int64(6), "great", int32(5), now.Add(-time.Hour))
+		).AddRow(int64(1), restaurantID, int64(5), "good", int32(4), now).
+			AddRow(int64(2), restaurantID, int64(6), "great", int32(5), now.Add(-time.Hour))
 
 		mock.ExpectQuery(`SELECT review_id, restaurant_id, user_id, comment, rating, created_at FROM review`).
 			WithArgs(restaurantID, limit, offset).
@@ -275,7 +275,7 @@ func TestCreateReview(t *testing.T) {
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{"review_id", "created_at"}).
-			AddRow(int32(10), now)
+			AddRow(int64(10), now)
 
 		mock.ExpectQuery(`INSERT INTO review`).
 			WithArgs(review.RestaurantID, review.UserID, review.Comment, review.Rating).
@@ -362,7 +362,7 @@ func TestUpdateReview(t *testing.T) {
 
 		now := time.Now()
 		rows := pgxmock.NewRows([]string{"review_id", "restaurant_id", "user_id", "comment", "rating", "created_at"}).
-			AddRow(int32(1), int64(2), int64(3), comment, rating, now)
+			AddRow(int64(1), int64(2), int64(3), comment, rating, now)
 
 		mock.ExpectQuery(`UPDATE review`).
 			WithArgs(up.Comment, up.Rating, up.ReviewID, up.UserID).
@@ -394,7 +394,7 @@ func TestDeleteReview(t *testing.T) {
 		repo := &Repository{db: mock}
 
 		mock.ExpectExec(`DELETE FROM review`).
-			WithArgs(int32(1), int64(9)).
+			WithArgs(int64(1), int64(9)).
 			WillReturnError(errors.New("delete failed"))
 
 		err = repo.DeleteReview(ctx, 1, 9)
@@ -416,7 +416,7 @@ func TestDeleteReview(t *testing.T) {
 		repo := &Repository{db: mock}
 
 		mock.ExpectExec(`DELETE FROM review`).
-			WithArgs(int32(1), int64(9)).
+			WithArgs(int64(1), int64(9)).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
 
 		err = repo.DeleteReview(ctx, 1, 9)
@@ -438,7 +438,7 @@ func TestDeleteReview(t *testing.T) {
 		repo := &Repository{db: mock}
 
 		mock.ExpectExec(`DELETE FROM review`).
-			WithArgs(int32(1), int64(9)).
+			WithArgs(int64(1), int64(9)).
 			WillReturnResult(pgxmock.NewResult("DELETE", 1))
 
 		err = repo.DeleteReview(ctx, 1, 9)
