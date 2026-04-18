@@ -1,0 +1,33 @@
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - app-network
+
+services:
+  notification:
+    build: ./notification/
+    ports: ["${NOTIFICATION_SERVER_PORT}:${NOTIFICATION_SERVER_PORT}"]
+    <<: *common
+    environment:
+      APP_SERVER_PORT: ${NOTIFICATION_SERVER_PORT}
+      APP_LOG_LEVEL: debug
+      REDIS_HOST: notification_redis
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: ${SMTP_FROM}
+    depends_on:
+      notification_redis:
+        condition: service_healthy
+
+  notification_redis:
+    image: redis:7-alpine
+    <<: *common
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,16 @@
+info:
+  name: send email of registration
+  type: grpc
+  seq: 2
+
+grpc:
+  url: localhost:50058
+  method: /notification.NotificationService/SendRegistrationEmail
+  methodType: unary
+  protoFilePath: ../../../../services/notification/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "email": "mrfood.api@gmail.com",
+      "username":"teste"
+    }
+  auth: inherit

@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package notification;
+
+option go_package = "/pb;pb";
+
+import "google/protobuf/timestamp.proto";
+
+// NotificationService defines the gRPC service for sending notifications, such as registration emails and receipts.
+service NotificationService {
+  // SendRegistrationEmail sends a registration email to the specified username.
+  rpc SendRegistrationEmail (SendRegistrationEmailRequest) returns (SendRegistrationEmailResponse);
+  // SendReceipts sends a list of receipts to the appropriate recipients.
+  rpc SendReceipts(SendReceiptsRequest) returns (SendReceiptsResponse);
+}
+
+message SendRegistrationEmailRequest {
+  string email = 1;
+  string username = 2;
+}
+
+message SendRegistrationEmailResponse {}
+
+
+message SendReceiptsRequest {
+  string email = 1;
+  repeated Receipt receipts = 2;
+}
+
+message SendReceiptsResponse {}
+
+message Receipt {
+  double                    amount                 = 1;
+  string                    payment_description    = 2;
+  string                    current_payment_status = 3;
+  string                    payment_type           = 4;
+  google.protobuf.Timestamp created_at             = 5;
+}
