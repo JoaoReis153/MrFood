@@ -7,7 +7,7 @@ info:
 
 http:
   method: GET
-  url: localhost:500060/reservations/minimum
+  url: "{{baseUrl}}/reservations/minimum"
   auth:
     type: bearer
     token: "{{token}}"
