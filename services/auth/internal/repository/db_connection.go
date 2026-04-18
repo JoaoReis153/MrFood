@@ -63,7 +63,6 @@ func NewRedisClient(ctx context.Context, cfg *config.Config) (*redis.Client, err
 	slog.Debug("redis config loaded",
 		"host", cfg.Redis.Host,
 		"port", cfg.Redis.Port,
-		"password", cfg.Redis.Password,
 		"db", cfg.Redis.DB,
 	)
 

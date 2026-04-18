@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:8000/sponsor
+  url: "{{baseUrl}}/sponsor"
   body:
     type: json
     data: |-
@@ -24,17 +24,16 @@ settings:
 
 examples:
   - name: 201 Response
-    description: User successfully registered
+    description: Restaurant sponsored successfully
     request:
-      url: "{{baseUrl}}/auth/register"
+      url: "{{baseUrl}}/sponsor"
       method: POST
       body:
         type: json
         data: |-
           {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "StrongPassword123"
+            "id": 1,
+            "tier": 2
           }
     response:
       status: 201
@@ -46,22 +45,20 @@ examples:
         type: json
         data: |-
           {
-            "id": "user_12345",
-            "name": "John Doe",
-            "email": "john.doe@example.com"
+            "id": 1,
+            "tier": 2
           }
   - name: 400 Response
-    description: Bad Request (e.g., missing fields, invalid email)
+    description: Bad Request (e.g., missing fields)
     request:
-      url: "{{baseUrl}}/auth/register"
+      url: "{{baseUrl}}/sponsor"
       method: POST
       body:
         type: json
         data: |-
           {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "StrongPassword123"
+            "id": 0,
+            "tier": 0
           }
     response:
       status: 400
@@ -77,17 +74,16 @@ examples:
             "message": "Error message"
           }
   - name: 409 Response
-    description: User already exists
+    description: Conflict
     request:
-      url: "{{baseUrl}}/auth/register"
+      url: "{{baseUrl}}/sponsor"
       method: POST
       body:
         type: json
         data: |-
           {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "StrongPassword123"
+            "id": 1,
+            "tier": 2
           }
     response:
       status: 409

@@ -1,34 +1,16 @@
 info:
-  name: Get reviews of a restaurant
+  name: Get available booking slots for a given hour (GET)
   type: http
   seq: 1
   tags:
-    - Reviews
+    - Reservations
 
 http:
   method: GET
-  url: "{{baseUrl}}/reviews/:restaurantId?limit=1&page=1"
-  params:
-    - name: limit
-      value: "1"
-      type: query
-    - name: page
-      value: "1"
-      type: query
-    - name: restaurantId
-      value: "1"
-      type: path
-  body:
-    type: json
-    data: ""
+  url: "{{baseUrl}}/reservations/minimum"
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiI0IiwiZXhwIjoxNzc1MDQyMDcxLCJuYmYiOjE3NzUwNDExNzEsImlhdCI6MTc3NTA0MTE3MSwianRpIjoiMWM4MjI3M2UtN2Q1Ny00NjY1LWFkNjktNzdmZTQ2MmViNzZiIiwidXNlcl9pZCI6IjQiLCJ1c2VybmFtZSI6ImNyaXN0aWFubyIsInRva2VuX3ZlcnNpb24iOjksInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.y0lIgKRZOayn2KkgJwFulRQ6vej2L6Bb-VblfMD8AL8
-
-runtime:
-  variables:
-    - name: baseUrl
-      value: http://localhost:8000
+    token: "{{token}}"
 
 settings:
   encodeUrl: true
@@ -38,14 +20,19 @@ settings:
 
 examples:
   - name: 200 Response
-    description: List of reviews
+    description: List of available Booking slots
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
+      url: "{{baseUrl}}/reservations/minimum"
       method: GET
       params:
-        - name: restaurantId
+        - name: numberOfPeople
           value: ""
-          type: path
+          type: query
+          description: Number of people for the reservation
+        - name: day
+          value: ""
+          type: query
+          description: Day of the reservation (YYYY-MM-DD)
     response:
       status: 200
       statusText: OK
@@ -56,29 +43,22 @@ examples:
         type: json
         data: |-
           {
-            "page": 1,
-            "limit": 25,
-            "data": [
-              {
-                "id": "rev_12345",
-                "rating": 5,
-                "comment": "Amazing food and great service!",
-                "categories": "Food",
-                "userId": "user_12345",
-                "restaurantId": "12345",
-                "createdAt": "2024-12-31T19:00:00Z"
-              }
-            ]
+            "hour": ""
           }
   - name: 400 Response
     description: Bad Request
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
+      url: "{{baseUrl}}/reservations/minimum"
       method: GET
       params:
-        - name: restaurantId
+        - name: numberOfPeople
           value: ""
-          type: path
+          type: query
+          description: Number of people for the reservation
+        - name: day
+          value: ""
+          type: query
+          description: Day of the reservation (YYYY-MM-DD)
     response:
       status: 400
       statusText: Bad Request
@@ -95,12 +75,17 @@ examples:
   - name: 401 Response
     description: Unauthorized
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
+      url: "{{baseUrl}}/reservations/minimum"
       method: GET
       params:
-        - name: restaurantId
+        - name: numberOfPeople
           value: ""
-          type: path
+          type: query
+          description: Number of people for the reservation
+        - name: day
+          value: ""
+          type: query
+          description: Day of the reservation (YYYY-MM-DD)
     response:
       status: 401
       statusText: Unauthorized
@@ -115,14 +100,19 @@ examples:
             "message": "Error message"
           }
   - name: 404 Response
-    description: Restaurant not found
+    description: User not found
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
+      url: "{{baseUrl}}/reservations/minimum"
       method: GET
       params:
-        - name: restaurantId
+        - name: numberOfPeople
           value: ""
-          type: path
+          type: query
+          description: Number of people for the reservation
+        - name: day
+          value: ""
+          type: query
+          description: Day of the reservation (YYYY-MM-DD)
     response:
       status: 404
       statusText: Not Found
@@ -139,12 +129,17 @@ examples:
   - name: 500 Response
     description: Server Error
     request:
-      url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
+      url: "{{baseUrl}}/reservations/minimum"
       method: GET
       params:
-        - name: restaurantId
+        - name: numberOfPeople
           value: ""
-          type: path
+          type: query
+          description: Number of people for the reservation
+        - name: day
+          value: ""
+          type: query
+          description: Day of the reservation (YYYY-MM-DD)
     response:
       status: 500
       statusText: Internal Server Error

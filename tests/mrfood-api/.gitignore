@@ -4,6 +4,9 @@
 # Dependencies
 node_modules
 
+# Generated test reports
+reports/
+
 # OS files
 .DS_Store
 Thumbs.db

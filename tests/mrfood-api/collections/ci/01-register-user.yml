@@ -1,0 +1,34 @@
+info:
+  name: Register user (CI)
+  type: http
+  seq: 1
+  tags:
+    - ci
+    - smoke
+
+http:
+  method: POST
+  url: http://localhost:8000/auth/register
+  body:
+    type: json
+    data: |-
+      {
+        "username": "ci_user_bruno",
+        "email": "ci_user_bruno@example.com",
+        "password": "StrongPassword123"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("register responds with success status", function() {
+          expect([200, 201, 409]).to.include(res.status);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

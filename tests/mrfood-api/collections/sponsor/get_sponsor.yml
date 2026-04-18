@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:8000/sponsor/sponsorship
+  url: "{{baseUrl}}/sponsor/sponsorship"
   body:
     type: json
     data: |-
@@ -16,7 +16,7 @@ http:
       }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxMCIsImV4cCI6MTc3NTAzODgwNSwibmJmIjoxNzc1MDM3OTA1LCJpYXQiOjE3NzUwMzc5MDUsImp0aSI6IjU5ZDVjY2FhLWNlM2EtNDM2MC1hM2JkLWU0NjMwYjllODJhYyIsInVzZXJfaWQiOiIxMCIsInVzZXJuYW1lIjoiZWR1IiwidG9rZW5fdmVyc2lvbiI6NCwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.njfmwKs11aLvSsae0N5hBWjeMqUWiuOIyGyUhhkohrQ
+    token: "{{token}}"
 
 settings:
   encodeUrl: true
@@ -26,17 +26,15 @@ settings:
 
 examples:
   - name: 201 Response
-    description: User successfully registered
+    description: Sponsorship fetched successfully
     request:
-      url: "{{baseUrl}}/auth/register"
+      url: "{{baseUrl}}/sponsor/sponsorship"
       method: POST
       body:
         type: json
         data: |-
           {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "StrongPassword123"
+            "id": 1
           }
     response:
       status: 201
@@ -48,22 +46,19 @@ examples:
         type: json
         data: |-
           {
-            "id": "user_12345",
-            "name": "John Doe",
-            "email": "john.doe@example.com"
+            "id": 1,
+            "tier": 2
           }
   - name: 400 Response
-    description: Bad Request (e.g., missing fields, invalid email)
+    description: Bad Request (e.g., missing fields)
     request:
-      url: "{{baseUrl}}/auth/register"
+      url: "{{baseUrl}}/sponsor/sponsorship"
       method: POST
       body:
         type: json
         data: |-
           {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "StrongPassword123"
+            "id": 0
           }
     response:
       status: 400
@@ -79,17 +74,15 @@ examples:
             "message": "Error message"
           }
   - name: 409 Response
-    description: User already exists
+    description: Conflict
     request:
-      url: "{{baseUrl}}/auth/register"
+      url: "{{baseUrl}}/sponsor/sponsorship"
       method: POST
       body:
         type: json
         data: |-
           {
-            "name": "John Doe",
-            "email": "john@example.com",
-            "password": "StrongPassword123"
+            "id": 1
           }
     response:
       status: 409

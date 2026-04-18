@@ -25,4 +25,4 @@ grpc:
     }
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiI5MjE2NTgzNDY3Nzc4NjE3MjMwIiwiZXhwIjoxNzc2NTIyMTQ4LCJuYmYiOjE3NzY1MjEyNDgsImlhdCI6MTc3NjUyMTI0OCwianRpIjoiNjhlMTJmMDktNmJhOC00ZGY3LWEzZjktMGQ0NTI4MDU2MWNjIiwidXNlcl9pZCI6IjkyMTY1ODM0Njc3Nzg2MTcyMzAiLCJ1c2VybmFtZSI6ImJhbmFuYTIiLCJ0b2tlbl92ZXJzaW9uIjoxLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.OMRjAch4oV3Y_VKsxMxxvUEXp28YrpqBdxOEicUu6x8
+    token: "{{token}}"

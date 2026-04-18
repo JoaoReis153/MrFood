@@ -7,7 +7,7 @@ info:
 
 http:
   method: POST
-  url: http://localhost:8000/restaurants/create
+  url: "{{baseUrl}}/restaurants/create"
   body:
     type: json
     data: |
@@ -29,6 +29,8 @@ http:
       }
   auth:
     type: bearer
+    token: {{token}}
+
 
 settings:
   encodeUrl: true

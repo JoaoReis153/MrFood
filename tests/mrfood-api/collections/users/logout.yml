@@ -1,22 +1,24 @@
 info:
-  name: Refresh token
+  name: Logout user
   type: http
-  seq: 6
+  seq: 3
   tags:
     - Users
 
 http:
   method: POST
-  url: http://localhost:8000/auth/refresh
-  body:
-    type: json
-    data: |-
-      {
-        "token" : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxMCIsImV4cCI6MTc3NTAzNTAwNiwibmJmIjoxNzc1MDM0MTA2LCJpYXQiOjE3NzUwMzQxMDYsImp0aSI6IjRlZjAyYTJhLWYzY2ItNGJiYS04NWE4LThiZTViNDk5ZWRjNyIsInVzZXJfaWQiOiIxMCIsInVzZXJuYW1lIjoiZWR1IiwidG9rZW5fdmVyc2lvbiI6MSwidG9rZW5fdHlwZSI6ImFjY2VzcyJ9.Ey9KtnVPhWeKrZ7GGXJXm1xilg7qyIYBADBRhiftZGM"
-      }
+  url: "{{baseUrl}}/auth/logout"
   auth:
     type: bearer
     token: "{{token}}"
+
+scripts:
+  - type: after-response
+    code: |-
+      if (res.status >= 200 && res.status < 300) {
+        bru.setEnvVar("token", "", { persist: true });
+        bru.setEnvVar("refreshToken", "", { persist: true });
+      }
 
 settings:
   encodeUrl: true
