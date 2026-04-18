@@ -7,26 +7,27 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/restaurants/:restaurantId/reviews"
+  url: "{{baseUrl}}/reviews/:restaurantId"
   params:
     - name: restaurantId
-      value: ""
+      value: "1"
       type: path
   body:
     type: json
     data: |-
       {
-        "id": "rev_12345",
         "rating": 5,
         "comment": "Amazing food and great service!",
-        "categories": "Food",
-        "userId": "user_12345",
-        "restaurantId": "12345",
-        "createdAt": "2024-12-31T19:00:00Z"
+        "categories": "Food"
       }
   auth:
     type: bearer
-    token: "{{token}}"
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiI0IiwiZXhwIjoxNzc1MDQyMDcxLCJuYmYiOjE3NzUwNDExNzEsImlhdCI6MTc3NTA0MTE3MSwianRpIjoiMWM4MjI3M2UtN2Q1Ny00NjY1LWFkNjktNzdmZTQ2MmViNzZiIiwidXNlcl9pZCI6IjQiLCJ1c2VybmFtZSI6ImNyaXN0aWFubyIsInRva2VuX3ZlcnNpb24iOjksInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.y0lIgKRZOayn2KkgJwFulRQ6vej2L6Bb-VblfMD8AL8
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:8000
 
 settings:
   encodeUrl: true

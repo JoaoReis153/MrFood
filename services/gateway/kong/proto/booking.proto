@@ -15,7 +15,7 @@ service BookingService {
   };
   rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse){
     option (google.api.http) = {
-      delete: "/reservations/delete"
+      delete: "/reservations/{booking_id}"
       body: "*"
     };
   };

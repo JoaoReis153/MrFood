@@ -1,7 +1,7 @@
 info:
-  name: get restaurant details
+  name: get restaurant
   type: grpc
-  seq: 5
+  seq: 6
 
 grpc:
   url: localhost:50052

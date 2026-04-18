@@ -1,27 +1,10 @@
 info:
   name: update restaurant
   type: grpc
-  seq: 7
+  seq: 3
 
 grpc:
   url: localhost:50052
-  method: /proto.RestaurantService/UpdateRestaurant
+  method: /proto.RestaurantService/GetRestaurantDetails
   methodType: unary
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
-  message: |-
-    {
-      "id": 1,
-      "name": "Barneys without Jr",
-      "latitude": 289.41019114077517,
-      "longitude": 231.24068483866333,
-      "address": "derelinquo",
-      "working_hours": [
-        {}
-      ],
-      "categories": [
-        "viscus",
-        "viscus"
-      ],
-      "max_slots": 211
-    }
-  auth: inherit

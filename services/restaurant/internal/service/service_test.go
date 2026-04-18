@@ -14,8 +14,9 @@ type mockRepo struct {
 	getByNameFn       func(context.Context, string) (*models.Restaurant, error)
 	createFn          func(context.Context, *models.Restaurant) (int32, error)
 	getByIDFn         func(context.Context, int32) (*models.Restaurant, error)
+	getIDFn           func(context.Context, int32) (int32, error)
 	updateFn          func(context.Context, *models.Restaurant) (*models.Restaurant, error)
-	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.TimeRange, error)
+	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error)
 }
 
 type mockReviewStats struct {
@@ -43,6 +44,13 @@ func (m *mockRepo) GetRestaurantByID(ctx context.Context, id int32) (*models.Res
 	return m.getByIDFn(ctx, id)
 }
 
+func (m *mockRepo) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
+	if m.getIDFn == nil {
+		return 0, repository.ErrRestaurantNotFound
+	}
+	return m.getIDFn(ctx, id)
+}
+
 func (m *mockRepo) UpdateRestaurant(ctx context.Context, restaurant *models.Restaurant) (*models.Restaurant, error) {
 	if m.updateFn == nil {
 		return restaurant, nil
@@ -50,7 +58,7 @@ func (m *mockRepo) UpdateRestaurant(ctx context.Context, restaurant *models.Rest
 	return m.updateFn(ctx, restaurant)
 }
 
-func (m *mockRepo) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+func (m *mockRepo) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if m.getWorkingHoursFn == nil {
 		return nil, repository.ErrRestaurantNotFound
 	}
@@ -122,6 +130,20 @@ func TestCreateRestaurantSuccess(t *testing.T) {
 	}
 }
 
+func TestCreateRestaurantReturnsRepoError(t *testing.T) {
+	repoErr := errors.New("repo down")
+	svc := &Service{repo: &mockRepo{
+		getByNameFn: func(context.Context, string) (*models.Restaurant, error) {
+			return nil, repoErr
+		},
+	}}
+
+	_, err := svc.CreateRestaurant(context.Background(), &models.Restaurant{Name: "R1", OwnerID: 9})
+	if !errors.Is(err, repoErr) {
+		t.Fatalf("expected repo error, got %v", err)
+	}
+}
+
 func TestUpdateRestaurantRejectsNonOwner(t *testing.T) {
 	svc := &Service{repo: &mockRepo{
 		getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
@@ -189,6 +211,15 @@ func TestUpdateRestaurantSuccessPreservesOwner(t *testing.T) {
 	}
 }
 
+func TestUpdateRestaurantRejectsInvalidPayload(t *testing.T) {
+	svc := &Service{repo: &mockRepo{}}
+
+	_, err := svc.UpdateRestaurant(context.Background(), nil, 1)
+	if !errors.Is(err, ErrInvalidRestaurant) {
+		t.Fatalf("expected ErrInvalidRestaurant, got %v", err)
+	}
+}
+
 func TestCompareRestaurantsRejectsEqualIDs(t *testing.T) {
 	svc := &Service{repo: &mockRepo{}}
 
@@ -225,7 +256,7 @@ func TestGetWorkingHoursRejectsInvalidRestaurantID(t *testing.T) {
 
 func TestGetWorkingHoursMapsNotFound(t *testing.T) {
 	svc := &Service{repo: &mockRepo{
-		getWorkingHoursFn: func(context.Context, int32, time.Time) (*models.TimeRange, error) {
+		getWorkingHoursFn: func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error) {
 			return nil, repository.ErrRestaurantNotFound
 		},
 	}}
@@ -241,14 +272,14 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	wantEnd := wantStart.Add(8 * time.Hour)
 
 	svc := &Service{repo: &mockRepo{
-		getWorkingHoursFn: func(_ context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error) {
+		getWorkingHoursFn: func(_ context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 			if restaurantID != 4 {
 				t.Fatalf("expected restaurant id 4, got %d", restaurantID)
 			}
 			if timeStart.IsZero() {
 				t.Fatal("expected timeStart to be set")
 			}
-			return &models.TimeRange{TimeStart: wantStart, TimeEnd: wantEnd}, nil
+			return &models.WorkingHoursResponse{TimeStart: wantStart, TimeEnd: wantEnd, MaxSlots: 25}, nil
 		},
 	}}
 
@@ -258,6 +289,23 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	}
 	if !got.TimeStart.Equal(wantStart) || !got.TimeEnd.Equal(wantEnd) {
 		t.Fatalf("expected [%s, %s], got [%s, %s]", wantStart, wantEnd, got.TimeStart, got.TimeEnd)
+	}
+	if got.MaxSlots != 25 {
+		t.Fatalf("expected max slots 25, got %d", got.MaxSlots)
+	}
+}
+
+func TestGetWorkingHoursPassThroughError(t *testing.T) {
+	repoErr := errors.New("db timeout")
+	svc := &Service{repo: &mockRepo{
+		getWorkingHoursFn: func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error) {
+			return nil, repoErr
+		},
+	}}
+
+	_, err := svc.GetWorkingHours(context.Background(), 3, time.Now())
+	if !errors.Is(err, repoErr) {
+		t.Fatalf("expected repo error, got %v", err)
 	}
 }
 
@@ -302,5 +350,174 @@ func TestGetRestaurantByIDIgnoresReviewStatsError(t *testing.T) {
 	}
 	if restaurant.AverageRating != nil || restaurant.ReviewCount != nil {
 		t.Fatalf("expected nil stats when review service fails: %+v", restaurant)
+	}
+}
+
+func TestGetRestaurantIDRejectsInvalidID(t *testing.T) {
+	svc := &Service{repo: &mockRepo{}}
+
+	_, err := svc.GetRestaurantID(context.Background(), 0)
+	if !errors.Is(err, ErrInvalidRestaurant) {
+		t.Fatalf("expected ErrInvalidRestaurant, got %v", err)
+	}
+}
+
+func TestGetRestaurantIDMapsNotFound(t *testing.T) {
+	svc := &Service{repo: &mockRepo{
+		getIDFn: func(context.Context, int32) (int32, error) {
+			return 0, repository.ErrRestaurantNotFound
+		},
+	}}
+
+	_, err := svc.GetRestaurantID(context.Background(), 7)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestGetRestaurantIDSuccess(t *testing.T) {
+	svc := &Service{repo: &mockRepo{
+		getIDFn: func(context.Context, int32) (int32, error) {
+			return 7, nil
+		},
+	}}
+
+	id, err := svc.GetRestaurantID(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if id != 7 {
+		t.Fatalf("expected id 7, got %d", id)
+	}
+}
+
+func TestNew(t *testing.T) {
+	repo := &repository.Repository{}
+	svc := New(repo, nil)
+	if svc == nil || svc.repo == nil {
+		t.Fatal("expected service and repo to be set")
+	}
+}
+
+func TestUpdateRestaurantRejectsNegativeMaxSlots(t *testing.T) {
+	svc := &Service{repo: &mockRepo{
+		getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
+			return &models.Restaurant{ID: 7, OwnerID: 100, Name: "Old"}, nil
+		},
+	}}
+
+	_, err := svc.UpdateRestaurant(context.Background(), &models.Restaurant{ID: 7, MaxSlots: -2}, 100)
+	if !errors.Is(err, ErrInvalidRestaurant) {
+		t.Fatalf("expected ErrInvalidRestaurant, got %v", err)
+	}
+}
+
+func TestUpdateRestaurantReturnsNameLookupError(t *testing.T) {
+	repoErr := errors.New("lookup failed")
+	svc := &Service{repo: &mockRepo{
+		getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
+			return &models.Restaurant{ID: 7, OwnerID: 100, Name: "Old Name"}, nil
+		},
+		getByNameFn: func(context.Context, string) (*models.Restaurant, error) {
+			return nil, repoErr
+		},
+	}}
+
+	_, err := svc.UpdateRestaurant(context.Background(), &models.Restaurant{ID: 7, Name: "Taken"}, 100)
+	if !errors.Is(err, repoErr) {
+		t.Fatalf("expected lookup error, got %v", err)
+	}
+}
+
+func TestGetRestaurantByIDPaths(t *testing.T) {
+	t.Run("invalid id", func(t *testing.T) {
+		svc := &Service{repo: &mockRepo{}}
+		_, err := svc.GetRestaurantByID(context.Background(), 0)
+		if !errors.Is(err, ErrInvalidRestaurant) {
+			t.Fatalf("expected ErrInvalidRestaurant, got %v", err)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		svc := &Service{repo: &mockRepo{
+			getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
+				return nil, repository.ErrRestaurantNotFound
+			},
+		}}
+		_, err := svc.GetRestaurantByID(context.Background(), 10)
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatalf("expected ErrNotFound, got %v", err)
+		}
+	})
+
+	t.Run("repo error", func(t *testing.T) {
+		wantErr := errors.New("db err")
+		svc := &Service{repo: &mockRepo{
+			getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
+				return nil, wantErr
+			},
+		}}
+		_, err := svc.GetRestaurantByID(context.Background(), 10)
+		if !errors.Is(err, wantErr) {
+			t.Fatalf("expected db err, got %v", err)
+		}
+	})
+}
+
+func TestGetRestaurantIDReturnsRepoError(t *testing.T) {
+	wantErr := errors.New("db err")
+	svc := &Service{repo: &mockRepo{getIDFn: func(context.Context, int32) (int32, error) { return 0, wantErr }}}
+
+	_, err := svc.GetRestaurantID(context.Background(), 3)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("expected db err, got %v", err)
+	}
+}
+
+func TestCompareRestaurantsInvalidIDsAndErrors(t *testing.T) {
+	svc := &Service{repo: &mockRepo{}}
+
+	_, _, err := svc.CompareRestaurants(context.Background(), 0, 1)
+	if !errors.Is(err, ErrInvalidRestaurant) {
+		t.Fatalf("expected ErrInvalidRestaurant, got %v", err)
+	}
+
+	wantErr := errors.New("first failed")
+	svc = &Service{repo: &mockRepo{
+		getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
+			return nil, wantErr
+		},
+	}}
+
+	_, _, err = svc.CompareRestaurants(context.Background(), 1, 2)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("expected first error, got %v", err)
+	}
+}
+
+func TestEnrichWithReviewStatsNilRestaurant(t *testing.T) {
+	svc := &Service{}
+	_, err := svc.enrichWithReviewStats(context.Background(), nil)
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestEnrichWithReviewStatsNilClientOrStats(t *testing.T) {
+	r := &models.Restaurant{ID: 1, Name: "R"}
+	svc := &Service{reviewStats: nil}
+
+	out, err := svc.enrichWithReviewStats(context.Background(), r)
+	if err != nil || out != r {
+		t.Fatalf("expected passthrough, got out=%+v err=%v", out, err)
+	}
+
+	svc.reviewStats = &mockReviewStats{getStatsFn: func(context.Context, int32) (*models.RestaurantStats, error) {
+		return nil, nil
+	}}
+
+	out, err = svc.enrichWithReviewStats(context.Background(), r)
+	if err != nil || out.AverageRating != nil || out.ReviewCount != nil {
+		t.Fatalf("expected nil stats passthrough, got out=%+v err=%v", out, err)
 	}
 }

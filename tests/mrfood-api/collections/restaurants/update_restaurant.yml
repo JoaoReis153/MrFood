@@ -1,20 +1,35 @@
 info:
-  name: Get restaurant details
+  name: Update restaurant
   type: http
-  seq: 1
+  seq: 8
   tags:
     - Restaurants
 
 http:
-  method: GET
-  url: "{{baseUrl}}/restaurants/:restaurantId"
-  params:
-    - name: restaurantId
-      value: ""
-      type: path
+  method: PUT
+  url: http://localhost:8000/restaurants/update
+  body:
+    type: json
+    data: |-
+      {
+        "id": 5,
+        "name": "MrFood",
+        "latitude": 289.41019114077517,
+        "longitude": 231.24068483866333,
+        "address": "derelinquo",
+        "working_hours": [
+          "2026-03-27T09:00:00Z",
+          "2026-03-27T18:00:00Z"
+        ],
+        "categories": [
+          "viscus",
+          "viscus"
+        ],
+        "max_slots": 211
+      }
   auth:
     type: bearer
-    token: "{{token}}"
+    token: {{token}}
 
 settings:
   encodeUrl: true

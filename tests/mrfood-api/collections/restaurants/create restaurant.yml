@@ -1,7 +1,9 @@
 info:
-  name: create restaurant
-  type: grpc
-  seq: 6
+  name: Create restaurant
+  type: http
+  seq: 7
+  tags:
+  - Restaurants
 
 grpc:
   url: localhost:50052
@@ -10,7 +12,7 @@ grpc:
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |
     {
-      "name": "Barney's  Jr",
+      "name": "new restaurant",
       "latitude": 41.1579,
       "longitude": -8.6291,
       "address": "sono",
@@ -25,4 +27,6 @@ grpc:
       "max_slots": 132,
       "has_media": true
     }
-  auth: inherit
+  auth:
+    type: bearer
+    token: {{token}}
