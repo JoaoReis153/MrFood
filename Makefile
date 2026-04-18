@@ -129,7 +129,7 @@ stop:
 
 ## Stop and remove services
 down:
-	$(DC) down
+	$(DC) down -v
 
 ## Restart services
 restart: down run
