@@ -2,11 +2,10 @@ x-common: &common
   restart: unless-stopped
   networks:
     - app-network
-    - kong-net
 
 x-auth-db-config: &auth-db-config
   POSTGRES_HOST: auth_db
-  POSTGRES_DB: mrfood_auth
+  POSTGRES_DB: ${AUTH_POSTGRES_DB}
   POSTGRES_USER: ${AUTH_POSTGRES_USER}
   POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
 
@@ -19,7 +18,6 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   auth:
     build: ./auth/
-    ports: ["${AUTH_SERVER_PORT}:50051"]
     <<: *common
     environment:
       # Database
@@ -44,12 +42,11 @@ services:
 
   auth_db:
     image: postgres:16
-    ports: ["${AUTH_POSTGRES_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - auth_db_data:/var/lib/postgresql/data
-      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *auth-db-config
     healthcheck:
@@ -57,7 +54,6 @@ services:
 
   auth_redis:
     image: redis:7-alpine
-    ports: ["${AUTH_REDIS_PORT}:6379"]
     <<: *common
     command: redis-server --save "" --appendonly no
     healthcheck:
@@ -66,10 +62,5 @@ services:
       timeout: 5s
       retries: 5
 
-networks:
-  app-network:
-    driver: bridge
-  kong-net:
-    driver: bridge
 volumes:
   auth_db_data:

@@ -24,7 +24,7 @@ const (
 
 type RestaurantStats struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	AverageRating float64                `protobuf:"fixed64,2,opt,name=average_rating,json=averageRating,proto3" json:"average_rating,omitempty"`
 	ReviewCount   int32                  `protobuf:"varint,3,opt,name=review_count,json=reviewCount,proto3" json:"review_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -61,7 +61,7 @@ func (*RestaurantStats) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *RestaurantStats) GetRestaurantId() int32 {
+func (x *RestaurantStats) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -84,7 +84,7 @@ func (x *RestaurantStats) GetReviewCount() int32 {
 
 type GetRestaurantStatsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,7 +119,7 @@ func (*GetRestaurantStatsRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetRestaurantStatsRequest) GetRestaurantId() int32 {
+func (x *GetRestaurantStatsRequest) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -172,7 +172,7 @@ func (x *GetRestaurantStatsResponse) GetRestaurantStats() *RestaurantStats {
 
 type WorkingHoursRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -208,7 +208,7 @@ func (*WorkingHoursRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *WorkingHoursRequest) GetRestaurantId() int32 {
+func (x *WorkingHoursRequest) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -224,8 +224,10 @@ func (x *WorkingHoursRequest) GetTimeStart() *timestamppb.Timestamp {
 
 type WorkingHoursResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	WorkingHours  *TimeRange             `protobuf:"bytes,2,opt,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
+	TimeEnd       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time_end,json=timeEnd,proto3" json:"time_end,omitempty"`
+	MaxSlots      int32                  `protobuf:"varint,4,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -260,82 +262,44 @@ func (*WorkingHoursResponse) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *WorkingHoursResponse) GetRestaurantId() int32 {
+func (x *WorkingHoursResponse) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
 	return 0
 }
 
-func (x *WorkingHoursResponse) GetWorkingHours() *TimeRange {
-	if x != nil {
-		return x.WorkingHours
-	}
-	return nil
-}
-
-type TimeRange struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TimeStart     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=time_start,json=timeStart,proto3" json:"time_start,omitempty"`
-	TimeEnd       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time_end,json=timeEnd,proto3" json:"time_end,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TimeRange) Reset() {
-	*x = TimeRange{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TimeRange) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TimeRange) ProtoMessage() {}
-
-func (x *TimeRange) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TimeRange.ProtoReflect.Descriptor instead.
-func (*TimeRange) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *TimeRange) GetTimeStart() *timestamppb.Timestamp {
+func (x *WorkingHoursResponse) GetTimeStart() *timestamppb.Timestamp {
 	if x != nil {
 		return x.TimeStart
 	}
 	return nil
 }
 
-func (x *TimeRange) GetTimeEnd() *timestamppb.Timestamp {
+func (x *WorkingHoursResponse) GetTimeEnd() *timestamppb.Timestamp {
 	if x != nil {
 		return x.TimeEnd
 	}
 	return nil
 }
 
+func (x *WorkingHoursResponse) GetMaxSlots() int32 {
+	if x != nil {
+		return x.MaxSlots
+	}
+	return 0
+}
+
 type GetRestaurantDetailsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetRestaurantDetailsRequest) Reset() {
 	*x = GetRestaurantDetailsRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -347,7 +311,7 @@ func (x *GetRestaurantDetailsRequest) String() string {
 func (*GetRestaurantDetailsRequest) ProtoMessage() {}
 
 func (x *GetRestaurantDetailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -360,10 +324,10 @@ func (x *GetRestaurantDetailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRestaurantDetailsRequest.ProtoReflect.Descriptor instead.
 func (*GetRestaurantDetailsRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{6}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetRestaurantDetailsRequest) GetId() int32 {
+func (x *GetRestaurantDetailsRequest) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -379,7 +343,7 @@ type GetRestaurantDetailsResponse struct {
 
 func (x *GetRestaurantDetailsResponse) Reset() {
 	*x = GetRestaurantDetailsResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[7]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +355,7 @@ func (x *GetRestaurantDetailsResponse) String() string {
 func (*GetRestaurantDetailsResponse) ProtoMessage() {}
 
 func (x *GetRestaurantDetailsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[7]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +368,7 @@ func (x *GetRestaurantDetailsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRestaurantDetailsResponse.ProtoReflect.Descriptor instead.
 func (*GetRestaurantDetailsResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{7}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetRestaurantDetailsResponse) GetRestaurant() *RestaurantDetails {
@@ -420,17 +384,18 @@ type CreateRestaurantRequest struct {
 	Latitude      float64                `protobuf:"fixed64,2,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	Longitude     float64                `protobuf:"fixed64,3,opt,name=longitude,proto3" json:"longitude,omitempty"`
 	Address       string                 `protobuf:"bytes,4,opt,name=address,proto3" json:"address,omitempty"`
-	WorkingHours  []string               `protobuf:"bytes,5,rep,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
-	Categories    []string               `protobuf:"bytes,6,rep,name=categories,proto3" json:"categories,omitempty"`
-	MaxSlots      int32                  `protobuf:"varint,7,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
-	HasMedia      bool                   `protobuf:"varint,8,opt,name=has_media,json=hasMedia,proto3" json:"has_media,omitempty"`
+	OpeningTime   string                 `protobuf:"bytes,5,opt,name=opening_time,json=openingTime,proto3" json:"opening_time,omitempty"`
+	ClosingTime   string                 `protobuf:"bytes,6,opt,name=closing_time,json=closingTime,proto3" json:"closing_time,omitempty"`
+	Categories    []string               `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty"`
+	MaxSlots      int32                  `protobuf:"varint,8,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
+	HasMedia      bool                   `protobuf:"varint,9,opt,name=has_media,json=hasMedia,proto3" json:"has_media,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateRestaurantRequest) Reset() {
 	*x = CreateRestaurantRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -442,7 +407,7 @@ func (x *CreateRestaurantRequest) String() string {
 func (*CreateRestaurantRequest) ProtoMessage() {}
 
 func (x *CreateRestaurantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -455,7 +420,7 @@ func (x *CreateRestaurantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRestaurantRequest.ProtoReflect.Descriptor instead.
 func (*CreateRestaurantRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CreateRestaurantRequest) GetName() string {
@@ -486,11 +451,18 @@ func (x *CreateRestaurantRequest) GetAddress() string {
 	return ""
 }
 
-func (x *CreateRestaurantRequest) GetWorkingHours() []string {
+func (x *CreateRestaurantRequest) GetOpeningTime() string {
 	if x != nil {
-		return x.WorkingHours
+		return x.OpeningTime
 	}
-	return nil
+	return ""
+}
+
+func (x *CreateRestaurantRequest) GetClosingTime() string {
+	if x != nil {
+		return x.ClosingTime
+	}
+	return ""
 }
 
 func (x *CreateRestaurantRequest) GetCategories() []string {
@@ -516,7 +488,7 @@ func (x *CreateRestaurantRequest) GetHasMedia() bool {
 
 type CreateRestaurantResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	PresignedUrl  *string                `protobuf:"bytes,2,opt,name=presigned_url,json=presignedUrl,proto3,oneof" json:"presigned_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -524,7 +496,7 @@ type CreateRestaurantResponse struct {
 
 func (x *CreateRestaurantResponse) Reset() {
 	*x = CreateRestaurantResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -536,7 +508,7 @@ func (x *CreateRestaurantResponse) String() string {
 func (*CreateRestaurantResponse) ProtoMessage() {}
 
 func (x *CreateRestaurantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,10 +521,10 @@ func (x *CreateRestaurantResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRestaurantResponse.ProtoReflect.Descriptor instead.
 func (*CreateRestaurantResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{9}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *CreateRestaurantResponse) GetRestaurantId() int32 {
+func (x *CreateRestaurantResponse) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -567,22 +539,23 @@ func (x *CreateRestaurantResponse) GetPresignedUrl() string {
 }
 
 type UpdateRestaurantRequest struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Id            int32                    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Latitude      float64                  `protobuf:"fixed64,3,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	Longitude     float64                  `protobuf:"fixed64,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	Address       string                   `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
-	WorkingHours  []*timestamppb.Timestamp `protobuf:"bytes,6,rep,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
-	Categories    []string                 `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty"`
-	MaxSlots      int32                    `protobuf:"varint,8,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Latitude      float64                `protobuf:"fixed64,3,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude     float64                `protobuf:"fixed64,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	Address       string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	OpeningTime   string                 `protobuf:"bytes,6,opt,name=opening_time,json=openingTime,proto3" json:"opening_time,omitempty"`
+	ClosingTime   string                 `protobuf:"bytes,7,opt,name=closing_time,json=closingTime,proto3" json:"closing_time,omitempty"`
+	Categories    []string               `protobuf:"bytes,8,rep,name=categories,proto3" json:"categories,omitempty"`
+	MaxSlots      int32                  `protobuf:"varint,9,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateRestaurantRequest) Reset() {
 	*x = UpdateRestaurantRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -594,7 +567,7 @@ func (x *UpdateRestaurantRequest) String() string {
 func (*UpdateRestaurantRequest) ProtoMessage() {}
 
 func (x *UpdateRestaurantRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -607,10 +580,10 @@ func (x *UpdateRestaurantRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRestaurantRequest.ProtoReflect.Descriptor instead.
 func (*UpdateRestaurantRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{10}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *UpdateRestaurantRequest) GetId() int32 {
+func (x *UpdateRestaurantRequest) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -645,11 +618,18 @@ func (x *UpdateRestaurantRequest) GetAddress() string {
 	return ""
 }
 
-func (x *UpdateRestaurantRequest) GetWorkingHours() []*timestamppb.Timestamp {
+func (x *UpdateRestaurantRequest) GetOpeningTime() string {
 	if x != nil {
-		return x.WorkingHours
+		return x.OpeningTime
 	}
-	return nil
+	return ""
+}
+
+func (x *UpdateRestaurantRequest) GetClosingTime() string {
+	if x != nil {
+		return x.ClosingTime
+	}
+	return ""
 }
 
 func (x *UpdateRestaurantRequest) GetCategories() []string {
@@ -675,7 +655,7 @@ type UpdateRestaurantResponse struct {
 
 func (x *UpdateRestaurantResponse) Reset() {
 	*x = UpdateRestaurantResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -687,7 +667,7 @@ func (x *UpdateRestaurantResponse) String() string {
 func (*UpdateRestaurantResponse) ProtoMessage() {}
 
 func (x *UpdateRestaurantResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -700,7 +680,7 @@ func (x *UpdateRestaurantResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateRestaurantResponse.ProtoReflect.Descriptor instead.
 func (*UpdateRestaurantResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{11}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UpdateRestaurantResponse) GetRestaurant() *RestaurantDetails {
@@ -711,28 +691,29 @@ func (x *UpdateRestaurantResponse) GetRestaurant() *RestaurantDetails {
 }
 
 type RestaurantDetails struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Id            int32                    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Latitude      float64                  `protobuf:"fixed64,3,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	Longitude     float64                  `protobuf:"fixed64,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	Address       string                   `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
-	WorkingHours  []*timestamppb.Timestamp `protobuf:"bytes,6,rep,name=working_hours,json=workingHours,proto3" json:"working_hours,omitempty"`
-	Categories    []string                 `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty"`
-	MediaUrl      *string                  `protobuf:"bytes,8,opt,name=media_url,json=mediaUrl,proto3,oneof" json:"media_url,omitempty"`
-	MaxSlots      int32                    `protobuf:"varint,9,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
-	OwnerId       int32                    `protobuf:"varint,10,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	OwnerName     string                   `protobuf:"bytes,11,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	SponsorTier   int32                    `protobuf:"varint,12,opt,name=sponsor_tier,json=sponsorTier,proto3" json:"sponsor_tier,omitempty"`
-	AverageRating *float64                 `protobuf:"fixed64,13,opt,name=average_rating,json=averageRating,proto3,oneof" json:"average_rating,omitempty"`
-	ReviewCount   *int32                   `protobuf:"varint,14,opt,name=review_count,json=reviewCount,proto3,oneof" json:"review_count,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Latitude      float64                `protobuf:"fixed64,3,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude     float64                `protobuf:"fixed64,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	Address       string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
+	OpeningTime   string                 `protobuf:"bytes,6,opt,name=opening_time,json=openingTime,proto3" json:"opening_time,omitempty"`
+	ClosingTime   string                 `protobuf:"bytes,7,opt,name=closing_time,json=closingTime,proto3" json:"closing_time,omitempty"`
+	Categories    []string               `protobuf:"bytes,8,rep,name=categories,proto3" json:"categories,omitempty"`
+	MediaUrl      *string                `protobuf:"bytes,9,opt,name=media_url,json=mediaUrl,proto3,oneof" json:"media_url,omitempty"`
+	MaxSlots      int32                  `protobuf:"varint,10,opt,name=max_slots,json=maxSlots,proto3" json:"max_slots,omitempty"`
+	OwnerId       int64                  `protobuf:"varint,11,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	OwnerName     string                 `protobuf:"bytes,12,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	SponsorTier   int32                  `protobuf:"varint,13,opt,name=sponsor_tier,json=sponsorTier,proto3" json:"sponsor_tier,omitempty"`
+	AverageRating float64                `protobuf:"fixed64,14,opt,name=average_rating,json=averageRating,proto3" json:"average_rating,omitempty"`
+	ReviewCount   int32                  `protobuf:"varint,15,opt,name=review_count,json=reviewCount,proto3" json:"review_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RestaurantDetails) Reset() {
 	*x = RestaurantDetails{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -744,7 +725,7 @@ func (x *RestaurantDetails) String() string {
 func (*RestaurantDetails) ProtoMessage() {}
 
 func (x *RestaurantDetails) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -757,10 +738,10 @@ func (x *RestaurantDetails) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestaurantDetails.ProtoReflect.Descriptor instead.
 func (*RestaurantDetails) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{12}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *RestaurantDetails) GetId() int32 {
+func (x *RestaurantDetails) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -795,11 +776,18 @@ func (x *RestaurantDetails) GetAddress() string {
 	return ""
 }
 
-func (x *RestaurantDetails) GetWorkingHours() []*timestamppb.Timestamp {
+func (x *RestaurantDetails) GetOpeningTime() string {
 	if x != nil {
-		return x.WorkingHours
+		return x.OpeningTime
 	}
-	return nil
+	return ""
+}
+
+func (x *RestaurantDetails) GetClosingTime() string {
+	if x != nil {
+		return x.ClosingTime
+	}
+	return ""
 }
 
 func (x *RestaurantDetails) GetCategories() []string {
@@ -823,7 +811,7 @@ func (x *RestaurantDetails) GetMaxSlots() int32 {
 	return 0
 }
 
-func (x *RestaurantDetails) GetOwnerId() int32 {
+func (x *RestaurantDetails) GetOwnerId() int64 {
 	if x != nil {
 		return x.OwnerId
 	}
@@ -845,30 +833,30 @@ func (x *RestaurantDetails) GetSponsorTier() int32 {
 }
 
 func (x *RestaurantDetails) GetAverageRating() float64 {
-	if x != nil && x.AverageRating != nil {
-		return *x.AverageRating
+	if x != nil {
+		return x.AverageRating
 	}
 	return 0
 }
 
 func (x *RestaurantDetails) GetReviewCount() int32 {
-	if x != nil && x.ReviewCount != nil {
-		return *x.ReviewCount
+	if x != nil {
+		return x.ReviewCount
 	}
 	return 0
 }
 
 type CompareRestaurantDetailsRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId_1 int32                  `protobuf:"varint,1,opt,name=restaurant_id_1,json=restaurantId1,proto3" json:"restaurant_id_1,omitempty"`
-	RestaurantId_2 int32                  `protobuf:"varint,2,opt,name=restaurant_id_2,json=restaurantId2,proto3" json:"restaurant_id_2,omitempty"`
+	RestaurantId_1 int64                  `protobuf:"varint,1,opt,name=restaurant_id_1,json=restaurantId1,proto3" json:"restaurant_id_1,omitempty"`
+	RestaurantId_2 int64                  `protobuf:"varint,2,opt,name=restaurant_id_2,json=restaurantId2,proto3" json:"restaurant_id_2,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CompareRestaurantDetailsRequest) Reset() {
 	*x = CompareRestaurantDetailsRequest{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[13]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -880,7 +868,7 @@ func (x *CompareRestaurantDetailsRequest) String() string {
 func (*CompareRestaurantDetailsRequest) ProtoMessage() {}
 
 func (x *CompareRestaurantDetailsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[13]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -893,17 +881,17 @@ func (x *CompareRestaurantDetailsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompareRestaurantDetailsRequest.ProtoReflect.Descriptor instead.
 func (*CompareRestaurantDetailsRequest) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{13}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *CompareRestaurantDetailsRequest) GetRestaurantId_1() int32 {
+func (x *CompareRestaurantDetailsRequest) GetRestaurantId_1() int64 {
 	if x != nil {
 		return x.RestaurantId_1
 	}
 	return 0
 }
 
-func (x *CompareRestaurantDetailsRequest) GetRestaurantId_2() int32 {
+func (x *CompareRestaurantDetailsRequest) GetRestaurantId_2() int64 {
 	if x != nil {
 		return x.RestaurantId_2
 	}
@@ -920,7 +908,7 @@ type CompareRestaurantDetailsResponse struct {
 
 func (x *CompareRestaurantDetailsResponse) Reset() {
 	*x = CompareRestaurantDetailsResponse{}
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[14]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -932,7 +920,7 @@ func (x *CompareRestaurantDetailsResponse) String() string {
 func (*CompareRestaurantDetailsResponse) ProtoMessage() {}
 
 func (x *CompareRestaurantDetailsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[14]
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -945,7 +933,7 @@ func (x *CompareRestaurantDetailsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompareRestaurantDetailsResponse.ProtoReflect.Descriptor instead.
 func (*CompareRestaurantDetailsResponse) Descriptor() ([]byte, []int) {
-	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{14}
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CompareRestaurantDetailsResponse) GetRestaurant1() *RestaurantDetails {
@@ -962,95 +950,299 @@ func (x *CompareRestaurantDetailsResponse) GetRestaurant2() *RestaurantDetails {
 	return nil
 }
 
+type GetRestaurantRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRestaurantRequest) Reset() {
+	*x = GetRestaurantRequest{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRestaurantRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRestaurantRequest) ProtoMessage() {}
+
+func (x *GetRestaurantRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRestaurantRequest.ProtoReflect.Descriptor instead.
+func (*GetRestaurantRequest) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetRestaurantRequest) GetRestaurantId() int64 {
+	if x != nil {
+		return x.RestaurantId
+	}
+	return 0
+}
+
+type GetRestaurantResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRestaurantResponse) Reset() {
+	*x = GetRestaurantResponse{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRestaurantResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRestaurantResponse) ProtoMessage() {}
+
+func (x *GetRestaurantResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRestaurantResponse.ProtoReflect.Descriptor instead.
+func (*GetRestaurantResponse) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetRestaurantResponse) GetRestaurantId() int64 {
+	if x != nil {
+		return x.RestaurantId
+	}
+	return 0
+}
+
+type GetRestaurantSponsorshipRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRestaurantSponsorshipRequest) Reset() {
+	*x = GetRestaurantSponsorshipRequest{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRestaurantSponsorshipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRestaurantSponsorshipRequest) ProtoMessage() {}
+
+func (x *GetRestaurantSponsorshipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRestaurantSponsorshipRequest.ProtoReflect.Descriptor instead.
+func (*GetRestaurantSponsorshipRequest) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GetRestaurantSponsorshipRequest) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type GetRestaurantSponsorshipResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Categories    []string               `protobuf:"bytes,2,rep,name=categories,proto3" json:"categories,omitempty"`
+	OwnerId       int64                  `protobuf:"varint,3,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRestaurantSponsorshipResponse) Reset() {
+	*x = GetRestaurantSponsorshipResponse{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRestaurantSponsorshipResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRestaurantSponsorshipResponse) ProtoMessage() {}
+
+func (x *GetRestaurantSponsorshipResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRestaurantSponsorshipResponse.ProtoReflect.Descriptor instead.
+func (*GetRestaurantSponsorshipResponse) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetRestaurantSponsorshipResponse) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *GetRestaurantSponsorshipResponse) GetCategories() []string {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+func (x *GetRestaurantSponsorshipResponse) GetOwnerId() int64 {
+	if x != nil {
+		return x.OwnerId
+	}
+	return 0
+}
+
 var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
 	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x80\x01\n" +
 	"\x0fRestaurantStats\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12%\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x12%\n" +
 	"\x0eaverage_rating\x18\x02 \x01(\x01R\raverageRating\x12!\n" +
 	"\freview_count\x18\x03 \x01(\x05R\vreviewCount\"@\n" +
 	"\x19GetRestaurantStatsRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\"_\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\"_\n" +
 	"\x1aGetRestaurantStatsResponse\x12A\n" +
 	"\x10restaurant_stats\x18\x01 \x01(\v2\x16.proto.RestaurantStatsR\x0frestaurantStats\"u\n" +
 	"\x13WorkingHoursRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x129\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x129\n" +
 	"\n" +
-	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"r\n" +
+	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\"\xca\x01\n" +
 	"\x14WorkingHoursResponse\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x125\n" +
-	"\rworking_hours\x18\x02 \x01(\v2\x10.proto.TimeRangeR\fworkingHours\"}\n" +
-	"\tTimeRange\x129\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x129\n" +
 	"\n" +
-	"time_start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\x125\n" +
-	"\btime_end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd\"-\n" +
+	"time_start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimeStart\x125\n" +
+	"\btime_end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\atimeEnd\x12\x1b\n" +
+	"\tmax_slots\x18\x04 \x01(\x05R\bmaxSlots\"-\n" +
 	"\x1bGetRestaurantDetailsRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\"X\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"X\n" +
 	"\x1cGetRestaurantDetailsResponse\x128\n" +
 	"\n" +
 	"restaurant\x18\x01 \x01(\v2\x18.proto.RestaurantDetailsR\n" +
-	"restaurant\"\x80\x02\n" +
+	"restaurant\"\xa1\x02\n" +
 	"\x17CreateRestaurantRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\blatitude\x18\x02 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x03 \x01(\x01R\tlongitude\x12\x18\n" +
-	"\aaddress\x18\x04 \x01(\tR\aaddress\x12#\n" +
-	"\rworking_hours\x18\x05 \x03(\tR\fworkingHours\x12\x1e\n" +
-	"\n" +
-	"categories\x18\x06 \x03(\tR\n" +
-	"categories\x12\x1b\n" +
-	"\tmax_slots\x18\a \x01(\x05R\bmaxSlots\x12\x1b\n" +
-	"\thas_media\x18\b \x01(\bR\bhasMedia\"{\n" +
-	"\x18CreateRestaurantResponse\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12(\n" +
-	"\rpresigned_url\x18\x02 \x01(\tH\x00R\fpresignedUrl\x88\x01\x01B\x10\n" +
-	"\x0e_presigned_url\"\x8f\x02\n" +
-	"\x17UpdateRestaurantRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
-	"\blatitude\x18\x03 \x01(\x01R\blatitude\x12\x1c\n" +
-	"\tlongitude\x18\x04 \x01(\x01R\tlongitude\x12\x18\n" +
-	"\aaddress\x18\x05 \x01(\tR\aaddress\x12?\n" +
-	"\rworking_hours\x18\x06 \x03(\v2\x1a.google.protobuf.TimestampR\fworkingHours\x12\x1e\n" +
+	"\aaddress\x18\x04 \x01(\tR\aaddress\x12!\n" +
+	"\fopening_time\x18\x05 \x01(\tR\vopeningTime\x12!\n" +
+	"\fclosing_time\x18\x06 \x01(\tR\vclosingTime\x12\x1e\n" +
 	"\n" +
 	"categories\x18\a \x03(\tR\n" +
 	"categories\x12\x1b\n" +
-	"\tmax_slots\x18\b \x01(\x05R\bmaxSlots\"T\n" +
+	"\tmax_slots\x18\b \x01(\x05R\bmaxSlots\x12\x1b\n" +
+	"\thas_media\x18\t \x01(\bR\bhasMedia\"{\n" +
+	"\x18CreateRestaurantResponse\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x12(\n" +
+	"\rpresigned_url\x18\x02 \x01(\tH\x00R\fpresignedUrl\x88\x01\x01B\x10\n" +
+	"\x0e_presigned_url\"\x94\x02\n" +
+	"\x17UpdateRestaurantRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
+	"\blatitude\x18\x03 \x01(\x01R\blatitude\x12\x1c\n" +
+	"\tlongitude\x18\x04 \x01(\x01R\tlongitude\x12\x18\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12!\n" +
+	"\fopening_time\x18\x06 \x01(\tR\vopeningTime\x12!\n" +
+	"\fclosing_time\x18\a \x01(\tR\vclosingTime\x12\x1e\n" +
+	"\n" +
+	"categories\x18\b \x03(\tR\n" +
+	"categories\x12\x1b\n" +
+	"\tmax_slots\x18\t \x01(\x05R\bmaxSlots\"T\n" +
 	"\x18UpdateRestaurantResponse\x128\n" +
 	"\n" +
 	"restaurant\x18\x01 \x01(\v2\x18.proto.RestaurantDetailsR\n" +
-	"restaurant\"\x8e\x04\n" +
+	"restaurant\"\xe5\x03\n" +
 	"\x11RestaurantDetails\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
 	"\blatitude\x18\x03 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x04 \x01(\x01R\tlongitude\x12\x18\n" +
-	"\aaddress\x18\x05 \x01(\tR\aaddress\x12?\n" +
-	"\rworking_hours\x18\x06 \x03(\v2\x1a.google.protobuf.TimestampR\fworkingHours\x12\x1e\n" +
+	"\aaddress\x18\x05 \x01(\tR\aaddress\x12!\n" +
+	"\fopening_time\x18\x06 \x01(\tR\vopeningTime\x12!\n" +
+	"\fclosing_time\x18\a \x01(\tR\vclosingTime\x12\x1e\n" +
 	"\n" +
-	"categories\x18\a \x03(\tR\n" +
+	"categories\x18\b \x03(\tR\n" +
 	"categories\x12 \n" +
-	"\tmedia_url\x18\b \x01(\tH\x00R\bmediaUrl\x88\x01\x01\x12\x1b\n" +
-	"\tmax_slots\x18\t \x01(\x05R\bmaxSlots\x12\x19\n" +
-	"\bowner_id\x18\n" +
-	" \x01(\x05R\aownerId\x12\x1d\n" +
+	"\tmedia_url\x18\t \x01(\tH\x00R\bmediaUrl\x88\x01\x01\x12\x1b\n" +
+	"\tmax_slots\x18\n" +
+	" \x01(\x05R\bmaxSlots\x12\x19\n" +
+	"\bowner_id\x18\v \x01(\x03R\aownerId\x12\x1d\n" +
 	"\n" +
-	"owner_name\x18\v \x01(\tR\townerName\x12!\n" +
-	"\fsponsor_tier\x18\f \x01(\x05R\vsponsorTier\x12*\n" +
-	"\x0eaverage_rating\x18\r \x01(\x01H\x01R\raverageRating\x88\x01\x01\x12&\n" +
-	"\freview_count\x18\x0e \x01(\x05H\x02R\vreviewCount\x88\x01\x01B\f\n" +
+	"owner_name\x18\f \x01(\tR\townerName\x12!\n" +
+	"\fsponsor_tier\x18\r \x01(\x05R\vsponsorTier\x12%\n" +
+	"\x0eaverage_rating\x18\x0e \x01(\x01R\raverageRating\x12!\n" +
+	"\freview_count\x18\x0f \x01(\x05R\vreviewCountB\f\n" +
 	"\n" +
-	"_media_urlB\x11\n" +
-	"\x0f_average_ratingB\x0f\n" +
-	"\r_review_count\"q\n" +
+	"_media_url\"q\n" +
 	"\x1fCompareRestaurantDetailsRequest\x12&\n" +
-	"\x0frestaurant_id_1\x18\x01 \x01(\x05R\rrestaurantId1\x12&\n" +
-	"\x0frestaurant_id_2\x18\x02 \x01(\x05R\rrestaurantId2\"\x9a\x01\n" +
+	"\x0frestaurant_id_1\x18\x01 \x01(\x03R\rrestaurantId1\x12&\n" +
+	"\x0frestaurant_id_2\x18\x02 \x01(\x03R\rrestaurantId2\"\x9a\x01\n" +
 	" CompareRestaurantDetailsResponse\x12:\n" +
 	"\vrestaurant1\x18\x01 \x01(\v2\x18.proto.RestaurantDetailsR\vrestaurant1\x12:\n" +
-	"\vrestaurant2\x18\x02 \x01(\v2\x18.proto.RestaurantDetailsR\vrestaurant22\x8b\x03\n" +
+	"\vrestaurant2\x18\x02 \x01(\v2\x18.proto.RestaurantDetailsR\vrestaurant2\";\n" +
+	"\x14GetRestaurantRequest\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\"<\n" +
+	"\x15GetRestaurantResponse\x12#\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\"1\n" +
+	"\x1fGetRestaurantSponsorshipRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\"m\n" +
+	" GetRestaurantSponsorshipResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1e\n" +
+	"\n" +
+	"categories\x18\x02 \x03(\tR\n" +
+	"categories\x12\x19\n" +
+	"\bowner_id\x18\x03 \x01(\x03R\aownerId2\x8b\x03\n" +
 	"\x11RestaurantService\x12_\n" +
 	"\x14GetRestaurantDetails\x12\".proto.GetRestaurantDetailsRequest\x1a#.proto.GetRestaurantDetailsResponse\x12S\n" +
 	"\x10CreateRestaurant\x12\x1e.proto.CreateRestaurantRequest\x1a\x1f.proto.CreateRestaurantResponse\x12S\n" +
@@ -1059,7 +1251,11 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x1aRestaurantToBookingService\x12J\n" +
 	"\x0fGetWorkingHours\x12\x1a.proto.WorkingHoursRequest\x1a\x1b.proto.WorkingHoursResponse2v\n" +
 	"\x19RestaurantToReviewService\x12Y\n" +
-	"\x12GetRestaurantStats\x12 .proto.GetRestaurantStatsRequest\x1a!.proto.GetRestaurantStatsResponseB\bZ\x06/pb;pbb\x06proto3"
+	"\x12GetRestaurantStats\x12 .proto.GetRestaurantStatsRequest\x1a!.proto.GetRestaurantStatsResponse2i\n" +
+	"\x19ReviewToRestaurantService\x12L\n" +
+	"\x0fGetRestaurantId\x12\x1b.proto.GetRestaurantRequest\x1a\x1c.proto.GetRestaurantResponse2\x89\x01\n" +
+	"\x1aRestaurantToSponsorService\x12k\n" +
+	"\x18GetRestaurantSponsorship\x12&.proto.GetRestaurantSponsorshipRequest\x1a'.proto.GetRestaurantSponsorshipResponseB\bZ\x06/pb;pbb\x06proto3"
 
 var (
 	file_internal_api_grpc_proto_protofile_proto_rawDescOnce sync.Once
@@ -1073,54 +1269,58 @@ func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescData
 }
 
-var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 	(*RestaurantStats)(nil),                  // 0: proto.RestaurantStats
 	(*GetRestaurantStatsRequest)(nil),        // 1: proto.GetRestaurantStatsRequest
 	(*GetRestaurantStatsResponse)(nil),       // 2: proto.GetRestaurantStatsResponse
 	(*WorkingHoursRequest)(nil),              // 3: proto.WorkingHoursRequest
 	(*WorkingHoursResponse)(nil),             // 4: proto.WorkingHoursResponse
-	(*TimeRange)(nil),                        // 5: proto.TimeRange
-	(*GetRestaurantDetailsRequest)(nil),      // 6: proto.GetRestaurantDetailsRequest
-	(*GetRestaurantDetailsResponse)(nil),     // 7: proto.GetRestaurantDetailsResponse
-	(*CreateRestaurantRequest)(nil),          // 8: proto.CreateRestaurantRequest
-	(*CreateRestaurantResponse)(nil),         // 9: proto.CreateRestaurantResponse
-	(*UpdateRestaurantRequest)(nil),          // 10: proto.UpdateRestaurantRequest
-	(*UpdateRestaurantResponse)(nil),         // 11: proto.UpdateRestaurantResponse
-	(*RestaurantDetails)(nil),                // 12: proto.RestaurantDetails
-	(*CompareRestaurantDetailsRequest)(nil),  // 13: proto.CompareRestaurantDetailsRequest
-	(*CompareRestaurantDetailsResponse)(nil), // 14: proto.CompareRestaurantDetailsResponse
-	(*timestamppb.Timestamp)(nil),            // 15: google.protobuf.Timestamp
+	(*GetRestaurantDetailsRequest)(nil),      // 5: proto.GetRestaurantDetailsRequest
+	(*GetRestaurantDetailsResponse)(nil),     // 6: proto.GetRestaurantDetailsResponse
+	(*CreateRestaurantRequest)(nil),          // 7: proto.CreateRestaurantRequest
+	(*CreateRestaurantResponse)(nil),         // 8: proto.CreateRestaurantResponse
+	(*UpdateRestaurantRequest)(nil),          // 9: proto.UpdateRestaurantRequest
+	(*UpdateRestaurantResponse)(nil),         // 10: proto.UpdateRestaurantResponse
+	(*RestaurantDetails)(nil),                // 11: proto.RestaurantDetails
+	(*CompareRestaurantDetailsRequest)(nil),  // 12: proto.CompareRestaurantDetailsRequest
+	(*CompareRestaurantDetailsResponse)(nil), // 13: proto.CompareRestaurantDetailsResponse
+	(*GetRestaurantRequest)(nil),             // 14: proto.GetRestaurantRequest
+	(*GetRestaurantResponse)(nil),            // 15: proto.GetRestaurantResponse
+	(*GetRestaurantSponsorshipRequest)(nil),  // 16: proto.GetRestaurantSponsorshipRequest
+	(*GetRestaurantSponsorshipResponse)(nil), // 17: proto.GetRestaurantSponsorshipResponse
+	(*timestamppb.Timestamp)(nil),            // 18: google.protobuf.Timestamp
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	0,  // 0: proto.GetRestaurantStatsResponse.restaurant_stats:type_name -> proto.RestaurantStats
-	15, // 1: proto.WorkingHoursRequest.time_start:type_name -> google.protobuf.Timestamp
-	5,  // 2: proto.WorkingHoursResponse.working_hours:type_name -> proto.TimeRange
-	15, // 3: proto.TimeRange.time_start:type_name -> google.protobuf.Timestamp
-	15, // 4: proto.TimeRange.time_end:type_name -> google.protobuf.Timestamp
-	12, // 5: proto.GetRestaurantDetailsResponse.restaurant:type_name -> proto.RestaurantDetails
-	15, // 6: proto.UpdateRestaurantRequest.working_hours:type_name -> google.protobuf.Timestamp
-	12, // 7: proto.UpdateRestaurantResponse.restaurant:type_name -> proto.RestaurantDetails
-	15, // 8: proto.RestaurantDetails.working_hours:type_name -> google.protobuf.Timestamp
-	12, // 9: proto.CompareRestaurantDetailsResponse.restaurant1:type_name -> proto.RestaurantDetails
-	12, // 10: proto.CompareRestaurantDetailsResponse.restaurant2:type_name -> proto.RestaurantDetails
-	6,  // 11: proto.RestaurantService.GetRestaurantDetails:input_type -> proto.GetRestaurantDetailsRequest
-	8,  // 12: proto.RestaurantService.CreateRestaurant:input_type -> proto.CreateRestaurantRequest
-	10, // 13: proto.RestaurantService.UpdateRestaurant:input_type -> proto.UpdateRestaurantRequest
-	13, // 14: proto.RestaurantService.CompareRestaurantDetails:input_type -> proto.CompareRestaurantDetailsRequest
-	3,  // 15: proto.RestaurantToBookingService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
-	1,  // 16: proto.RestaurantToReviewService.GetRestaurantStats:input_type -> proto.GetRestaurantStatsRequest
-	7,  // 17: proto.RestaurantService.GetRestaurantDetails:output_type -> proto.GetRestaurantDetailsResponse
-	9,  // 18: proto.RestaurantService.CreateRestaurant:output_type -> proto.CreateRestaurantResponse
-	11, // 19: proto.RestaurantService.UpdateRestaurant:output_type -> proto.UpdateRestaurantResponse
-	14, // 20: proto.RestaurantService.CompareRestaurantDetails:output_type -> proto.CompareRestaurantDetailsResponse
-	4,  // 21: proto.RestaurantToBookingService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
-	2,  // 22: proto.RestaurantToReviewService.GetRestaurantStats:output_type -> proto.GetRestaurantStatsResponse
-	17, // [17:23] is the sub-list for method output_type
-	11, // [11:17] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	18, // 1: proto.WorkingHoursRequest.time_start:type_name -> google.protobuf.Timestamp
+	18, // 2: proto.WorkingHoursResponse.time_start:type_name -> google.protobuf.Timestamp
+	18, // 3: proto.WorkingHoursResponse.time_end:type_name -> google.protobuf.Timestamp
+	11, // 4: proto.GetRestaurantDetailsResponse.restaurant:type_name -> proto.RestaurantDetails
+	11, // 5: proto.UpdateRestaurantResponse.restaurant:type_name -> proto.RestaurantDetails
+	11, // 6: proto.CompareRestaurantDetailsResponse.restaurant1:type_name -> proto.RestaurantDetails
+	11, // 7: proto.CompareRestaurantDetailsResponse.restaurant2:type_name -> proto.RestaurantDetails
+	5,  // 8: proto.RestaurantService.GetRestaurantDetails:input_type -> proto.GetRestaurantDetailsRequest
+	7,  // 9: proto.RestaurantService.CreateRestaurant:input_type -> proto.CreateRestaurantRequest
+	9,  // 10: proto.RestaurantService.UpdateRestaurant:input_type -> proto.UpdateRestaurantRequest
+	12, // 11: proto.RestaurantService.CompareRestaurantDetails:input_type -> proto.CompareRestaurantDetailsRequest
+	3,  // 12: proto.RestaurantToBookingService.GetWorkingHours:input_type -> proto.WorkingHoursRequest
+	1,  // 13: proto.RestaurantToReviewService.GetRestaurantStats:input_type -> proto.GetRestaurantStatsRequest
+	14, // 14: proto.ReviewToRestaurantService.GetRestaurantId:input_type -> proto.GetRestaurantRequest
+	16, // 15: proto.RestaurantToSponsorService.GetRestaurantSponsorship:input_type -> proto.GetRestaurantSponsorshipRequest
+	6,  // 16: proto.RestaurantService.GetRestaurantDetails:output_type -> proto.GetRestaurantDetailsResponse
+	8,  // 17: proto.RestaurantService.CreateRestaurant:output_type -> proto.CreateRestaurantResponse
+	10, // 18: proto.RestaurantService.UpdateRestaurant:output_type -> proto.UpdateRestaurantResponse
+	13, // 19: proto.RestaurantService.CompareRestaurantDetails:output_type -> proto.CompareRestaurantDetailsResponse
+	4,  // 20: proto.RestaurantToBookingService.GetWorkingHours:output_type -> proto.WorkingHoursResponse
+	2,  // 21: proto.RestaurantToReviewService.GetRestaurantStats:output_type -> proto.GetRestaurantStatsResponse
+	15, // 22: proto.ReviewToRestaurantService.GetRestaurantId:output_type -> proto.GetRestaurantResponse
+	17, // 23: proto.RestaurantToSponsorService.GetRestaurantSponsorship:output_type -> proto.GetRestaurantSponsorshipResponse
+	16, // [16:24] is the sub-list for method output_type
+	8,  // [8:16] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_internal_api_grpc_proto_protofile_proto_init() }
@@ -1128,17 +1328,17 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 	if File_internal_api_grpc_proto_protofile_proto != nil {
 		return
 	}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[9].OneofWrappers = []any{}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[12].OneofWrappers = []any{}
+	file_internal_api_grpc_proto_protofile_proto_msgTypes[8].OneofWrappers = []any{}
+	file_internal_api_grpc_proto_protofile_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   18,
 			NumExtensions: 0,
-			NumServices:   3,
+			NumServices:   5,
 		},
 		GoTypes:           file_internal_api_grpc_proto_protofile_proto_goTypes,
 		DependencyIndexes: file_internal_api_grpc_proto_protofile_proto_depIdxs,

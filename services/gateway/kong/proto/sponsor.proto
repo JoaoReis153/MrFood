@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+import "google/protobuf/timestamp.proto";
+
+service SponsorService {
+  rpc Sponsor (SponsorshipRequest) returns (SponsorshipResponse) {
+    option (google.api.http) = {
+      post: "/sponsor/{id}"
+      body: "*"
+    };
+  }
+
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse) {
+    option (google.api.http) = {
+      get: "/sponsor/{id}"
+      body: "*"
+    };
+  };
+}
+
+//Important repeated = all data comes back in one response
+//Important stream = data comes back in multiple responses, one at a time
+
+message SponsorshipRequest {
+  int64 id = 1;
+  int32 tier = 2;
+}
+
+message SponsorshipResponse {
+  int64 id = 1;
+  int32 tier = 2;
+  google.protobuf.Timestamp until = 3;
+}
+
+message GetRestaurantSponsorshipRequest {
+  int64 id = 1;
+}
+
+message GetRestaurantSponsorshipResponse {
+  int64 id = 1;
+  repeated string categories = 2;
+  int64 owner_id = 3;
+}

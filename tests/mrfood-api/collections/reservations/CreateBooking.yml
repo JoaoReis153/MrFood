@@ -4,18 +4,19 @@ info:
   seq: 4
 
 grpc:
-  url: localhost:50060
+  url: localhost:50053
   method: /proto.BookingService/CreateBooking
   methodType: unary
   protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "user_id": 38,
-      "restaurant_id": 121,
+      "restaurant_id": 2,
       "quantity": 2,
       "time_start": {
-        "seconds": 1774350000,
+        "seconds": 1774612801,
         "nanos": 0
       }
     }
-  auth: inherit
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc0OTk5OTE0LCJuYmYiOjE3NzQ5OTkwMTQsImlhdCI6MTc3NDk5OTAxNCwianRpIjoiYjQ4ZDgzZDgtN2ZjMC00ZDIzLWFmNTgtNzkxNmY3ZDI0NGVmIiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImJhbmFuYTEiLCJ0b2tlbl92ZXJzaW9uIjoxLCJ0b2tlbl90eXBlIjoiYWNjZXNzIn0.gZm9sjQKNj55yyFaWoTzSpF4Z59D9dIDy98QC2ei_PA

@@ -1,7 +1,7 @@
 info:
   name: get working hours / Booking
   type: grpc
-  seq: 9
+  seq: 5
 
 grpc:
   url: localhost:50052

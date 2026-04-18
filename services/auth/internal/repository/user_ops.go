@@ -13,8 +13,14 @@ func (r *Repository) CreateUser(ctx context.Context, username, password, email s
 	}
 
 	query := `
-		INSERT INTO app_user (username, password, email)
-		VALUES ($1, $2, $3)
+		INSERT INTO app_user (user_id, username, password, email)
+		VALUES (
+			COALESCE(
+				(SELECT MAX(user_id) + 1 FROM app_user WHERE user_id <= 9223372036854775807),
+				1
+			),
+			$1, $2, $3
+		)
 		RETURNING user_id, username
 	`
 

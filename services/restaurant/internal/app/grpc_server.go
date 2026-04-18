@@ -27,19 +27,27 @@ import (
 type server struct {
 	pb.UnimplementedRestaurantServiceServer
 	pb.UnimplementedRestaurantToBookingServiceServer
+	pb.UnimplementedReviewToRestaurantServiceServer
+	pb.UnimplementedRestaurantToSponsorServiceServer
 	restaurantService restaurantService
 }
 
 type restaurantService interface {
-	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
-	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
-	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error)
-	CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error)
-	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.TimeRange, error)
+	GetRestaurantByID(ctx context.Context, id int64) (*models.Restaurant, error)
+	GetRestaurantID(ctx context.Context, id int64) (int64, error)
+	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int64, error)
+	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int64) (*models.Restaurant, error)
+	CompareRestaurants(ctx context.Context, id1, id2 int64) (*models.Restaurant, *models.Restaurant, error)
+	GetWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHoursResponse, error)
 }
 
 type reviewStatsClient struct {
-	client pb.RestaurantToReviewServiceClient
+	client reviewStatsRPC
+	conn   grpc.ClientConnInterface
+}
+
+type reviewStatsRPC interface {
+	GetRestaurantStats(ctx context.Context, in *pb.GetRestaurantStatsRequest, opts ...grpc.CallOption) (*pb.GetRestaurantStatsResponse, error)
 }
 
 func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, error) {
@@ -48,19 +56,36 @@ func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, 
 		return nil, nil, fmt.Errorf("dial review grpc: %w", err)
 	}
 
-	return &reviewStatsClient{client: pb.NewRestaurantToReviewServiceClient(conn)}, conn, nil
+	return &reviewStatsClient{conn: conn}, conn, nil
 }
 
-func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
+func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int64) (*models.RestaurantStats, error) {
 	reviewCtx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
 	defer cancel()
 
-	resp, err := c.client.GetRestaurantStats(reviewCtx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	var (
+		resp *pb.GetRestaurantStatsResponse
+		err  error
+	)
+
+	if c.client != nil {
+		resp, err = c.client.GetRestaurantStats(reviewCtx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	} else {
+		resp = new(pb.GetRestaurantStatsResponse)
+		err = c.conn.Invoke(
+			reviewCtx,
+			"/proto.ReviewService/GetRestaurantStats",
+			&pb.GetRestaurantStatsRequest{RestaurantId: restaurantID},
+			resp,
+		)
+	}
 	if err != nil {
 		code := status.Code(err)
 		if code == codes.DeadlineExceeded || code == codes.Unavailable {
+			slog.Debug("review stats unavailable", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 			return nil, nil
 		}
+		slog.Warn("review stats rpc failed", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 		return nil, nil
 	}
 
@@ -89,6 +114,18 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 	}, nil
 }
 
+func (s *server) GetRestaurantId(ctx context.Context, req *pb.GetRestaurantRequest) (*pb.GetRestaurantResponse, error) {
+	slog.Info("fetching restaurant id for review service", "restaurant_id", req.GetRestaurantId())
+	restaurantID, err := s.restaurantService.GetRestaurantID(ctx, req.GetRestaurantId())
+	if err != nil {
+		slog.Error("failed to get restaurant id", "error", err)
+		return nil, mapServiceError(err)
+	}
+	return &pb.GetRestaurantResponse{
+		RestaurantId: restaurantID,
+	}, nil
+}
+
 func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantRequest) (*pb.CreateRestaurantResponse, error) {
 	requesterOwner, err := ExtractUserFromContext(ctx)
 	if err != nil {
@@ -97,15 +134,20 @@ func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantR
 	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwner.UserID)
 
 	restaurant := &models.Restaurant{
-		OwnerID:      requesterOwner.UserID,
-		OwnerName:    requesterOwner.Username,
-		Name:         req.GetName(),
-		Address:      req.GetAddress(),
-		WorkingHours: req.GetWorkingHours(),
-		Categories:   req.GetCategories(),
-		Latitude:     req.GetLatitude(),
-		Longitude:    req.GetLongitude(),
-		MaxSlots:     req.GetMaxSlots(),
+		OwnerID:     requesterOwner.UserID,
+		OwnerName:   requesterOwner.Username,
+		Name:        req.GetName(),
+		Address:     req.GetAddress(),
+		OpeningTime: req.GetOpeningTime(),
+		ClosingTime: req.GetClosingTime(),
+		Categories:  req.GetCategories(),
+		Latitude:    req.GetLatitude(),
+		Longitude:   req.GetLongitude(),
+		MaxSlots:    req.GetMaxSlots(),
+	}
+
+	if err := restaurant.ValidateCreateRequest(); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	newRestaurantID, err := s.restaurantService.CreateRestaurant(ctx, restaurant)
@@ -127,19 +169,15 @@ func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantR
 	}
 
 	changes := &models.Restaurant{
-		ID:         req.GetId(),
-		Name:       req.GetName(),
-		Address:    req.GetAddress(),
-		Categories: req.GetCategories(),
-		Latitude:   req.GetLatitude(),
-		Longitude:  req.GetLongitude(),
-		MaxSlots:   req.GetMaxSlots(),
-	}
-	for _, wh := range req.GetWorkingHours() {
-		if wh == nil {
-			continue
-		}
-		changes.WorkingHours = append(changes.WorkingHours, wh.AsTime().UTC().Format(time.RFC3339))
+		ID:          req.GetId(),
+		Name:        req.GetName(),
+		Address:     req.GetAddress(),
+		Categories:  req.GetCategories(),
+		Latitude:    req.GetLatitude(),
+		Longitude:   req.GetLongitude(),
+		MaxSlots:    req.GetMaxSlots(),
+		OpeningTime: req.GetOpeningTime(),
+		ClosingTime: req.GetClosingTime(),
 	}
 
 	updatedRestaurant, err := s.restaurantService.UpdateRestaurant(ctx, changes, requestOwner.UserID)
@@ -175,10 +213,24 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 
 	return &pb.WorkingHoursResponse{
 		RestaurantId: req.GetRestaurantId(),
-		WorkingHours: &pb.TimeRange{
-			TimeStart: timestamppb.New(workingHours.TimeStart),
-			TimeEnd:   timestamppb.New(workingHours.TimeEnd),
-		},
+		TimeStart:    timestamppb.New(workingHours.TimeStart),
+		TimeEnd:      timestamppb.New(workingHours.TimeEnd),
+		MaxSlots:     workingHours.MaxSlots,
+	}, nil
+}
+
+func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.GetRestaurantSponsorshipResponse, error) {
+	slog.Info("fetching restaurant details", "restaurant_id", req.GetId())
+
+	restaurant, err := s.restaurantService.GetRestaurantByID(ctx, req.GetId())
+	if err != nil {
+		return nil, mapServiceError(err)
+	}
+
+	return &pb.GetRestaurantSponsorshipResponse{
+		Id:         restaurant.ID,
+		Categories: restaurant.Categories,
+		OwnerId:    restaurant.OwnerID,
 	}, nil
 }
 
@@ -199,6 +251,8 @@ func (app *App) RunServer() {
 
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)
+	pb.RegisterReviewToRestaurantServiceServer(s, srv)
+	pb.RegisterRestaurantToSponsorServiceServer(s, srv)
 
 	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
@@ -216,7 +270,7 @@ type Claims struct {
 }
 
 type UserInfo struct {
-	UserID   int32
+	UserID   int64
 	Username string
 }
 
@@ -240,7 +294,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID, err := parseInt32(claims.UserID)
+	userID, err := parseInt64(claims.UserID)
 
 	if err != nil {
 		slog.Error("failed to parse user id", "error", err)
@@ -262,15 +316,15 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
+func parseInt64(value string) (int64, error) {
+	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	if v < 1 {
-		return 0, errors.New("out of int32 range")
+		return 0, errors.New("out of int64 range")
 	}
-	return int32(v), nil
+	return v, nil
 }
 
 func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
@@ -284,6 +338,8 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 		Latitude:    restaurant.Latitude,
 		Longitude:   restaurant.Longitude,
 		Address:     restaurant.Address,
+		OpeningTime: restaurant.OpeningTime,
+		ClosingTime: restaurant.ClosingTime,
 		Categories:  restaurant.Categories,
 		MaxSlots:    restaurant.MaxSlots,
 		OwnerId:     restaurant.OwnerID,
@@ -297,32 +353,13 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 	}
 
 	if restaurant.AverageRating != nil {
-		averageRating := *restaurant.AverageRating
-		response.AverageRating = &averageRating
+		response.AverageRating = *restaurant.AverageRating
 	}
 	if restaurant.ReviewCount != nil {
-		reviewCount := *restaurant.ReviewCount
-		response.ReviewCount = &reviewCount
-	}
-
-	for _, wh := range restaurant.WorkingHours {
-		if ts := parseTimestampToProto(wh); ts != nil {
-			response.WorkingHours = append(response.WorkingHours, ts)
-		}
+		response.ReviewCount = *restaurant.ReviewCount
 	}
 
 	return response
-}
-
-func parseTimestampToProto(value string) *timestamppb.Timestamp {
-	layouts := []string{time.RFC3339, "2006-01-02 15:04:05"}
-	for _, layout := range layouts {
-		parsed, err := time.Parse(layout, value)
-		if err == nil {
-			return timestamppb.New(parsed.UTC())
-		}
-	}
-	return nil
 }
 
 func mapServiceError(err error) error {

@@ -2,6 +2,9 @@ go 1.25.0
 
 use (
 	./services/auth
+	./services/booking
 	./services/restaurant
-	services/search
+	./services/review
+	./services/sponsor
+	./services/search
 )

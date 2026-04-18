@@ -2,3 +2,7 @@
 *.vscode
 *.idea
 *.env
+*__pycache__/
+data/*
+scripts/processed_data/*
+*.zip

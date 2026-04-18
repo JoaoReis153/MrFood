@@ -439,3 +439,209 @@ var RestaurantToReviewService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "internal/api/grpc/proto/protofile.proto",
 }
+
+const (
+	ReviewToRestaurantService_GetRestaurantId_FullMethodName = "/proto.ReviewToRestaurantService/GetRestaurantId"
+)
+
+// ReviewToRestaurantServiceClient is the client API for ReviewToRestaurantService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ReviewToRestaurantServiceClient interface {
+	GetRestaurantId(ctx context.Context, in *GetRestaurantRequest, opts ...grpc.CallOption) (*GetRestaurantResponse, error)
+}
+
+type reviewToRestaurantServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewReviewToRestaurantServiceClient(cc grpc.ClientConnInterface) ReviewToRestaurantServiceClient {
+	return &reviewToRestaurantServiceClient{cc}
+}
+
+func (c *reviewToRestaurantServiceClient) GetRestaurantId(ctx context.Context, in *GetRestaurantRequest, opts ...grpc.CallOption) (*GetRestaurantResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRestaurantResponse)
+	err := c.cc.Invoke(ctx, ReviewToRestaurantService_GetRestaurantId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ReviewToRestaurantServiceServer is the server API for ReviewToRestaurantService service.
+// All implementations must embed UnimplementedReviewToRestaurantServiceServer
+// for forward compatibility.
+type ReviewToRestaurantServiceServer interface {
+	GetRestaurantId(context.Context, *GetRestaurantRequest) (*GetRestaurantResponse, error)
+	mustEmbedUnimplementedReviewToRestaurantServiceServer()
+}
+
+// UnimplementedReviewToRestaurantServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedReviewToRestaurantServiceServer struct{}
+
+func (UnimplementedReviewToRestaurantServiceServer) GetRestaurantId(context.Context, *GetRestaurantRequest) (*GetRestaurantResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRestaurantId not implemented")
+}
+func (UnimplementedReviewToRestaurantServiceServer) mustEmbedUnimplementedReviewToRestaurantServiceServer() {
+}
+func (UnimplementedReviewToRestaurantServiceServer) testEmbeddedByValue() {}
+
+// UnsafeReviewToRestaurantServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ReviewToRestaurantServiceServer will
+// result in compilation errors.
+type UnsafeReviewToRestaurantServiceServer interface {
+	mustEmbedUnimplementedReviewToRestaurantServiceServer()
+}
+
+func RegisterReviewToRestaurantServiceServer(s grpc.ServiceRegistrar, srv ReviewToRestaurantServiceServer) {
+	// If the following call panics, it indicates UnimplementedReviewToRestaurantServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ReviewToRestaurantService_ServiceDesc, srv)
+}
+
+func _ReviewToRestaurantService_GetRestaurantId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReviewToRestaurantServiceServer).GetRestaurantId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReviewToRestaurantService_GetRestaurantId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReviewToRestaurantServiceServer).GetRestaurantId(ctx, req.(*GetRestaurantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ReviewToRestaurantService_ServiceDesc is the grpc.ServiceDesc for ReviewToRestaurantService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ReviewToRestaurantService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.ReviewToRestaurantService",
+	HandlerType: (*ReviewToRestaurantServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetRestaurantId",
+			Handler:    _ReviewToRestaurantService_GetRestaurantId_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	RestaurantToSponsorService_GetRestaurantSponsorship_FullMethodName = "/proto.RestaurantToSponsorService/GetRestaurantSponsorship"
+)
+
+// RestaurantToSponsorServiceClient is the client API for RestaurantToSponsorService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type RestaurantToSponsorServiceClient interface {
+	GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*GetRestaurantSponsorshipResponse, error)
+}
+
+type restaurantToSponsorServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRestaurantToSponsorServiceClient(cc grpc.ClientConnInterface) RestaurantToSponsorServiceClient {
+	return &restaurantToSponsorServiceClient{cc}
+}
+
+func (c *restaurantToSponsorServiceClient) GetRestaurantSponsorship(ctx context.Context, in *GetRestaurantSponsorshipRequest, opts ...grpc.CallOption) (*GetRestaurantSponsorshipResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRestaurantSponsorshipResponse)
+	err := c.cc.Invoke(ctx, RestaurantToSponsorService_GetRestaurantSponsorship_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RestaurantToSponsorServiceServer is the server API for RestaurantToSponsorService service.
+// All implementations must embed UnimplementedRestaurantToSponsorServiceServer
+// for forward compatibility.
+type RestaurantToSponsorServiceServer interface {
+	GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*GetRestaurantSponsorshipResponse, error)
+	mustEmbedUnimplementedRestaurantToSponsorServiceServer()
+}
+
+// UnimplementedRestaurantToSponsorServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedRestaurantToSponsorServiceServer struct{}
+
+func (UnimplementedRestaurantToSponsorServiceServer) GetRestaurantSponsorship(context.Context, *GetRestaurantSponsorshipRequest) (*GetRestaurantSponsorshipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetRestaurantSponsorship not implemented")
+}
+func (UnimplementedRestaurantToSponsorServiceServer) mustEmbedUnimplementedRestaurantToSponsorServiceServer() {
+}
+func (UnimplementedRestaurantToSponsorServiceServer) testEmbeddedByValue() {}
+
+// UnsafeRestaurantToSponsorServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RestaurantToSponsorServiceServer will
+// result in compilation errors.
+type UnsafeRestaurantToSponsorServiceServer interface {
+	mustEmbedUnimplementedRestaurantToSponsorServiceServer()
+}
+
+func RegisterRestaurantToSponsorServiceServer(s grpc.ServiceRegistrar, srv RestaurantToSponsorServiceServer) {
+	// If the following call panics, it indicates UnimplementedRestaurantToSponsorServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&RestaurantToSponsorService_ServiceDesc, srv)
+}
+
+func _RestaurantToSponsorService_GetRestaurantSponsorship_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRestaurantSponsorshipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RestaurantToSponsorServiceServer).GetRestaurantSponsorship(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RestaurantToSponsorService_GetRestaurantSponsorship_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RestaurantToSponsorServiceServer).GetRestaurantSponsorship(ctx, req.(*GetRestaurantSponsorshipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RestaurantToSponsorService_ServiceDesc is the grpc.ServiceDesc for RestaurantToSponsorService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var RestaurantToSponsorService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.RestaurantToSponsorService",
+	HandlerType: (*RestaurantToSponsorServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetRestaurantSponsorship",
+			Handler:    _RestaurantToSponsorService_GetRestaurantSponsorship_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}

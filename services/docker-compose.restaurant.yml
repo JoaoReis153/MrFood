@@ -18,12 +18,12 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   restaurant:
     build: ./restaurant/
-    ports: ["${RESTAURANT_SERVER_PORT}:${RESTAURANT_SERVER_PORT}"]
     <<: *common
     environment:
       # Database
       <<: *restaurant-db-config
       APP_SERVER_PORT: ${RESTAURANT_SERVER_PORT}
+      REVIEW_GRPC_ADDR: "review:${REVIEW_SERVER_PORT}"
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m
@@ -38,20 +38,15 @@ services:
 
   restaurant_db:
     image: postgres:16
-    ports: ["${RESTAURANT_POSTGRES_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
       - restaurant_db_data:/var/lib/postgresql/data
-      - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     environment:
       <<: *restaurant-db-config
     healthcheck:
       <<: *pg-healthcheck
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   restaurant_db_data:

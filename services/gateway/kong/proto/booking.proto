@@ -7,40 +7,32 @@ package proto;
 option go_package = "/pb;pb";
 
 service BookingService {
-  rpc CreateBooking (CreateBookingRequest) returns (Booking) {
+  rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse) {
     option (google.api.http) = {
       post: "/reservations"
       body: "*"
     };
   };
-}
-
-message WorkingHoursRequest {
-  int32 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
-}
-
-message WorkingHoursResponse {
-  int32 restaurant_id = 1;
-  TimeRange working_hours = 2;
+  rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse){
+    option (google.api.http) = {
+      delete: "/reservations/{booking_id}"
+      body: "*"
+    };
+  };
 }
 
 message CreateBookingRequest {
-  int32 user_id = 1;
-  int32 restaurant_id = 2;
-  int32 quantity = 3;
-  google.protobuf.Timestamp time_start = 4;
+  int64 restaurant_id = 1;
+  int32 quantity = 2;
+  google.protobuf.Timestamp time_start = 3;
 }
 
-message Booking {
-  int32 id = 1;
-  int32 user_id = 2;
-  int32 restaurant_id = 3;
-  int32 quantity = 4;
-  TimeRange working_hours = 5;
+message CreateBookingResponse {
+  int32 booking_id = 1;
 }
 
-message TimeRange {
-  google.protobuf.Timestamp time_start = 1;
-  google.protobuf.Timestamp time_end = 2;
+message DeleteBookingRequest {
+  int32 booking_id = 1;
 }
+
+message DeleteBookingResponse {}

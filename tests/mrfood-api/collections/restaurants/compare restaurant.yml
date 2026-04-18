@@ -1,7 +1,7 @@
 info:
   name: compare restaurant
   type: grpc
-  seq: 8
+  seq: 2
 
 grpc:
   url: localhost:50052
