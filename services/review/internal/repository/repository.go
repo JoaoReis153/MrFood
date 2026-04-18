@@ -118,7 +118,7 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 	return updated, nil
 }
 
-func (r *Repository) DeleteReview(ctx context.Context, reviewID int32, userID int64) error {
+func (r *Repository) DeleteReview(ctx context.Context, reviewID int64, userID int64) error {
 	result, err := r.db.Exec(ctx, "DELETE FROM review WHERE review_id = $1 AND user_id = $2", reviewID, userID)
 	if err != nil {
 		slog.Error("Failed to delete review", "error", err)

@@ -11,7 +11,7 @@ type ReviewRepository interface {
 	GetReviews(ctx context.Context, restaurantID int64, page, limit int) ([]models.Review, int, error)
 	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
-	DeleteReview(ctx context.Context, reviewID int32, userID int64) error
+	DeleteReview(ctx context.Context, reviewID int64, userID int64) error
 	GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error)
 }
 

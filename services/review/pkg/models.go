@@ -21,7 +21,7 @@ var (
 )
 
 type Review struct {
-	ReviewID     int32     `json:"id"`
+	ReviewID     int64     `json:"id"`
 	RestaurantID int64     `json:"restaurant_id"`
 	UserID       int64     `json:"user_id"`
 	Rating       int32     `json:"rating"`
@@ -36,14 +36,14 @@ type CreateReview struct {
 }
 
 type UpdateReview struct {
-	ReviewID int32   `json:"id"`
+	ReviewID int64   `json:"id"`
 	UserID   int64   `json:"user_id,omitempty"`
 	Rating   *int32  `json:"rating,omitempty"`
 	Comment  *string `json:"comment,omitempty"`
 }
 
 type DeleteReview struct {
-	ReviewID int32 `json:"id"`
+	ReviewID int64 `json:"id"`
 	UserID   int64 `json:"user_id"`
 }
 
