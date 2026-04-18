@@ -119,6 +119,9 @@ setup: run load-all
 build:
 	$(DC) build
 
+build-no-cache:
+	$(DC) build --no-cache
+
 ## Start all services (detached)
 run:
 	$(DC) up -d
@@ -129,6 +132,9 @@ stop:
 
 ## Stop and remove services
 down:
+	$(DC) down
+
+down-volumes:
 	$(DC) down -v
 
 ## Restart services
