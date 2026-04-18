@@ -18,7 +18,6 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   restaurant:
     build: ./restaurant/
-    ports: ["${RESTAURANT_SERVER_PORT}:${RESTAURANT_SERVER_PORT}"]
     <<: *common
     environment:
       # Database
@@ -39,7 +38,6 @@ services:
 
   restaurant_db:
     image: postgres:16
-    ports: ["${RESTAURANT_POSTGRES_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
