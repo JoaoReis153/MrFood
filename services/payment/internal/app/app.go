@@ -8,12 +8,14 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
 )
 
 type App struct {
-	Service *service.Service
-	Repo    *repository.Repository
-	DB      *pgxpool.Pool
+	Service          *service.Service
+	Repo             *repository.Repository
+	DB               *pgxpool.Pool
+	NotificationConn *grpc.ClientConn
 }
 
 func New(ctx context.Context, cfg *config.Config) (*App, error) {
@@ -28,12 +30,14 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("repository: %w", err)
 	}
 
-	svc := service.New(repo)
+	client, notificationConn, err := NewClient(cfg.Notification.GRPCAddr)
+	svc := service.New(repo, client)
 
 	return &App{
-		Repo:    repo,
-		Service: svc,
-		DB:      conns.DB,
+		Repo:             repo,
+		Service:          svc,
+		DB:               conns.DB,
+		NotificationConn: notificationConn,
 	}, nil
 }
 

@@ -14,6 +14,7 @@ import (
 var (
 	ErrReceiptNotFound         = errors.New("receipt not found")
 	ErrDatabaseNotSet          = errors.New("database is not configured")
+	ErrUnauthorized            = errors.New("unauthorized access to receipt")
 	ErrDuplicatePaymentRequest = errors.New("duplicate payment request")
 )
 
@@ -31,21 +32,23 @@ func (r *Repository) Close(_ context.Context) error {
 	return nil
 }
 
-func (r *Repository) CreateReceipt(ctx context.Context, payment_request *models.PaymentRequest) (int32, error) {
+func (r *Repository) CreateReceipt(ctx context.Context, receipt_request *models.Receipt) (int32, error) {
 	if r.DB == nil {
 		return 0, ErrDatabaseNotSet
 	}
 
 	query := `
-		INSERT INTO receipts (idempotency_key, user_id, ammount, payment_description, current_payment_status)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO receipts (idempotency_key, user_id, user_email, ammount, payment_description, current_payment_status, 
+				payment_type, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id;
 	`
 
 	var receipt_id int32
 
-	err := r.DB.QueryRow(ctx, query, payment_request.IdempotencyKey, payment_request.UserID,
-		payment_request.Ammount, payment_request.PaymentDescription, payment_request.PaymentStatus).Scan(&receipt_id)
+	err := r.DB.QueryRow(ctx, query, receipt_request.IdempotencyKey, receipt_request.UserID, receipt_request.UserEmail,
+		receipt_request.Amount, receipt_request.PaymentDescription, receipt_request.PaymentStatus, receipt_request.PaymentType,
+		receipt_request.CreatedAt).Scan(&receipt_id)
 
 	var pgErr *pgconn.PgError
 
@@ -61,7 +64,7 @@ func (r *Repository) CreateReceipt(ctx context.Context, payment_request *models.
 	return receipt_id, nil
 }
 
-func (r *Repository) GetReceiptByID(ctx context.Context, receipt_id, user_id int32) (*models.Receipt, error) {
+func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
@@ -79,9 +82,11 @@ func (r *Repository) GetReceiptByID(ctx context.Context, receipt_id, user_id int
 		&receipt.ID,
 		&receipt.IdempotencyKey,
 		&receipt.UserID,
-		&receipt.Ammount,
+		&receipt.UserEmail,
+		&receipt.Amount,
 		&receipt.PaymentDescription,
 		&receipt.PaymentStatus,
+		&receipt.PaymentType,
 		&receipt.CreatedAt,
 	)
 
@@ -93,7 +98,7 @@ func (r *Repository) GetReceiptByID(ctx context.Context, receipt_id, user_id int
 	return receipt, nil
 }
 
-func (r *Repository) GetReceiptsByUser(ctx context.Context, user_id int32) ([]*models.Receipt, error) {
+func (r *Repository) GetReceiptsByUser(ctx context.Context, user_id int64) ([]*models.Receipt, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}

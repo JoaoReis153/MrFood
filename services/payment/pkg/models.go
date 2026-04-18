@@ -4,18 +4,12 @@ import "time"
 
 type Receipt struct {
 	ID                 int32     `json:"id"`
+	UserID             int64     `json:"user_id"`
+	UserEmail          string    `json:"user_email"`
 	IdempotencyKey     string    `json:"idempotency_key"`
-	UserID             int32     `json:"user_id"`
-	Ammount            float32   `json:"ammount"`
+	Amount             float32   `json:"amount"`
 	PaymentDescription string    `json:"payment_description"`
 	PaymentStatus      string    `json:"payment_status"`
+	PaymentType        string    `json:"payment_type"`
 	CreatedAt          time.Time `json:"created_at"`
-}
-
-type PaymentRequest struct {
-	IdempotencyKey     string  `json:"idempotency_key"`
-	UserID             int32   `json:"user_id"`
-	Ammount            float32 `json:"ammount"`
-	PaymentDescription string  `json:"payment_description"`
-	PaymentStatus      string  `json:"payment_status"`
 }
