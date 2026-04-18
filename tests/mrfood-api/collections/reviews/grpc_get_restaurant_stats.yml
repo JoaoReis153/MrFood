@@ -1,0 +1,17 @@
+info:
+  name: GetRestaurantStats
+  type: grpc
+  seq: 9
+
+grpc:
+  url: localhost:50055
+  method: /proto.ReviewService/GetRestaurantStats
+  methodType: unary
+  protoFilePath: ../../../../services/review/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "restaurant_id": 1
+    }
+  auth:
+    type: bearer
+    token: "{{token}}"

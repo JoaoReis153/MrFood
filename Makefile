@@ -12,7 +12,7 @@ CSV_SERVICES ?= all
 CSV_ROWS ?= 200
 CSV_FULL ?=
 
-.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run stop down restart logs test clean clean-volumes clean-all
+.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run stop down restart logs test clean clean-volumes clean-all test test-bruno
 
 help:
 	@echo "MrFood Make Commands"
@@ -40,6 +40,13 @@ help:
 	@echo "  make clean                              - Remove containers & images"
 	@echo "  make clean-volumes                      - Remove containers, images, volumes"
 	@echo "  make clean-all                          - Full reset (all containers, images, volumes)"
+
+## Run Bruno REST CI smoke tests
+test-bruno:
+	mkdir -p tests/mrfood-api/reports
+	cd tests/mrfood-api/collections/ci && npx --yes @usebruno/cli@latest run -r --tests-only --reporter-junit ../../reports/bruno-junit.xml --reporter-json ../../reports/bruno-report.json
+
+## Build services
 
 # ============================================================================
 # ENVIRONMENT

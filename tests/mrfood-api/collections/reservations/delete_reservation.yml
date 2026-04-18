@@ -7,7 +7,7 @@ info:
 
 http:
   method: DELETE
-  url: http://localhost:8000/reservations/delete
+  url: "{{baseUrl}}/reservations/delete"
   body:
     type: json
     data: |-
