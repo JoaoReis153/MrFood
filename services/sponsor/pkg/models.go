@@ -8,27 +8,27 @@ import (
 )
 
 type SponsorshipRequest struct {
-	ID   int `json:"id"`
-	Tier int `json:"tier" validate:"required,min=1,max=4"`
+	ID   int64 `json:"id"`
+	Tier int   `json:"tier" validate:"required,min=1,max=4"`
 }
 
 type SponsorshipResponse struct {
-	ID    int       `json:"id"`
+	ID    int64     `json:"id"`
 	Tier  int       `json:"tier" validate:"required,min=1,max=4"`
 	Until time.Time `json:"until"`
 }
 
 type Sponsorship struct {
-	ID         int       `json:"id"`
+	ID         int64     `json:"id"`
 	Tier       int       `json:"tier" validate:"required,min=1,max=4"`
 	Until      time.Time `json:"until"`
 	Categories []string  `json:"categories"`
 }
 
 type RestaurantDetails struct {
-	ID         int      `json:"id"`
+	ID         int64    `json:"id"`
 	Categories []string `json:"categories"`
-	OwnerID    int      `json:"owner_id"`
+	OwnerID    int64    `json:"owner_id"`
 }
 
 var validate = validator.New()

@@ -1,0 +1,16 @@
+info:
+  name: compare restaurant
+  type: grpc
+  seq: 2
+
+grpc:
+  url: localhost:50052
+  method: /proto.RestaurantService/CompareRestaurantDetails
+  methodType: unary
+  protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "restaurant_id_1": 1,
+      "restaurant_id_2": 2
+    }
+  auth: inherit

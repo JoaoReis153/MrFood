@@ -1,0 +1,99 @@
+info:
+  name: Get sponsorship
+  type: http
+  seq: 4
+  tags:
+    - Users
+
+http:
+  method: POST
+  url: "{{baseUrl}}/sponsor/sponsorship"
+  body:
+    type: json
+    data: |-
+      {
+        "id" : 1
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Sponsorship fetched successfully
+    request:
+      url: "{{baseUrl}}/sponsor/sponsorship"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "id": 1
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": 1,
+            "tier": 2
+          }
+  - name: 400 Response
+    description: Bad Request (e.g., missing fields)
+    request:
+      url: "{{baseUrl}}/sponsor/sponsorship"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/sponsor/sponsorship"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "id": 1
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

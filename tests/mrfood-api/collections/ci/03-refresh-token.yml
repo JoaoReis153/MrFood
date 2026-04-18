@@ -1,0 +1,36 @@
+info:
+  name: Refresh token (CI)
+  type: http
+  seq: 3
+  tags:
+    - ci
+    - smoke
+
+http:
+  method: POST
+  url: http://localhost:8000/auth/refresh
+  body:
+    type: json
+    data: |-
+      {
+        "refreshToken": "{{ci_refresh_token}}"
+      }
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("refresh rejects invalid token", function() {
+          expect(res.status).to.equal(401);
+        });
+
+        test("refresh returns unauthorized response", function() {
+          expect(res.statusText).to.equal("Unauthorized");
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

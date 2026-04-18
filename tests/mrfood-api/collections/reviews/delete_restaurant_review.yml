@@ -1,0 +1,148 @@
+info:
+  name: Delete a review for a restaurant
+  type: http
+  seq: 2
+  tags:
+    - Reviews
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/reviews/:reviewId"
+  params:
+    - name: reviewId
+      value: "17"
+      type: path
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:8000
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 204 Response
+    description: Review deleted
+    request:
+      url: "{{baseUrl}}/restaurants/:restaurantId/reviews/:reviewId"
+      method: DELETE
+      params:
+        - name: restaurantId
+          value: ""
+          type: path
+        - name: reviewId
+          value: ""
+          type: path
+    response:
+      status: 204
+      statusText: No Content
+      body:
+        type: text
+        data: ""
+  - name: 400 Response
+    description: Bad Request
+    request:
+      url: "{{baseUrl}}/restaurants/:restaurantId/reviews/:reviewId"
+      method: DELETE
+      params:
+        - name: restaurantId
+          value: ""
+          type: path
+        - name: reviewId
+          value: ""
+          type: path
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
+  - name: 401 Response
+    description: Unauthorized
+    request:
+      url: "{{baseUrl}}/restaurants/:restaurantId/reviews/:reviewId"
+      method: DELETE
+      params:
+        - name: restaurantId
+          value: ""
+          type: path
+        - name: reviewId
+          value: ""
+          type: path
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
+  - name: 404 Response
+    description: Review or restaurant not found
+    request:
+      url: "{{baseUrl}}/restaurants/:restaurantId/reviews/:reviewId"
+      method: DELETE
+      params:
+        - name: restaurantId
+          value: ""
+          type: path
+        - name: reviewId
+          value: ""
+          type: path
+    response:
+      status: 404
+      statusText: Not Found
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
+  - name: 500 Response
+    description: Server Error
+    request:
+      url: "{{baseUrl}}/restaurants/:restaurantId/reviews/:reviewId"
+      method: DELETE
+      params:
+        - name: restaurantId
+          value: ""
+          type: path
+        - name: reviewId
+          value: ""
+          type: path
+    response:
+      status: 500
+      statusText: Internal Server Error
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

@@ -21,7 +21,6 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   booking:
     build: ./booking/
-    ports: ["${BOOKING_SERVER_PORT}:${BOOKING_SERVER_PORT}"]
     <<: *common
     environment:
       # Database
@@ -41,7 +40,6 @@ services:
 
   booking_db:
     image: postgres:16
-    ports: ["${BOOKING_DB_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:

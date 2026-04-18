@@ -1,0 +1,100 @@
+info:
+  name: Sponsor a restaurant
+  type: http
+  seq: 3
+  tags:
+    - Users
+
+http:
+  method: POST
+  url: "{{baseUrl}}/sponsor"
+  body:
+    type: json
+    data: |-
+      {
+        
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 201 Response
+    description: Restaurant sponsored successfully
+    request:
+      url: "{{baseUrl}}/sponsor"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "id": 1,
+            "tier": 2
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": 1,
+            "tier": 2
+          }
+  - name: 400 Response
+    description: Bad Request (e.g., missing fields)
+    request:
+      url: "{{baseUrl}}/sponsor"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "id": 0,
+            "tier": 0
+          }
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
+  - name: 409 Response
+    description: Conflict
+    request:
+      url: "{{baseUrl}}/sponsor"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "id": 1,
+            "tier": 2
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

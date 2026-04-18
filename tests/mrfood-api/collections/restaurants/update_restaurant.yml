@@ -1,13 +1,13 @@
 info:
   name: Update restaurant
   type: http
-  seq: 8
+  seq: 7
   tags:
     - Restaurants
 
 http:
   method: PUT
-  url: http://localhost:8000/restaurants/update
+  url: "{{baseUrl}}/restaurants/update"
   body:
     type: json
     data: |-
@@ -29,7 +29,6 @@ http:
       }
   auth:
     type: bearer
-    token: {{token}}
 
 settings:
   encodeUrl: true

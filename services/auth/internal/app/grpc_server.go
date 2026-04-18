@@ -4,8 +4,10 @@ import (
 	"MrFood/services/auth/config"
 	pb "MrFood/services/auth/internal/api/grpc/pb"
 	"MrFood/services/auth/internal/auth"
+	"MrFood/services/auth/internal/service"
 	models "MrFood/services/auth/pkg"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -61,6 +63,9 @@ func (s *Server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 	newUser, err := s.authService.StoreUser(ctx, user)
 	if err != nil {
 		slog.Error("failed to store user", "error", err)
+		if errors.Is(err, service.ErrDuplicateUser) {
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

@@ -1,0 +1,63 @@
+info:
+  name: Refresh token
+  type: http
+  seq: 6
+  tags:
+    - Users
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/refresh"
+  body:
+    type: json
+    data: |-
+      {
+        "token": "{{refreshToken}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Token refreshed successfully
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "token": "",
+            "refresh_token": ""
+          }
+  - name: 401 Response
+    description: Unauthorized (invalid or missing refresh token)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

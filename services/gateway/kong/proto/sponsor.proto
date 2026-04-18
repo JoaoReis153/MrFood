@@ -25,22 +25,22 @@ service SponsorService {
 //Important stream = data comes back in multiple responses, one at a time
 
 message SponsorshipRequest {
-  int32 id = 1;
+  int64 id = 1;
   int32 tier = 2;
 }
 
 message SponsorshipResponse {
-  int32 id = 1;
+  int64 id = 1;
   int32 tier = 2;
   google.protobuf.Timestamp until = 3;
 }
 
 message GetRestaurantSponsorshipRequest {
-  int32 id = 1;
+  int64 id = 1;
 }
 
 message GetRestaurantSponsorshipResponse {
-  int32 id = 1;
+  int64 id = 1;
   repeated string categories = 2;
-  int32 owner_id = 3;
+  int64 owner_id = 3;
 }

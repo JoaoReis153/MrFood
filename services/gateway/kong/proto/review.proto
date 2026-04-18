@@ -36,8 +36,8 @@ service ReviewService {
 
 message Review {
   int32 review_id = 1;
-  int32 restaurant_id = 2;
-  int32 user_id = 3;
+  int64 restaurant_id = 2;
+  int64 user_id = 3;
   string comment = 4;
   int32 rating = 5;
   google.protobuf.Timestamp created_at = 6;
@@ -55,13 +55,13 @@ message Pagination {
 // ===================================================
 
 message GetReviewsRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
   int32 page = 2;
   int32 limit = 3;
 }
 
 message CreateReviewRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
   string comment = 2;
   int32 rating = 3;
 }
