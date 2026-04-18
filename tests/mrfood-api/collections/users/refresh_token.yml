@@ -1,13 +1,19 @@
 info:
-  name: Logout user
+  name: Refresh token
   type: http
-  seq: 3
+  seq: 6
   tags:
     - Users
 
 http:
   method: POST
-  url: "{{baseUrl}}/auth/logout"
+  url: "{{baseUrl}}/auth/refresh"
+  body:
+    type: json
+    data: |-
+      {
+        "token": "{{refreshToken}}"
+      }
   auth:
     type: bearer
     token: "{{token}}"
@@ -20,9 +26,9 @@ settings:
 
 examples:
   - name: 200 Response
-    description: User logged out successfully
+    description: Token refreshed successfully
     request:
-      url: "{{baseUrl}}/auth/logout"
+      url: "{{baseUrl}}/auth/refresh"
       method: POST
     response:
       status: 200
@@ -34,12 +40,13 @@ examples:
         type: json
         data: |-
           {
-            "message": "Logged out successfully"
+            "token": "",
+            "refresh_token": ""
           }
   - name: 401 Response
-    description: Unauthorized (invalid or missing token)
+    description: Unauthorized (invalid or missing refresh token)
     request:
-      url: "{{baseUrl}}/auth/logout"
+      url: "{{baseUrl}}/auth/refresh"
       method: POST
     response:
       status: 401
