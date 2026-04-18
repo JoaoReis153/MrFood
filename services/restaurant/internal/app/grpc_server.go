@@ -33,16 +33,21 @@ type server struct {
 }
 
 type restaurantService interface {
-	GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error)
-	GetRestaurantID(ctx context.Context, id int32) (int32, error)
-	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error)
-	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error)
-	CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error)
-	GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error)
+	GetRestaurantByID(ctx context.Context, id int64) (*models.Restaurant, error)
+	GetRestaurantID(ctx context.Context, id int64) (int64, error)
+	CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int64, error)
+	UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int64) (*models.Restaurant, error)
+	CompareRestaurants(ctx context.Context, id1, id2 int64) (*models.Restaurant, *models.Restaurant, error)
+	GetWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHoursResponse, error)
 }
 
 type reviewStatsClient struct {
-	client pb.RestaurantToReviewServiceClient
+	client reviewStatsRPC
+	conn   grpc.ClientConnInterface
+}
+
+type reviewStatsRPC interface {
+	GetRestaurantStats(ctx context.Context, in *pb.GetRestaurantStatsRequest, opts ...grpc.CallOption) (*pb.GetRestaurantStatsResponse, error)
 }
 
 func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, error) {
@@ -51,19 +56,36 @@ func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, 
 		return nil, nil, fmt.Errorf("dial review grpc: %w", err)
 	}
 
-	return &reviewStatsClient{client: pb.NewRestaurantToReviewServiceClient(conn)}, conn, nil
+	return &reviewStatsClient{conn: conn}, conn, nil
 }
 
-func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int32) (*models.RestaurantStats, error) {
+func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int64) (*models.RestaurantStats, error) {
 	reviewCtx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
 	defer cancel()
 
-	resp, err := c.client.GetRestaurantStats(reviewCtx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	var (
+		resp *pb.GetRestaurantStatsResponse
+		err  error
+	)
+
+	if c.client != nil {
+		resp, err = c.client.GetRestaurantStats(reviewCtx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	} else {
+		resp = new(pb.GetRestaurantStatsResponse)
+		err = c.conn.Invoke(
+			reviewCtx,
+			"/proto.ReviewService/GetRestaurantStats",
+			&pb.GetRestaurantStatsRequest{RestaurantId: restaurantID},
+			resp,
+		)
+	}
 	if err != nil {
 		code := status.Code(err)
 		if code == codes.DeadlineExceeded || code == codes.Unavailable {
+			slog.Debug("review stats unavailable", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 			return nil, nil
 		}
+		slog.Warn("review stats rpc failed", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 		return nil, nil
 	}
 
@@ -248,7 +270,7 @@ type Claims struct {
 }
 
 type UserInfo struct {
-	UserID   int32
+	UserID   int64
 	Username string
 }
 
@@ -272,7 +294,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID, err := parseInt32(claims.UserID)
+	userID, err := parseInt64(claims.UserID)
 
 	if err != nil {
 		slog.Error("failed to parse user id", "error", err)
@@ -294,15 +316,15 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
+func parseInt64(value string) (int64, error) {
+	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	if v < 1 {
-		return 0, errors.New("out of int32 range")
+		return 0, errors.New("out of int64 range")
 	}
-	return int32(v), nil
+	return v, nil
 }
 
 func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
@@ -331,12 +353,10 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 	}
 
 	if restaurant.AverageRating != nil {
-		averageRating := *restaurant.AverageRating
-		response.AverageRating = &averageRating
+		response.AverageRating = *restaurant.AverageRating
 	}
 	if restaurant.ReviewCount != nil {
-		reviewCount := *restaurant.ReviewCount
-		response.ReviewCount = &reviewCount
+		response.ReviewCount = *restaurant.ReviewCount
 	}
 
 	return response

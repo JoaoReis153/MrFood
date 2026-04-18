@@ -79,7 +79,7 @@ func (s *Service) DeleteBooking(ctx context.Context, delete_request *models.Dele
 	return err
 }
 
-func (s *Service) getWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHours, error) {
+func (s *Service) getWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHours, error) {
 	res, err := s.client.GetWorkingHours(ctx, &pb.WorkingHoursRequest{
 		RestaurantId: restaurantID,
 		TimeStart:    timestamppb.New(timeStart),

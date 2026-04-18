@@ -1,7 +1,7 @@
 info:
   name: create restaurantt
   type: grpc
-  seq: 2
+  seq: 1
 
 grpc:
   url: localhost:50052
@@ -10,18 +10,17 @@ grpc:
   protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
   message: |-
     {
-      "name": "ver5",
-      "latitude": 861.0153091051654,
-      "longitude": 20.226016353542708,
-      "address": "creo",
-      "working_hours": [
-        "2026-03-27 12:00:00"
-      ],
+      "name": "dolores1234",
+      "latitude": 80,
+      "longitude": 80,
+      "address": "appositus",
+      "opening_time": "12:00:00",
+      "closing_time": "14:00:00",
       "categories": [
-        "tamisium",
-        "tamisium"
+        "cura",
+        "cura123"
       ],
-      "max_slots": 84,
+      "max_slots": 834,
       "has_media": false
     }
   auth:

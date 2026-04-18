@@ -30,7 +30,7 @@ type server struct {
 }
 
 type UserInfo struct {
-	UserID   int32
+	UserID   int64
 	Username string
 }
 
@@ -43,8 +43,8 @@ type Claims struct {
 }
 
 type SponsorService interface {
-	GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
-	Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
+	GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error)
+	Sponsor(ctx context.Context, s *models.Sponsorship, userID int64) (*models.SponsorshipResponse, error)
 }
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
@@ -57,7 +57,7 @@ func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestau
 	}
 
 	return &pb.SponsorshipResponse{
-		Id:    int32(response.ID),
+		Id:    response.ID,
 		Tier:  int32(response.Tier),
 		Until: timestamppb.New(response.Until),
 	}, nil
@@ -76,13 +76,13 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	slog.Info("USER", "username", user.Username, "userID", user.UserID)
 
 	sponsorship := &models.Sponsorship{
-		ID:         int(req.Id),
+		ID:         req.Id,
 		Tier:       int(req.Tier),
 		Until:      time.Now().AddDate(0, 1, 0),
 		Categories: []string{},
 	}
 
-	response, err := s.sponsorService.Sponsor(ctx, sponsorship, int(user.UserID))
+	response, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	)
 
 	return &pb.SponsorshipResponse{
-		Id:    int32(response.ID),
+		Id:    response.ID,
 		Tier:  int32(response.Tier),
 		Until: timestamppb.New(response.Until),
 	}, nil
@@ -120,7 +120,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID, err := parseInt32(claims.UserID)
+	userID, err := parseInt64(claims.UserID)
 
 	if err != nil {
 		slog.Error("failed to parse user id", "error", err)
@@ -142,15 +142,15 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
+func parseInt64(value string) (int64, error) {
+	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	if v < 1 {
-		return 0, errors.New("out of int32 range")
+		return 0, errors.New("out of int64 range")
 	}
-	return int32(v), nil
+	return v, nil
 }
 
 func (app *App) RunServer() {

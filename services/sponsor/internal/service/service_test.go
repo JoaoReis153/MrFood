@@ -16,7 +16,7 @@ type MockRepo struct {
 	mock.Mock
 }
 
-func (m *MockRepo) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+func (m *MockRepo) GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -66,13 +66,13 @@ func TestSponsor_Success(t *testing.T) {
 		ID: 1,
 	}
 
-	ownerID := 100
+	ownerID := int64(100)
 
 	mockClient.On("GetRestaurantSponsorship", ctx, &pb.GetRestaurantSponsorshipRequest{
-		Id: int32(req.ID),
+		Id: req.ID,
 	}).Return(&pb.GetRestaurantSponsorshipResponse{
-		Id:      int32(req.ID),
-		OwnerId: int32(ownerID),
+		Id:      req.ID,
+		OwnerId: ownerID,
 	}, nil)
 
 	expectedResp := &models.SponsorshipResponse{}
@@ -104,9 +104,9 @@ func TestSponsor_InvalidOwner(t *testing.T) {
 	}
 
 	mockClient.On("GetRestaurantSponsorship", ctx, &pb.GetRestaurantSponsorshipRequest{
-		Id: int32(req.ID),
+		Id: req.ID,
 	}).Return(&pb.GetRestaurantSponsorshipResponse{
-		Id:      int32(req.ID),
+		Id:      req.ID,
 		OwnerId: 999, // different owner
 	}, nil)
 
@@ -135,7 +135,7 @@ func TestSponsor_ClientError(t *testing.T) {
 	}
 
 	mockClient.On("GetRestaurantSponsorship", ctx, &pb.GetRestaurantSponsorshipRequest{
-		Id: int32(req.ID),
+		Id: req.ID,
 	}).Return(nil, errors.New("grpc error"))
 
 	resp, err := service.Sponsor(ctx, req, 100)
@@ -160,7 +160,7 @@ func TestGetRestaurantSponsorship(t *testing.T) {
 
 	expected := &models.SponsorshipResponse{}
 
-	mockRepo.On("GetRestaurantSponsorship", ctx, int32(1)).Return(expected, nil)
+	mockRepo.On("GetRestaurantSponsorship", ctx, int64(1)).Return(expected, nil)
 
 	resp, err := service.GetRestaurantSponsorship(ctx, 1)
 
