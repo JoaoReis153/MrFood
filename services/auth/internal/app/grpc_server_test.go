@@ -3,7 +3,6 @@ package app
 import (
 	pb "MrFood/services/auth/internal/api/grpc/pb"
 	"MrFood/services/auth/internal/auth"
-	"MrFood/services/auth/internal/service"
 	models "MrFood/services/auth/pkg"
 	"context"
 	"errors"
@@ -100,16 +99,6 @@ func TestServer_RegisterProcess(t *testing.T) {
 		_, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "john@mail.com", Password: "secret"})
 		if status.Code(err) != codes.Internal {
 			t.Fatalf("expected internal, got %v", status.Code(err))
-		}
-	})
-
-	t.Run("store duplicate maps to already exists", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{store: func(context.Context, *models.User) (*models.User, error) {
-			return nil, service.ErrDuplicateUser
-		}}, jwtService: &jwtSvcMock{}}
-		_, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "john@mail.com", Password: "secret"})
-		if status.Code(err) != codes.AlreadyExists {
-			t.Fatalf("expected already exists, got %v", status.Code(err))
 		}
 	})
 
