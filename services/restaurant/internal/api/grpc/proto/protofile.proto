@@ -112,8 +112,8 @@ message RestaurantDetails {
   int64 owner_id = 11;
   string owner_name = 12;
   int32 sponsor_tier = 13;
-  optional double average_rating = 14;
-  optional int32 review_count = 15;
+  double average_rating = 14;
+  int32 review_count = 15;
 
 }
 

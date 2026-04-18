@@ -253,8 +253,8 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	model.AverageRating = nil
 	model.ReviewCount = nil
 	pbModel = modelToPB(model)
-	if pbModel.AverageRating != nil || pbModel.ReviewCount != nil {
-		t.Fatalf("expected nil optional stats, got rating=%v count=%v", pbModel.AverageRating, pbModel.ReviewCount)
+	if pbModel.GetAverageRating() != 0 || pbModel.GetReviewCount() != 0 {
+		t.Fatalf("expected zero-value stats, got rating=%v count=%v", pbModel.GetAverageRating(), pbModel.GetReviewCount())
 	}
 }
 

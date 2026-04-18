@@ -24,6 +24,7 @@ services:
       # Database
       <<: *restaurant-db-config
       APP_SERVER_PORT: ${RESTAURANT_SERVER_PORT}
+      REVIEW_GRPC_ADDR: "review:${REVIEW_SERVER_PORT}"
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m

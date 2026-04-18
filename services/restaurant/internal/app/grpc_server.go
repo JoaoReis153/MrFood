@@ -42,7 +42,12 @@ type restaurantService interface {
 }
 
 type reviewStatsClient struct {
-	client pb.RestaurantToReviewServiceClient
+	client reviewStatsRPC
+	conn   grpc.ClientConnInterface
+}
+
+type reviewStatsRPC interface {
+	GetRestaurantStats(ctx context.Context, in *pb.GetRestaurantStatsRequest, opts ...grpc.CallOption) (*pb.GetRestaurantStatsResponse, error)
 }
 
 func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, error) {
@@ -51,19 +56,36 @@ func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, 
 		return nil, nil, fmt.Errorf("dial review grpc: %w", err)
 	}
 
-	return &reviewStatsClient{client: pb.NewRestaurantToReviewServiceClient(conn)}, conn, nil
+	return &reviewStatsClient{conn: conn}, conn, nil
 }
 
 func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int64) (*models.RestaurantStats, error) {
 	reviewCtx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
 	defer cancel()
 
-	resp, err := c.client.GetRestaurantStats(reviewCtx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	var (
+		resp *pb.GetRestaurantStatsResponse
+		err  error
+	)
+
+	if c.client != nil {
+		resp, err = c.client.GetRestaurantStats(reviewCtx, &pb.GetRestaurantStatsRequest{RestaurantId: restaurantID})
+	} else {
+		resp = new(pb.GetRestaurantStatsResponse)
+		err = c.conn.Invoke(
+			reviewCtx,
+			"/proto.ReviewService/GetRestaurantStats",
+			&pb.GetRestaurantStatsRequest{RestaurantId: restaurantID},
+			resp,
+		)
+	}
 	if err != nil {
 		code := status.Code(err)
 		if code == codes.DeadlineExceeded || code == codes.Unavailable {
+			slog.Debug("review stats unavailable", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 			return nil, nil
 		}
+		slog.Warn("review stats rpc failed", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 		return nil, nil
 	}
 
@@ -331,12 +353,10 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 	}
 
 	if restaurant.AverageRating != nil {
-		averageRating := *restaurant.AverageRating
-		response.AverageRating = &averageRating
+		response.AverageRating = *restaurant.AverageRating
 	}
 	if restaurant.ReviewCount != nil {
-		reviewCount := *restaurant.ReviewCount
-		response.ReviewCount = &reviewCount
+		response.ReviewCount = *restaurant.ReviewCount
 	}
 
 	return response
