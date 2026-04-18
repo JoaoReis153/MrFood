@@ -51,11 +51,16 @@ type JWTConfig struct {
 }
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	Log    LogConfig    `yaml:"log"`
-	DB     DBConfig     `yaml:"db"`
-	Redis  RedisConfig  `yaml:"redis"`
-	JWT    JWTConfig    `yaml:"jwt"`
+	Server       ServerConfig       `yaml:"server"`
+	Log          LogConfig          `yaml:"log"`
+	DB           DBConfig           `yaml:"db"`
+	Redis        RedisConfig        `yaml:"redis"`
+	JWT          JWTConfig          `yaml:"jwt"`
+	Notification NotificationConfig `yaml:"notification"`
+}
+
+type NotificationConfig struct {
+	GRPCAddr string `yaml:"grpc_addr"`
 }
 
 var (
@@ -68,7 +73,7 @@ func Load(_ context.Context) (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
 			Host:    "0.0.0.0",
-			Port:    50051,
+			Port:    8080,
 			Timeout: 30 * time.Second,
 		},
 		Log: LogConfig{
@@ -95,6 +100,9 @@ func Load(_ context.Context) (*Config, error) {
 			RefreshTokenSecret: "to-be-saved",
 			AccessTokenTTL:     15 * time.Minute,
 			RefreshTokenTTL:    7 * 24 * time.Hour,
+		},
+		Notification: NotificationConfig{
+			GRPCAddr: "notification:50058",
 		},
 	}
 
@@ -138,6 +146,8 @@ func overrideWithEnv(cfg *Config) {
 
 	cfg.JWT.AccessTokenSecret = getEnvAny(cfg.JWT.AccessTokenSecret, "APP_JWT_ACCESS_TOKEN_SECRET", "AUTH_JWT_ACCESS_TOKEN_SECRET")
 	cfg.JWT.RefreshTokenSecret = getEnvAny(cfg.JWT.RefreshTokenSecret, "APP_JWT_REFRESH_TOKEN_SECRET", "AUTH_JWT_REFRESH_TOKEN_SECRET")
+
+	cfg.Notification.GRPCAddr = getEnvAny(cfg.Notification.GRPCAddr, "NOTIFICATION_GRPC_ADDR")
 }
 
 func validateConfig(cfg *Config) error {
