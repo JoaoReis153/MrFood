@@ -19,12 +19,12 @@ func New(repo *repository.Repository, client pb.RestaurantToSponsorServiceClient
 }
 
 type sponsorRepository interface {
-	GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
+	GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error)
 	Sponsor(ctx context.Context, request *models.Sponsorship) (*models.SponsorshipResponse, error)
 }
 
-func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owner int) (*models.SponsorshipResponse, error) {
-	restaurant, err := s.getRestaurantDetails(ctx, int32(request.ID))
+func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owner int64) (*models.SponsorshipResponse, error) {
+	restaurant, err := s.getRestaurantDetails(ctx, request.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,11 +40,11 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 	return s.repo.Sponsor(ctx, request)
 }
 
-func (s *Service) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+func (s *Service) GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 	return s.repo.GetRestaurantSponsorship(ctx, id)
 }
 
-func (s *Service) getRestaurantDetails(ctx context.Context, restaurantID int32) (*models.RestaurantDetails, error) {
+func (s *Service) getRestaurantDetails(ctx context.Context, restaurantID int64) (*models.RestaurantDetails, error) {
 	res, err := s.client.GetRestaurantSponsorship(ctx, &pb.GetRestaurantSponsorshipRequest{
 		Id: restaurantID,
 	})
@@ -54,8 +54,8 @@ func (s *Service) getRestaurantDetails(ctx context.Context, restaurantID int32) 
 	}
 
 	return &models.RestaurantDetails{
-		ID:         int(res.Id),
+		ID:         res.Id,
 		Categories: res.Categories,
-		OwnerID:    int(res.OwnerId),
+		OwnerID:    res.OwnerId,
 	}, nil
 }

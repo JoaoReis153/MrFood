@@ -21,7 +21,6 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   sponsor:
     build: ./sponsor/
-    ports: ["${SPONSOR_SERVER_PORT}:${SPONSOR_SERVER_PORT}"]
     <<: *common
     environment:
       # Database
@@ -41,7 +40,6 @@ services:
 
   sponsor_db:
     image: postgres:16
-    ports: ["${SPONSOR_DB_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:
