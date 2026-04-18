@@ -9,6 +9,7 @@ package pb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -23,9 +24,10 @@ const (
 
 type PaymentRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Ammount            float64                `protobuf:"fixed64,1,opt,name=ammount,proto3" json:"ammount,omitempty"`
+	Amount             float32                `protobuf:"fixed32,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	IdempotencyKey     string                 `protobuf:"bytes,2,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
 	PaymentDescription string                 `protobuf:"bytes,3,opt,name=payment_description,json=paymentDescription,proto3" json:"payment_description,omitempty"`
+	Type               string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -60,9 +62,9 @@ func (*PaymentRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PaymentRequest) GetAmmount() float64 {
+func (x *PaymentRequest) GetAmount() float32 {
 	if x != nil {
-		return x.Ammount
+		return x.Amount
 	}
 	return 0
 }
@@ -77,6 +79,13 @@ func (x *PaymentRequest) GetIdempotencyKey() string {
 func (x *PaymentRequest) GetPaymentDescription() string {
 	if x != nil {
 		return x.PaymentDescription
+	}
+	return ""
+}
+
+func (x *PaymentRequest) GetType() string {
+	if x != nil {
+		return x.Type
 	}
 	return ""
 }
@@ -125,20 +134,287 @@ func (x *PaymentResponse) GetReceiptId() int32 {
 	return 0
 }
 
+type ReceiptRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReceiptId     *int32                 `protobuf:"varint,1,opt,name=receipt_id,json=receiptId,proto3,oneof" json:"receipt_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReceiptRequest) Reset() {
+	*x = ReceiptRequest{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReceiptRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReceiptRequest) ProtoMessage() {}
+
+func (x *ReceiptRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReceiptRequest.ProtoReflect.Descriptor instead.
+func (*ReceiptRequest) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ReceiptRequest) GetReceiptId() int32 {
+	if x != nil && x.ReceiptId != nil {
+		return *x.ReceiptId
+	}
+	return 0
+}
+
+type GetReceiptResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReceiptResponse) Reset() {
+	*x = GetReceiptResponse{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReceiptResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReceiptResponse) ProtoMessage() {}
+
+func (x *GetReceiptResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReceiptResponse.ProtoReflect.Descriptor instead.
+func (*GetReceiptResponse) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{3}
+}
+
+type SendReceiptsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Receipts      []*Receipt             `protobuf:"bytes,1,rep,name=receipts,proto3" json:"receipts,omitempty"`
+	UserEmail     string                 `protobuf:"bytes,2,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendReceiptsRequest) Reset() {
+	*x = SendReceiptsRequest{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendReceiptsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendReceiptsRequest) ProtoMessage() {}
+
+func (x *SendReceiptsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendReceiptsRequest.ProtoReflect.Descriptor instead.
+func (*SendReceiptsRequest) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *SendReceiptsRequest) GetReceipts() []*Receipt {
+	if x != nil {
+		return x.Receipts
+	}
+	return nil
+}
+
+func (x *SendReceiptsRequest) GetUserEmail() string {
+	if x != nil {
+		return x.UserEmail
+	}
+	return ""
+}
+
+type SendReceiptsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendReceiptsResponse) Reset() {
+	*x = SendReceiptsResponse{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendReceiptsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendReceiptsResponse) ProtoMessage() {}
+
+func (x *SendReceiptsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendReceiptsResponse.ProtoReflect.Descriptor instead.
+func (*SendReceiptsResponse) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{5}
+}
+
+type Receipt struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Amount               float64                `protobuf:"fixed64,1,opt,name=amount,proto3" json:"amount,omitempty"`
+	PaymentDescription   string                 `protobuf:"bytes,2,opt,name=payment_description,json=paymentDescription,proto3" json:"payment_description,omitempty"`
+	CurrentPaymentStatus string                 `protobuf:"bytes,3,opt,name=current_payment_status,json=currentPaymentStatus,proto3" json:"current_payment_status,omitempty"`
+	PaymentType          string                 `protobuf:"bytes,4,opt,name=payment_type,json=paymentType,proto3" json:"payment_type,omitempty"`
+	CreatedAt            *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *Receipt) Reset() {
+	*x = Receipt{}
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Receipt) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Receipt) ProtoMessage() {}
+
+func (x *Receipt) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_api_grpc_proto_protofile_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Receipt.ProtoReflect.Descriptor instead.
+func (*Receipt) Descriptor() ([]byte, []int) {
+	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Receipt) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *Receipt) GetPaymentDescription() string {
+	if x != nil {
+		return x.PaymentDescription
+	}
+	return ""
+}
+
+func (x *Receipt) GetCurrentPaymentStatus() string {
+	if x != nil {
+		return x.CurrentPaymentStatus
+	}
+	return ""
+}
+
+func (x *Receipt) GetPaymentType() string {
+	if x != nil {
+		return x.PaymentType
+	}
+	return ""
+}
+
+func (x *Receipt) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
 var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\"\x84\x01\n" +
-	"\x0ePaymentRequest\x12\x18\n" +
-	"\aammount\x18\x01 \x01(\x01R\aammount\x12'\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x96\x01\n" +
+	"\x0ePaymentRequest\x12\x16\n" +
+	"\x06amount\x18\x01 \x01(\x02R\x06amount\x12'\n" +
 	"\x0fidempotency_key\x18\x02 \x01(\tR\x0eidempotencyKey\x12/\n" +
-	"\x13payment_description\x18\x03 \x01(\tR\x12paymentDescription\"0\n" +
+	"\x13payment_description\x18\x03 \x01(\tR\x12paymentDescription\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\"0\n" +
 	"\x0fPaymentResponse\x12\x1d\n" +
 	"\n" +
-	"receipt_id\x18\x01 \x01(\x05R\treceiptId2N\n" +
-	"\x0ePaymentService\x12<\n" +
-	"\vMakePayment\x12\x15.proto.PaymentRequest\x1a\x16.proto.PaymentResponseB\bZ\x06/pb;pbb\x06proto3"
+	"receipt_id\x18\x01 \x01(\x05R\treceiptId\"C\n" +
+	"\x0eReceiptRequest\x12\"\n" +
+	"\n" +
+	"receipt_id\x18\x01 \x01(\x05H\x00R\treceiptId\x88\x01\x01B\r\n" +
+	"\v_receipt_id\"\x14\n" +
+	"\x12GetReceiptResponse\"`\n" +
+	"\x13SendReceiptsRequest\x12*\n" +
+	"\breceipts\x18\x01 \x03(\v2\x0e.proto.ReceiptR\breceipts\x12\x1d\n" +
+	"\n" +
+	"user_email\x18\x02 \x01(\tR\tuserEmail\"\x16\n" +
+	"\x14SendReceiptsResponse\"\xe6\x01\n" +
+	"\aReceipt\x12\x16\n" +
+	"\x06amount\x18\x01 \x01(\x01R\x06amount\x12/\n" +
+	"\x13payment_description\x18\x02 \x01(\tR\x12paymentDescription\x124\n" +
+	"\x16current_payment_status\x18\x03 \x01(\tR\x14currentPaymentStatus\x12!\n" +
+	"\fpayment_type\x18\x04 \x01(\tR\vpaymentType\x129\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt2U\n" +
+	"\x15PaymentCommandService\x12<\n" +
+	"\vMakePayment\x12\x15.proto.PaymentRequest\x1a\x16.proto.PaymentResponse2\xa0\x01\n" +
+	"\x13PaymentQueryService\x12B\n" +
+	"\x0eGetReceiptById\x12\x15.proto.ReceiptRequest\x1a\x19.proto.GetReceiptResponse\x12E\n" +
+	"\x11GetReceiptsByUser\x12\x15.proto.ReceiptRequest\x1a\x19.proto.GetReceiptResponse2f\n" +
+	"\x1cPaymentToNotificationService\x12F\n" +
+	"\vSendReceipt\x12\x1a.proto.SendReceiptsRequest\x1a\x1b.proto.SendReceiptsResponseB\bZ\x06/pb;pbb\x06proto3"
 
 var (
 	file_internal_api_grpc_proto_protofile_proto_rawDescOnce sync.Once
@@ -152,19 +428,33 @@ func file_internal_api_grpc_proto_protofile_proto_rawDescGZIP() []byte {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescData
 }
 
-var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internal_api_grpc_proto_protofile_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
-	(*PaymentRequest)(nil),  // 0: proto.PaymentRequest
-	(*PaymentResponse)(nil), // 1: proto.PaymentResponse
+	(*PaymentRequest)(nil),        // 0: proto.PaymentRequest
+	(*PaymentResponse)(nil),       // 1: proto.PaymentResponse
+	(*ReceiptRequest)(nil),        // 2: proto.ReceiptRequest
+	(*GetReceiptResponse)(nil),    // 3: proto.GetReceiptResponse
+	(*SendReceiptsRequest)(nil),   // 4: proto.SendReceiptsRequest
+	(*SendReceiptsResponse)(nil),  // 5: proto.SendReceiptsResponse
+	(*Receipt)(nil),               // 6: proto.Receipt
+	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
-	0, // 0: proto.PaymentService.MakePayment:input_type -> proto.PaymentRequest
-	1, // 1: proto.PaymentService.MakePayment:output_type -> proto.PaymentResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6, // 0: proto.SendReceiptsRequest.receipts:type_name -> proto.Receipt
+	7, // 1: proto.Receipt.created_at:type_name -> google.protobuf.Timestamp
+	0, // 2: proto.PaymentCommandService.MakePayment:input_type -> proto.PaymentRequest
+	2, // 3: proto.PaymentQueryService.GetReceiptById:input_type -> proto.ReceiptRequest
+	2, // 4: proto.PaymentQueryService.GetReceiptsByUser:input_type -> proto.ReceiptRequest
+	4, // 5: proto.PaymentToNotificationService.SendReceipt:input_type -> proto.SendReceiptsRequest
+	1, // 6: proto.PaymentCommandService.MakePayment:output_type -> proto.PaymentResponse
+	3, // 7: proto.PaymentQueryService.GetReceiptById:output_type -> proto.GetReceiptResponse
+	3, // 8: proto.PaymentQueryService.GetReceiptsByUser:output_type -> proto.GetReceiptResponse
+	5, // 9: proto.PaymentToNotificationService.SendReceipt:output_type -> proto.SendReceiptsResponse
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internal_api_grpc_proto_protofile_proto_init() }
@@ -172,15 +462,16 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 	if File_internal_api_grpc_proto_protofile_proto != nil {
 		return
 	}
+	file_internal_api_grpc_proto_protofile_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_api_grpc_proto_protofile_proto_rawDesc), len(file_internal_api_grpc_proto_protofile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   7,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   3,
 		},
 		GoTypes:           file_internal_api_grpc_proto_protofile_proto_goTypes,
 		DependencyIndexes: file_internal_api_grpc_proto_protofile_proto_depIdxs,

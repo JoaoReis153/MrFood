@@ -19,101 +19,344 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaymentService_MakePayment_FullMethodName = "/proto.PaymentService/MakePayment"
+	PaymentCommandService_MakePayment_FullMethodName = "/proto.PaymentCommandService/MakePayment"
 )
 
-// PaymentServiceClient is the client API for PaymentService service.
+// PaymentCommandServiceClient is the client API for PaymentCommandService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type PaymentServiceClient interface {
+type PaymentCommandServiceClient interface {
 	MakePayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error)
 }
 
-type paymentServiceClient struct {
+type paymentCommandServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
-	return &paymentServiceClient{cc}
+func NewPaymentCommandServiceClient(cc grpc.ClientConnInterface) PaymentCommandServiceClient {
+	return &paymentCommandServiceClient{cc}
 }
 
-func (c *paymentServiceClient) MakePayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error) {
+func (c *paymentCommandServiceClient) MakePayment(ctx context.Context, in *PaymentRequest, opts ...grpc.CallOption) (*PaymentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PaymentResponse)
-	err := c.cc.Invoke(ctx, PaymentService_MakePayment_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, PaymentCommandService_MakePayment_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// PaymentServiceServer is the server API for PaymentService service.
-// All implementations must embed UnimplementedPaymentServiceServer
+// PaymentCommandServiceServer is the server API for PaymentCommandService service.
+// All implementations must embed UnimplementedPaymentCommandServiceServer
 // for forward compatibility.
-type PaymentServiceServer interface {
+type PaymentCommandServiceServer interface {
 	MakePayment(context.Context, *PaymentRequest) (*PaymentResponse, error)
-	mustEmbedUnimplementedPaymentServiceServer()
+	mustEmbedUnimplementedPaymentCommandServiceServer()
 }
 
-// UnimplementedPaymentServiceServer must be embedded to have
+// UnimplementedPaymentCommandServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedPaymentServiceServer struct{}
+type UnimplementedPaymentCommandServiceServer struct{}
 
-func (UnimplementedPaymentServiceServer) MakePayment(context.Context, *PaymentRequest) (*PaymentResponse, error) {
+func (UnimplementedPaymentCommandServiceServer) MakePayment(context.Context, *PaymentRequest) (*PaymentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MakePayment not implemented")
 }
-func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
-func (UnimplementedPaymentServiceServer) testEmbeddedByValue()                        {}
+func (UnimplementedPaymentCommandServiceServer) mustEmbedUnimplementedPaymentCommandServiceServer() {}
+func (UnimplementedPaymentCommandServiceServer) testEmbeddedByValue()                               {}
 
-// UnsafePaymentServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to PaymentServiceServer will
+// UnsafePaymentCommandServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PaymentCommandServiceServer will
 // result in compilation errors.
-type UnsafePaymentServiceServer interface {
-	mustEmbedUnimplementedPaymentServiceServer()
+type UnsafePaymentCommandServiceServer interface {
+	mustEmbedUnimplementedPaymentCommandServiceServer()
 }
 
-func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceServer) {
-	// If the following call panics, it indicates UnimplementedPaymentServiceServer was
+func RegisterPaymentCommandServiceServer(s grpc.ServiceRegistrar, srv PaymentCommandServiceServer) {
+	// If the following call panics, it indicates UnimplementedPaymentCommandServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&PaymentService_ServiceDesc, srv)
+	s.RegisterService(&PaymentCommandService_ServiceDesc, srv)
 }
 
-func _PaymentService_MakePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PaymentCommandService_MakePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PaymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaymentServiceServer).MakePayment(ctx, in)
+		return srv.(PaymentCommandServiceServer).MakePayment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaymentService_MakePayment_FullMethodName,
+		FullMethod: PaymentCommandService_MakePayment_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).MakePayment(ctx, req.(*PaymentRequest))
+		return srv.(PaymentCommandServiceServer).MakePayment(ctx, req.(*PaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
+// PaymentCommandService_ServiceDesc is the grpc.ServiceDesc for PaymentCommandService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var PaymentService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.PaymentService",
-	HandlerType: (*PaymentServiceServer)(nil),
+var PaymentCommandService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.PaymentCommandService",
+	HandlerType: (*PaymentCommandServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "MakePayment",
-			Handler:    _PaymentService_MakePayment_Handler,
+			Handler:    _PaymentCommandService_MakePayment_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	PaymentQueryService_GetReceiptById_FullMethodName    = "/proto.PaymentQueryService/GetReceiptById"
+	PaymentQueryService_GetReceiptsByUser_FullMethodName = "/proto.PaymentQueryService/GetReceiptsByUser"
+)
+
+// PaymentQueryServiceClient is the client API for PaymentQueryService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type PaymentQueryServiceClient interface {
+	GetReceiptById(ctx context.Context, in *ReceiptRequest, opts ...grpc.CallOption) (*GetReceiptResponse, error)
+	GetReceiptsByUser(ctx context.Context, in *ReceiptRequest, opts ...grpc.CallOption) (*GetReceiptResponse, error)
+}
+
+type paymentQueryServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewPaymentQueryServiceClient(cc grpc.ClientConnInterface) PaymentQueryServiceClient {
+	return &paymentQueryServiceClient{cc}
+}
+
+func (c *paymentQueryServiceClient) GetReceiptById(ctx context.Context, in *ReceiptRequest, opts ...grpc.CallOption) (*GetReceiptResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetReceiptResponse)
+	err := c.cc.Invoke(ctx, PaymentQueryService_GetReceiptById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentQueryServiceClient) GetReceiptsByUser(ctx context.Context, in *ReceiptRequest, opts ...grpc.CallOption) (*GetReceiptResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetReceiptResponse)
+	err := c.cc.Invoke(ctx, PaymentQueryService_GetReceiptsByUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PaymentQueryServiceServer is the server API for PaymentQueryService service.
+// All implementations must embed UnimplementedPaymentQueryServiceServer
+// for forward compatibility.
+type PaymentQueryServiceServer interface {
+	GetReceiptById(context.Context, *ReceiptRequest) (*GetReceiptResponse, error)
+	GetReceiptsByUser(context.Context, *ReceiptRequest) (*GetReceiptResponse, error)
+	mustEmbedUnimplementedPaymentQueryServiceServer()
+}
+
+// UnimplementedPaymentQueryServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPaymentQueryServiceServer struct{}
+
+func (UnimplementedPaymentQueryServiceServer) GetReceiptById(context.Context, *ReceiptRequest) (*GetReceiptResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReceiptById not implemented")
+}
+func (UnimplementedPaymentQueryServiceServer) GetReceiptsByUser(context.Context, *ReceiptRequest) (*GetReceiptResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReceiptsByUser not implemented")
+}
+func (UnimplementedPaymentQueryServiceServer) mustEmbedUnimplementedPaymentQueryServiceServer() {}
+func (UnimplementedPaymentQueryServiceServer) testEmbeddedByValue()                             {}
+
+// UnsafePaymentQueryServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PaymentQueryServiceServer will
+// result in compilation errors.
+type UnsafePaymentQueryServiceServer interface {
+	mustEmbedUnimplementedPaymentQueryServiceServer()
+}
+
+func RegisterPaymentQueryServiceServer(s grpc.ServiceRegistrar, srv PaymentQueryServiceServer) {
+	// If the following call panics, it indicates UnimplementedPaymentQueryServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&PaymentQueryService_ServiceDesc, srv)
+}
+
+func _PaymentQueryService_GetReceiptById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentQueryServiceServer).GetReceiptById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentQueryService_GetReceiptById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentQueryServiceServer).GetReceiptById(ctx, req.(*ReceiptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentQueryService_GetReceiptsByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReceiptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentQueryServiceServer).GetReceiptsByUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentQueryService_GetReceiptsByUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentQueryServiceServer).GetReceiptsByUser(ctx, req.(*ReceiptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// PaymentQueryService_ServiceDesc is the grpc.ServiceDesc for PaymentQueryService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var PaymentQueryService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.PaymentQueryService",
+	HandlerType: (*PaymentQueryServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetReceiptById",
+			Handler:    _PaymentQueryService_GetReceiptById_Handler,
+		},
+		{
+			MethodName: "GetReceiptsByUser",
+			Handler:    _PaymentQueryService_GetReceiptsByUser_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	PaymentToNotificationService_SendReceipt_FullMethodName = "/proto.PaymentToNotificationService/SendReceipt"
+)
+
+// PaymentToNotificationServiceClient is the client API for PaymentToNotificationService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type PaymentToNotificationServiceClient interface {
+	SendReceipt(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error)
+}
+
+type paymentToNotificationServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewPaymentToNotificationServiceClient(cc grpc.ClientConnInterface) PaymentToNotificationServiceClient {
+	return &paymentToNotificationServiceClient{cc}
+}
+
+func (c *paymentToNotificationServiceClient) SendReceipt(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendReceiptsResponse)
+	err := c.cc.Invoke(ctx, PaymentToNotificationService_SendReceipt_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PaymentToNotificationServiceServer is the server API for PaymentToNotificationService service.
+// All implementations must embed UnimplementedPaymentToNotificationServiceServer
+// for forward compatibility.
+type PaymentToNotificationServiceServer interface {
+	SendReceipt(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error)
+	mustEmbedUnimplementedPaymentToNotificationServiceServer()
+}
+
+// UnimplementedPaymentToNotificationServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPaymentToNotificationServiceServer struct{}
+
+func (UnimplementedPaymentToNotificationServiceServer) SendReceipt(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendReceipt not implemented")
+}
+func (UnimplementedPaymentToNotificationServiceServer) mustEmbedUnimplementedPaymentToNotificationServiceServer() {
+}
+func (UnimplementedPaymentToNotificationServiceServer) testEmbeddedByValue() {}
+
+// UnsafePaymentToNotificationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PaymentToNotificationServiceServer will
+// result in compilation errors.
+type UnsafePaymentToNotificationServiceServer interface {
+	mustEmbedUnimplementedPaymentToNotificationServiceServer()
+}
+
+func RegisterPaymentToNotificationServiceServer(s grpc.ServiceRegistrar, srv PaymentToNotificationServiceServer) {
+	// If the following call panics, it indicates UnimplementedPaymentToNotificationServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&PaymentToNotificationService_ServiceDesc, srv)
+}
+
+func _PaymentToNotificationService_SendReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendReceiptsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentToNotificationServiceServer).SendReceipt(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentToNotificationService_SendReceipt_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentToNotificationServiceServer).SendReceipt(ctx, req.(*SendReceiptsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// PaymentToNotificationService_ServiceDesc is the grpc.ServiceDesc for PaymentToNotificationService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var PaymentToNotificationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "proto.PaymentToNotificationService",
+	HandlerType: (*PaymentToNotificationServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendReceipt",
+			Handler:    _PaymentToNotificationService_SendReceipt_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
