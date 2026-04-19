@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -153,13 +152,15 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
 	}
-	defer func(tx pgx.Tx, ctx context.Context) {
-		err := tx.Rollback(ctx)
-		if err != nil {
-			slog.Error("rollback transaction", "error", err)
-			return
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback(ctx)
+			panic(p)
+		} else if err != nil {
+			_ = tx.Rollback(ctx)
 		}
-	}(tx, ctx)
+	}()
 
 	query := `
 		INSERT INTO restaurants (id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier)
@@ -224,13 +225,14 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer func(tx pgx.Tx, ctx context.Context) {
-		err := tx.Rollback(ctx)
-		if err != nil {
-			slog.Error("rollback transaction", "error", err)
-			return
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback(ctx)
+			panic(p)
+		} else if err != nil {
+			_ = tx.Rollback(ctx)
 		}
-	}(tx, ctx)
+	}()
 
 	var exists bool
 	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurant.ID).Scan(&exists)
