@@ -28,6 +28,45 @@ wait_for_http() {
   return 1
 }
 
+ensure_location_pipeline() {
+  echo "Ensuring Elasticsearch ingest pipeline 'restaurants_location_pipeline' exists..."
+  curl -fsS -X PUT "$ELASTIC_URL/_ingest/pipeline/restaurants_location_pipeline" \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "description": "Populate geo_point location from latitude/longitude",
+      "processors": [
+        {
+          "script": {
+            "source": "if (ctx.latitude != null && ctx.longitude != null) { ctx.location = ['\''lat'\'': ctx.latitude, '\''lon'\'': ctx.longitude]; }"
+          }
+        }
+      ]
+    }' >/dev/null
+}
+
+backfill_location_field() {
+  echo "Backfilling missing location fields on existing restaurant documents..."
+  curl -fsS -X POST "$ELASTIC_URL/restaurants/_update_by_query?conflicts=proceed&refresh=true" \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "script": {
+        "lang": "painless",
+        "source": "if (ctx._source.latitude != null && ctx._source.longitude != null) { ctx._source.location = ['\''lat'\'': ctx._source.latitude, '\''lon'\'': ctx._source.longitude]; }"
+      },
+      "query": {
+        "bool": {
+          "must": [
+            {"exists": {"field": "latitude"}},
+            {"exists": {"field": "longitude"}}
+          ],
+          "must_not": [
+            {"exists": {"field": "location"}}
+          ]
+        }
+      }
+    }' >/dev/null
+}
+
 echo "Starting CDC stack (Postgres logical replication, Elasticsearch, Kafka, Connect)..."
 if docker ps -a --format '{{.Names}}' | grep -qx 'search_elasticsearch'; then
   echo "Detected existing CDC containers from another compose invocation; skipping compose up."
@@ -37,6 +76,8 @@ fi
 
 wait_for_http "$ELASTIC_URL" "Elasticsearch"
 wait_for_http "$CONNECT_URL/connectors" "Kafka Connect"
+
+ensure_location_pipeline
 
 echo "Setting up PostgreSQL logical replication for CDC..."
 # Wait for restaurant_db to be healthy
@@ -57,7 +98,8 @@ if ! curl -fsS -I "$ELASTIC_URL/restaurants" >/dev/null 2>&1; then
     -d '{
       "settings": {
         "number_of_shards": 1,
-        "number_of_replicas": 0
+        "number_of_replicas": 0,
+        "index.default_pipeline": "restaurants_location_pipeline"
       },
       "mappings": {
         "properties": {
@@ -81,9 +123,20 @@ if ! curl -fsS -I "$ELASTIC_URL/restaurants" >/dev/null 2>&1; then
         }
       }
     }' >/dev/null
+else
+  # Apply default ingest pipeline even when index already exists.
+  curl -fsS -X PUT "$ELASTIC_URL/restaurants/_settings" \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "index": {
+        "default_pipeline": "restaurants_location_pipeline"
+      }
+    }' >/dev/null
 fi
 
 CONNECT_URL="$CONNECT_URL" "$SCRIPT_DIR/register-connectors.sh"
+
+backfill_location_field
 
 echo "CDC bootstrap finished."
 echo "- Elasticsearch: $ELASTIC_URL"

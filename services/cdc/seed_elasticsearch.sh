@@ -10,15 +10,33 @@ DOCKER_COMPOSE_PROJECT="${DOCKER_COMPOSE_PROJECT:-mrfood}"
 DOCKER_COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-../docker-compose.yml}"
 
 echo "Creating restaurants index with proper mapping..."
+
+echo "Ensuring ingest pipeline restaurants_location_pipeline exists..."
+curl -s -X PUT "$ELASTIC_URL/_ingest/pipeline/restaurants_location_pipeline" \
+  -H "Content-Type: application/json" -d '{
+  "description": "Populate geo_point location from latitude/longitude",
+  "processors": [
+    {
+      "script": {
+        "source": "if (ctx.latitude != null && ctx.longitude != null) { ctx.location = ['\''lat'\'': ctx.latitude, '\''lon'\'': ctx.longitude]; }"
+      }
+    }
+  ]
+}' > /dev/null
+
 # Create/recreate the index with correct field mappings (id as long, not int)
 curl -s -X DELETE "$ELASTIC_URL/restaurants" > /dev/null 2>&1 || true
 curl -s -X PUT "$ELASTIC_URL/restaurants" -H "Content-Type: application/json" -d '{
+  "settings": {
+    "index.default_pipeline": "restaurants_location_pipeline"
+  },
   "mappings": {
     "properties": {
       "id": {"type": "long"},
       "name": {"type": "text"},
       "latitude": {"type": "double"},
       "longitude": {"type": "double"},
+      "location": {"type": "geo_point"},
       "address": {"type": "text"},
       "media_url": {"type": "keyword"},
       "max_slots": {"type": "integer"},
@@ -54,6 +72,26 @@ docker compose -p "$DOCKER_COMPOSE_PROJECT" -f "$DOCKER_COMPOSE_FILE" exec -T re
 
 # Wait a moment for index refresh
 sleep 2
+
+echo "Backfilling missing location fields..."
+curl -s -X POST "$ELASTIC_URL/restaurants/_update_by_query?conflicts=proceed&refresh=true" \
+  -H "Content-Type: application/json" -d '{
+  "script": {
+    "lang": "painless",
+    "source": "if (ctx._source.latitude != null && ctx._source.longitude != null) { ctx._source.location = ['\''lat'\'': ctx._source.latitude, '\''lon'\'': ctx._source.longitude]; }"
+  },
+  "query": {
+    "bool": {
+      "must": [
+        {"exists": {"field": "latitude"}},
+        {"exists": {"field": "longitude"}}
+      ],
+      "must_not": [
+        {"exists": {"field": "location"}}
+      ]
+    }
+  }
+}' > /dev/null
 
 COUNT=$(curl -s "$ELASTIC_URL/restaurants/_count" | jq '.count')
 echo "✓ Elasticsearch restaurants index now has $COUNT documents"
