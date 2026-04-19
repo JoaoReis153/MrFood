@@ -5,7 +5,9 @@ include:
   - docker-compose.review.yml
   - docker-compose.sponsor.yml
   - docker-compose.kong.yml
+  - docker-compose.search.yml
+  - docker-compose.cdc.yml
 
 networks:
-  app-network: 
+  app-network:
     driver: bridge

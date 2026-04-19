@@ -6,4 +6,5 @@ use (
 	./services/restaurant
 	./services/review
 	./services/sponsor
+	./services/search
 )

@@ -1,0 +1,30 @@
+{
+  "name": "restaurant-postgres-source",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+    "database.hostname": "restaurant_db",
+    "database.port": "5432",
+    "database.user": "restaurant",
+    "database.password": "restaurantsecret",
+    "database.dbname": "mrfood_restaurant",
+    "topic.prefix": "restaurantdb",
+    "plugin.name": "pgoutput",
+    "slot.name": "restaurant_search_slot",
+    "publication.name": "restaurant_search_publication",
+    "publication.autocreate.mode": "filtered",
+    "table.include.list": "public.restaurants",
+    "snapshot.mode": "initial",
+    "snapshot.delay.ms": "5000",
+    "decimal.handling.mode": "double",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "false",
+    "value.converter.schemas.enable": "false",
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones": "false",
+    "transforms.unwrap.delete.handling.mode": "none"
+  }
+}
+

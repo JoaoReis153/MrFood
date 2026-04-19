@@ -1,0 +1,53 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+out/
+
+# Test binary
+*_test
+
+# Go workspace
+go.work
+go.work.bin
+
+# Go module cache
+go-build/
+
+# VSCode
+.vscode/settings.json
+!.vscode/settings.json  # Keep shared settings
+.vscode/launch.json
+.vscode/tasks.json
+
+# JetBrains
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+vendor/
+
+# Mac
+.DS_Store
+.DS_Store?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Build artifacts
+dist/
