@@ -22,7 +22,7 @@ service PaymentQueryService {
 }
 
 message ReceiptRequest {
-  optional int32 receipt_id = 1;
+  int32 receipt_id = 1;
 }
 
 message GetReceiptResponse {}
