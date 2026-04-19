@@ -1,0 +1,74 @@
+info:
+  name: Search restaurants by name suffix
+  type: http
+  seq: 13
+  tags:
+    - Restaurants
+    - Search
+
+http:
+  method: GET
+  url: "{{baseUrl}}/restaurants/search?name_suffix=147&page=1&limit=10"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Suffix-matching restaurants returned
+    request:
+      url: "{{baseUrl}}/restaurants/search?name_suffix=147&page=1&limit=10"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": 1,
+                "name": "Le 147"
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 1,
+              "pages": 1
+            }
+          }
+  - name: 200 Empty Response
+    description: No restaurants match the suffix
+    request:
+      url: "{{baseUrl}}/restaurants/search?name_suffix=nonexistent&page=1&limit=10"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 0,
+              "pages": 0
+            }
+          }
+

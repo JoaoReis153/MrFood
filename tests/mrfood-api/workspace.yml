@@ -18,9 +18,11 @@ collections:
     path: "collections/users"
   - name: "sponsor"
     path: "collections/sponsor"
+  - name: "search"
+    path: "collections/search"
 
 specs:
 
 docs: ''
 
-activeEnvironmentUid: rdsgdj000000000000000
+activeEnvironmentUid: u1zz20000000000000000

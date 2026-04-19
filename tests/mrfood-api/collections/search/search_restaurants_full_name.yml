@@ -1,0 +1,79 @@
+info:
+  name: Search restaurants by full name
+  type: http
+  seq: 10
+  tags:
+    - Restaurants
+    - Search
+
+http:
+  method: GET
+  url: "{{baseUrl}}/search?"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:8000
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc2NTk4OTUwLCJuYmYiOjE3NzY1OTgwNTAsImlhdCI6MTc3NjU5ODA1MCwianRpIjoiMzcxMjQ0NjctZDI1MC00ZTMxLWE3YjAtM2QxODg2NTM0MmUxIiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6ImNyaXN0aWFubyIsInRva2VuX3ZlcnNpb24iOjEsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.z3kLP7TUEX16yZhjUHg5umOUQbZyWIXOyJmTYSAqdFQ
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Search results returned
+    request:
+      url: "{{baseUrl}}/restaurants/search?full_name=Le%20147&page=1&limit=10"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": 1,
+                "name": "Le 147",
+                "latitude": 45.961674,
+                "longitude": 1.169131,
+                "address": "10 Maison Neuve, 87510 Saint-Jouvent France",
+                "categories": ["French"]
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 1,
+              "pages": 1
+            }
+          }
+  - name: 401 Response
+    description: Missing or invalid token
+    request:
+      url: "{{baseUrl}}/restaurants/search?full_name=Le%20147&page=1&limit=10"
+      method: GET
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
