@@ -18,6 +18,8 @@ collections:
     path: "collections/users"
   - name: "sponsor"
     path: "collections/sponsor"
+  - name: "payment"
+    path: "collections/payment"
 
 specs:
 

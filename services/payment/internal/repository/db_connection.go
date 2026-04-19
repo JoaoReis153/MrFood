@@ -4,18 +4,13 @@ import (
 	"MrFood/services/payment/config"
 	"context"
 	"fmt"
-	"log/slog"
 	"net/url"
-	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
 )
 
-// Connections groups external dependencies shared by repositories.
 type Connections struct {
-	DB    *pgxpool.Pool
-	Redis *redis.Client
+	DB *pgxpool.Pool
 }
 
 func NewConnections(ctx context.Context, cfg *config.Config) (*Connections, error) {
@@ -24,15 +19,8 @@ func NewConnections(ctx context.Context, cfg *config.Config) (*Connections, erro
 		return nil, err
 	}
 
-	rdb, err := NewRedisClient(ctx, cfg)
-	if err != nil {
-		dbPool.Close()
-		return nil, err
-	}
-
 	return &Connections{
-		DB:    dbPool,
-		Redis: rdb,
+		DB: dbPool,
 	}, nil
 }
 
@@ -42,11 +30,6 @@ func (c *Connections) Close() {
 	}
 	if c.DB != nil {
 		c.DB.Close()
-	}
-	if c.Redis != nil {
-		if err := c.Redis.Close(); err != nil {
-			slog.Warn("failed to close redis client", "error", err)
-		}
 	}
 }
 
@@ -80,23 +63,4 @@ func NewDBPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 	}
 
 	return pool, nil
-}
-
-func NewRedisClient(ctx context.Context, cfg *config.Config) (*redis.Client, error) {
-	addr := cfg.Redis.Host + ":" + strconv.Itoa(cfg.Redis.Port)
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
-	})
-
-	if err := rdb.Ping(ctx).Err(); err != nil {
-		if closeErr := rdb.Close(); closeErr != nil {
-			slog.Warn("failed to close redis client after ping error", "error", closeErr)
-		}
-		return nil, fmt.Errorf("redis ping: %w", err)
-	}
-
-	return rdb, nil
 }

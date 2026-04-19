@@ -174,3 +174,15 @@ clean-volumes:
 ## Full reset (containers, images, volumes)
 clean-all:
 	$(DC) down --rmi all --volumes --remove-orphans
+
+## check if images already exist to avoid rate-limiting -- pull if they dont
+check-images:
+	@for img in postgres:16 redis:7-alpine; do \
+		if ! docker image inspect $$img >/dev/null 2>&1; then \
+			echo "$$img missing → pulling"; \
+			docker pull $$img; \
+		else \
+			echo "$$img exists → skip"; \
+		fi; \
+	done
+

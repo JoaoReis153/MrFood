@@ -54,7 +54,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	pb.RegisterPaymentCommandServiceServer(s, &commandServer{
 		paymentService: app.Service,
 	})
-	pb.RegisterPaymentCommandServiceServer(s, &commandServer{
+	pb.RegisterPaymentQueryServiceServer(s, &queryServer{
 		paymentService: app.Service,
 	})
 

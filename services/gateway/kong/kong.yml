@@ -103,6 +103,27 @@ services:
       claims_to_verify:
       - exp
 
+- name: payment
+  host: payment
+  port: 50057
+  protocol: grpc
+  routes:
+  - name: payment
+    protocols:
+    - http
+    - https
+    paths:
+    - /payment
+
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/payment.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+
 consumers:
 - username: my-client
   jwt_secrets:

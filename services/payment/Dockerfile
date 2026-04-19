@@ -11,5 +11,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /payment .
-EXPOSE 50051
+EXPOSE 50057
 CMD ["./payment"]

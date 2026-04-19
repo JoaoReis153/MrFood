@@ -36,13 +36,6 @@ type DBConfig struct {
 	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 }
 
-type RedisConfig struct {
-	Host     string `yaml:"host"     validate:"required"`
-	Port     int    `yaml:"port"     validate:"required,min=1,max=65535"`
-	Password string `yaml:"password"`
-	DB       int    `yaml:"db"       validate:"min=0"`
-}
-
 type JWTConfig struct {
 	AccessTokenSecret  string        `yaml:"secret"        validate:"required,min=32"`
 	RefreshTokenSecret string        `yaml:"refresh_secret" validate:"required,min=32"`
@@ -54,7 +47,6 @@ type Config struct {
 	Server       ServerConfig       `yaml:"server"`
 	Log          LogConfig          `yaml:"log"`
 	DB           DBConfig           `yaml:"db"`
-	Redis        RedisConfig        `yaml:"redis"`
 	JWT          JWTConfig          `yaml:"jwt"`
 	Notification NotificationConfig `yaml:"notification"`
 }
@@ -89,12 +81,6 @@ func Load(_ context.Context) (*Config, error) {
 			MaxConnLifetime:   15 * time.Minute,
 			HealthCheckPeriod: 1 * time.Minute,
 		},
-		Redis: RedisConfig{
-			Host:     "localhost",
-			Port:     6379,
-			Password: "",
-			DB:       0,
-		},
 		JWT: JWTConfig{
 			AccessTokenSecret:  "to-be-saved",
 			RefreshTokenSecret: "to-be-saved",
@@ -115,7 +101,6 @@ func Load(_ context.Context) (*Config, error) {
 	slog.Info("config loaded",
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
 		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
-		slog.String("redis", fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)),
 		slog.String("log_level", cfg.Log.Level),
 	)
 
@@ -127,8 +112,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST")
-	cfg.DB.Port = getEnvIntAny(cfg.DB.Port, "DB_PORT")
+	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST", "POSTGRES_HOST")
 	cfg.DB.Name = getEnvAny(cfg.DB.Name, "DB_NAME", "POSTGRES_DB")
 	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER", "DB_USER")
 	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD", "DB_PASS")
@@ -136,11 +120,6 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
 	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
-
-	cfg.Redis.Host = getEnvAny(cfg.Redis.Host, "REDIS_HOST", "AUTH_REDIS_HOST")
-	cfg.Redis.Port = getEnvIntAny(cfg.Redis.Port, "REDIS_PORT", "AUTH_REDIS_PORT")
-	cfg.Redis.Password = getEnvAny(cfg.Redis.Password, "REDIS_PASS", "AUTH_REDIS_PASS")
-	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 

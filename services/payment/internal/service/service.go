@@ -69,7 +69,7 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 	return s.repo.CreateReceipt(ctx, receipt_request)
 }
 
-func (s *Service) GetReceiptByID(ctx context.Context, receipt_id int32, user_id int64) error {
+func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) error {
 	receipt, err := s.repo.GetReceiptById(ctx, receipt_id, user_id)
 	if err != nil {
 		return err
