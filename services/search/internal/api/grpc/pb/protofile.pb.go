@@ -175,7 +175,7 @@ func (x *SearchPaginatedResponse) GetPagination() *Pagination {
 
 type RestaurantSearchResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int32                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Latitude      float64                `protobuf:"fixed64,3,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	Longitude     float64                `protobuf:"fixed64,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
@@ -216,7 +216,7 @@ func (*RestaurantSearchResult) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *RestaurantSearchResult) GetId() int32 {
+func (x *RestaurantSearchResult) GetId() int64 {
 	if x != nil {
 		return x.Id
 	}
@@ -364,7 +364,7 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"pagination\x18\x02 \x01(\v2\x11.proto.PaginationR\n" +
 	"pagination\"\xe0\x01\n" +
 	"\x16RestaurantSearchResult\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
 	"\blatitude\x18\x03 \x01(\x01R\blatitude\x12\x1c\n" +
 	"\tlongitude\x18\x04 \x01(\x01R\tlongitude\x12\x18\n" +

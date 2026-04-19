@@ -11,5 +11,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /search .
-EXPOSE 50051
+EXPOSE 50056
 CMD ["./search"]

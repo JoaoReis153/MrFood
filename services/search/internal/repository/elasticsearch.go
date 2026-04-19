@@ -18,7 +18,7 @@ type ElasticsearchClient struct {
 }
 
 type RestaurantDocument struct {
-	ID          int32    `json:"id"`
+	ID          int64    `json:"id"`
 	Name        string   `json:"name"`
 	Latitude    float64  `json:"latitude"`
 	Longitude   float64  `json:"longitude"`
@@ -27,7 +27,7 @@ type RestaurantDocument struct {
 	Categories  []string `json:"categories"`
 	MediaURL    *string  `json:"media_url,omitempty"`
 	MaxSlots    int32    `json:"max_slots"`
-	OwnerID     int32    `json:"owner_id"`
+	OwnerID     int64    `json:"owner_id"`
 	OwnerName   string   `json:"owner_name"`
 	SponsorTier int32    `json:"sponsor_tier"`
 }

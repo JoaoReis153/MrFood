@@ -151,7 +151,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 			Hits []struct {
 				ID     string `json:"_id"`
 				Source struct {
-					ID         int32    `json:"id"`
+					ID         int64    `json:"id"`
 					Name       string   `json:"name"`
 					Latitude   float64  `json:"latitude"`
 					Longitude  float64  `json:"longitude"`
@@ -175,8 +175,8 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 	for _, h := range decoded.Hits.Hits {
 		id := h.Source.ID
 		if id == 0 {
-			if parsed, err := strconv.Atoi(h.ID); err == nil {
-				id = int32(parsed)
+			if parsed, err := strconv.ParseInt(h.ID, 10, 64); err == nil {
+				id = parsed
 			}
 		}
 
