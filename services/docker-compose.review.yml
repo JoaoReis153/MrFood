@@ -18,7 +18,6 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   review:
     build: ./review/
-    ports: ["${REVIEW_SERVER_PORT}:${REVIEW_SERVER_PORT}"]
     <<: *common
     environment:
       <<: *review-db-config
@@ -35,7 +34,6 @@ services:
 
   review_db:
     image: postgres:16
-    ports: ["${REVIEW_POSTGRES_PORT}:5432"]
     <<: *common
     command: postgres -c ssl=off -c log_statement=ddl
     volumes:

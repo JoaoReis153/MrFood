@@ -1,0 +1,28 @@
+info:
+  name: create restaurantt
+  type: grpc
+  seq: 1
+
+grpc:
+  url: localhost:50052
+  method: /proto.RestaurantService/CreateRestaurant
+  methodType: unary
+  protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "name": "dolores1234",
+      "latitude": 80,
+      "longitude": 80,
+      "address": "appositus",
+      "opening_time": "12:00:00",
+      "closing_time": "14:00:00",
+      "categories": [
+        "cura",
+        "cura123"
+      ],
+      "max_slots": 834,
+      "has_media": false
+    }
+  auth:
+    type: bearer
+    token: "{{token}}"

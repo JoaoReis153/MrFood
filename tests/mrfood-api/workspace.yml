@@ -6,6 +6,8 @@ info:
 collections:
   - name: "notifications"
     path: "collections/notifications"
+  - name: "ci"
+    path: "collections/ci"
   - name: "reservations"
     path: "collections/reservations"
   - name: "restaurants"
@@ -20,3 +22,5 @@ collections:
 specs:
 
 docs: ''
+
+activeEnvironmentUid: rdsgdj000000000000000

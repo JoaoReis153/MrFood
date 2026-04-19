@@ -24,9 +24,9 @@ const (
 
 type Review struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReviewId      int32                  `protobuf:"varint,1,opt,name=review_id,json=reviewId,proto3" json:"review_id,omitempty"`
-	RestaurantId  int32                  `protobuf:"varint,2,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
-	UserId        int32                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ReviewId      int64                  `protobuf:"varint,1,opt,name=review_id,json=reviewId,proto3" json:"review_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,2,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Comment       string                 `protobuf:"bytes,4,opt,name=comment,proto3" json:"comment,omitempty"`
 	Rating        int32                  `protobuf:"varint,5,opt,name=rating,proto3" json:"rating,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -64,21 +64,21 @@ func (*Review) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Review) GetReviewId() int32 {
+func (x *Review) GetReviewId() int64 {
 	if x != nil {
 		return x.ReviewId
 	}
 	return 0
 }
 
-func (x *Review) GetRestaurantId() int32 {
+func (x *Review) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
 	return 0
 }
 
-func (x *Review) GetUserId() int32 {
+func (x *Review) GetUserId() int64 {
 	if x != nil {
 		return x.UserId
 	}
@@ -108,7 +108,7 @@ func (x *Review) GetCreatedAt() *timestamppb.Timestamp {
 
 type RestaurantStats struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	AverageRating float64                `protobuf:"fixed64,2,opt,name=average_rating,json=averageRating,proto3" json:"average_rating,omitempty"`
 	ReviewCount   int32                  `protobuf:"varint,3,opt,name=review_count,json=reviewCount,proto3" json:"review_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -145,7 +145,7 @@ func (*RestaurantStats) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *RestaurantStats) GetRestaurantId() int32 {
+func (x *RestaurantStats) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -236,7 +236,7 @@ func (x *Pagination) GetPages() int32 {
 
 type GetReviewsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	Page          *int32                 `protobuf:"varint,2,opt,name=page,proto3,oneof" json:"page,omitempty"`
 	Limit         *int32                 `protobuf:"varint,3,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -273,7 +273,7 @@ func (*GetReviewsRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetReviewsRequest) GetRestaurantId() int32 {
+func (x *GetReviewsRequest) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -296,7 +296,7 @@ func (x *GetReviewsRequest) GetLimit() int32 {
 
 type CreateReviewRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
 	Rating        int32                  `protobuf:"varint,3,opt,name=rating,proto3" json:"rating,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -333,7 +333,7 @@ func (*CreateReviewRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *CreateReviewRequest) GetRestaurantId() int32 {
+func (x *CreateReviewRequest) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -356,7 +356,7 @@ func (x *CreateReviewRequest) GetRating() int32 {
 
 type UpdateReviewRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReviewId      int32                  `protobuf:"varint,1,opt,name=review_id,json=reviewId,proto3" json:"review_id,omitempty"`
+	ReviewId      int64                  `protobuf:"varint,1,opt,name=review_id,json=reviewId,proto3" json:"review_id,omitempty"`
 	Comment       *string                `protobuf:"bytes,2,opt,name=comment,proto3,oneof" json:"comment,omitempty"`
 	Rating        *int32                 `protobuf:"varint,3,opt,name=rating,proto3,oneof" json:"rating,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -393,7 +393,7 @@ func (*UpdateReviewRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *UpdateReviewRequest) GetReviewId() int32 {
+func (x *UpdateReviewRequest) GetReviewId() int64 {
 	if x != nil {
 		return x.ReviewId
 	}
@@ -416,7 +416,7 @@ func (x *UpdateReviewRequest) GetRating() int32 {
 
 type DeleteReviewRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReviewId      int32                  `protobuf:"varint,1,opt,name=review_id,json=reviewId,proto3" json:"review_id,omitempty"`
+	ReviewId      int64                  `protobuf:"varint,1,opt,name=review_id,json=reviewId,proto3" json:"review_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -451,7 +451,7 @@ func (*DeleteReviewRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *DeleteReviewRequest) GetReviewId() int32 {
+func (x *DeleteReviewRequest) GetReviewId() int64 {
 	if x != nil {
 		return x.ReviewId
 	}
@@ -460,7 +460,7 @@ func (x *DeleteReviewRequest) GetReviewId() int32 {
 
 type GetRestaurantStatsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -495,7 +495,7 @@ func (*GetRestaurantStatsRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetRestaurantStatsRequest) GetRestaurantId() int32 {
+func (x *GetRestaurantStatsRequest) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -504,7 +504,7 @@ func (x *GetRestaurantStatsRequest) GetRestaurantId() int32 {
 
 type GetRestaurantRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -539,7 +539,7 @@ func (*GetRestaurantRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetRestaurantRequest) GetRestaurantId() int32 {
+func (x *GetRestaurantRequest) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -768,7 +768,7 @@ func (x *GetRestaurantStatsResponse) GetRestaurantStats() *RestaurantStats {
 
 type GetRestaurantResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RestaurantId  int32                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
+	RestaurantId  int64                  `protobuf:"varint,1,opt,name=restaurant_id,json=restaurantId,proto3" json:"restaurant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -803,7 +803,7 @@ func (*GetRestaurantResponse) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *GetRestaurantResponse) GetRestaurantId() int32 {
+func (x *GetRestaurantResponse) GetRestaurantId() int64 {
 	if x != nil {
 		return x.RestaurantId
 	}
@@ -816,15 +816,15 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
 	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd0\x01\n" +
 	"\x06Review\x12\x1b\n" +
-	"\treview_id\x18\x01 \x01(\x05R\breviewId\x12#\n" +
-	"\rrestaurant_id\x18\x02 \x01(\x05R\frestaurantId\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\x05R\x06userId\x12\x18\n" +
+	"\treview_id\x18\x01 \x01(\x03R\breviewId\x12#\n" +
+	"\rrestaurant_id\x18\x02 \x01(\x03R\frestaurantId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x03R\x06userId\x12\x18\n" +
 	"\acomment\x18\x04 \x01(\tR\acomment\x12\x16\n" +
 	"\x06rating\x18\x05 \x01(\x05R\x06rating\x129\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x80\x01\n" +
 	"\x0fRestaurantStats\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12%\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x12%\n" +
 	"\x0eaverage_rating\x18\x02 \x01(\x01R\raverageRating\x12!\n" +
 	"\freview_count\x18\x03 \x01(\x05R\vreviewCount\"b\n" +
 	"\n" +
@@ -834,28 +834,28 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x05total\x18\x03 \x01(\x05R\x05total\x12\x14\n" +
 	"\x05pages\x18\x04 \x01(\x05R\x05pages\"\x7f\n" +
 	"\x11GetReviewsRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x17\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x12\x17\n" +
 	"\x04page\x18\x02 \x01(\x05H\x00R\x04page\x88\x01\x01\x12\x19\n" +
 	"\x05limit\x18\x03 \x01(\x05H\x01R\x05limit\x88\x01\x01B\a\n" +
 	"\x05_pageB\b\n" +
 	"\x06_limit\"l\n" +
 	"\x13CreateReviewRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\x12\x18\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\x12\x18\n" +
 	"\acomment\x18\x02 \x01(\tR\acomment\x12\x16\n" +
 	"\x06rating\x18\x03 \x01(\x05R\x06rating\"\x85\x01\n" +
 	"\x13UpdateReviewRequest\x12\x1b\n" +
-	"\treview_id\x18\x01 \x01(\x05R\breviewId\x12\x1d\n" +
+	"\treview_id\x18\x01 \x01(\x03R\breviewId\x12\x1d\n" +
 	"\acomment\x18\x02 \x01(\tH\x00R\acomment\x88\x01\x01\x12\x1b\n" +
 	"\x06rating\x18\x03 \x01(\x05H\x01R\x06rating\x88\x01\x01B\n" +
 	"\n" +
 	"\b_commentB\t\n" +
 	"\a_rating\"2\n" +
 	"\x13DeleteReviewRequest\x12\x1b\n" +
-	"\treview_id\x18\x01 \x01(\x05R\breviewId\"@\n" +
+	"\treview_id\x18\x01 \x01(\x03R\breviewId\"@\n" +
 	"\x19GetRestaurantStatsRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\";\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\";\n" +
 	"\x14GetRestaurantRequest\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId\"p\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId\"p\n" +
 	"\x12GetReviewsResponse\x12'\n" +
 	"\areviews\x18\x01 \x03(\v2\r.proto.ReviewR\areviews\x121\n" +
 	"\n" +
@@ -869,7 +869,7 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x1aGetRestaurantStatsResponse\x12A\n" +
 	"\x10restaurant_stats\x18\x01 \x01(\v2\x16.proto.RestaurantStatsR\x0frestaurantStats\"<\n" +
 	"\x15GetRestaurantResponse\x12#\n" +
-	"\rrestaurant_id\x18\x01 \x01(\x05R\frestaurantId2\x88\x03\n" +
+	"\rrestaurant_id\x18\x01 \x01(\x03R\frestaurantId2\x88\x03\n" +
 	"\rReviewService\x12A\n" +
 	"\n" +
 	"GetReviews\x12\x18.proto.GetReviewsRequest\x1a\x19.proto.GetReviewsResponse\x12G\n" +

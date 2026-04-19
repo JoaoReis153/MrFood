@@ -1,0 +1,22 @@
+info:
+  name: CreateBooking
+  type: grpc
+  seq: 4
+
+grpc:
+  url: localhost:50053
+  method: /proto.BookingService/CreateBooking
+  methodType: unary
+  protoFilePath: ../../../../services/booking/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "restaurant_id": 2,
+      "quantity": 2,
+      "time_start": {
+        "seconds": 1774612801,
+        "nanos": 0
+      }
+    }
+  auth:
+    type: bearer
+    token: "{{token}}"

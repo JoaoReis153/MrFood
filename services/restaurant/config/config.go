@@ -65,7 +65,7 @@ func Load(ctx context.Context) *Config {
 		Review: struct {
 			GRPCAddr string `yaml:"grpc_addr"`
 		}{
-			GRPCAddr: "localhost:50052",
+			GRPCAddr: "localhost:50055",
 		},
 	}
 

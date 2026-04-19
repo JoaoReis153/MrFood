@@ -1,0 +1,143 @@
+name: Bruno API Tests
+
+on:
+  push:
+    paths:
+      - 'tests/mrfood-api/**'
+      - '.github/workflows/bruno.yml'
+      - 'Makefile'
+      - 'services/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/mrfood-api/**'
+      - '.github/workflows/bruno.yml'
+      - 'Makefile'
+      - 'services/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bruno-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bruno-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Create services/.env
+        run: |
+          cat > services/.env <<'EOF'
+          AUTH_SERVER_PORT=50051
+          AUTH_POSTGRES_PORT=5432
+          AUTH_POSTGRES_DB=mrfood_auth
+          AUTH_REDIS_PORT=6379
+          AUTH_POSTGRES_USER=mrfood_auth_user
+          AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
+          AUTH_REDIS_PASS=
+          AUTH_JWT_ACCESS_TOKEN_SECRET=test-access-secret-for-ci-0123456789
+          AUTH_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci-0123456789
+
+          RESTAURANT_SERVER_PORT=50052
+          RESTAURANT_POSTGRES_PORT=5433
+          RESTAURANT_POSTGRES_DB=mrfood_restaurant
+          RESTAURANT_POSTGRES_USER=restaurant
+          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
+
+          REVIEW_SERVER_PORT=50055
+          REVIEW_POSTGRES_PORT=5436
+          REVIEW_POSTGRES_DB=mrfood_review
+          REVIEW_POSTGRES_USER=review
+          REVIEW_POSTGRES_PASSWORD=reviewsecret
+
+          BOOKING_SERVER_PORT=50053
+          BOOKING_DB_PORT=5434
+          BOOKING_POSTGRES_DB=mrfood_booking
+          BOOKING_POSTGRES_USER=booking
+          BOOKING_POSTGRES_PASSWORD=bookingsecret
+
+          SPONSOR_SERVER_PORT=50054
+          SPONSOR_POSTGRES_PORT=5435
+          SPONSOR_POSTGRES_DB=mrfood_sponsor
+          SPONSOR_POSTGRES_USER=sponsor
+          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
+          SPONSOR_DB_PORT=5435
+          EOF
+
+      - name: Start services
+        working-directory: services
+        run: docker compose up -d --build
+
+      - name: Wait for API gateway
+        run: |
+          ready=0
+          for i in {1..90}; do
+            status=$(curl -sS -o /tmp/gateway-auth-ping-body.txt -w "%{http_code}" http://localhost:8000/auth/ping/1 || true)
+
+            if [ "$status" = "200" ]; then
+              echo "Gateway and auth upstream are ready"
+              ready=1
+              break
+            fi
+
+            echo "Waiting for gateway/auth upstream... ($i/90) status=$status"
+
+            if [ "$status" = "503" ]; then
+              echo "Gateway is up but auth upstream is not ready yet"
+            fi
+
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "--- docker compose ps ---"
+              docker compose -f services/docker-compose.yml ps || true
+              echo "--- auth logs (tail) ---"
+              docker compose -f services/docker-compose.yml logs --tail=80 auth || true
+              echo "--- kong logs (tail) ---"
+              docker compose -f services/docker-compose.yml logs --tail=80 kong || true
+            fi
+
+            sleep 5
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "Gateway/auth upstream did not become ready in time"
+            echo "--- gateway ping response body ---"
+            cat /tmp/gateway-auth-ping-body.txt || true
+            echo "--- docker compose ps ---"
+            docker compose -f services/docker-compose.yml ps || true
+            echo "--- full service logs (tail) ---"
+            docker compose -f services/docker-compose.yml logs --tail=300 || true
+            exit 1
+          fi
+
+      - name: Run Bruno tests
+        run: make test-bruno
+
+      - name: Upload Bruno reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: bruno-reports
+          path: |
+            tests/mrfood-api/reports/bruno-junit.xml
+            tests/mrfood-api/reports/bruno-report.json
+          if-no-files-found: warn
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose -f services/docker-compose.yml logs --tail=300
+
+      - name: Stop services
+        if: always()
+        working-directory: services
+        run: docker compose down -v

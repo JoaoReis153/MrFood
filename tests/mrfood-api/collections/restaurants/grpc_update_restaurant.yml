@@ -1,0 +1,28 @@
+info:
+  name: update restaurant
+  type: grpc
+  seq: 3
+
+grpc:
+  url: localhost:50052
+  method: /proto.RestaurantService/GetRestaurantDetails
+  methodType: unary
+  protoFilePath: ../../../../services/restaurant/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "id": 1,
+      "name": "amicitia",
+      "latitude": 70,
+      "longitude": 70,
+      "address": "pauper",
+      "opening_time": "01:00:00",
+      "closing_time": "10:00:00",
+      "categories": [
+        "truculenter",
+        "truculenter1"
+      ],
+      "max_slots": 1000
+    }
+  auth:
+    type: bearer
+    token: "{{token}}"

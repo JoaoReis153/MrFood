@@ -24,7 +24,7 @@ func (m *mockGRPCClient) GetWorkingHours(ctx context.Context, req *pb.WorkingHou
 }
 
 type mockRepo struct {
-	bookings map[int32]int32 // bookingID -> userID
+	bookings map[int32]int64 // bookingID -> userID
 }
 
 func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
@@ -36,7 +36,7 @@ func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (
 
 func (m *mockRepo) DeleteBooking(ctx context.Context, req *models.DeleteBooking) error {
 	if m.bookings == nil {
-		m.bookings = map[int32]int32{
+		m.bookings = map[int32]int64{
 			1: 1,
 		}
 	}
@@ -140,7 +140,7 @@ func TestDeleteBooking(t *testing.T) {
 
 	t.Run("Wrong user", func(t *testing.T) {
 		// Recreate the booking to ensure it exists
-		service.repo.(*mockRepo).bookings = map[int32]int32{1: 1}
+		service.repo.(*mockRepo).bookings = map[int32]int64{1: 1}
 
 		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
 			UserID:    2, // wrong user
