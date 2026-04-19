@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *JWTService) GenerateAccessToken(ctx context.Context, userID, username string) (string, error) {
+func (s *JWTService) GenerateAccessToken(ctx context.Context, userID, username, email string) (string, error) {
 	version, err := s.tokenStore.GetUserTokenVersion(ctx, userID)
 	if err != nil {
 		slog.Error("failed to get token version", "error", err)
@@ -31,6 +31,7 @@ func (s *JWTService) GenerateAccessToken(ctx context.Context, userID, username s
 		},
 		UserID:       userID,
 		Username:     username,
+		Email:        email,
 		TokenVersion: version,
 		TokenType:    "access",
 	}
@@ -78,9 +79,9 @@ func (s *JWTService) GenerateRefreshToken(ctx context.Context, userID string) (s
 	return signedToken, nil
 }
 
-func (s *JWTService) GenerateTokenPair(ctx context.Context, userID, username string) (*TokenPair, error) {
+func (s *JWTService) GenerateTokenPair(ctx context.Context, userID, username, email string) (*TokenPair, error) {
 	slog.Debug("generating token pair", "user_id", userID, "username", username)
-	accessToken, err := s.GenerateAccessToken(ctx, userID, username)
+	accessToken, err := s.GenerateAccessToken(ctx, userID, username, email)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +191,7 @@ func (s *JWTService) RefreshTokens(ctx context.Context, tokenStr string) (*Token
 		return nil, err
 	}
 
-	return s.GenerateTokenPair(ctx, claims.UserID, claims.Username)
+	return s.GenerateTokenPair(ctx, claims.UserID, claims.Username, claims.Email)
 }
 
 func (s *JWTService) parseRefreshToken(refreshTokenString string) (*Claims, error) {

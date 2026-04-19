@@ -105,7 +105,7 @@ func TestGenerateAccessToken(t *testing.T) {
 			},
 		})
 
-		_, err := svc.GenerateAccessToken(context.Background(), "u1", "john")
+		_, err := svc.GenerateAccessToken(context.Background(), "u1", "john", "john@teste.pt")
 		if err == nil || !strings.Contains(err.Error(), "failed to get token version") {
 			t.Fatalf("expected version error, got: %v", err)
 		}
@@ -118,7 +118,7 @@ func TestGenerateAccessToken(t *testing.T) {
 			},
 		})
 
-		tok, err := svc.GenerateAccessToken(context.Background(), "u1", "john")
+		tok, err := svc.GenerateAccessToken(context.Background(), "u1", "john", "john@teste.pt")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

@@ -38,6 +38,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
+	Email        string `json:"email"`
 	TokenVersion int    `json:"token_version"`
 	TokenType    string `json:"token_type"` // access or refresh
 }
@@ -135,6 +136,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	slog.Info("USER INFO",
 		"user_id", claims.UserID,
 		"username", claims.Username,
+		"email", claims.Email,
 		"token_type", claims.TokenType,
 		"exp", claims.ExpiresAt,
 	)
