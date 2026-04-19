@@ -54,7 +54,7 @@ var (
 func Load(_ context.Context) (*Config, error) {
 	cfg := &Config{
 		Server: ServerConfig{
-			Port:    50051,
+			Port:    0,
 			Timeout: 30 * time.Second,
 		},
 		Log: LogConfig{
@@ -76,6 +76,9 @@ func Load(_ context.Context) (*Config, error) {
 
 	overrideWithEnv(cfg)
 
+	if cfg.Server.Port == 0 {
+		return nil, fmt.Errorf("config: APP_SERVER_PORT is required")
+	}
 	if cfg.SMTP.User == "" {
 		return nil, fmt.Errorf("config: SMTP_USER is required")
 	}
