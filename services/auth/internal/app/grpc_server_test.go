@@ -34,7 +34,7 @@ func (m *authSvcMock) GetUserByEmail(ctx context.Context, email string) (*models
 
 type jwtSvcMock struct {
 	revokeAll func(context.Context, string) error
-	genPair   func(context.Context, string, string) (*auth.TokenPair, error)
+	genPair   func(context.Context, string, string, string) (*auth.TokenPair, error)
 	refresh   func(context.Context, string) (*auth.TokenPair, error)
 	validate  func(context.Context, string) (*auth.Claims, error)
 	revokeOne func(context.Context, string) error
@@ -47,11 +47,11 @@ func (m *jwtSvcMock) RevokeAllUserTokens(ctx context.Context, userID string) err
 	return m.revokeAll(ctx, userID)
 }
 
-func (m *jwtSvcMock) GenerateTokenPair(ctx context.Context, userID, username string) (*auth.TokenPair, error) {
+func (m *jwtSvcMock) GenerateTokenPair(ctx context.Context, userID, username, email string) (*auth.TokenPair, error) {
 	if m.genPair == nil {
 		return nil, nil
 	}
-	return m.genPair(ctx, userID, username)
+	return m.genPair(ctx, userID, username, email)
 }
 
 func (m *jwtSvcMock) RefreshTokens(ctx context.Context, tokenStr string) (*auth.TokenPair, error) {
@@ -154,7 +154,7 @@ func TestServer_LoginProcess(t *testing.T) {
 			return &models.User{ID: 1, Username: "john", Password: string(h)}, nil
 		}}, jwtService: &jwtSvcMock{
 			revokeAll: func(context.Context, string) error { return nil },
-			genPair: func(context.Context, string, string) (*auth.TokenPair, error) {
+			genPair: func(context.Context, string, string, string) (*auth.TokenPair, error) {
 				return &auth.TokenPair{AccessToken: "a", RefreshToken: "r"}, nil
 			},
 		}}
