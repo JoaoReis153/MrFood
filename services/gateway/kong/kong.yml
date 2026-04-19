@@ -103,9 +103,30 @@ services:
       claims_to_verify:
       - exp
 
+- name: search
+  host: search
+  port: 50051
+  protocol: grpc
+  routes:
+  - name: search
+    protocols:
+    - http
+    - https
+    paths:
+    - /search
+
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/search.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+
 consumers:
 - username: my-client
   jwt_secrets:
   - key: generate-key
-    secret: /m6LosSwzwgW9f2cGZBB0q257O9R4wPUepn4xp9vNAQ=
+    secret: fQWjH/xFR1QzbkW+PJoMOWCiHJE1OX9b2BDnER0q9vs=
     algorithm: HS256
