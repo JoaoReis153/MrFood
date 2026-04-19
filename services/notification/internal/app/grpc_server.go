@@ -21,7 +21,8 @@ import (
 )
 
 type Server struct {
-	pb.UnimplementedNotificationServiceServer
+	pb.UnimplementedAuthToNotificationServiceServer
+	pb.UnimplementedPaymentToNotificationServiceServer
 	svc *service.Service
 }
 
@@ -33,7 +34,8 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterNotificationServiceServer(s, &Server{svc: app.NotificationService})
+	pb.RegisterAuthToNotificationServiceServer(s, &Server{svc: app.NotificationService})
+	pb.RegisterPaymentToNotificationServiceServer(s, &Server{svc: app.NotificationService})
 
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
 

@@ -6,10 +6,14 @@ option go_package = "/pb;pb";
 
 import "google/protobuf/timestamp.proto";
 
-// NotificationService defines the gRPC service for sending notifications, such as registration emails and receipts.
-service NotificationService {
+// AuthToNotificationService defines the gRPC service for sending notifications related to user authentication.
+service AuthToNotificationService {
   // SendRegistrationEmail sends a registration email to the specified username.
   rpc SendRegistrationEmail (SendRegistrationEmailRequest) returns (SendRegistrationEmailResponse);
+}
+
+// PaymentToNotificationService defines the gRPC service for sending notifications related to payments.
+service PaymentToNotificationService {
   // SendReceipts sends a list of receipts to the appropriate recipients.
   rpc SendReceipts(SendReceiptsRequest) returns (SendReceiptsResponse);
 }

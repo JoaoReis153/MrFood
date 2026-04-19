@@ -293,9 +293,10 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x16current_payment_status\x18\x03 \x01(\tR\x14currentPaymentStatus\x12!\n" +
 	"\fpayment_type\x18\x04 \x01(\tR\vpaymentType\x129\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt2\xde\x01\n" +
-	"\x13NotificationService\x12p\n" +
-	"\x15SendRegistrationEmail\x12*.notification.SendRegistrationEmailRequest\x1a+.notification.SendRegistrationEmailResponse\x12U\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt2\x8d\x01\n" +
+	"\x19AuthToNotificationService\x12p\n" +
+	"\x15SendRegistrationEmail\x12*.notification.SendRegistrationEmailRequest\x1a+.notification.SendRegistrationEmailResponse2u\n" +
+	"\x1cPaymentToNotificationService\x12U\n" +
 	"\fSendReceipts\x12!.notification.SendReceiptsRequest\x1a\".notification.SendReceiptsResponseB\bZ\x06/pb;pbb\x06proto3"
 
 var (
@@ -322,10 +323,10 @@ var file_internal_api_grpc_proto_protofile_proto_goTypes = []any{
 var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	4, // 0: notification.SendReceiptsRequest.receipts:type_name -> notification.Receipt
 	5, // 1: notification.Receipt.created_at:type_name -> google.protobuf.Timestamp
-	0, // 2: notification.NotificationService.SendRegistrationEmail:input_type -> notification.SendRegistrationEmailRequest
-	2, // 3: notification.NotificationService.SendReceipts:input_type -> notification.SendReceiptsRequest
-	1, // 4: notification.NotificationService.SendRegistrationEmail:output_type -> notification.SendRegistrationEmailResponse
-	3, // 5: notification.NotificationService.SendReceipts:output_type -> notification.SendReceiptsResponse
+	0, // 2: notification.AuthToNotificationService.SendRegistrationEmail:input_type -> notification.SendRegistrationEmailRequest
+	2, // 3: notification.PaymentToNotificationService.SendReceipts:input_type -> notification.SendReceiptsRequest
+	1, // 4: notification.AuthToNotificationService.SendRegistrationEmail:output_type -> notification.SendRegistrationEmailResponse
+	3, // 5: notification.PaymentToNotificationService.SendReceipts:output_type -> notification.SendReceiptsResponse
 	4, // [4:6] is the sub-list for method output_type
 	2, // [2:4] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -346,7 +347,7 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 			NumEnums:      0,
 			NumMessages:   5,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_internal_api_grpc_proto_protofile_proto_goTypes,
 		DependencyIndexes: file_internal_api_grpc_proto_protofile_proto_depIdxs,

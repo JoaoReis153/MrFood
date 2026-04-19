@@ -19,147 +19,217 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NotificationService_SendRegistrationEmail_FullMethodName = "/notification.NotificationService/SendRegistrationEmail"
-	NotificationService_SendReceipts_FullMethodName          = "/notification.NotificationService/SendReceipts"
+	AuthToNotificationService_SendRegistrationEmail_FullMethodName = "/notification.AuthToNotificationService/SendRegistrationEmail"
 )
 
-// NotificationServiceClient is the client API for NotificationService service.
+// AuthToNotificationServiceClient is the client API for AuthToNotificationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// NotificationService defines the gRPC service for sending notifications, such as registration emails and receipts.
-type NotificationServiceClient interface {
+// AuthToNotificationService defines the gRPC service for sending notifications related to user authentication.
+type AuthToNotificationServiceClient interface {
 	// SendRegistrationEmail sends a registration email to the specified username.
 	SendRegistrationEmail(ctx context.Context, in *SendRegistrationEmailRequest, opts ...grpc.CallOption) (*SendRegistrationEmailResponse, error)
-	// SendReceipts sends a list of receipts to the appropriate recipients.
-	SendReceipts(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error)
 }
 
-type notificationServiceClient struct {
+type authToNotificationServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewNotificationServiceClient(cc grpc.ClientConnInterface) NotificationServiceClient {
-	return &notificationServiceClient{cc}
+func NewAuthToNotificationServiceClient(cc grpc.ClientConnInterface) AuthToNotificationServiceClient {
+	return &authToNotificationServiceClient{cc}
 }
 
-func (c *notificationServiceClient) SendRegistrationEmail(ctx context.Context, in *SendRegistrationEmailRequest, opts ...grpc.CallOption) (*SendRegistrationEmailResponse, error) {
+func (c *authToNotificationServiceClient) SendRegistrationEmail(ctx context.Context, in *SendRegistrationEmailRequest, opts ...grpc.CallOption) (*SendRegistrationEmailResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SendRegistrationEmailResponse)
-	err := c.cc.Invoke(ctx, NotificationService_SendRegistrationEmail_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuthToNotificationService_SendRegistrationEmail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *notificationServiceClient) SendReceipts(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendReceiptsResponse)
-	err := c.cc.Invoke(ctx, NotificationService_SendReceipts_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// NotificationServiceServer is the server API for NotificationService service.
-// All implementations must embed UnimplementedNotificationServiceServer
+// AuthToNotificationServiceServer is the server API for AuthToNotificationService service.
+// All implementations must embed UnimplementedAuthToNotificationServiceServer
 // for forward compatibility.
 //
-// NotificationService defines the gRPC service for sending notifications, such as registration emails and receipts.
-type NotificationServiceServer interface {
+// AuthToNotificationService defines the gRPC service for sending notifications related to user authentication.
+type AuthToNotificationServiceServer interface {
 	// SendRegistrationEmail sends a registration email to the specified username.
 	SendRegistrationEmail(context.Context, *SendRegistrationEmailRequest) (*SendRegistrationEmailResponse, error)
-	// SendReceipts sends a list of receipts to the appropriate recipients.
-	SendReceipts(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error)
-	mustEmbedUnimplementedNotificationServiceServer()
+	mustEmbedUnimplementedAuthToNotificationServiceServer()
 }
 
-// UnimplementedNotificationServiceServer must be embedded to have
+// UnimplementedAuthToNotificationServiceServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedNotificationServiceServer struct{}
+type UnimplementedAuthToNotificationServiceServer struct{}
 
-func (UnimplementedNotificationServiceServer) SendRegistrationEmail(context.Context, *SendRegistrationEmailRequest) (*SendRegistrationEmailResponse, error) {
+func (UnimplementedAuthToNotificationServiceServer) SendRegistrationEmail(context.Context, *SendRegistrationEmailRequest) (*SendRegistrationEmailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendRegistrationEmail not implemented")
 }
-func (UnimplementedNotificationServiceServer) SendReceipts(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SendReceipts not implemented")
+func (UnimplementedAuthToNotificationServiceServer) mustEmbedUnimplementedAuthToNotificationServiceServer() {
 }
-func (UnimplementedNotificationServiceServer) mustEmbedUnimplementedNotificationServiceServer() {}
-func (UnimplementedNotificationServiceServer) testEmbeddedByValue()                             {}
+func (UnimplementedAuthToNotificationServiceServer) testEmbeddedByValue() {}
 
-// UnsafeNotificationServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to NotificationServiceServer will
+// UnsafeAuthToNotificationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthToNotificationServiceServer will
 // result in compilation errors.
-type UnsafeNotificationServiceServer interface {
-	mustEmbedUnimplementedNotificationServiceServer()
+type UnsafeAuthToNotificationServiceServer interface {
+	mustEmbedUnimplementedAuthToNotificationServiceServer()
 }
 
-func RegisterNotificationServiceServer(s grpc.ServiceRegistrar, srv NotificationServiceServer) {
-	// If the following call panics, it indicates UnimplementedNotificationServiceServer was
+func RegisterAuthToNotificationServiceServer(s grpc.ServiceRegistrar, srv AuthToNotificationServiceServer) {
+	// If the following call panics, it indicates UnimplementedAuthToNotificationServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&NotificationService_ServiceDesc, srv)
+	s.RegisterService(&AuthToNotificationService_ServiceDesc, srv)
 }
 
-func _NotificationService_SendRegistrationEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthToNotificationService_SendRegistrationEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendRegistrationEmailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NotificationServiceServer).SendRegistrationEmail(ctx, in)
+		return srv.(AuthToNotificationServiceServer).SendRegistrationEmail(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: NotificationService_SendRegistrationEmail_FullMethodName,
+		FullMethod: AuthToNotificationService_SendRegistrationEmail_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NotificationServiceServer).SendRegistrationEmail(ctx, req.(*SendRegistrationEmailRequest))
+		return srv.(AuthToNotificationServiceServer).SendRegistrationEmail(ctx, req.(*SendRegistrationEmailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotificationService_SendReceipts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+// AuthToNotificationService_ServiceDesc is the grpc.ServiceDesc for AuthToNotificationService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AuthToNotificationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "notification.AuthToNotificationService",
+	HandlerType: (*AuthToNotificationServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendRegistrationEmail",
+			Handler:    _AuthToNotificationService_SendRegistrationEmail_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "internal/api/grpc/proto/protofile.proto",
+}
+
+const (
+	PaymentToNotificationService_SendReceipts_FullMethodName = "/notification.PaymentToNotificationService/SendReceipts"
+)
+
+// PaymentToNotificationServiceClient is the client API for PaymentToNotificationService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PaymentToNotificationService defines the gRPC service for sending notifications related to payments.
+type PaymentToNotificationServiceClient interface {
+	// SendReceipts sends a list of receipts to the appropriate recipients.
+	SendReceipts(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error)
+}
+
+type paymentToNotificationServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewPaymentToNotificationServiceClient(cc grpc.ClientConnInterface) PaymentToNotificationServiceClient {
+	return &paymentToNotificationServiceClient{cc}
+}
+
+func (c *paymentToNotificationServiceClient) SendReceipts(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendReceiptsResponse)
+	err := c.cc.Invoke(ctx, PaymentToNotificationService_SendReceipts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PaymentToNotificationServiceServer is the server API for PaymentToNotificationService service.
+// All implementations must embed UnimplementedPaymentToNotificationServiceServer
+// for forward compatibility.
+//
+// PaymentToNotificationService defines the gRPC service for sending notifications related to payments.
+type PaymentToNotificationServiceServer interface {
+	// SendReceipts sends a list of receipts to the appropriate recipients.
+	SendReceipts(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error)
+	mustEmbedUnimplementedPaymentToNotificationServiceServer()
+}
+
+// UnimplementedPaymentToNotificationServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPaymentToNotificationServiceServer struct{}
+
+func (UnimplementedPaymentToNotificationServiceServer) SendReceipts(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendReceipts not implemented")
+}
+func (UnimplementedPaymentToNotificationServiceServer) mustEmbedUnimplementedPaymentToNotificationServiceServer() {
+}
+func (UnimplementedPaymentToNotificationServiceServer) testEmbeddedByValue() {}
+
+// UnsafePaymentToNotificationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PaymentToNotificationServiceServer will
+// result in compilation errors.
+type UnsafePaymentToNotificationServiceServer interface {
+	mustEmbedUnimplementedPaymentToNotificationServiceServer()
+}
+
+func RegisterPaymentToNotificationServiceServer(s grpc.ServiceRegistrar, srv PaymentToNotificationServiceServer) {
+	// If the following call panics, it indicates UnimplementedPaymentToNotificationServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&PaymentToNotificationService_ServiceDesc, srv)
+}
+
+func _PaymentToNotificationService_SendReceipts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendReceiptsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NotificationServiceServer).SendReceipts(ctx, in)
+		return srv.(PaymentToNotificationServiceServer).SendReceipts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: NotificationService_SendReceipts_FullMethodName,
+		FullMethod: PaymentToNotificationService_SendReceipts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NotificationServiceServer).SendReceipts(ctx, req.(*SendReceiptsRequest))
+		return srv.(PaymentToNotificationServiceServer).SendReceipts(ctx, req.(*SendReceiptsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// NotificationService_ServiceDesc is the grpc.ServiceDesc for NotificationService service.
+// PaymentToNotificationService_ServiceDesc is the grpc.ServiceDesc for PaymentToNotificationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var NotificationService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "notification.NotificationService",
-	HandlerType: (*NotificationServiceServer)(nil),
+var PaymentToNotificationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "notification.PaymentToNotificationService",
+	HandlerType: (*PaymentToNotificationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendRegistrationEmail",
-			Handler:    _NotificationService_SendRegistrationEmail_Handler,
-		},
-		{
 			MethodName: "SendReceipts",
-			Handler:    _NotificationService_SendReceipts_Handler,
+			Handler:    _PaymentToNotificationService_SendReceipts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
