@@ -53,7 +53,11 @@ func NewElasticsearchClient(cfg *config.Config) (*ElasticsearchClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("verify connection: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if res.IsError() {
 		return nil, fmt.Errorf("elasticsearch error: %s", res.Status())
@@ -69,7 +73,11 @@ func (ec *ElasticsearchClient) InitializeIndex(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("check index: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if res.StatusCode == 200 {
 		slog.Info("Index already exists", "index", indexName)
@@ -113,7 +121,11 @@ func (ec *ElasticsearchClient) InitializeIndex(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("create index: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if res.IsError() {
 		return fmt.Errorf("index error: %s", res.Status())
@@ -138,7 +150,11 @@ func (ec *ElasticsearchClient) IndexRestaurant(ctx context.Context, doc *Restaur
 	if err != nil {
 		return fmt.Errorf("index document: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if res.IsError() {
 		return fmt.Errorf("index error: %s", res.Status())
@@ -152,7 +168,11 @@ func (ec *ElasticsearchClient) DeleteRestaurant(ctx context.Context, restaurantI
 	if err != nil {
 		return fmt.Errorf("delete document: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if res.IsError() && res.StatusCode != 404 {
 		return fmt.Errorf("delete error: %s", res.Status())

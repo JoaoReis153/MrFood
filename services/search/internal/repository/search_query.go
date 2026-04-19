@@ -82,7 +82,11 @@ func (sr *SearchRepository) Search(ctx context.Context, query *SearchQuery) (*Se
 	if err != nil {
 		return nil, fmt.Errorf("search: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() {
+		if err := res.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if res.IsError() {
 		return nil, fmt.Errorf("search error: %s", res.Status())
