@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"strconv"
 
@@ -35,7 +36,11 @@ func New(ctx context.Context, cfg *config.Config) (*Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("elastic info: %w", err)
 	}
-	defer infoRes.Body.Close()
+	defer func() {
+		if err := infoRes.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if infoRes.IsError() {
 		body, _ := io.ReadAll(infoRes.Body)
@@ -136,7 +141,11 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 	if err != nil {
 		return nil, fmt.Errorf("elastic search: %w", err)
 	}
-	defer searchRes.Body.Close()
+	defer func() {
+		if err := searchRes.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if searchRes.IsError() {
 		body, _ := io.ReadAll(searchRes.Body)
@@ -220,7 +229,11 @@ func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, inde
 	if err != nil {
 		return fmt.Errorf("check index exists: %w", err)
 	}
-	defer existsRes.Body.Close()
+	defer func() {
+		if err := existsRes.Body.Close(); err != nil {
+			slog.Error("error closing response body", "error", err)
+		}
+	}()
 
 	if existsRes.StatusCode == 200 {
 		return nil
