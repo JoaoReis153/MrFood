@@ -1,30 +1,7 @@
 services:
-  restaurant_cdc_db:
-    image: postgres:16
-    container_name: restaurant_cdc_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${CDC_RESTAURANT_DB:-mrfood_restaurant}
-      POSTGRES_USER: ${CDC_RESTAURANT_USER:-restaurant}
-      POSTGRES_PASSWORD: ${CDC_RESTAURANT_PASSWORD:-restaurantsecret}
-    ports:
-      - "${CDC_RESTAURANT_DB_PORT:-5434}:5432"
-    command:
-      - postgres
-      - -c
-      - wal_level=logical
-      - -c
-      - max_wal_senders=10
-      - -c
-      - max_replication_slots=10
-    volumes:
-      - restaurant_cdc_db_data:/var/lib/postgresql/data
-      - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+  # CDC reads from the shared restaurant_db (managed in docker-compose.restaurant.yml)
+  # Restaurant_db must have wal_level=logical enabled for CDC to work
+  # CDC connectors will read change events from the main database
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
@@ -43,6 +20,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
+    networks:
+      - app-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
@@ -51,6 +30,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - app-network
 
   kafka:
     image: confluentinc/cp-kafka:7.6.1
@@ -70,14 +51,14 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_MIN_INSYNC_REPLICAS: 1
+    networks:
+      - app-network
 
   connect:
     image: confluentinc/cp-kafka-connect:7.6.1
     container_name: search_connect
     restart: unless-stopped
     depends_on:
-      restaurant_cdc_db:
-        condition: service_healthy
       kafka:
         condition: service_started
       elasticsearch:
@@ -114,9 +95,14 @@ services:
           confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
         fi
         /etc/confluent/docker/run
+    networks:
+      - app-network
 
 volumes:
-  restaurant_cdc_db_data:
   elastic_data:
   connect_plugins:
+
+networks:
+  app-network:
+    driver: bridge
 

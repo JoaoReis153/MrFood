@@ -5,16 +5,25 @@
     "tasks.max": "1",
     "topics": "restaurantdb.public.restaurants",
     "connection.url": "http://elasticsearch:9200",
-    "key.ignore": "true",
+    "key.ignore": "false",
     "schema.ignore": "true",
     "behavior.on.null.values": "delete",
     "write.method": "upsert",
     "type.name": "_doc",
-    "topic.index.map": "restaurantdb.public.restaurants:restaurants",
+    "external.resource.usage": "INDEX",
+    "topic.to.external.resource.mapping": "restaurantdb.public.restaurants:restaurants",
     "key.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "key.converter.schemas.enable": "false",
-    "value.converter.schemas.enable": "false"
+    "value.converter.schemas.enable": "false",
+    "transforms": "extractKey",
+    "transforms.extractKey.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractKey.field": "id",
+    "read.timeout.ms": 30000,
+    "retry.backoff.ms": 100,
+    "max.retries": 3,
+    "linger.ms": 100,
+    "batch.size": 100
   }
 }
 

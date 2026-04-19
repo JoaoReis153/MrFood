@@ -3,7 +3,7 @@
   "config": {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "tasks.max": "1",
-    "database.hostname": "restaurant_cdc_db",
+    "database.hostname": "restaurant_db",
     "database.port": "5432",
     "database.user": "restaurant",
     "database.password": "restaurantsecret",
@@ -14,6 +14,9 @@
     "publication.name": "restaurant_search_publication",
     "publication.autocreate.mode": "filtered",
     "table.include.list": "public.restaurants",
+    "snapshot.mode": "initial",
+    "snapshot.delay.ms": "5000",
+    "decimal.handling.mode": "double",
     "key.converter": "org.apache.kafka.connect.json.JsonConverter",
     "value.converter": "org.apache.kafka.connect.json.JsonConverter",
     "key.converter.schemas.enable": "false",
