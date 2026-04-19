@@ -92,23 +92,15 @@ func NewClient(address string) (pb.PaymentToNotificationServiceClient, *grpc.Cli
 }
 
 func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest) (*pb.PaymentResponse, error) {
-	claims, err := ExtractUserFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	user_id, err := parseInt64(claims.UserID)
-	if err != nil {
-		return nil, err
-	}
+	slog.Info("received request for payment")
 
 	request := &models.Receipt{
 		IdempotencyKey:     req.IdempotencyKey,
 		Amount:             req.Amount,
 		PaymentDescription: req.PaymentDescription,
 		PaymentType:        req.Type,
-		UserEmail:          claims.UserEmail,
-		UserID:             user_id,
+		UserEmail:          req.UserEmail,
+		UserID:             req.UserId,
 	}
 
 	receipt_id, err := s.paymentService.CreateReceipt(ctx, request)
@@ -121,7 +113,31 @@ func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest)
 	}, nil
 }
 
-func (s *queryServer) GetReceipt(ctx context.Context, req *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
+func (s *queryServer) GetReceiptsByUser(ctx context.Context, req *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
+	slog.Info("received request for receipts by user")
+
+	claims, err := ExtractUserFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	user_id, err := parseInt64(claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.paymentService.GetReceiptsByUser(ctx, user_id)
+
+	if err != nil {
+		return nil, mapServiceError(err)
+	}
+
+	return &pb.GetReceiptResponse{}, nil
+}
+
+func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
+	slog.Info("received request for receipt by id")
+
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -160,7 +176,8 @@ func mapServiceError(err error) error {
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID       string `json:"user_id"`
-	UserEmail    string `json:"user_email"`
+	Username     string `json:"username"`
+	Email        string `json:"email"`
 	TokenVersion int    `json:"token_version"`
 	TokenType    string `json:"token_type"` // access or refresh
 }
@@ -199,7 +216,8 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 
 	slog.Info("USER INFO",
 		"user_id", claims.UserID,
-		"user_email", claims.UserEmail,
+		"username", claims.Username,
+		"email", claims.Email,
 		"token_type", claims.TokenType,
 		"exp", claims.ExpiresAt,
 	)

@@ -24,10 +24,12 @@ const (
 
 type PaymentRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Amount             float32                `protobuf:"fixed32,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	IdempotencyKey     string                 `protobuf:"bytes,2,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	PaymentDescription string                 `protobuf:"bytes,3,opt,name=payment_description,json=paymentDescription,proto3" json:"payment_description,omitempty"`
-	Type               string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	UserId             int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Amount             float32                `protobuf:"fixed32,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	UserEmail          string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
+	IdempotencyKey     string                 `protobuf:"bytes,4,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	PaymentDescription string                 `protobuf:"bytes,5,opt,name=payment_description,json=paymentDescription,proto3" json:"payment_description,omitempty"`
+	Type               string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -62,11 +64,25 @@ func (*PaymentRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{0}
 }
 
+func (x *PaymentRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
 func (x *PaymentRequest) GetAmount() float32 {
 	if x != nil {
 		return x.Amount
 	}
 	return 0
+}
+
+func (x *PaymentRequest) GetUserEmail() string {
+	if x != nil {
+		return x.UserEmail
+	}
+	return ""
 }
 
 func (x *PaymentRequest) GetIdempotencyKey() string {
@@ -382,12 +398,15 @@ var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x96\x01\n" +
-	"\x0ePaymentRequest\x12\x16\n" +
-	"\x06amount\x18\x01 \x01(\x02R\x06amount\x12'\n" +
-	"\x0fidempotency_key\x18\x02 \x01(\tR\x0eidempotencyKey\x12/\n" +
-	"\x13payment_description\x18\x03 \x01(\tR\x12paymentDescription\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\"0\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xce\x01\n" +
+	"\x0ePaymentRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x02R\x06amount\x12\x1d\n" +
+	"\n" +
+	"user_email\x18\x03 \x01(\tR\tuserEmail\x12'\n" +
+	"\x0fidempotency_key\x18\x04 \x01(\tR\x0eidempotencyKey\x12/\n" +
+	"\x13payment_description\x18\x05 \x01(\tR\x12paymentDescription\x12\x12\n" +
+	"\x04type\x18\x06 \x01(\tR\x04type\"0\n" +
 	"\x0fPaymentResponse\x12\x1d\n" +
 	"\n" +
 	"receipt_id\x18\x01 \x01(\x05R\treceiptId\"C\n" +

@@ -128,5 +128,5 @@ consumers:
 - username: my-client
   jwt_secrets:
   - key: generate-key
-    secret: /m6LosSwzwgW9f2cGZBB0q257O9R4wPUepn4xp9vNAQ=
+    secret: CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
     algorithm: HS256

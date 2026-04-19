@@ -35,19 +35,16 @@ func (r *Repository) Close(_ context.Context) error {
 func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt, requestHash string) (int32, error) {
 	query := `
 		INSERT INTO receipts (
-			idempotency_key, request_hash, user_id, user_email,
-			amount, payment_description, current_payment_status,
-			payment_type, created_at
-		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-		ON CONFLICT (idempotency_key)
-		DO UPDATE
-		SET idempotency_key = receipts.idempotency_key
-		WHERE receipts.request_hash = EXCLUDED.request_hash
-		RETURNING id;
+		idempotency_key, request_hash, user_id, user_email,
+		amount, payment_description, current_payment_status,
+		payment_type, created_at
+	)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+	ON CONFLICT (idempotency_key) DO NOTHING
+	RETURNING id;
 	`
+	var receipt_id int32
 
-	var id int32
 	err := r.DB.QueryRow(ctx, query,
 		receipt.IdempotencyKey,
 		requestHash,
@@ -58,16 +55,38 @@ func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt,
 		receipt.PaymentStatus,
 		receipt.PaymentType,
 		receipt.CreatedAt,
-	).Scan(&id)
+	).Scan(&receipt_id)
 
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return 0, ErrDuplicatePaymentRequest
-		}
-		return 0, err
+	if err == nil {
+		return receipt_id, nil
 	}
 
-	return id, nil
+	if errors.Is(err, pgx.ErrNoRows) {
+		existing := `
+		SELECT id, request_hash
+		FROM receipts
+		WHERE idempotency_key = $1;
+	`
+
+		var existingID int32
+		var existingHash string
+
+		err = r.DB.QueryRow(ctx, existing, receipt.IdempotencyKey).
+			Scan(&existingID, &existingHash)
+		if err != nil {
+			slog.Error("error checking hash", "error", err)
+			return 0, err
+		}
+
+		if existingHash != requestHash {
+			slog.Error("duplicate payment")
+			return 0, ErrDuplicatePaymentRequest
+		}
+
+		return existingID, nil
+	}
+
+	return 0, err
 }
 
 func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error) {

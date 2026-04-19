@@ -106,10 +106,12 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 	})
 
 	if err != nil {
+		slog.Error("failed to get receipt", "error", err)
 		return 0, err
 	}
 
-	return res.GetReceiptId(), nil
+	slog.Info("receipt id", "receipt_id", res.ReceiptId)
+	return res.ReceiptId, nil
 }
 
 func (s *Service) getWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHours, error) {
