@@ -4,12 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-$SERVICES_DIR/docker-compose.cdc.yml}"
+RESTAURANT_COMPOSE_FILE="${RESTAURANT_COMPOSE_FILE:-$SERVICES_DIR/docker-compose.restaurant.yml}"
+BASE_COMPOSE_FILE="${BASE_COMPOSE_FILE:-$SERVICES_DIR/docker-compose.yml}"
+DOCKER_COMPOSE_PROJECT="${DOCKER_COMPOSE_PROJECT:-mrfood}"
 
 CONNECT_URL="${CONNECT_URL:-http://localhost:8083}"
 ELASTIC_URL="${ELASTIC_URL:-http://localhost:9200}"
 ELASTIC_INDEX="${ELASTIC_INDEX:-_all}"
 
-DB_CONTAINER="${DB_CONTAINER:-restaurant_cdc_db}"
 DB_USER="${DB_USER:-restaurant}"
 DB_NAME="${DB_NAME:-mrfood_restaurant}"
 
@@ -93,7 +95,7 @@ require_cmd curl
 require_cmd python3
 
 log "Checking CDC stack is up"
-if ! docker compose -f "$COMPOSE_FILE" ps >/dev/null 2>&1; then
+if ! docker compose -p "$DOCKER_COMPOSE_PROJECT" -f "$COMPOSE_FILE" ps >/dev/null 2>&1; then
   fail "Could not query docker compose status using $COMPOSE_FILE"
 fi
 
@@ -110,10 +112,21 @@ assert_connector_running "$SINK_CONNECTOR"
 
 unique_suffix="$(date +%s)"
 restaurant_name="smoke-cdc-${unique_suffix}"
+restaurant_id="$((1700000000 + unique_suffix))"
 
 log "Inserting test restaurant into Postgres: $restaurant_name"
+docker compose -p "$DOCKER_COMPOSE_PROJECT" -f "$BASE_COMPOSE_FILE" -f "$RESTAURANT_COMPOSE_FILE" up -d restaurant_db >/dev/null
+db_ready=0
+for _ in $(seq 1 30); do
+  if docker compose -p "$DOCKER_COMPOSE_PROJECT" -f "$BASE_COMPOSE_FILE" -f "$RESTAURANT_COMPOSE_FILE" exec -T restaurant_db pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+    db_ready=1
+    break
+  fi
+  sleep 2
+done
+[[ "$db_ready" -eq 1 ]] || fail "restaurant_db did not become ready in time"
 insert_output="$({
-  docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -t -A -c "INSERT INTO restaurants (name, latitude, longitude, address, max_slots, owner_id, owner_name, sponsor_tier) VALUES ('$restaurant_name', 41.1579, -8.6291, 'Porto', 20, 9999, 'smoke-test', 0) RETURNING id;"
+  docker compose -p "$DOCKER_COMPOSE_PROJECT" -f "$BASE_COMPOSE_FILE" -f "$RESTAURANT_COMPOSE_FILE" exec -T restaurant_db psql -U "$DB_USER" -d "$DB_NAME" -t -A -c "INSERT INTO restaurants (id, name, latitude, longitude, address, opening_time, closing_time, max_slots, owner_id, owner_name, sponsor_tier) VALUES ($restaurant_id, '$restaurant_name', 41.1579, -8.6291, 'Porto', '09:00:00', '22:00:00', 20, 9999, 'smoke-test', 0) RETURNING id;"
 } | cat)"
 
 restaurant_id="$(printf '%s\n' "$insert_output" | sed -n '1p' | tr -dc '0-9')"
