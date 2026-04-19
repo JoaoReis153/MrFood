@@ -5,6 +5,7 @@ import (
 	"MrFood/services/notification/internal/service"
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -19,7 +20,9 @@ func newRedisClient(ctx context.Context, cfg *config.Config) (*redis.Client, err
 		Password: cfg.Redis.Password,
 	})
 	if err := client.Ping(ctx).Err(); err != nil {
-		client.Close()
+		if err := client.Close(); err != nil {
+			slog.Warn("failed to close redis client", "error", err)
+		}
 		return nil, fmt.Errorf("redis ping: %w", err)
 	}
 	return client, nil
