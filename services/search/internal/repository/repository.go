@@ -88,7 +88,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 		must = append(must, map[string]any{
 			"wildcard": map[string]any{
 				"name.keyword": map[string]any{
-					"value":            "*" + *query.Filter.NameSuffix,
+					"value":            *query.Filter.NameSuffix + "*",
 					"case_insensitive": true,
 				},
 			},
