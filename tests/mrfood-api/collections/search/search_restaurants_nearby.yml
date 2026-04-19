@@ -8,16 +8,16 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/search?latitude=45&longitude=1.169131&radius_meters=30000&page=1&limit=10"
+  url: "{{baseUrl}}/search?latitude=45.961674&longitude=1.169131&radius_meters=3000&page=1&limit=10"
   params:
     - name: latitude
-      value: "45"
+      value: "45.961674"
       type: query
     - name: longitude
       value: "1.169131"
       type: query
     - name: radius_meters
-      value: "30000"
+      value: "3000"
       type: query
     - name: page
       value: "1"
