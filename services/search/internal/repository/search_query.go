@@ -30,7 +30,7 @@ type SearchQuery struct {
 }
 
 type SearchResult struct {
-	ID         int32    `json:"id"`
+	ID         int64    `json:"id"`
 	Name       string   `json:"name"`
 	Latitude   float64  `json:"latitude"`
 	Longitude  float64  `json:"longitude"`
@@ -104,7 +104,7 @@ func (sr *SearchRepository) Search(ctx context.Context, query *SearchQuery) (*Se
 		source := hit.(map[string]interface{})["_source"].(map[string]interface{})
 
 		result := SearchResult{
-			ID:        int32(source["id"].(float64)),
+			ID:        int64(source["id"].(float64)),
 			Name:      source["name"].(string),
 			Latitude:  source["latitude"].(float64),
 			Longitude: source["longitude"].(float64),
