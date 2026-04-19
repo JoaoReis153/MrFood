@@ -50,12 +50,17 @@ type JWTConfig struct {
 	RefreshTokenTTL    time.Duration `yaml:"refresh_token_ttl" validate:"required,min=1h,max=720h"`
 }
 
+type NotificationConfig struct {
+	GRPCAddr string `yaml:"grpc_addr" validate:"required"`
+}
+
 type Config struct {
-	Server ServerConfig `yaml:"server"`
-	Log    LogConfig    `yaml:"log"`
-	DB     DBConfig     `yaml:"db"`
-	Redis  RedisConfig  `yaml:"redis"`
-	JWT    JWTConfig    `yaml:"jwt"`
+	Server       ServerConfig       `yaml:"server"`
+	Log          LogConfig          `yaml:"log"`
+	DB           DBConfig           `yaml:"db"`
+	Redis        RedisConfig        `yaml:"redis"`
+	JWT          JWTConfig          `yaml:"jwt"`
+	Notification NotificationConfig `yaml:"notification"`
 }
 
 var (
@@ -102,6 +107,10 @@ func Load(_ context.Context) (*Config, error) {
 		return nil, fmt.Errorf("config: %w", err)
 	}
 
+	if cfg.Notification.GRPCAddr == "" {
+		return nil, fmt.Errorf("notification gRPC address is required")
+	}
+
 	slog.Debug("config loaded",
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
 		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
@@ -146,6 +155,8 @@ func overrideWithEnv(cfg *Config) {
 
 	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
 	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
+
+	cfg.Notification.GRPCAddr = getEnv("AUTH_TO_NOTIFICATION_GRPC_ADDR", cfg.Notification.GRPCAddr)
 }
 
 func validateConfig(cfg *Config) error {

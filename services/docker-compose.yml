@@ -6,6 +6,7 @@ include:
   - docker-compose.sponsor.yml
   - docker-compose.kong.yml
   - docker-compose.payment.yml
+  - docker-compose.notification.yml
 
 networks:
   app-network: 

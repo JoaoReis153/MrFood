@@ -3,6 +3,7 @@ go 1.25.0
 use (
 	./services/auth
 	./services/booking
+	./services/notification
 	./services/restaurant
 	./services/review
 	./services/sponsor
