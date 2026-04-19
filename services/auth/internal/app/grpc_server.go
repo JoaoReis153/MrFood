@@ -33,7 +33,7 @@ type authService interface {
 
 type jwtService interface {
 	RevokeAllUserTokens(ctx context.Context, userID string) error
-	GenerateTokenPair(ctx context.Context, userID, username string) (*auth.TokenPair, error)
+	GenerateTokenPair(ctx context.Context, userID, username, email string) (*auth.TokenPair, error)
 	RefreshTokens(ctx context.Context, tokenStr string) (*auth.TokenPair, error)
 	ValidateAccessToken(ctx context.Context, tokenString string) (*auth.Claims, error)
 	RevokeAccessToken(ctx context.Context, tokenString string) error
@@ -100,7 +100,7 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 		return nil, status.Error(codes.Internal, "failed to revoke all user tokens")
 	}
 
-	tokenPair, err := s.jwtService.GenerateTokenPair(ctx, userID, user.Username)
+	tokenPair, err := s.jwtService.GenerateTokenPair(ctx, userID, user.Username, user.Email)
 	if err != nil {
 		slog.Error("failed to generate token pair", "error", err)
 		return nil, status.Error(codes.Internal, "failed to generate token pair")
