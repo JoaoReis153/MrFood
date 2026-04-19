@@ -11,6 +11,6 @@ grpc:
   message: |-
     {
       "email": "mrfood.api@gmail.com",
-      "username":"teste"
+      "username":"Mr Food"
     }
   auth: inherit
