@@ -5,7 +5,7 @@ info:
 
 grpc:
   url: localhost:50058
-  method: /notification.NotificationService/SendRegistrationEmail
+  method: /notification.AuthToNotificationService/SendRegistrationEmail
   methodType: unary
   protoFilePath: ../../../../services/notification/internal/api/grpc/proto/protofile.proto
   message: |-

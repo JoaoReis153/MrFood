@@ -5,7 +5,7 @@ info:
 
 grpc:
   url: localhost:50058
-  method: /notification.NotificationService/SendReceipts
+  method: /notification.PaymentToNotificationService/SendReceipts
   methodType: unary
   protoFilePath: ../../../../services/notification/internal/api/grpc/proto/protofile.proto
   message: |-
