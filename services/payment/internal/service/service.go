@@ -5,10 +5,12 @@ import (
 	"MrFood/services/payment/internal/repository"
 	models "MrFood/services/payment/pkg"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"math/rand"
-	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -24,7 +26,7 @@ var (
 )
 
 type paymentRepository interface {
-	CreateReceipt(ctx context.Context, payment_request *models.Receipt) (int32, error)
+	CreateReceipt(ctx context.Context, payment_request *models.Receipt, requestHash string) (int32, error)
 	GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error)
 	GetReceiptsByUser(ctx context.Context, user_id int64) ([]*models.Receipt, error)
 }
@@ -58,15 +60,14 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 		receipt_request.PaymentStatus = "failed"
 	}
 
-	if strings.Contains(receipt_request.IdempotencyKey, "BOOKING") {
-		receipt_request.PaymentType = "B"
-	} else {
-		receipt_request.PaymentType = "S"
-	}
-
 	receipt_request.CreatedAt = time.Now().UTC()
 
-	return s.repo.CreateReceipt(ctx, receipt_request)
+	hash, err := generateRequestHash(receipt_request)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.repo.CreateReceipt(ctx, receipt_request, hash)
 }
 
 func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) error {
@@ -124,4 +125,28 @@ func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) 
 	}
 
 	return res, nil
+}
+
+func generateRequestHash(r *models.Receipt) (string, error) {
+	input := struct {
+		UserID      int64
+		Amount      float32
+		Description string
+		PaymentType string
+		TimeSlot    string
+	}{
+		UserID:      r.UserID,
+		Amount:      r.Amount,
+		Description: r.PaymentDescription,
+		PaymentType: r.PaymentType,
+		TimeSlot:    r.CreatedAt.UTC().Format("2006-01-02T15:04"),
+	}
+
+	data, err := json.Marshal(input)
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:]), nil
 }

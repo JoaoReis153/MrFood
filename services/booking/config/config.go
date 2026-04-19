@@ -29,6 +29,9 @@ type Config struct {
 	Restaurant struct {
 		GRPCAddr string `yaml:"grpc_addr"`
 	} `yaml:"review"`
+	Payment struct {
+		GRPCAddr string `yaml:"grpc_addr"`
+	} `yaml:"review"`
 }
 
 var globalConfig *Config
@@ -67,6 +70,11 @@ func Load(ctx context.Context) *Config {
 		}{
 			GRPCAddr: "restaurant:50052",
 		},
+		Payment: struct {
+			GRPCAddr string `yaml:"grpc_addr"`
+		}{
+			GRPCAddr: "payment:50057",
+		},
 	}
 
 	overrideWithEnv(cfg)
@@ -97,7 +105,8 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
-	cfg.Restaurant.GRPCAddr = getEnv("REVIEW_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
+	cfg.Restaurant.GRPCAddr = getEnv("RESTAURANT_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
+	cfg.Payment.GRPCAddr = getEnv("PAYMENT_GRPC_ADDR", cfg.Payment.GRPCAddr)
 }
 
 func validateConfig(cfg *Config) error {
@@ -111,7 +120,10 @@ func validateConfig(cfg *Config) error {
 		return fmt.Errorf("DB host/name required")
 	}
 	if strings.TrimSpace(cfg.Restaurant.GRPCAddr) == "" {
-		return fmt.Errorf("review grpc addr required")
+		return fmt.Errorf("restaurant grpc addr required")
+	}
+	if strings.TrimSpace(cfg.Payment.GRPCAddr) == "" {
+		return fmt.Errorf("payment grpc addr required")
 	}
 	return nil
 }

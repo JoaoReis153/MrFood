@@ -20,10 +20,12 @@ service PaymentToNotificationService {
 }
 
 message PaymentRequest {
-  float amount = 1;
-  string idempotency_key = 2;
-  string payment_description = 3;
-  string type = 4;
+  int64 user_id = 1;
+  float amount = 2;
+  string user_email = 3;
+  string idempotency_key = 4;
+  string payment_description = 5;
+  string type = 6;
 }
 
 message PaymentResponse {

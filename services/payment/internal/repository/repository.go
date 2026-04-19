@@ -7,7 +7,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -32,36 +32,42 @@ func (r *Repository) Close(_ context.Context) error {
 	return nil
 }
 
-func (r *Repository) CreateReceipt(ctx context.Context, receipt_request *models.Receipt) (int32, error) {
-	if r.DB == nil {
-		return 0, ErrDatabaseNotSet
-	}
-
+func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt, requestHash string) (int32, error) {
 	query := `
-		INSERT INTO receipts (idempotency_key, user_id, user_email, ammount, payment_description, current_payment_status, 
-				payment_type, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO receipts (
+			idempotency_key, request_hash, user_id, user_email,
+			amount, payment_description, current_payment_status,
+			payment_type, created_at
+		)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		ON CONFLICT (idempotency_key)
+		DO UPDATE
+		SET idempotency_key = receipts.idempotency_key
+		WHERE receipts.request_hash = EXCLUDED.request_hash
 		RETURNING id;
 	`
 
-	var receipt_id int32
-
-	err := r.DB.QueryRow(ctx, query, receipt_request.IdempotencyKey, receipt_request.UserID, receipt_request.UserEmail,
-		receipt_request.Amount, receipt_request.PaymentDescription, receipt_request.PaymentStatus, receipt_request.PaymentType,
-		receipt_request.CreatedAt).Scan(&receipt_id)
-
-	var pgErr *pgconn.PgError
+	var id int32
+	err := r.DB.QueryRow(ctx, query,
+		receipt.IdempotencyKey,
+		requestHash,
+		receipt.UserID,
+		receipt.UserEmail,
+		receipt.Amount,
+		receipt.PaymentDescription,
+		receipt.PaymentStatus,
+		receipt.PaymentType,
+		receipt.CreatedAt,
+	).Scan(&id)
 
 	if err != nil {
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" {
-				return receipt_id, nil
-			}
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, ErrDuplicatePaymentRequest
 		}
 		return 0, err
 	}
 
-	return receipt_id, nil
+	return id, nil
 }
 
 func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error) {

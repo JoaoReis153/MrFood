@@ -25,7 +25,7 @@ import (
 )
 
 type bookingService interface {
-	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
+	CreateBooking(ctx context.Context, booking *models.Booking) (int32, int32, error)
 	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
@@ -37,7 +37,7 @@ type server struct {
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID       string `json:"user_id"`
-	Username     string `json:"username"`
+	UserEmail    string `json:""`
 	TokenVersion int    `json:"token_version"`
 	TokenType    string `json:"token_type"` // access or refresh
 }
@@ -63,7 +63,7 @@ func RunServer(service bookingService) {
 	}
 }
 
-func NewClient(address string) (pb.RestaurantToBookingServiceClient, *grpc.ClientConn, error) {
+func NewRestaurantClient(address string) (pb.RestaurantToBookingServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -73,6 +73,18 @@ func NewClient(address string) (pb.RestaurantToBookingServiceClient, *grpc.Clien
 	}
 
 	return pb.NewRestaurantToBookingServiceClient(conn), conn, nil
+}
+
+func NewPaymentClient(address string) (pb.PaymentCommandServiceClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pb.NewPaymentCommandServiceClient(conn), conn, nil
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.CreateBookingResponse, error) {
@@ -93,12 +105,13 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 
 	booking := &models.Booking{
 		UserID:       user_id,
+		UserEmail:    claims.UserEmail,
 		RestaurantID: req.RestaurantId,
 		TimeStart:    req.TimeStart.AsTime(),
 		PeopleCount:  req.Quantity,
 	}
 
-	booking_id, err := s.bookingService.CreateBooking(ctx, booking)
+	booking_id, receipt_id, err := s.bookingService.CreateBooking(ctx, booking)
 
 	if err != nil {
 		return nil, mapServiceError(err)
@@ -108,6 +121,9 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 
 	return &pb.CreateBookingResponse{
 		BookingId: booking_id,
+		Payment: &pb.PaymentResponse{
+			ReceiptId: receipt_id,
+		},
 	}, nil
 }
 
@@ -165,7 +181,7 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 
 	slog.Info("USER INFO",
 		"user_id", claims.UserID,
-		"username", claims.Username,
+		"user_email", claims.UserEmail,
 		"token_type", claims.TokenType,
 		"exp", claims.ExpiresAt,
 	)
