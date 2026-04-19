@@ -12,10 +12,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type redisClient interface {
+type RedisClient interface {
 	Incr(ctx context.Context, key string) *redis.IntCmd
 	Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd
 	Close() error
+}
+
+type Mailer interface {
+	Send(to, subject, body string) error
 }
 
 type SMTPConfig struct {
@@ -26,9 +30,14 @@ type SMTPConfig struct {
 	From     string
 }
 
+type SMTPMailer struct {
+	config   SMTPConfig
+	sendMail func(addr string, a smtp.Auth, from string, to []string, msg []byte) error
+}
+
 type Service struct {
-	redis     redisClient
-	smtp      SMTPConfig
+	redis     RedisClient
+	mailer    Mailer
 	rateLimit RateLimitConfig
 }
 
@@ -37,11 +46,15 @@ type RateLimitConfig struct {
 	RateLimitTTL   time.Duration
 }
 
-func New(redis redisClient, smtp SMTPConfig, rateLimit RateLimitConfig) *Service {
+func New(redis RedisClient, smtpCfg SMTPConfig, rateLimit RateLimitConfig) *Service {
 	if redis == nil {
 		panic("nil redis client")
 	}
-	return &Service{redis: redis, smtp: smtp, rateLimit: rateLimit}
+	return &Service{redis: redis, mailer: NewSMTPMailer(smtpCfg), rateLimit: rateLimit}
+}
+
+func NewSMTPMailer(cfg SMTPConfig) *SMTPMailer {
+	return &SMTPMailer{config: cfg, sendMail: smtp.SendMail}
 }
 
 func (s *Service) SendRegistrationEmail(
@@ -55,7 +68,7 @@ func (s *Service) SendRegistrationEmail(
 		return &pb.SendRegistrationEmailResponse{}, models.ErrInvalidEmail
 	}
 
-	err := s.sendEmail(
+	err := s.mailer.Send(
 		userInfo.Email,
 		"Welcome to MrFood!",
 		fmt.Sprintf("Hello %s,<br><br>Thank you for registering at MrFood! We're excited to have you on board.<br><br>Best regards,<br>MrFood Team", userInfo.Username),
@@ -84,7 +97,7 @@ func (s *Service) SendReceipts(
 
 	body := buildReceiptsBody(receiptInfo.Receipts)
 
-	err := s.sendEmail(receiptInfo.Email, "Your MrFood Receipts", body)
+	err := s.mailer.Send(receiptInfo.Email, "Your MrFood Receipts", body)
 	if err != nil {
 		return &pb.SendReceiptsResponse{}, models.ErrSendEmailFailed
 	}
@@ -112,16 +125,14 @@ func (s *Service) checkRateLimit(ctx context.Context, email string) error {
 	return nil
 }
 
-func (s *Service) sendEmail(to, subject, body string) error {
-	auth := smtp.PlainAuth("", s.smtp.User, s.smtp.Password, s.smtp.Host)
-	addr := fmt.Sprintf("%s:%d", s.smtp.Host, s.smtp.Port)
-
+func (m *SMTPMailer) Send(to, subject, body string) error {
+	auth := smtp.PlainAuth("", m.config.User, m.config.Password, m.config.Host)
+	addr := fmt.Sprintf("%s:%d", m.config.Host, m.config.Port)
 	msg := fmt.Sprintf(
 		"From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n%s",
-		s.smtp.From, to, subject, body,
+		m.config.From, to, subject, body,
 	)
-
-	return smtp.SendMail(addr, auth, s.smtp.From, []string{to}, []byte(msg))
+	return m.sendMail(addr, auth, m.config.From, []string{to}, []byte(msg))
 }
 
 func buildReceiptsBody(receipts []*pb.Receipt) string {
