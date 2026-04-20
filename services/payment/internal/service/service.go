@@ -93,6 +93,10 @@ func (s *Service) GetReceiptsByUser(ctx context.Context, user_id int64) error {
 }
 
 func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) (*pb.SendReceiptsResponse, error) {
+	if len(receipts) == 0 {
+		return nil, ErrReceiptNotFound
+	}
+
 	pbReceipts := make([]*pb.Receipt, 0, len(receipts))
 
 	for _, r := range receipts {
