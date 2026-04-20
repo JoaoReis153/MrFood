@@ -31,6 +31,15 @@ type RestaurantDetails struct {
 	OwnerID    int64    `json:"owner_id"`
 }
 
+type PaymentRequest struct {
+	UserID             int64   `json:"user_id"`
+	UserEmail          string  `json:"user_email"`
+	IdempotencyKey     string  `json:"idempotency_key"`
+	Amount             float32 `json:"amount"`
+	PaymentDescription string  `json:"payment_description"`
+	PaymentType        string  `json:"payment_type"`
+}
+
 var validate = validator.New()
 
 func ValidateSponsorshipRequest(s SponsorshipRequest) error {
