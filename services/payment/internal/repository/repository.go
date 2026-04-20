@@ -8,7 +8,6 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -18,11 +17,16 @@ var (
 	ErrDuplicatePaymentRequest = errors.New("duplicate payment request")
 )
 
-type Repository struct {
-	DB *pgxpool.Pool
+type DB interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-func New(_ context.Context, _ *config.Config, db *pgxpool.Pool) (*Repository, error) {
+type Repository struct {
+	DB DB
+}
+
+func New(_ context.Context, _ *config.Config, db DB) (*Repository, error) {
 	return &Repository{
 		DB: db,
 	}, nil
@@ -90,8 +94,6 @@ func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt,
 }
 
 func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error) {
-	slog.Info("RECEIPT_ID", "RECEIPT_ID:", receipt_id)
-
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
@@ -130,10 +132,8 @@ func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			slog.Info("BRUUUUUUUUUUUUUUUUUUUUUUUUUUHHHHH")
 			return nil, ErrReceiptNotFound
 		}
-		slog.Info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 		return nil, err
 	}
 
