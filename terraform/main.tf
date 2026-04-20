@@ -16,4 +16,17 @@ provider "google" {
 module "vpc" {
   source       = "./modules/vpc"
   network_name = var.network_name
+  region       = var.region
+}
+
+module "gke" {
+  source             = "./modules/gke"
+  subnetwork         = module.vpc.subnetwork_name
+  network            = module.vpc.network_name
+  cluster_name       = "mrfood-cluster"
+  node_machine_type  = "e2-standard-2"
+  node_count         = 1
+  region             = var.region
+  pods_cidr_name     = "pods"
+  services_cidr_name = "services"
 }
