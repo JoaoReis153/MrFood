@@ -84,20 +84,20 @@ func (s *Service) SendReceipts(
 	ctx context.Context,
 	receiptInfo *pb.SendReceiptsRequest) (*pb.SendReceiptsResponse, error) {
 
-	if receiptInfo.Email == "" {
+	if receiptInfo.UserEmail == "" {
 		return &pb.SendReceiptsResponse{}, models.ErrInvalidEmail
 	}
 	if len(receiptInfo.Receipts) == 0 {
 		return &pb.SendReceiptsResponse{}, models.ErrEmptyReceipts
 	}
 
-	if err := s.checkRateLimit(ctx, receiptInfo.Email); err != nil {
+	if err := s.checkRateLimit(ctx, receiptInfo.UserEmail); err != nil {
 		return &pb.SendReceiptsResponse{}, err
 	}
 
 	body := buildReceiptsBody(receiptInfo.Receipts)
 
-	err := s.mailer.Send(receiptInfo.Email, "Your MrFood Receipts", body)
+	err := s.mailer.Send(receiptInfo.UserEmail, "Your MrFood Receipts", body)
 	if err != nil {
 		return &pb.SendReceiptsResponse{}, models.ErrSendEmailFailed
 	}

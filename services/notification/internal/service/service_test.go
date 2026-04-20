@@ -119,24 +119,24 @@ func TestSendRegistrationEmailSendFailAndSuccess(t *testing.T) {
 func TestSendReceiptsValidationAndRateLimit(t *testing.T) {
 	s := newServiceForTests(&fakeRedisClient{}, &fakeMailer{})
 
-	_, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{Email: "", Receipts: []*pb.Receipt{{CreatedAt: timestamppb.Now()}}})
+	_, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{UserEmail: "", Receipts: []*pb.Receipt{{CreatedAt: timestamppb.Now()}}})
 	if !errors.Is(err, models.ErrInvalidEmail) {
 		t.Fatalf("expected ErrInvalidEmail, got %v", err)
 	}
 
-	_, err = s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{Email: "a@b.com", Receipts: nil})
+	_, err = s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{UserEmail: "a@b.com", Receipts: nil})
 	if !errors.Is(err, models.ErrEmptyReceipts) {
 		t.Fatalf("expected ErrEmptyReceipts, got %v", err)
 	}
 
 	s = newServiceForTests(&fakeRedisClient{incrErr: errors.New("redis fail")}, &fakeMailer{})
-	_, err = s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{Email: "a@b.com", Receipts: []*pb.Receipt{{CreatedAt: timestamppb.Now()}}})
+	_, err = s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{UserEmail: "a@b.com", Receipts: []*pb.Receipt{{CreatedAt: timestamppb.Now()}}})
 	if !errors.Is(err, models.ErrRedisIncrFailed) {
 		t.Fatalf("expected ErrRedisIncrFailed, got %v", err)
 	}
 
 	s = newServiceForTests(&fakeRedisClient{incrResult: 2}, &fakeMailer{})
-	_, err = s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{Email: "a@b.com", Receipts: []*pb.Receipt{{CreatedAt: timestamppb.Now()}}})
+	_, err = s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{UserEmail: "a@b.com", Receipts: []*pb.Receipt{{CreatedAt: timestamppb.Now()}}})
 	if !errors.Is(err, models.ErrRateLimitExceeded) {
 		t.Fatalf("expected ErrRateLimitExceeded, got %v", err)
 	}
@@ -148,7 +148,7 @@ func TestSendReceiptsSendFailAndSuccess(t *testing.T) {
 	s := newServiceForTests(fakeRedis, failingMailer)
 
 	req := &pb.SendReceiptsRequest{
-		Email: "a@b.com",
+		UserEmail: "a@b.com",
 		Receipts: []*pb.Receipt{{
 			Amount:               10.5,
 			PaymentDescription:   "order-1",

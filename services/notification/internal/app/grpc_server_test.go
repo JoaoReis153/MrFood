@@ -264,8 +264,8 @@ func TestSendReceipts(t *testing.T) {
 	t.Run("empty receipts", func(t *testing.T) {
 		s := newTestServer(t, &fakeRedis{}, host, port)
 		_, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{
-			Email:    "user@example.com",
-			Receipts: nil,
+			UserEmail: "user@example.com",
+			Receipts:  nil,
 		})
 		if err == nil {
 			t.Fatal("expected error, got nil")
@@ -278,7 +278,7 @@ func TestSendReceipts(t *testing.T) {
 	t.Run("invalid email", func(t *testing.T) {
 		s := newTestServer(t, &fakeRedis{}, host, port)
 		_, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{
-			Email: "",
+			UserEmail: "",
 			Receipts: []*pb.Receipt{{
 				Amount:               10,
 				PaymentDescription:   "order #0",
@@ -299,7 +299,7 @@ func TestSendReceipts(t *testing.T) {
 		redisClient := &fakeRedis{incrResult: 2}
 		s := newTestServer(t, redisClient, host, port)
 		_, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{
-			Email: "user@example.com",
+			UserEmail: "user@example.com",
 			Receipts: []*pb.Receipt{{
 				Amount:               10,
 				PaymentDescription:   "order #1",
@@ -319,7 +319,7 @@ func TestSendReceipts(t *testing.T) {
 	t.Run("send email failed", func(t *testing.T) {
 		s := newTestServer(t, &fakeRedis{incrResult: 1}, "127.0.0.1", 1)
 		_, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{
-			Email: "user@example.com",
+			UserEmail: "user@example.com",
 			Receipts: []*pb.Receipt{{
 				Amount:               20,
 				PaymentDescription:   "order #2",
@@ -340,7 +340,7 @@ func TestSendReceipts(t *testing.T) {
 		redisClient := &fakeRedis{incrResult: 1}
 		s := newTestServer(t, redisClient, "localhost", port)
 		resp, err := s.SendReceipts(context.Background(), &pb.SendReceiptsRequest{
-			Email: "user@example.com",
+			UserEmail: "user@example.com",
 			Receipts: []*pb.Receipt{{
 				Amount:               30,
 				PaymentDescription:   "order #3",

@@ -70,7 +70,7 @@ func (s *Server) SendRegistrationEmail(ctx context.Context, req *pb.SendRegistra
 }
 
 func (s *Server) SendReceipts(ctx context.Context, req *pb.SendReceiptsRequest) (*pb.SendReceiptsResponse, error) {
-	slog.Info("SendReceipts", "email", req.GetEmail(), "receiptCount", len(req.GetReceipts()))
+	slog.Info("SendReceipts", "email", req.UserEmail, "receiptCount", len(req.GetReceipts()))
 
 	_, err := s.svc.SendReceipts(ctx, req)
 	if err != nil {
