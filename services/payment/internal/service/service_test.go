@@ -233,13 +233,11 @@ func TestSendReceipts_EmptySlice(t *testing.T) {
 		client: &mockNotificationClient{},
 	}
 
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("expected panic for empty slice")
-		}
-	}()
+	_, err := service.sendReceipts(context.Background(), []*models.Receipt{})
 
-	_, _ = service.sendReceipts(context.Background(), []*models.Receipt{})
+	if !errors.Is(err, ErrReceiptNotFound) {
+		t.Fatalf("expected ErrReceiptNotFound, got %v", err)
+	}
 }
 
 // -----------------------------
