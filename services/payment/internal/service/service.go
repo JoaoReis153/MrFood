@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
-	"math/rand"
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -49,17 +48,7 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 		return 0, ErrNullIdempotencyKey
 	}
 
-	// mock 3rd party payment service
-	time.Sleep(500 * time.Millisecond)
-
-	success := 0.3 > rand.Float32()
-
-	if success {
-		receipt_request.PaymentStatus = "success"
-	} else {
-		receipt_request.PaymentStatus = "failed"
-	}
-
+	receipt_request.PaymentStatus = "success"
 	receipt_request.CreatedAt = time.Now().UTC()
 
 	hash, err := generateRequestHash(receipt_request)
