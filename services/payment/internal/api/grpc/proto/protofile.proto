@@ -16,7 +16,7 @@ service PaymentQueryService {
 }
 
 service PaymentToNotificationService {
-  rpc SendReceipt (SendReceiptsRequest) returns (SendReceiptsResponse);
+  rpc SendReceipts (SendReceiptsRequest) returns (SendReceiptsResponse);
 }
 
 message PaymentRequest {
@@ -33,7 +33,7 @@ message PaymentResponse {
 }
 
 message ReceiptRequest {
-  optional int32 receipt_id = 1;
+  int32 receipt_id = 1;
 }
 
 message GetReceiptResponse {}

@@ -7,6 +7,7 @@ type Receipt struct {
 	UserID             int64     `json:"user_id"`
 	UserEmail          string    `json:"user_email"`
 	IdempotencyKey     string    `json:"idempotency_key"`
+	RequestHash        string    `json:"request_hash"`
 	Amount             float32   `json:"amount"`
 	PaymentDescription string    `json:"payment_description"`
 	PaymentStatus      string    `json:"payment_status"`

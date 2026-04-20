@@ -90,12 +90,24 @@ func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt,
 }
 
 func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error) {
+	slog.Info("RECEIPT_ID", "RECEIPT_ID:", receipt_id)
+
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
 
 	query := `
-		SELECT *
+		SELECT
+			id,
+			idempotency_key,
+			request_hash,
+			user_id,
+			user_email,
+			amount,
+			payment_description,
+			current_payment_status,
+			payment_type,
+			created_at
 		FROM receipts
 		WHERE id = $1
 		AND user_id = $2
@@ -106,6 +118,7 @@ func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_
 	err := r.DB.QueryRow(ctx, query, receipt_id, user_id).Scan(
 		&receipt.ID,
 		&receipt.IdempotencyKey,
+		&receipt.RequestHash,
 		&receipt.UserID,
 		&receipt.UserEmail,
 		&receipt.Amount,
@@ -116,8 +129,12 @@ func (r *Repository) GetReceiptById(ctx context.Context, receipt_id int32, user_
 	)
 
 	if err != nil {
-		slog.Error("receipt not found", "error", err)
-		return nil, ErrReceiptNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			slog.Info("BRUUUUUUUUUUUUUUUUUUUUUUUUUUHHHHH")
+			return nil, ErrReceiptNotFound
+		}
+		slog.Info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+		return nil, err
 	}
 
 	return receipt, nil
@@ -145,14 +162,28 @@ func (r *Repository) GetReceiptsByUser(ctx context.Context, user_id int64) ([]*m
 	var receipts []*models.Receipt
 
 	for receiptsRows.Next() {
-		var curr_receipt *models.Receipt
-		if err := receiptsRows.Scan(&curr_receipt); err != nil {
+		curr := &models.Receipt{}
+
+		err := receiptsRows.Scan(
+			&curr.ID,
+			&curr.IdempotencyKey,
+			&curr.RequestHash,
+			&curr.UserID,
+			&curr.UserEmail,
+			&curr.Amount,
+			&curr.PaymentDescription,
+			&curr.PaymentStatus,
+			&curr.PaymentType,
+			&curr.CreatedAt,
+		)
+		if err != nil {
 			slog.Error("error scanning receipt row", "error", err)
 			return nil, err
 		}
-		receipts = append(receipts, curr_receipt)
+
+		receipts = append(receipts, curr)
 	}
-	if receiptsRows.Err() != nil {
+	if err := receiptsRows.Err(); err != nil {
 		slog.Error("error iterating receipts", "error", err)
 		return nil, err
 	}

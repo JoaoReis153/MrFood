@@ -261,14 +261,14 @@ var PaymentQueryService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	PaymentToNotificationService_SendReceipt_FullMethodName = "/proto.PaymentToNotificationService/SendReceipt"
+	PaymentToNotificationService_SendReceipts_FullMethodName = "/proto.PaymentToNotificationService/SendReceipts"
 )
 
 // PaymentToNotificationServiceClient is the client API for PaymentToNotificationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentToNotificationServiceClient interface {
-	SendReceipt(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error)
+	SendReceipts(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error)
 }
 
 type paymentToNotificationServiceClient struct {
@@ -279,10 +279,10 @@ func NewPaymentToNotificationServiceClient(cc grpc.ClientConnInterface) PaymentT
 	return &paymentToNotificationServiceClient{cc}
 }
 
-func (c *paymentToNotificationServiceClient) SendReceipt(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error) {
+func (c *paymentToNotificationServiceClient) SendReceipts(ctx context.Context, in *SendReceiptsRequest, opts ...grpc.CallOption) (*SendReceiptsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SendReceiptsResponse)
-	err := c.cc.Invoke(ctx, PaymentToNotificationService_SendReceipt_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, PaymentToNotificationService_SendReceipts_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func (c *paymentToNotificationServiceClient) SendReceipt(ctx context.Context, in
 // All implementations must embed UnimplementedPaymentToNotificationServiceServer
 // for forward compatibility.
 type PaymentToNotificationServiceServer interface {
-	SendReceipt(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error)
+	SendReceipts(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error)
 	mustEmbedUnimplementedPaymentToNotificationServiceServer()
 }
 
@@ -304,8 +304,8 @@ type PaymentToNotificationServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPaymentToNotificationServiceServer struct{}
 
-func (UnimplementedPaymentToNotificationServiceServer) SendReceipt(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method SendReceipt not implemented")
+func (UnimplementedPaymentToNotificationServiceServer) SendReceipts(context.Context, *SendReceiptsRequest) (*SendReceiptsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendReceipts not implemented")
 }
 func (UnimplementedPaymentToNotificationServiceServer) mustEmbedUnimplementedPaymentToNotificationServiceServer() {
 }
@@ -329,20 +329,20 @@ func RegisterPaymentToNotificationServiceServer(s grpc.ServiceRegistrar, srv Pay
 	s.RegisterService(&PaymentToNotificationService_ServiceDesc, srv)
 }
 
-func _PaymentToNotificationService_SendReceipt_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PaymentToNotificationService_SendReceipts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendReceiptsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaymentToNotificationServiceServer).SendReceipt(ctx, in)
+		return srv.(PaymentToNotificationServiceServer).SendReceipts(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaymentToNotificationService_SendReceipt_FullMethodName,
+		FullMethod: PaymentToNotificationService_SendReceipts_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentToNotificationServiceServer).SendReceipt(ctx, req.(*SendReceiptsRequest))
+		return srv.(PaymentToNotificationServiceServer).SendReceipts(ctx, req.(*SendReceiptsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -355,8 +355,8 @@ var PaymentToNotificationService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PaymentToNotificationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendReceipt",
-			Handler:    _PaymentToNotificationService_SendReceipt_Handler,
+			MethodName: "SendReceipts",
+			Handler:    _PaymentToNotificationService_SendReceipts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

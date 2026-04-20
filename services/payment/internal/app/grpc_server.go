@@ -148,7 +148,7 @@ func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest
 		return nil, err
 	}
 
-	err = s.paymentService.GetReceiptById(ctx, *req.ReceiptId, user_id)
+	err = s.paymentService.GetReceiptById(ctx, req.ReceiptId, user_id)
 
 	if err != nil {
 		return nil, mapServiceError(err)
@@ -163,12 +163,12 @@ func mapServiceError(err error) error {
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, service.ErrDuplicatePaymentRequest):
 		return status.Error(codes.AlreadyExists, err.Error())
-	case errors.Is(err, service.ErrReceiptsNotFound):
+	case errors.Is(err, service.ErrReceiptNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, service.ErrUnauthorized):
 		return status.Error(codes.PermissionDenied, err.Error())
 	default:
-		slog.Error("restaurant rpc failed", "error", err)
+		slog.Error("payment rpc failed", "error", err)
 		return status.Error(codes.Internal, "internal server error")
 	}
 }

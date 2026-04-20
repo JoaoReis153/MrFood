@@ -19,7 +19,7 @@ import (
 var (
 	ErrInvalidAmmount          = errors.New("ammount cannot be negative")
 	ErrNullIdempotencyKey      = errors.New("idempotency key cannot be null")
-	ErrReceiptsNotFound        = errors.New("receipt not found")
+	ErrReceiptNotFound         = errors.New("receipt not found")
 	ErrDuplicatePaymentRequest = errors.New("duplicate payment request")
 	ErrDatabaseNotSet          = errors.New("database is not configured")
 	ErrUnauthorized            = errors.New("unauthorized access to receipt")
@@ -116,7 +116,7 @@ func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) 
 		})
 	}
 
-	res, err := s.client.SendReceipt(ctx, &pb.SendReceiptsRequest{
+	res, err := s.client.SendReceipts(ctx, &pb.SendReceiptsRequest{
 		UserEmail: receipts[0].UserEmail,
 		Receipts:  pbReceipts,
 	})

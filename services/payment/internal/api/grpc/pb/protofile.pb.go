@@ -152,7 +152,7 @@ func (x *PaymentResponse) GetReceiptId() int32 {
 
 type ReceiptRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReceiptId     *int32                 `protobuf:"varint,1,opt,name=receipt_id,json=receiptId,proto3,oneof" json:"receipt_id,omitempty"`
+	ReceiptId     int32                  `protobuf:"varint,1,opt,name=receipt_id,json=receiptId,proto3" json:"receipt_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -188,8 +188,8 @@ func (*ReceiptRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *ReceiptRequest) GetReceiptId() int32 {
-	if x != nil && x.ReceiptId != nil {
-		return *x.ReceiptId
+	if x != nil {
+		return x.ReceiptId
 	}
 	return 0
 }
@@ -409,11 +409,10 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\x04type\x18\x06 \x01(\tR\x04type\"0\n" +
 	"\x0fPaymentResponse\x12\x1d\n" +
 	"\n" +
-	"receipt_id\x18\x01 \x01(\x05R\treceiptId\"C\n" +
-	"\x0eReceiptRequest\x12\"\n" +
+	"receipt_id\x18\x01 \x01(\x05R\treceiptId\"/\n" +
+	"\x0eReceiptRequest\x12\x1d\n" +
 	"\n" +
-	"receipt_id\x18\x01 \x01(\x05H\x00R\treceiptId\x88\x01\x01B\r\n" +
-	"\v_receipt_id\"\x14\n" +
+	"receipt_id\x18\x01 \x01(\x05R\treceiptId\"\x14\n" +
 	"\x12GetReceiptResponse\"`\n" +
 	"\x13SendReceiptsRequest\x12*\n" +
 	"\breceipts\x18\x01 \x03(\v2\x0e.proto.ReceiptR\breceipts\x12\x1d\n" +
@@ -431,9 +430,9 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\vMakePayment\x12\x15.proto.PaymentRequest\x1a\x16.proto.PaymentResponse2\xa0\x01\n" +
 	"\x13PaymentQueryService\x12B\n" +
 	"\x0eGetReceiptById\x12\x15.proto.ReceiptRequest\x1a\x19.proto.GetReceiptResponse\x12E\n" +
-	"\x11GetReceiptsByUser\x12\x15.proto.ReceiptRequest\x1a\x19.proto.GetReceiptResponse2f\n" +
-	"\x1cPaymentToNotificationService\x12F\n" +
-	"\vSendReceipt\x12\x1a.proto.SendReceiptsRequest\x1a\x1b.proto.SendReceiptsResponseB\bZ\x06/pb;pbb\x06proto3"
+	"\x11GetReceiptsByUser\x12\x15.proto.ReceiptRequest\x1a\x19.proto.GetReceiptResponse2g\n" +
+	"\x1cPaymentToNotificationService\x12G\n" +
+	"\fSendReceipts\x12\x1a.proto.SendReceiptsRequest\x1a\x1b.proto.SendReceiptsResponseB\bZ\x06/pb;pbb\x06proto3"
 
 var (
 	file_internal_api_grpc_proto_protofile_proto_rawDescOnce sync.Once
@@ -464,11 +463,11 @@ var file_internal_api_grpc_proto_protofile_proto_depIdxs = []int32{
 	0, // 2: proto.PaymentCommandService.MakePayment:input_type -> proto.PaymentRequest
 	2, // 3: proto.PaymentQueryService.GetReceiptById:input_type -> proto.ReceiptRequest
 	2, // 4: proto.PaymentQueryService.GetReceiptsByUser:input_type -> proto.ReceiptRequest
-	4, // 5: proto.PaymentToNotificationService.SendReceipt:input_type -> proto.SendReceiptsRequest
+	4, // 5: proto.PaymentToNotificationService.SendReceipts:input_type -> proto.SendReceiptsRequest
 	1, // 6: proto.PaymentCommandService.MakePayment:output_type -> proto.PaymentResponse
 	3, // 7: proto.PaymentQueryService.GetReceiptById:output_type -> proto.GetReceiptResponse
 	3, // 8: proto.PaymentQueryService.GetReceiptsByUser:output_type -> proto.GetReceiptResponse
-	5, // 9: proto.PaymentToNotificationService.SendReceipt:output_type -> proto.SendReceiptsResponse
+	5, // 9: proto.PaymentToNotificationService.SendReceipts:output_type -> proto.SendReceiptsResponse
 	6, // [6:10] is the sub-list for method output_type
 	2, // [2:6] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -481,7 +480,6 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 	if File_internal_api_grpc_proto_protofile_proto != nil {
 		return
 	}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
