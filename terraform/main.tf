@@ -23,9 +23,10 @@ module "gke" {
   source             = "./modules/gke"
   subnetwork         = module.vpc.subnetwork_name
   network            = module.vpc.network_name
-  cluster_name       = "mrfood-cluster"
-  node_machine_type  = "e2-standard-2"
-  node_count         = 1
+  cluster_name       = var.cluster_name
+  node_machine_type  = var.node_machine_type
+  node_min           = var.node_min
+  node_max           = var.node_max
   region             = var.region
   pods_cidr_name     = "pods"
   services_cidr_name = "services"

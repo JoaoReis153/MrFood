@@ -20,10 +20,22 @@ resource "google_container_node_pool" "primary" {
   cluster  = google_container_cluster.this.name
   location = var.region
 
-  node_count = var.node_count
+  autoscaling {
+    min_node_count = var.node_min
+    max_node_count = var.node_max
+  }
+
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
 
   node_config {
     machine_type = var.node_machine_type
+
+    spot = true
+
+    disk_size_gb = 20
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"

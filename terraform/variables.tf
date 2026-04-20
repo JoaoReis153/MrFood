@@ -23,6 +23,10 @@ variable "node_machine_type" {
   type = string
 }
 
-variable "node_count" {
+variable "node_min" {
+  type = number
+}
+
+variable "node_max" {
   type = number
 }
