@@ -14,21 +14,6 @@ resource "google_container_cluster" "this" {
   }
 }
 
-resource "google_container_node_pool" "primary" {
-  name     = "${var.cluster_name}-node-pool"
-  cluster  = google_container_cluster.this.name
-  location = var.region
-
-  node_count = var.node_count
-
-  node_config {
-    machine_type = var.node_machine_type
-
-    oauth_scopes = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-  }
-}
 
 resource "google_container_node_pool" "primary" {
   name     = "${var.cluster_name}-node-pool"
