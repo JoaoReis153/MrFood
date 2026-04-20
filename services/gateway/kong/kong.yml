@@ -126,7 +126,7 @@ services:
   
 - name: search
   host: search
-  port: 50056
+  port: 50051
   protocol: grpc
   routes:
   - name: search
