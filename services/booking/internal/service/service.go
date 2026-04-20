@@ -136,6 +136,7 @@ func GenerateIdempotencyKey(userID int64, amount float32, bookingID int32, servi
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
 }
+
 func FormatTime(t time.Time) string {
 	return t.UTC().Truncate(30 * time.Minute).Format("2006-01-02T15:04")
 }

@@ -13,6 +13,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// -----------------------------
+// Mock Restaurant Client
+// -----------------------------
 type mockGRPCClient struct{}
 
 func (m *mockGRPCClient) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursRequest, opts ...grpc.CallOption) (*pb.WorkingHoursResponse, error) {
@@ -23,8 +26,22 @@ func (m *mockGRPCClient) GetWorkingHours(ctx context.Context, req *pb.WorkingHou
 	}, nil
 }
 
+// -----------------------------
+// Mock Payment Client
+// -----------------------------
+type mockPaymentClient struct{}
+
+func (m *mockPaymentClient) MakePayment(ctx context.Context, req *pb.PaymentRequest, opts ...grpc.CallOption) (*pb.PaymentResponse, error) {
+	return &pb.PaymentResponse{
+		ReceiptId: 99,
+	}, nil
+}
+
+// -----------------------------
+// Mock Repo
+// -----------------------------
 type mockRepo struct {
-	bookings map[int32]int64 // bookingID -> userID
+	bookings map[int32]int64
 }
 
 func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
@@ -50,14 +67,18 @@ func (m *mockRepo) DeleteBooking(ctx context.Context, req *models.DeleteBooking)
 	return nil
 }
 
+// -----------------------------
+// CreateBooking Tests
+// -----------------------------
 func TestCreateBooking_EdgeCases(t *testing.T) {
-	service := New(&mockRepo{}, &mockGRPCClient{})
+	service := New(&mockRepo{}, &mockGRPCClient{}, &mockPaymentClient{})
 
 	tests := []struct {
-		name      string
-		booking   *models.Booking
-		expectErr error
-		expectID  int32
+		name        string
+		booking     *models.Booking
+		expectErr   error
+		expectID    int32
+		expectRecID int32
 	}{
 		{
 			name: "PeopleCount exceeds MAX_SLOTS",
@@ -93,30 +114,42 @@ func TestCreateBooking_EdgeCases(t *testing.T) {
 			name: "Successful booking",
 			booking: &models.Booking{
 				UserID:       1,
+				UserEmail:    "test@test.com",
 				RestaurantID: 1,
 				TimeStart:    time.Date(2026, 3, 28, 10, 0, 0, 0, time.UTC),
 				PeopleCount:  2,
 			},
-			expectErr: nil,
-			expectID:  42,
+			expectErr:   nil,
+			expectID:    42,
+			expectRecID: 99,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := service.CreateBooking(context.Background(), tt.booking)
+			id, receiptID, err := service.CreateBooking(context.Background(), tt.booking)
+
 			if !errors.Is(err, tt.expectErr) {
 				t.Fatalf("expected error %v, got %v", tt.expectErr, err)
 			}
-			if tt.expectErr == nil && id != tt.expectID {
-				t.Fatalf("expected booking id %d, got %d", tt.expectID, id)
+
+			if tt.expectErr == nil {
+				if id != tt.expectID {
+					t.Fatalf("expected booking id %d, got %d", tt.expectID, id)
+				}
+				if receiptID != tt.expectRecID {
+					t.Fatalf("expected receipt id %d, got %d", tt.expectRecID, receiptID)
+				}
 			}
 		})
 	}
 }
 
+// -----------------------------
+// DeleteBooking Tests
+// -----------------------------
 func TestDeleteBooking(t *testing.T) {
-	service := New(&mockRepo{}, &mockGRPCClient{})
+	service := New(&mockRepo{}, &mockGRPCClient{}, &mockPaymentClient{})
 
 	t.Run("Successful deletion", func(t *testing.T) {
 		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
@@ -131,7 +164,7 @@ func TestDeleteBooking(t *testing.T) {
 	t.Run("Booking not found", func(t *testing.T) {
 		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
 			UserID:    1,
-			BookingID: 999, // non-existent booking
+			BookingID: 999,
 		})
 		if !errors.Is(err, ErrBookingNotFound) {
 			t.Fatalf("expected ErrBookingNotFound, got %v", err)
@@ -139,11 +172,10 @@ func TestDeleteBooking(t *testing.T) {
 	})
 
 	t.Run("Wrong user", func(t *testing.T) {
-		// Recreate the booking to ensure it exists
 		service.repo.(*mockRepo).bookings = map[int32]int64{1: 1}
 
 		err := service.DeleteBooking(context.Background(), &models.DeleteBooking{
-			UserID:    2, // wrong user
+			UserID:    2,
 			BookingID: 1,
 		})
 		if !errors.Is(err, ErrBookingNotFound) {
