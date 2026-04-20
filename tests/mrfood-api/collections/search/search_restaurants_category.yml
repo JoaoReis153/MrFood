@@ -1,0 +1,143 @@
+info:
+  name: Search restaurants by category and pagination
+  type: http
+  seq: 11
+  tags:
+    - Restaurants
+    - Search
+
+http:
+  method: GET
+  url: "{{baseUrl}}/search?category=French&page=1&limit=10"
+  params:
+    - name: category
+      value: French
+      type: query
+    - name: page
+      value: "1"
+      type: query
+    - name: limit
+      value: "10"
+      type: query
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Category filter (no matches)
+    description: Seed data has empty categories, so category returns no rows
+    request:
+      url: "{{baseUrl}}/search?category=French&page=1&limit=10"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 0,
+              "pages": 0
+            }
+          }
+  - name: Pagination by page
+    description: page=2 with limit=15 returns second page of the 20 fixed restaurants
+    request:
+      url: "{{baseUrl}}/search?page=2&limit=15"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": 16,
+                "name": "Pietra Foci Rocbaron"
+              },
+              {
+                "id": 17,
+                "name": "Tip top pizza"
+              },
+              {
+                "id": 18,
+                "name": "L'Antidote"
+              },
+              {
+                "id": 19,
+                "name": "La terrasse"
+              },
+              {
+                "id": 20,
+                "name": "Cafe Restaurant le Papareil"
+              }
+            ],
+            "pagination": {
+              "page": 2,
+              "limit": 15,
+              "total": 20,
+              "pages": 2
+            }
+          }
+  - name: Pagination by limit
+    description: limit controls page size over the same fixed 20 restaurants
+    request:
+      url: "{{baseUrl}}/search?page=1&limit=5"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": 1,
+                "name": "Le 147"
+              },
+              {
+                "id": 2,
+                "name": "Le Saint Jouvent"
+              },
+              {
+                "id": 3,
+                "name": "Au Bout du Pont"
+              },
+              {
+                "id": 4,
+                "name": "Le Relais de Naiade"
+              },
+              {
+                "id": 5,
+                "name": "Relais Du MontSeigne"
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 5,
+              "total": 20,
+              "pages": 4
+            }
+          }

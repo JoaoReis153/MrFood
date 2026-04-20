@@ -114,11 +114,32 @@ services:
     - https
     paths:
     - /payment
-
+    
   plugins:
   - name: grpc-gateway
     config:
       proto: /etc/kong/proto/payment.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+  
+- name: search
+  host: search
+  port: 50056
+  protocol: grpc
+  routes:
+  - name: search
+    protocols:
+    - http
+    - https
+    paths:
+    - /search
+
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/search.proto
   - name: jwt
     config:
       claims_to_verify:

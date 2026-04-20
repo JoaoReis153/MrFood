@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+
+import "google/api/annotations.proto";
+
+service SearchService {
+  rpc SearchPaginated(SearchPaginatedRequest) returns (SearchPaginatedResponse) {
+    option (google.api.http) = {
+      get: "/search"
+    };
+  }
+}
+
+message SearchPaginatedRequest {
+  int32 page = 1;
+  int32 limit = 2;
+
+  string category = 3;
+  string name_suffix = 4;
+  string full_name = 5;
+
+  double latitude = 6;
+  double longitude = 7;
+  double radius_meters = 8;
+}
+
+message SearchPaginatedResponse {
+  repeated RestaurantSearchResult data = 1;
+  Pagination pagination = 2;
+}
+
+message RestaurantSearchResult {
+  int64 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  repeated string categories = 6;
+  string media_url = 7;
+}
+
+message Pagination {
+  int32 page = 1;
+  int32 limit = 2;
+  int32 total = 3;
+  int32 pages = 4;
+}
+

@@ -1,0 +1,79 @@
+info:
+  name: Search restaurants by full name
+  type: http
+  seq: 10
+  tags:
+    - Restaurants
+    - Search
+
+http:
+  method: GET
+  url: "{{baseUrl}}/search?page=1&limit=10"
+  params:
+    - name: page
+      value: "1"
+      type: query
+    - name: limit
+      value: "10"
+      type: query
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Exact match
+    description: full_name returns Le 147 from the fixed seed data
+    request:
+      url: "{{baseUrl}}/search?full_name=Le%20147&page=1&limit=10"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": 1,
+                "name": "Le 147",
+                "latitude": 45.961674,
+                "longitude": 1.169131,
+                "address": "10 Maison Neuve, 87510 Saint-Jouvent France",
+                "categories": []
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 1,
+              "pages": 1
+            }
+          }
+  - name: 400 Invalid text filter combination
+    description: full_name and name_suffix cannot be used together
+    request:
+      url: "{{baseUrl}}/search?full_name=Le%20147&name_suffix=147&page=1&limit=10"
+      method: GET
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

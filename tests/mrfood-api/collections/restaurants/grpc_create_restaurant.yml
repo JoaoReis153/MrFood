@@ -26,3 +26,8 @@ grpc:
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  variables:
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiI5MjE2NTgzNDY3Nzc4NjE3MjMwIiwiZXhwIjoxNzc2NTU5NDk3LCJuYmYiOjE3NzY1NTg1OTcsImlhdCI6MTc3NjU1ODU5NywianRpIjoiOWUxNjhkY2YtYzViZC00MjY4LWIyYjQtMzI3ZTFjODc0YTU1IiwidXNlcl9pZCI6IjkyMTY1ODM0Njc3Nzg2MTcyMzAiLCJ1c2VybmFtZSI6ImNyaXN0aWFubyIsInRva2VuX3ZlcnNpb24iOjIsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.C9e90txq3DkBPDVcDa78nOybkImXt-tPgcdD7OfQ8Oo

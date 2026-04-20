@@ -7,7 +7,9 @@ include:
   - docker-compose.kong.yml
   - docker-compose.payment.yml
   - docker-compose.notification.yml
+  - docker-compose.search.yml
+  - docker-compose.cdc.yml
 
 networks:
-  app-network: 
+  app-network:
     driver: bridge

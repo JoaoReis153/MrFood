@@ -12,7 +12,7 @@ CSV_SERVICES ?= all
 CSV_ROWS ?= 200
 CSV_FULL ?=
 
-.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run stop down restart logs test clean clean-volumes clean-all test test-bruno
+.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run bootstrap-search stop down restart logs test clean clean-volumes clean-all test test-bruno
 
 help:
 	@echo "MrFood Make Commands"
@@ -27,6 +27,7 @@ help:
 	@echo ""
 	@echo "Service Management:"
 	@echo "  make run                                - Start all services (detached)"
+	@echo "  make bootstrap-search                   - Create ES index and register CDC connectors"
 	@echo "  make stop                               - Stop services"
 	@echo "  make down                               - Stop and remove services"
 	@echo "  make restart                            - Restart services"
@@ -132,6 +133,15 @@ build-no-cache:
 ## Start all services (detached)
 run:
 	$(DC) up -d
+	@$(MAKE) --no-print-directory bootstrap-search
+
+bootstrap-search:
+	@echo "Ensuring Elasticsearch index '$(ELASTICSEARCH_INDEX)' exists..."
+	@curl -fsS -X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
+		-H 'Content-Type: application/json' \
+		-d '{"settings":{"number_of_shards":1,"number_of_replicas":0},"mappings":{"properties":{"id":{"type":"integer"},"name":{"type":"text","fields":{"keyword":{"type":"keyword"}}},"address":{"type":"text"},"categories":{"type":"keyword"},"location":{"type":"geo_point"},"latitude":{"type":"double"},"longitude":{"type":"double"},"media_url":{"type":"keyword"},"max_slots":{"type":"integer"},"owner_id":{"type":"long"},"owner_name":{"type":"text"},"sponsor_tier":{"type":"integer"}}}}' >/dev/null || true
+	@echo "Registering CDC connectors..."
+	@CONNECT_URL="http://localhost:$(CDC_CONNECT_PORT)" services/cdc/register-connectors.sh
 
 ## Stop services
 stop:
