@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS restaurant_slots;
 CREATE TABLE IF NOT EXISTS booking(
     id serial PRIMARY KEY,
     user_id BIGINT NOT NULL,
+    user_email VARCHAR(100) NOT NULL,
     restaurant_id BIGINT NOT NULL,
     time_start TIMESTAMP NOT NULL,
     time_end TIMESTAMP NOT NULL,

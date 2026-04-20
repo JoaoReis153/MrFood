@@ -32,13 +32,20 @@ type DBConfig struct {
 	Password string `yaml:"password"`
 }
 
+type RestaurantConfig struct {
+	GRPCAddr string `yaml:"grpc_addr"`
+}
+
+type PaymentConfig struct {
+	GRPCAddr string `yaml:"grpc_addr"`
+}
+
 type Config struct {
-	Server     ServerConfig `yaml:"server"`
-	Log        LogConfig    `yaml:"log"`
-	DB         DBConfig     `yaml:"db"`
-	Restaurant struct {
-		GRPCAddr string `yaml:"grpc_addr"`
-	} `yaml:"review"`
+	Server     ServerConfig     `yaml:"server"`
+	Log        LogConfig        `yaml:"log"`
+	DB         DBConfig         `yaml:"db"`
+	Restaurant RestaurantConfig `yaml:"restaurant"`
+	Payment    PaymentConfig    `yaml:"restaurant"`
 }
 
 var (
@@ -67,6 +74,11 @@ func Load(_ context.Context) (*Config, error) {
 			GRPCAddr string `yaml:"grpc_addr"`
 		}{
 			GRPCAddr: "restaurant:50052",
+		},
+		Payment: struct {
+			GRPCAddr string `yaml:"grpc_addr"`
+		}{
+			GRPCAddr: "payment:50057",
 		},
 	}
 
@@ -114,7 +126,8 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
-	cfg.Restaurant.GRPCAddr = getEnv("REVIEW_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
+	cfg.Restaurant.GRPCAddr = getEnv("RESTAURANT_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
+	cfg.Payment.GRPCAddr = getEnv("PAYMENT_GRPC_ADDR", cfg.Payment.GRPCAddr)
 }
 
 func getEnv(key, defaultValue string) string {

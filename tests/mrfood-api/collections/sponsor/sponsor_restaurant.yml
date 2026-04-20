@@ -7,14 +7,16 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/sponsor"
+  url: "{{baseUrl}}/sponsor/1"
   body:
     type: json
     data: |-
       {
-        
+        "tier": 3
       }
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{token}}"
 
 settings:
   encodeUrl: true

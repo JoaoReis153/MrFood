@@ -73,6 +73,33 @@ jobs:
           SPONSOR_POSTGRES_USER=sponsor
           SPONSOR_POSTGRES_PASSWORD=sponsorsecret
           SPONSOR_DB_PORT=5435
+
+          SEARCH_SERVER_PORT=50056
+          ELASTICSEARCH_HOST=localhost
+          ELASTICSEARCH_PORT=9200
+          ELASTICSEARCH_INDEX=restaurants
+          ELASTICSEARCH_USERNAME= #optional
+          ELASTICSEARCH_PASSWORD= #optional
+
+          CDC_RESTAURANT_DB=mrfood_restaurant
+          CDC_RESTAURANT_USER=restaurant
+          CDC_RESTAURANT_PASSWORD=restaurantsecret
+          CDC_RESTAURANT_DB_PORT=5434
+          CDC_ELASTIC_PORT=9200
+          CDC_CONNECT_PORT=8083
+          CDC_KAFKA_PORT=9092
+
+          PAYMENT_SERVER_PORT=50057
+          PAYMENT_POSTGRES_PORT=5437
+          PAYMENT_POSTGRES_DB=mrfood_payment
+          PAYMENT_POSTGRES_USER=payment
+          PAYMENT_POSTGRES_PASSWORD=paymentsecret
+
+          NOTIFICATION_SERVER_PORT=50058
+
+          NOTIFICATION_SMTP_USER=mrfood.api@gmail.com
+          NOTIFICATION_SMTP_PASSWORD=wpbp rgwe hplj smzy
+          NOTIFICATION_SMTP_FROM=mrfood.api@gmail.com
           EOF
 
       - name: Start services

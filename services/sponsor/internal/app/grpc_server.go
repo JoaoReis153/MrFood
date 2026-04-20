@@ -31,6 +31,7 @@ type server struct {
 
 type UserInfo struct {
 	UserID   int64
+	Email    string
 	Username string
 }
 
@@ -45,7 +46,7 @@ type Claims struct {
 
 type SponsorService interface {
 	GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error)
-	Sponsor(ctx context.Context, s *models.Sponsorship, userID int64) (*models.SponsorshipResponse, error)
+	Sponsor(ctx context.Context, s *models.Sponsorship, userID int64, email string) (*models.SponsorshipResponse, int32, error)
 }
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
@@ -83,7 +84,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		Categories: []string{},
 	}
 
-	response, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID)
+	response, receipt_id, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID, user.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -95,9 +96,10 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	)
 
 	return &pb.SponsorshipResponse{
-		Id:    response.ID,
-		Tier:  int32(response.Tier),
-		Until: timestamppb.New(response.Until),
+		Id:        response.ID,
+		Tier:      int32(response.Tier),
+		Until:     timestamppb.New(response.Until),
+		ReceiptId: receipt_id,
 	}, nil
 }
 
@@ -130,6 +132,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 
 	userInfo := &UserInfo{
 		UserID:   userID,
+		Email:    claims.Email,
 		Username: claims.Username,
 	}
 
@@ -179,7 +182,7 @@ func (app *App) RunServer() {
 	}
 }
 
-func NewClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.ClientConn, error) {
+func NewRestaurantClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -189,4 +192,16 @@ func NewClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.Clien
 	}
 
 	return pb.NewRestaurantToSponsorServiceClient(conn), conn, nil
+}
+
+func NewPaymentClient(address string) (pb.PaymentCommandServiceClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pb.NewPaymentCommandServiceClient(conn), conn, nil
 }

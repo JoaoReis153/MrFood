@@ -33,6 +33,7 @@ message SponsorshipResponse {
   int64 id = 1;
   int32 tier = 2;
   google.protobuf.Timestamp until = 3;
+  int32 receipt_id = 4;
 }
 
 message GetRestaurantSponsorshipRequest {

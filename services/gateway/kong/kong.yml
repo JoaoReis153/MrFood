@@ -13,6 +13,7 @@ services:
     - https
     paths:
     - /auth
+    strip_path: true
 
   plugins:
   - name: grpc-gateway
@@ -103,6 +104,27 @@ services:
       claims_to_verify:
       - exp
 
+- name: payment
+  host: payment
+  port: 50057
+  protocol: grpc
+  routes:
+  - name: payment
+    protocols:
+    - http
+    - https
+    paths:
+    - /payment
+    
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/payment.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+  
 - name: search
   host: search
   port: 50051
@@ -128,5 +150,5 @@ consumers:
 - username: my-client
   jwt_secrets:
   - key: generate-key
-    secret: fQWjH/xFR1QzbkW+PJoMOWCiHJE1OX9b2BDnER0q9vs=
+    secret: CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
     algorithm: HS256
