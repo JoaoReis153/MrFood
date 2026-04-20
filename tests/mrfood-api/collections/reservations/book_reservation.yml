@@ -12,15 +12,13 @@ http:
     type: json
     data: |-
       {
-        "id": "res_12345",
-        "userId": "user_12345",
-        "restaurantId": "12345",
-        "dateTime": "2024-12-31T19:00:00Z",
-        "numberOfPeople": 4
+        "restaurant_id": "1",
+        "time_start": "2024-12-31T11:00:00Z",
+        "quantity": 10
       }
   auth:
     type: bearer
-    token: {{token}}
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnZW5lcmF0ZS1rZXkiLCJzdWIiOiIxIiwiZXhwIjoxNzc2NjMzMjQwLCJuYmYiOjE3NzY2MzIzNDAsImlhdCI6MTc3NjYzMjM0MCwianRpIjoiZmE4YzRhZDQtNjY1Yi00NDdjLTgzZWEtZGZlNjRmZjlmOGU2IiwidXNlcl9pZCI6IjEiLCJ1c2VybmFtZSI6InRlc3RlIiwiZW1haWwiOiJtcmZvb2QuYXBpQGdtYWlsLmNvbSIsInRva2VuX3ZlcnNpb24iOjEsInRva2VuX3R5cGUiOiJhY2Nlc3MifQ.DisE7Uz2KFxOarbfqkI7TPTmptwmBIKbV4CSj3zFs_E
 
 settings:
   encodeUrl: true
