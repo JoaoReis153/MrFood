@@ -9,3 +9,7 @@ variable "region" {
 variable "zone" {
   type = string
 }
+
+variable "network_name" {
+  type = string
+}

@@ -15,5 +15,5 @@ provider "google" {
 
 module "vpc" {
   source       = "./modules/vpc"
-  network_name = "terraform-network"
+  network_name = var.network_name
 }
