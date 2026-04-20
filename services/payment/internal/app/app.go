@@ -31,6 +31,9 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 
 	client, notificationConn, err := NewClient(cfg.Notification.GRPCAddr)
+	if err != nil {
+		return nil, fmt.Errorf("client connection: %w", err)
+	}
 	svc := service.New(repo, client)
 
 	return &App{

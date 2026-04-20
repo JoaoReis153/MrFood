@@ -85,6 +85,9 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 			booking_id, booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
 		PaymentType: "B",
 	})
+	if err != nil {
+		return 0, 0, err
+	}
 
 	return booking_id, receipt_id, nil
 }

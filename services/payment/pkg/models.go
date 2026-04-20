@@ -14,10 +14,3 @@ type Receipt struct {
 	PaymentType        string    `json:"payment_type"`
 	CreatedAt          time.Time `json:"created_at"`
 }
-
-type hashInput struct {
-	UserID             int64   `json:"user_id"`
-	Amount             float32 `json:"amount"`
-	PaymentDescription string  `json:"payment_description"`
-	PaymentType        string  `json:"payment_type"`
-}

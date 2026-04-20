@@ -206,7 +206,10 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	defer notificationConn.Close()
+
+	defer func() {
+		_ = notificationConn.Close()
+	}()
 
 	s := grpc.NewServer()
 	pb.RegisterAuthServiceServer(s, &Server{

@@ -58,6 +58,9 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 			res.ID, request.ID, res.Tier, FormatTime(res.Until)),
 		PaymentType: "S",
 	})
+	if err != nil {
+		return nil, 0, err
+	}
 
 	return res, receipt_id, nil
 }

@@ -90,7 +90,9 @@ func startFakeSMTPServer(t *testing.T) (host string, port int, shutdown func()) 
 			wg.Add(1)
 			go func(c net.Conn) {
 				defer wg.Done()
-				defer c.Close()
+				defer func() {
+					_ = c.Close() // ignore
+				}()
 
 				_ = c.SetDeadline(time.Now().Add(5 * time.Second))
 				reader := bufio.NewReader(c)

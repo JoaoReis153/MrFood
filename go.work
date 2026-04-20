@@ -4,6 +4,7 @@ use (
 	./services/auth
 	./services/booking
 	./services/notification
+	./services/payment
 	./services/restaurant
 	./services/review
 	./services/sponsor
