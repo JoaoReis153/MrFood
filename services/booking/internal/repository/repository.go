@@ -40,7 +40,12 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 		return 0, err
 	}
 	defer func() {
-		_ = tx.Rollback(ctx)
+		if p := recover(); p != nil {
+			_ = tx.Rollback(ctx)
+			panic(p)
+		} else if err != nil {
+			_ = tx.Rollback(ctx)
+		}
 	}()
 
 	// check if booking already exists
@@ -105,6 +110,7 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
+		_ = tx.Rollback(ctx)
 		return 0, err
 	}
 

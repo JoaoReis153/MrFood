@@ -207,6 +207,7 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	}
 
 	if err := tx.Commit(ctx); err != nil {
+		_ = tx.Rollback(ctx)
 		return 0, fmt.Errorf("commit tx: %w", err)
 	}
 
@@ -316,6 +317,7 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	}
 
 	if err := tx.Commit(ctx); err != nil {
+		_ = tx.Rollback(ctx)
 		return nil, fmt.Errorf("commit tx: %w", err)
 	}
 
