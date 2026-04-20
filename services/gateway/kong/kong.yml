@@ -13,6 +13,7 @@ services:
     - https
     paths:
     - /auth
+    strip_path: true
 
   plugins:
   - name: grpc-gateway
