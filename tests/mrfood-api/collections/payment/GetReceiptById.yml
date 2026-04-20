@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/payment/3"
+  url: "{{baseUrl}}/payment/1"
   auth:
     type: bearer
     token: "{{token}}"
