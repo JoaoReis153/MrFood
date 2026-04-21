@@ -1,6 +1,7 @@
 variable "project_id" {
   description = "GCP project ID"
   type        = string
+  default     = "mrfood-490623"
 }
 
 variable "region" {
@@ -12,11 +13,13 @@ variable "region" {
 variable "network_name" {
   description = "Name of the VPC network"
   type        = string
+  default     = "gke-network"
 }
 
 variable "subnet_name" {
   description = "Name of the subnet"
   type        = string
+  default     = "gke-subnet"
 }
 
 variable "subnet_cidr" {
@@ -52,6 +55,7 @@ variable "services_cidr_range" {
 variable "cluster_name" {
   description = "Name of the GKE cluster"
   type        = string
+  default     = "mrfood-cluster"
 }
 
 variable "node_machine_type" {
