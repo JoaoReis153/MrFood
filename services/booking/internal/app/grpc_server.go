@@ -19,8 +19,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
 
@@ -56,7 +57,10 @@ func RunServer(service bookingService) {
 	pb.RegisterBookingServiceServer(s, &server{
 		bookingService: service,
 	})
-	reflection.Register(s)
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("booking", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "booking")
 
 	fmt.Println("Server running on", addr)
 	if err := s.Serve(lis); err != nil {

@@ -15,6 +15,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 )
 
@@ -97,6 +99,11 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	s := grpc.NewServer()
 	pb.RegisterSearchServiceServer(s, newServer(app.Service))
 
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("search", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "search")
+
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -111,7 +118,9 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	g.Go(func() error {
 		<-ctx.Done()
 		slog.Info("shutting down gRPC server...")
+		healthServer.SetServingStatus("search", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 		s.GracefulStop()
+		healthServer.Shutdown()
 		return nil
 	})
 
