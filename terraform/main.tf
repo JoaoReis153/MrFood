@@ -81,3 +81,31 @@ module "service_cloudsql" {
   depends_on = [module.cloudsql_foundation]
 }
 
+
+resource "google_project_service" "redis" {
+  project = var.project_id
+  service = "redis.googleapis.com"
+}
+
+module "service_redis" {
+  for_each = var.service_redis_instances
+  source   = "./modules/memorystore-redis"
+
+  project_id         = var.project_id
+  instance_name      = "mrfood-${each.key}-redis"
+  region             = coalesce(each.value.region, var.region)
+  location_id        = try(each.value.location_id, null)
+  authorized_network = module.vpc.network_id
+
+  tier                    = each.value.tier
+  memory_size_gb          = each.value.memory_size_gb
+  redis_version           = each.value.redis_version
+  connect_mode            = each.value.connect_mode
+  auth_enabled            = each.value.auth_enabled
+  transit_encryption_mode = each.value.transit_encryption_mode
+  labels                  = each.value.labels
+
+  depends_on = [module.vpc, google_project_service.redis]
+}
+
+

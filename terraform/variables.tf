@@ -147,3 +147,33 @@ variable "service_databases" {
   }
 }
 
+
+variable "service_redis_instances" {
+  description = "Per-service Memorystore Redis configuration"
+  type = map(object({
+    region                  = optional(string, "europe-southwest1")
+    location_id             = optional(string)
+    tier                    = optional(string, "BASIC")
+    memory_size_gb          = optional(number, 1)
+    redis_version           = optional(string, "REDIS_7_2")
+    connect_mode            = optional(string, "DIRECT_PEERING")
+    auth_enabled            = optional(bool, false)
+    transit_encryption_mode = optional(string, "DISABLED")
+    labels                  = optional(map(string), {})
+  }))
+
+  default = {
+    auth = {
+      memory_size_gb = 1
+      labels = {
+        service = "auth"
+      }
+    }
+    notification = {
+      memory_size_gb = 1
+      labels = {
+        service = "notification"
+      }
+    }
+  }
+}

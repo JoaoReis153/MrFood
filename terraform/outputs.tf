@@ -36,3 +36,25 @@ output "service_db_connection_names" {
     for svc, m in module.service_cloudsql : svc => m.connection_name
   }
 }
+
+output "service_redis_hosts" {
+  description = "Redis host IP per service"
+  value = {
+    for svc, m in module.service_redis : svc => m.host
+  }
+}
+
+output "service_redis_ports" {
+  description = "Redis port per service"
+  value = {
+    for svc, m in module.service_redis : svc => m.port
+  }
+}
+
+output "service_redis_auth_strings" {
+  description = "Redis AUTH string per service (if enabled)"
+  value = {
+    for svc, m in module.service_redis : svc => m.auth_string
+  }
+  sensitive = true
+}
