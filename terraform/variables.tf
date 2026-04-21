@@ -73,6 +73,7 @@ variable "node_min_count" {
 variable "node_max_count" {
   description = "Maximum number of nodes"
   type        = number
+  default     = 5
 }
 
 variable "node_disk_size_gb" {
