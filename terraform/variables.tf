@@ -141,7 +141,7 @@ variable "service_databases" {
     }
     sponsor = {
       db_name     = "mrfood_sponsor"
-      db_user     = "mrfood_sponsor_secret"
+      db_user     = "mrfood_sponsor_user"
       db_password = "mrfood_sponsor_secret"
     }
   }
