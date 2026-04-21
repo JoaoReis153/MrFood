@@ -1,0 +1,6 @@
+name: gateway
+
+image: kong:3.6
+
+service:
+  type: LoadBalancer

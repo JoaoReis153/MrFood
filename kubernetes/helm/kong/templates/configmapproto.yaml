@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-protos
+data:
+{{- (.Files.Glob "files/proto/**").AsConfig | nindent 2 }}

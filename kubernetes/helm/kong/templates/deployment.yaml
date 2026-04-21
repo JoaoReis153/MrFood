@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - name: {{ .Values.name }}
+          image: {{ .Values.image }}
+
+          ports:
+          - containerPort: 8000   # proxy
+          - containerPort: 8001   # admin
+
+          env:
+          - name: KONG_DATABASE
+            value: "off"
+          - name: KONG_DECLARATIVE_CONFIG
+            value: /kong/declarative/kong.yml
+          - name: KONG_PROXY_ACCESS_LOG
+            value: /dev/stdout
+          - name: KONG_ADMIN_LISTEN
+            value: "0.0.0.0:8001"
+
+          volumeMounts:
+          - name: kong-config
+            mountPath: /kong/declarative
+          - name: kong-protos
+            mountPath: /etc/kong/proto
+
+      volumes:
+      - name: kong-config
+        configMap:
+          name: kong-config
+      - name: kong-protos
+        configMap:
+          name: kong-protos
+
+      livenessProbe:
+        httpGet:
+          path: /status
+          port: 8001
+        initialDelaySeconds: 10
+
+      readinessProbe:
+        httpGet:
+          path: /status
+          port: 8001
+        initialDelaySeconds: 10

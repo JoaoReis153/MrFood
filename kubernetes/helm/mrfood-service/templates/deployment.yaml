@@ -38,3 +38,6 @@ spec:
           grpc:
             port: {{ .Values.port }}
           initialDelaySeconds: 5
+      
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest

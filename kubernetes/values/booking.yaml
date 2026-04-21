@@ -1,0 +1,6 @@
+name: booking
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/booking:v1.0.0
+port: 50053
+
+service:
+  type: ClusterIP

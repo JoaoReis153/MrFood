@@ -1,7 +1,7 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: "{{ .Values.name }}-hpa"
+  name: {{ .Values.name }}
   namespace: {{ .Values.namespace }}
 spec:
   scaleTargetRef:

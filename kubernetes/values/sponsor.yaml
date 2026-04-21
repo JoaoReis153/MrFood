@@ -1,0 +1,6 @@
+name: sponsor
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/sponsor:v1.0.0
+port: 50054
+
+service:
+  type: ClusterIP
