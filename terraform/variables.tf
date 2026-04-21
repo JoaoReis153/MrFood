@@ -91,4 +91,5 @@ variable "node_disk_type" {
 variable "node_preemptible" {
   description = "Whether nodes are preemptible"
   type        = bool
+  default     = false
 }
