@@ -99,3 +99,51 @@ variable "repository_id" {
   type        = string
   default     = "mrfood-repo"
 }
+
+variable "service_databases" {
+  description = "Per-service Cloud SQL Postgres configuration"
+  type = map(object({
+    db_name             = string
+    db_user             = string
+    db_password         = string
+    region              = optional(string, "europe-southwest1")
+    tier                = optional(string, "db-f1-micro")
+    disk_size           = optional(number, 20)
+    availability_type   = optional(string, "ZONAL")
+    deletion_protection = optional(bool, true)
+  }))
+
+  default = {
+    auth = {
+      db_name     = "mrfood_auth"
+      db_user     = "mrfood_auth_user"
+      db_password = "mrfood_auth_secret"
+    }
+    restaurant = {
+      db_name     = "mrfood_restaurant"
+      db_user     = "mrfood_restaurant_user"
+      db_password = "mrfood_restaurant_secret"
+    }
+    booking = {
+      db_name     = "mrfood_booking"
+      db_user     = "mrfood_booking_user"
+      db_password = "mrfood_booking_secret"
+    }
+    review = {
+      db_name     = "mrfood_review"
+      db_user     = "mrfood_review_user"
+      db_password = "mrfood_review_secret"
+    }
+    payment = {
+      db_name     = "mrfood_payment"
+      db_user     = "mrfood_payment_user"
+      db_password = "mrfood_payment_secret"
+    }
+    sponsor = {
+      db_name     = "mrfood_sponsor"
+      db_user     = "mrfood_sponsor_secret"
+      db_password = "mrfood_sponsor_secret"
+    }
+  }
+}
+

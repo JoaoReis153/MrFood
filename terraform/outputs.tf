@@ -24,3 +24,15 @@ output "gke_cluster_ca_certificate" {
   value       = module.gke.cluster_ca_certificate
   sensitive   = true
 }
+
+output "service_db_private_ips" {
+  value = {
+    for svc, m in module.service_cloudsql : svc => m.private_ip_address
+  }
+}
+
+output "service_db_connection_names" {
+  value = {
+    for svc, m in module.service_cloudsql : svc => m.connection_name
+  }
+}

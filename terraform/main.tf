@@ -50,3 +50,34 @@ module "registry" {
   region        = var.region
   repository_id = var.repository_id
 }
+
+module "cloudsql_foundation" {
+  source = "./modules/cloudsql-foundation"
+
+  project_id = var.project_id
+  network_id = module.vpc.network_id
+
+  depends_on = [module.vpc]
+}
+
+
+
+module "service_cloudsql" {
+  for_each = var.service_databases
+  source   = "./modules/cloudsql-postgres"
+
+  project_id          = var.project_id
+  region              = coalesce(each.value.region, var.region)
+  instance_name       = "mrfood-${each.key}-pg"
+  db_name             = each.value.db_name
+  db_user             = each.value.db_user
+  db_password         = each.value.db_password
+  tier                = each.value.tier
+  disk_size           = each.value.disk_size
+  availability_type   = each.value.availability_type
+  deletion_protection = each.value.deletion_protection
+  private_network     = module.vpc.network_id
+
+  depends_on = [module.cloudsql_foundation]
+}
+
