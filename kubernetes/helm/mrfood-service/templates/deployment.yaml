@@ -38,6 +38,16 @@ spec:
           grpc:
             port: {{ .Values.port }}
           initialDelaySeconds: 5
-      
+        
+        envFrom:
+          - configMapRef:
+              name: {{ .Values.name }}-config
+          - secretRef:
+              name: {{ .Values.name }}-secret
+
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+        args:
+          - "--structured-logs"
+          - "--port=5432"
+          - "mrfood-490623:europe-southwest1:{{ .Values.cloudsql.instance }}"

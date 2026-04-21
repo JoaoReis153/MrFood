@@ -4,3 +4,22 @@ port: 50057
 
 service:
   type: ClusterIP
+
+env:
+  secrets:
+    POSTGRES_PASSWORD: paymentsecret
+  config:
+    APP_SERVER_PORT: 50057
+    PAYMENT_POSTGRES_PORT: 5438
+    POSTGRES_DB: mrfood_payment
+    POSTGRES_USER: payment
+    POSTGRES_HOST: 127.0.0.1
+    DB_MIN_CONNS: 4
+    DB_MAX_CONNS: 20
+    DB_MAX_CONN_LIFETIME: 15m
+    DB_HEALTH_CHECK_PERIOD: 1m
+    APP_LOG_LEVEL: debug
+    NOTIFICATION_GRPC_ADDR: "notification:50058"
+
+cloudsql:
+  instance: mrfood-payment-pg

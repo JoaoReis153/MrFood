@@ -4,3 +4,18 @@ port: 50058
 
 service:
   type: ClusterIP
+
+env:
+  secrets:
+    SMTP_PASSWORD: wpbp rgwe hplj smzy
+  config:
+    APP_SERVER_PORT: 50058
+    SMTP_FROM: mrfood.api@gmail.com
+    SMTP_USER: mrfood.api@gmail.com
+    REDIS_HOST: notification_redis
+    REDIS_PORT: 6379
+    SMTP_HOST: smtp.gmail.com
+    SMTP_PORT: 587
+
+cloudsql:
+  instance: mrfood-notification-pg
