@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -257,6 +259,11 @@ func (app *App) RunServer() {
 
 	pb.RegisterReviewServiceServer(s, srv)
 	pb.RegisterReviewToRestaurantServiceServer(s, srv)
+
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("review", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "review")
 
 	slog.Info("Server running on", "address", addr)
 	if err := s.Serve(lis); err != nil {
