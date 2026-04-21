@@ -42,3 +42,11 @@ module "gke" {
 
   depends_on = [module.vpc]
 }
+
+module "registry" {
+  source = "./modules/registry"
+
+  project_id    = var.project_id
+  region        = var.region
+  repository_id = var.repository_id
+}

@@ -93,3 +93,9 @@ variable "node_preemptible" {
   type        = bool
   default     = false
 }
+
+variable "repository_id" {
+  description = "Name of the Artifact Registry repository"
+  type        = string
+  default     = "mrfood-repo"
+}
