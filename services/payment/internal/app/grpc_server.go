@@ -18,8 +18,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -57,6 +59,9 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	pb.RegisterPaymentQueryServiceServer(s, &queryServer{
 		paymentService: app.Service,
 	})
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("payment", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
 
@@ -72,7 +77,9 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	g.Go(func() error {
 		<-ctx.Done()
 		slog.Info("shutting down gRPC server...")
+		healthServer.SetServingStatus("payment", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 		s.GracefulStop()
+		healthServer.Shutdown()
 		return nil
 	})
 

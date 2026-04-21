@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
 )
 
@@ -217,6 +219,10 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 		jwtService:          jwtServiceInstance,
 		notificationService: notificationClient,
 	})
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("auth", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "auth")
 
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
 
@@ -234,7 +240,9 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	g.Go(func() error {
 		<-ctx.Done() // Wait for the context to be canceled
 		slog.Info("shutting down gRPC server...")
+		healthServer.SetServingStatus("auth", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 		s.GracefulStop()
+		healthServer.Shutdown()
 		return nil
 	})
 
