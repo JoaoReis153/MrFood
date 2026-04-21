@@ -16,6 +16,23 @@ service RestaurantToBookingService {
   rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
 }
 
+service PaymentCommandService {
+  rpc MakePayment (PaymentRequest) returns (PaymentResponse);
+}
+
+message PaymentRequest {
+  int64 user_id = 1;
+  float amount = 2;
+  string user_email = 3;
+  string idempotency_key = 4;
+  string payment_description = 5;
+  string type = 6;
+}
+
+message PaymentResponse {
+  int32 receipt_id = 1;
+}
+
 message WorkingHoursRequest {
   int64 restaurant_id = 1;
   google.protobuf.Timestamp time_start = 2;
@@ -35,6 +52,7 @@ message CreateBookingRequest {
 
 message CreateBookingResponse {
   int32 booking_id = 1;
+  PaymentResponse payment = 2;
 }
 
 message DeleteBookingRequest {

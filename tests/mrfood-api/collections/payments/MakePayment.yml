@@ -1,0 +1,19 @@
+info:
+  name: MakePayment
+  type: grpc
+  seq: 1
+
+grpc:
+  url: localhost:50057
+  method: /proto.PaymentCommandService/MakePayment
+  methodType: unary
+  protoFilePath: ../../../../services/payment/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "amount": 375.0623332302169,
+      "idempotency_key": "crinis",
+      "payment_description": "cibus",
+      "type": "B"
+    }
+  auth:
+    type: bearer

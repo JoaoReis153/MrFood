@@ -26,6 +26,8 @@ services:
       # Database
       <<: *sponsor-db-config
       APP_SERVER_PORT: ${SPONSOR_SERVER_PORT}
+      RESTAURANT_GRPC_ADDR: "restaurant:${RESTAURANT_SERVER_PORT}"
+      PAYMENT_GRPC_ADDR: "payment:${PAYMENT_SERVER_PORT}"
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m

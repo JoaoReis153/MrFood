@@ -22,6 +22,7 @@ services:
     environment:
       # Database
       <<: *auth-db-config
+      AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:${NOTIFICATION_SERVER_PORT}"
       DB_MIN_CONNS: 4
       DB_MAX_CONNS: 20
       DB_MAX_CONN_LIFETIME: 15m

@@ -29,6 +29,7 @@ message CreateBookingRequest {
 
 message CreateBookingResponse {
   int32 booking_id = 1;
+  PaymentResponse payment = 2;
 }
 
 message DeleteBookingRequest {
@@ -36,3 +37,9 @@ message DeleteBookingRequest {
 }
 
 message DeleteBookingResponse {}
+
+message PaymentResponse {
+  int32 receipt_id = 1;
+}
+
+

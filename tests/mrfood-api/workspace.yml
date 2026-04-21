@@ -18,9 +18,13 @@ collections:
     path: "collections/users"
   - name: "sponsor"
     path: "collections/sponsor"
+  - name: "payment"
+    path: "collections/payment"
+  - name: "search"
+    path: "collections/search"
 
 specs:
 
 docs: ''
 
-activeEnvironmentUid: rdsgdj000000000000000
+activeEnvironmentUid: 1elusaw00000000000000

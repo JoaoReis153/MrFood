@@ -5,6 +5,7 @@ import "time"
 type Booking struct {
 	ID           int32     `json:"id"`
 	UserID       int64     `json:"user_id"`
+	UserEmail    string    `json:"user_email"`
 	RestaurantID int64     `json:"restaurant_id"`
 	PeopleCount  int32     `json:"people_count"`
 	TimeStart    time.Time `json:"time_start"`
@@ -30,4 +31,13 @@ type WorkingHours struct {
 	RestaurantID int64     `json:"restaurant_id"`
 	TimeStart    time.Time `json:"time_start"`
 	TimeEnd      time.Time `json:"time_end"`
+}
+
+type PaymentRequest struct {
+	UserID             int64   `json:"user_id"`
+	UserEmail          string  `json:"user_email"`
+	IdempotencyKey     string  `json:"idempotency_key"`
+	Amount             float32 `json:"amount"`
+	PaymentDescription string  `json:"payment_description"`
+	PaymentType        string  `json:"payment_type"`
 }

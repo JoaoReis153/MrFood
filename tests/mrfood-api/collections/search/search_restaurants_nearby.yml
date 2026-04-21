@@ -1,0 +1,86 @@
+info:
+  name: Search nearby restaurants
+  type: http
+  seq: 12
+  tags:
+    - Restaurants
+    - Search
+
+http:
+  method: GET
+  url: "{{baseUrl}}/search?latitude=45.961674&longitude=1.169131&radius_meters=3000&page=1&limit=10"
+  params:
+    - name: latitude
+      value: "45.961674"
+      type: query
+    - name: longitude
+      value: "1.169131"
+      type: query
+    - name: radius_meters
+      value: "3000"
+      type: query
+    - name: page
+      value: "1"
+      type: query
+    - name: limit
+      value: "10"
+      type: query
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Nearby restaurants returned
+    request:
+      url: "{{baseUrl}}/search?latitude=45.961674&longitude=1.169131&radius_meters=3000&page=1&limit=10"
+      method: GET
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "data": [
+              {
+                "id": 1,
+                "name": "Le 147",
+                "latitude": 45.961674,
+                "longitude": 1.169131
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 1,
+              "pages": 1
+            }
+          }
+  - name: 400 Response
+    description: Invalid geo query
+    request:
+      url: "{{baseUrl}}/search?latitude=120&longitude=1.169131&radius_meters=-10&page=1&limit=10"
+      method: GET
+    response:
+      status: 400
+      statusText: Bad Request
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

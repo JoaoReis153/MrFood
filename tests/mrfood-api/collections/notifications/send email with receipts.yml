@@ -1,0 +1,37 @@
+info:
+  name: send email with receipts
+  type: grpc
+  seq: 3
+
+grpc:
+  url: localhost:50058
+  method: /notification.PaymentToNotificationService/SendReceipts
+  methodType: unary
+  protoFilePath: ../../../../services/notification/internal/api/grpc/proto/protofile.proto
+  message: |-
+    {
+      "email": "mrfood.api@gmail.com",
+      "receipts": [
+        {
+          "amount": 12.50,
+          "payment_description": "Burger + Fries",
+          "current_payment_status": "completed",
+          "payment_type": "credit_card",
+          "created_at": {
+            "seconds": 1745000400,
+            "nanos": 0
+          }
+        },
+        {
+          "amount": 8.00,
+          "payment_description": "Pizza Margherita",
+          "current_payment_status": "completed",
+          "payment_type": "mbway",
+          "created_at": {
+            "seconds": 1745000400,
+            "nanos": 0
+          }
+        }
+      ]
+    }
+  auth: inherit

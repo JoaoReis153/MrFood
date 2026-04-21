@@ -12,18 +12,21 @@ import (
 	"log/slog"
 	"net"
 	"strconv"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 )
 
 type Server struct {
 	pb.UnimplementedAuthServiceServer
-	authService authService
-	jwtService  jwtService
+	authService         authService
+	jwtService          jwtService
+	notificationService notificationService
 }
 
 type authService interface {
@@ -31,9 +34,46 @@ type authService interface {
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 }
 
+type notificationService interface {
+	SendRegistrationEmail(ctx context.Context, email, username string) error
+}
+
+type notificationClient struct {
+	conn grpc.ClientConnInterface
+}
+
+const notificationSendRegistrationEmailMethod = "/notification.AuthToNotificationService/SendRegistrationEmail"
+
+func newNotificationClient(target string) (*notificationClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, nil, fmt.Errorf("dial notification grpc: %w", err)
+	}
+
+	return &notificationClient{conn: conn}, conn, nil
+}
+
+func (c *notificationClient) SendRegistrationEmail(ctx context.Context, email, username string) error {
+	notifyCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	req := &pb.SendRegistrationEmailRequest{
+		Email:    email,
+		Username: username,
+	}
+
+	resp := new(pb.SendRegistrationEmailResponse)
+	return c.conn.Invoke(
+		notifyCtx,
+		notificationSendRegistrationEmailMethod,
+		req,
+		resp,
+	)
+}
+
 type jwtService interface {
 	RevokeAllUserTokens(ctx context.Context, userID string) error
-	GenerateTokenPair(ctx context.Context, userID, username string) (*auth.TokenPair, error)
+	GenerateTokenPair(ctx context.Context, userID, username, email string) (*auth.TokenPair, error)
 	RefreshTokens(ctx context.Context, tokenStr string) (*auth.TokenPair, error)
 	ValidateAccessToken(ctx context.Context, tokenString string) (*auth.Claims, error)
 	RevokeAccessToken(ctx context.Context, tokenString string) error
@@ -68,6 +108,11 @@ func (s *Server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	if s.notificationService != nil {
+		if err := s.notificationService.SendRegistrationEmail(ctx, req.GetEmail(), req.GetUsername()); err != nil {
+			slog.Warn("failed to send registration email", "user_id", newUser.ID, "email", req.GetEmail(), "error", err)
+		}
+	}
 
 	return &pb.RegisterResponse{
 		Id:       newUser.ID,
@@ -100,7 +145,7 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 		return nil, status.Error(codes.Internal, "failed to revoke all user tokens")
 	}
 
-	tokenPair, err := s.jwtService.GenerateTokenPair(ctx, userID, user.Username)
+	tokenPair, err := s.jwtService.GenerateTokenPair(ctx, userID, user.Username, user.Email)
 	if err != nil {
 		slog.Error("failed to generate token pair", "error", err)
 		return nil, status.Error(codes.Internal, "failed to generate token pair")
@@ -157,11 +202,20 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	}
 
 	jwtServiceInstance := auth.NewJWTService(&cfg.JWT, app.Repo)
+	notificationClient, notificationConn, err := newNotificationClient(cfg.Notification.GRPCAddr)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = notificationConn.Close()
+	}()
 
 	s := grpc.NewServer()
 	pb.RegisterAuthServiceServer(s, &Server{
-		authService: app.Service,
-		jwtService:  jwtServiceInstance,
+		authService:         app.Service,
+		jwtService:          jwtServiceInstance,
+		notificationService: notificationClient,
 	})
 
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
