@@ -1,0 +1,41 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'terraform/**' ]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-apply-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: terraform
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: google-github-actions/auth@v3
+      with:
+        project_id: 'mrfood-490623'
+        workload_identity_provider: 'projects/685340956759/locations/global/workloadIdentityPools/github/providers/mrfood-repo'
+        service_account: 'github-actions@mrfood-490623.iam.gserviceaccount.com'
+
+    - uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve -input=false
