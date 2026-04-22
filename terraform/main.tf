@@ -5,6 +5,20 @@ terraform {
   }
 }
 
+# Grant Cloud SQL Admin role to terraform-sa service account for schema imports
+resource "google_project_iam_member" "terraform_sa_cloudsql_admin" {
+  project = var.project_id
+  role    = "roles/cloudsql.admin"
+  member  = "serviceAccount:terraform-sa@state-manager-493721.iam.gserviceaccount.com"
+}
+
+# Grant Storage Admin role to terraform-sa for bucket access
+resource "google_project_iam_member" "terraform_sa_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:terraform-sa@state-manager-493721.iam.gserviceaccount.com"
+}
+
 module "vpc" {
   source = "./modules/vpc"
 
@@ -80,6 +94,132 @@ module "service_cloudsql" {
 
   depends_on = [module.cloudsql_foundation]
 }
+
+resource "google_project_service_identity" "cloudsql" {
+  provider = google-beta
+  project  = var.project_id
+  service  = "sqladmin.googleapis.com"
+
+  depends_on = [module.cloudsql_foundation]
+}
+
+
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+locals {
+  service_schema = {
+    for svc, cfg in var.service_databases :
+    svc => {
+      bootstrap_enabled = try(cfg.bootstrap_enabled, true)
+      schema_revision   = try(cfg.schema_revision, "v1")
+      schema_sql_path   = coalesce(try(cfg.schema_sql_path, null), "${path.root}/../services/${svc}/db_setup.sql")
+    }
+  }
+}
+
+resource "google_storage_bucket" "schema_bootstrap" {
+  name                        = var.schema_bootstrap_bucket_name
+  project                     = var.project_id
+  location                    = var.region
+  uniform_bucket_level_access = true
+}
+
+resource "google_project_iam_member" "cloudsql_admin_cloudsql" {
+  project = var.project_id
+  role    = "roles/cloudsql.admin"
+  member  = google_project_service_identity.cloudsql.member
+
+  depends_on = [google_project_service_identity.cloudsql]
+}
+
+resource "google_project_iam_member" "cloudsql_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = google_project_service_identity.cloudsql.member
+
+  depends_on = [google_project_service_identity.cloudsql]
+}
+
+resource "google_storage_bucket_iam_member" "cloudsql_schema_reader" {
+  bucket = google_storage_bucket.schema_bootstrap.name
+  role   = "roles/storage.objectViewer"
+  member = google_project_service_identity.cloudsql.member
+
+  depends_on = [time_sleep.wait_for_cloudsql_service_identity]
+}
+
+resource "google_storage_bucket_iam_member" "cloudsql_schema_bucket_reader" {
+  bucket = google_storage_bucket.schema_bootstrap.name
+  role   = "roles/storage.admin"
+  member = google_project_service_identity.cloudsql.member
+
+  depends_on = [time_sleep.wait_for_cloudsql_service_identity]
+}
+
+
+resource "google_storage_bucket_object" "service_schema_sql" {
+  for_each = {
+    for svc, cfg in local.service_schema :
+    svc => cfg
+    if cfg.bootstrap_enabled && fileexists(cfg.schema_sql_path)
+  }
+
+  bucket = google_storage_bucket.schema_bootstrap.name
+  name   = "schemas/${each.key}/${each.value.schema_revision}-${filesha256(each.value.schema_sql_path)}.sql"
+  source = each.value.schema_sql_path
+}
+
+resource "time_sleep" "wait_for_iam_propagation" {
+  create_duration = "60s"
+  depends_on = [
+    google_project_iam_member.terraform_sa_cloudsql_admin,
+    google_project_iam_member.terraform_sa_storage_admin,
+    google_project_iam_member.cloudsql_storage_admin,
+    google_storage_bucket_iam_member.cloudsql_schema_reader,
+    google_storage_bucket_iam_member.cloudsql_schema_bucket_reader
+  ]
+}
+
+resource "terraform_data" "apply_service_schema" {
+  for_each = google_storage_bucket_object.service_schema_sql
+
+  triggers_replace = [
+    module.service_cloudsql[each.key].instance_name,
+    module.service_cloudsql[each.key].private_ip_address,
+    local.service_schema[each.key].schema_revision,
+    google_storage_bucket_object.service_schema_sql[each.key].name,
+  ]
+
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+    command     = <<-EOT
+      set -euo pipefail
+      gcloud sql import sql "${module.service_cloudsql[each.key].instance_name}" \
+        "gs://${google_storage_bucket.schema_bootstrap.name}/${google_storage_bucket_object.service_schema_sql[each.key].name}" \
+        --database="${var.service_databases[each.key].db_name}" \
+        --project="${var.project_id}" \
+        --quiet
+    EOT
+  }
+
+  depends_on = [
+    module.service_cloudsql,
+    google_project_iam_member.terraform_sa_cloudsql_admin,
+    google_project_iam_member.terraform_sa_storage_admin,
+    google_storage_bucket_iam_member.cloudsql_schema_reader,
+    google_storage_bucket_iam_member.cloudsql_schema_bucket_reader,
+    time_sleep.wait_for_iam_propagation
+  ]
+}
+
+resource "time_sleep" "wait_for_cloudsql_service_identity" {
+  create_duration = "90s"
+  depends_on      = [google_project_service_identity.cloudsql]
+}
+
+
 
 
 resource "google_project_service" "redis" {

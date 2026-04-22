@@ -17,3 +17,8 @@ output "db_user" {
   description = "Created database user"
   value       = google_sql_user.user.name
 }
+
+output "instance_name" {
+  description = "Cloud SQL instance name"
+  value       = google_sql_database_instance.this.name
+}

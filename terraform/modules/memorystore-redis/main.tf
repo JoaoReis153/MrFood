@@ -9,10 +9,10 @@ resource "google_redis_instance" "this" {
   connect_mode       = var.connect_mode
   authorized_network = var.authorized_network
 
-  auth_enabled             = var.auth_enabled
-  transit_encryption_mode  = var.transit_encryption_mode
-  read_replicas_mode       = var.read_replicas_mode
-  replica_count            = var.replica_count
+  auth_enabled            = var.auth_enabled
+  transit_encryption_mode = var.transit_encryption_mode
+  read_replicas_mode      = var.read_replicas_mode
+  replica_count           = var.replica_count
 
   labels = var.labels
 }

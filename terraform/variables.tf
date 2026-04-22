@@ -111,6 +111,10 @@ variable "service_databases" {
     disk_size           = optional(number, 20)
     availability_type   = optional(string, "ZONAL")
     deletion_protection = optional(bool, true)
+
+    bootstrap_enabled = optional(bool, true)
+    schema_sql_path   = optional(string)
+    schema_revision   = optional(string, "v1")
   }))
 
   default = {
@@ -176,4 +180,10 @@ variable "service_redis_instances" {
       }
     }
   }
+}
+
+variable "schema_bootstrap_bucket_name" {
+  description = "GCS bucket used to stage SQL bootstrap files for Cloud SQL import"
+  type        = string
+  default     = "mrfood-cloudsql-schema-bootstrap-490623"
 }
