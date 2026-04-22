@@ -1,5 +1,5 @@
 name: payment
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.0
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.1
 port: 50057
 
 service:
