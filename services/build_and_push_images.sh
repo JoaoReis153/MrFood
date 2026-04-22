@@ -49,6 +49,12 @@ main() {
 
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  if [[ ! -d "$script_dir/../kubernetes/values" ]]; then
+    echo "Error: Kubernetes values directory not found at $script_dir/../kubernetes/values" >&2
+    exit 1
+  fi
+  local values_dir
+  values_dir="$(cd "$script_dir/../kubernetes/values" && pwd)"
 
   mapfile -t dockerfiles < <(find "$script_dir" -mindepth 2 -maxdepth 2 -type f -name Dockerfile | sort)
 
@@ -71,6 +77,17 @@ main() {
     echo "[$service_name] docker push $image"
     if [[ "$dry_run" != "true" ]]; then
       docker push "$image"
+    fi
+
+    local values_file
+    values_file="$values_dir/${service_name}.yaml"
+    if [[ -f "$values_file" ]]; then
+      echo "[$service_name] update $values_file image -> $image"
+      if [[ "$dry_run" != "true" ]]; then
+        sed -i "s|^image:.*$|image: ${image}|" "$values_file"
+      fi
+    else
+      echo "[$service_name] warning: values file not found at $values_file"
     fi
   done
 
