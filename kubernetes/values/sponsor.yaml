@@ -15,8 +15,8 @@ env:
     DB_USER: mrfood_sponsor_user
     DB_HOST: 127.0.0.1
     APP_LOG_LEVEL: debug
-    RESTAURANT_GRPC_ADDR: "restaurant:50052"
-    PAYMENT_GRPC_ADDR: "payment:50057"
+    RESTAURANT_GRPC_ADDR: "restaurant:80"
+    PAYMENT_GRPC_ADDR: "payment:80"
 
 cloudsql:
   instance: mrfood-490623:europe-southwest1:mrfood-sponsor-pg

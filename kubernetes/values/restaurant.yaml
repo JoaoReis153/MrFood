@@ -15,7 +15,7 @@ env:
     POSTGRES_USER: mrfood_restaurant_user
     POSTGRES_HOST: 127.0.0.1
     APP_LOG_LEVEL: debug
-    REVIEW_GRPC_ADDR: "review:50055"
+    REVIEW_GRPC_ADDR: "review:80"
 
 cloudsql:
   instance: mrfood-490623:europe-southwest1:mrfood-restaurant-pg

@@ -19,7 +19,7 @@ env:
     DB_MAX_CONN_LIFETIME: 15m
     DB_HEALTH_CHECK_PERIOD: 1m
     APP_LOG_LEVEL: debug
-    NOTIFICATION_GRPC_ADDR: "notification:50058"
+    NOTIFICATION_GRPC_ADDR: "notification:80"
 
 cloudsql:
   instance: mrfood-490623:europe-southwest1:mrfood-payment-pg
