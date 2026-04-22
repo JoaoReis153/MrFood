@@ -3,4 +3,8 @@ kind: ConfigMap
 metadata:
   name: kong-protos
 data:
-{{- (.Files.Glob "files/proto/**").AsConfig | nindent 2 }}
+{{- range $path, $bytes := .Files.Glob "files/proto/**" }}
+  {{ trimPrefix "files/proto/" $path | replace "/" "_" }}: |-
+{{ $bytes | toString | indent 4 }}
+{{- end }}
+
