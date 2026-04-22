@@ -28,4 +28,4 @@ env:
     AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:50058"
 
 cloudsql:
-  instance: mrfood-auth-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-auth-pg

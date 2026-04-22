@@ -15,6 +15,7 @@ spec:
       labels:
         app: {{ .Values.name }}
     spec:
+      serviceAccountName: {{ .Values.name }}
       containers:
       - name: {{ .Values.name }}
         image: {{ .Values.image }}
@@ -50,4 +51,5 @@ spec:
         args:
           - "--structured-logs"
           - "--port=5432"
-          - "mrfood-490623:europe-southwest1:{{ .Values.cloudsql.instance }}"
+          - "--private-ip"
+          - "{{ .Values.cloudsql.instance }}"
