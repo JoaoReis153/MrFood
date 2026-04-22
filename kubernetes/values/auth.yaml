@@ -1,0 +1,31 @@
+name: auth
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/auth:v1.0.1
+port: 50051
+
+service:
+  type: ClusterIP
+
+env:
+  secrets:
+    POSTGRES_PASSWORD: mrfood_auth_secret
+    REDIS_PASS: ""
+    APP_JWT_ACCESS_TOKEN_SECRET: CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
+    APP_JWT_REFRESH_TOKEN_SECRET: U3mstKH58SoVC7IozPUMex7iCcDsDeJrKu4TAmdu5T8=
+  config:
+    AUTH_SERVER_PORT: 50051
+    AUTH_POSTGRES_PORT: 5432
+    AUTH_REDIS_PORT: 6379
+    POSTGRES_HOST: 127.0.0.1
+    POSTGRES_DB: mrfood_auth
+    POSTGRES_USER: mrfood_auth_user
+    DB_MIN_CONNS: 4
+    DB_MAX_CONNS: 20
+    DB_MAX_CONN_LIFETIME: 15m
+    DB_HEALTH_CHECK_PERIOD: 1m
+    REDIS_HOST: 10.89.138.75
+    REDIS_DB: 0
+    APP_LOG_LEVEL: debug
+    AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:80"
+
+cloudsql:
+  instance: mrfood-490623:europe-southwest1:mrfood-auth-pg

@@ -36,18 +36,10 @@ type DBConfig struct {
 	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 }
 
-type JWTConfig struct {
-	AccessTokenSecret  string        `yaml:"secret"        validate:"required,min=32"`
-	RefreshTokenSecret string        `yaml:"refresh_secret" validate:"required,min=32"`
-	AccessTokenTTL     time.Duration `yaml:"access_token_ttl" validate:"required,min=5m,max=2h"`
-	RefreshTokenTTL    time.Duration `yaml:"refresh_token_ttl" validate:"required,min=1h,max=720h"`
-}
-
 type Config struct {
 	Server       ServerConfig       `yaml:"server"`
 	Log          LogConfig          `yaml:"log"`
 	DB           DBConfig           `yaml:"db"`
-	JWT          JWTConfig          `yaml:"jwt"`
 	Notification NotificationConfig `yaml:"notification"`
 }
 
@@ -80,12 +72,6 @@ func Load(_ context.Context) (*Config, error) {
 			MaxConns:          20,
 			MaxConnLifetime:   15 * time.Minute,
 			HealthCheckPeriod: 1 * time.Minute,
-		},
-		JWT: JWTConfig{
-			AccessTokenSecret:  "to-be-saved",
-			RefreshTokenSecret: "to-be-saved",
-			AccessTokenTTL:     15 * time.Minute,
-			RefreshTokenTTL:    7 * 24 * time.Hour,
 		},
 		Notification: NotificationConfig{
 			GRPCAddr: "notification:50058",
@@ -122,9 +108,6 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
-
-	cfg.JWT.AccessTokenSecret = getEnvAny(cfg.JWT.AccessTokenSecret, "APP_JWT_ACCESS_TOKEN_SECRET", "AUTH_JWT_ACCESS_TOKEN_SECRET")
-	cfg.JWT.RefreshTokenSecret = getEnvAny(cfg.JWT.RefreshTokenSecret, "APP_JWT_REFRESH_TOKEN_SECRET", "AUTH_JWT_REFRESH_TOKEN_SECRET")
 
 	cfg.Notification.GRPCAddr = getEnvAny(cfg.Notification.GRPCAddr, "NOTIFICATION_GRPC_ADDR")
 }

@@ -258,7 +258,7 @@ func (app *App) RunServer() {
 
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(s, healthServer)
-	healthServer.SetServingStatus("restaurant", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	slog.Info("health check registered for service", "service", "restaurant")
 
 	slog.Info("server running", "addr", addr)

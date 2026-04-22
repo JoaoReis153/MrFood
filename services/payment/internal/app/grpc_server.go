@@ -61,7 +61,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	})
 	healthServer := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(s, healthServer)
-	healthServer.SetServingStatus("payment", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	slog.Info("health check registered for service", "service", "payment")
 
 	slog.Info("gRPC server listening", "port", cfg.Server.Port)
@@ -78,7 +78,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	g.Go(func() error {
 		<-ctx.Done()
 		slog.Info("shutting down gRPC server...")
-		healthServer.SetServingStatus("payment", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
+		healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 		s.GracefulStop()
 		healthServer.Shutdown()
 		return nil

@@ -7,17 +7,15 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/restaurants/compare"
+  url: "{{baseUrl}}/restaurants/1"
   body:
     type: json
     data: |-
       {
-        "restaurant_id_1": 5,
-        "restaurant_id_2": 4
       }
   auth:
     type: bearer
-    token: {{token}}
+    token: "{{token}}"
 
 settings:
   encodeUrl: true
