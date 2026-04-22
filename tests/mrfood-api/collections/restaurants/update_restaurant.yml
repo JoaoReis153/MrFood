@@ -7,20 +7,17 @@ info:
 
 http:
   method: PUT
-  url: "{{baseUrl}}/restaurants/update"
+  url: "{{baseUrl}}/restaurants/1"
   body:
     type: json
     data: |-
       {
-        "id": 5,
         "name": "MrFood",
         "latitude": 289.41019114077517,
         "longitude": 231.24068483866333,
         "address": "derelinquo",
-        "working_hours": [
-          "2026-03-27T09:00:00Z",
-          "2026-03-27T18:00:00Z"
-        ],
+        "opening_time": "10:00:00",
+        "closing_time": "12:00:00",
         "categories": [
           "viscus",
           "viscus"
@@ -29,6 +26,7 @@ http:
       }
   auth:
     type: bearer
+    token: "{{token}}"
 
 settings:
   encodeUrl: true

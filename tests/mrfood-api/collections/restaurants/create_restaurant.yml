@@ -7,30 +7,27 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/restaurants/create"
+  url: "{{baseUrl}}/restaurants"
   body:
     type: json
-    data: |
+    data: |-
       {
-        "name": "new restaurant",
-        "latitude": 41.1579,
-        "longitude": -8.6291,
-        "address": "sono",
-        "working_hours": [
-          "2026-03-27T09:00:00Z",
-          "2026-03-27T18:00:00Z"
-        ],
+        "name": "demolicao",
+        "latitude": 56.64874557659272,
+        "longitude": 40.059817033302636,
+        "address": "charisma",
+        "opening_time": "10:00:00",
+        "closing_time": "12:00:00",
         "categories": [
-          "brevis",
-          "brevis"
+          "civitas",
+          "civitas1"
         ],
-        "max_slots": 132,
+        "max_slots": 26,
         "has_media": true
       }
   auth:
     type: bearer
-    token: {{token}}
-
+    token: "{{token}}"
 
 settings:
   encodeUrl: true

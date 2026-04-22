@@ -1,7 +1,7 @@
 name: development
 variables:
   - name: baseUrl
-    value: http://localhost:8000
+    value: http://34.175.210.67:80
   - secret: true
     name: token
   - secret: true
