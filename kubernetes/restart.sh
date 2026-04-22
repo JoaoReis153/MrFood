@@ -49,10 +49,10 @@ for values_file in "${value_files[@]}"; do
 
   if [[ "$service" == "gateway" ]]; then
     echo "[${service}] Installing release with helm/kong and values/$(basename "$values_file")..."
-    helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE"
+    helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace
   else
     echo "[${service}] Installing release with values/$(basename "$values_file")..."
-    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE"
+    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace
   fi
 
 done
