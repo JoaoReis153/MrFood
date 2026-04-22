@@ -45,6 +45,18 @@ spec:
           - name: kong-protos
             mountPath: /etc/kong/proto
 
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 10
+
       volumes:
       - name: kong-config
         configMap:
@@ -52,15 +64,8 @@ spec:
       - name: kong-protos
         configMap:
           name: kong-protos
-
-      livenessProbe:
-        httpGet:
-          path: /status
-          port: 8001
-        initialDelaySeconds: 10
-
-      readinessProbe:
-        httpGet:
-          path: /status
-          port: 8001
-        initialDelaySeconds: 10
+          items:
+{{- range $path, $bytes := .Files.Glob "files/proto/**" }}
+          - key: {{ trimPrefix "files/proto/" $path | replace "/" "_" }}
+            path: {{ trimPrefix "files/proto/" $path }}
+{{- end }}
