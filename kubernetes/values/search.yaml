@@ -1,5 +1,5 @@
 name: search
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/search:v1.0.0
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/search:v1.0.1
 port: 50056
 
 service:

@@ -1,5 +1,5 @@
 name: auth
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/auth:v1.0.0
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/auth:v1.0.1
 port: 50051
 
 service:
