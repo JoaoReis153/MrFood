@@ -22,14 +22,22 @@ spec:
           - containerPort: 8001   # admin
 
           env:
-          - name: KONG_DATABASE
-            value: "off"
-          - name: KONG_DECLARATIVE_CONFIG
-            value: /kong/declarative/kong.yml
-          - name: KONG_PROXY_ACCESS_LOG
-            value: /dev/stdout
-          - name: KONG_ADMIN_LISTEN
-            value: "0.0.0.0:8001"
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /kong/declarative/kong.yml
+            - name: KONG_PROXY_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_PROXY_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_ADMIN_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_LOG_LEVEL
+              value: debug
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001"
 
           volumeMounts:
           - name: kong-config
