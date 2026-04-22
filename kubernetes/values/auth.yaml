@@ -25,7 +25,7 @@ env:
     REDIS_HOST: 10.89.138.75
     REDIS_DB: 0
     APP_LOG_LEVEL: debug
-    AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:50058"
+    AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:80"
 
 cloudsql:
   instance: mrfood-490623:europe-southwest1:mrfood-auth-pg
