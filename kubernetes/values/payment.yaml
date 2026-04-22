@@ -22,4 +22,4 @@ env:
     NOTIFICATION_GRPC_ADDR: "notification:50058"
 
 cloudsql:
-  instance: mrfood-payment-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-payment-pg

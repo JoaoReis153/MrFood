@@ -18,4 +18,4 @@ env:
     REVIEW_GRPC_ADDR: "review:50055"
 
 cloudsql:
-  instance: mrfood-restaurant-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-restaurant-pg

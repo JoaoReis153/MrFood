@@ -19,4 +19,4 @@ env:
     PAYMENT_GRPC_ADDR: "payment:50057"
 
 cloudsql:
-  instance: mrfood-booking-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-booking-pg

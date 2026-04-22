@@ -18,4 +18,4 @@ env:
     SMTP_PORT: 587
 
 cloudsql:
-  instance: mrfood-notification-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-notification-pg
