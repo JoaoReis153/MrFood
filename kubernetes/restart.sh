@@ -39,6 +39,11 @@ fi
 for values_file in "${value_files[@]}"; do
   service="$(basename "$values_file" .yaml)"
 
+  if [[ "$service" == "cdc" || "$service" == "search" ]]; then
+    echo "[${service}] Skipping service as requested."
+    continue
+  fi
+
   echo "[${service}] Uninstalling release from namespace ${NAMESPACE}..."
   helm uninstall "$service" -n "$NAMESPACE" >/dev/null 2>&1 || true
 
