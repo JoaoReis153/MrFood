@@ -7,12 +7,12 @@ service:
 
 env:
   secrets:
-    DB_PASS: sponsorsecret
+    DB_PASS: mrfood_sponsor_secret
   config:
     APP_SERVER_PORT: 50054
-    SPONSOR_DB_PORT: 5435
+    SPONSOR_DB_PORT: 5432
     DB_NAME: mrfood_sponsor
-    DB_USER: sponsor
+    DB_USER: mrfood_sponsor_user
     DB_HOST: 127.0.0.1
     APP_LOG_LEVEL: debug
     RESTAURANT_GRPC_ADDR: "restaurant:50052"

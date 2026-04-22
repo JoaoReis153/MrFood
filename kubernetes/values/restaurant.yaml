@@ -7,12 +7,12 @@ service:
 
 env:
   secrets:
-    POSTGRES_PASSWORD: restaurantsecret
+    POSTGRES_PASSWORD: mrfood_restaurant_secret
   config:
     APP_SERVER_PORT: 50052
-    RESTAURANT_DB_PORT: 5433
+    RESTAURANT_DB_PORT: 5432
     POSTGRES_DB: mrfood_restaurant
-    POSTGRES_USER: restaurant
+    POSTGRES_USER: mrfood_restaurant_user
     POSTGRES_HOST: 127.0.0.1
     APP_LOG_LEVEL: debug
     REVIEW_GRPC_ADDR: "review:50055"

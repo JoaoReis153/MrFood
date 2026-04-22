@@ -7,12 +7,12 @@ service:
 
 env:
   secrets:
-    POSTGRES_PASSWORD: paymentsecret
+    POSTGRES_PASSWORD: mrfood_payment_secret
   config:
     APP_SERVER_PORT: 50057
-    PAYMENT_POSTGRES_PORT: 5438
+    PAYMENT_POSTGRES_PORT: 5432
     POSTGRES_DB: mrfood_payment
-    POSTGRES_USER: payment
+    POSTGRES_USER: mrfood_payment_user
     POSTGRES_HOST: 127.0.0.1
     DB_MIN_CONNS: 4
     DB_MAX_CONNS: 20
