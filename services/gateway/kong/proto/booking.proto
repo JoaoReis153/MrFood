@@ -6,42 +6,19 @@ package proto;
 
 option go_package = "/pb;pb";
 
-
 service BookingService {
-  rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse);
-  rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse);
-}
-
-service RestaurantToBookingService {
-  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
-}
-
-service PaymentCommandService {
-  rpc MakePayment (PaymentRequest) returns (PaymentResponse);
-}
-
-message PaymentRequest {
-  int64 user_id = 1;
-  float amount = 2;
-  string user_email = 3;
-  string idempotency_key = 4;
-  string payment_description = 5;
-  string type = 6;
-}
-
-message PaymentResponse {
-  int32 receipt_id = 1;
-}
-
-message WorkingHoursRequest {
-  int64 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
-}
-
-message WorkingHoursResponse {
-  int64 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
-  google.protobuf.Timestamp time_end = 3;
+  rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse) {
+    option (google.api.http) = {
+      post: "/reservations"
+      body: "*"
+    };
+  };
+  rpc DeleteBooking (DeleteBookingRequest) returns (DeleteBookingResponse){
+    option (google.api.http) = {
+      delete: "/reservations/{booking_id}"
+      body: "*"
+    };
+  };
 }
 
 message CreateBookingRequest {
@@ -60,3 +37,9 @@ message DeleteBookingRequest {
 }
 
 message DeleteBookingResponse {}
+
+message PaymentResponse {
+  int32 receipt_id = 1;
+}
+
+

@@ -3,7 +3,7 @@ _format_version: "3.0"
 services:
 - name: auth
   host: auth
-  port: 80
+  port: 50051
   protocol: grpc
 
   routes:
@@ -22,7 +22,7 @@ services:
 
 - name: restaurant
   host: restaurant
-  port: 80
+  port: 50052
   protocol: grpc
   routes:
   - name: restaurant
@@ -43,7 +43,7 @@ services:
 
 - name: booking
   host: booking
-  port: 80
+  port: 50053
   protocol: grpc
   routes:
   - name: booking
@@ -64,7 +64,7 @@ services:
 
 - name: review
   host: review
-  port: 80
+  port: 50055
   protocol: grpc
   routes:
   - name: review
@@ -85,7 +85,7 @@ services:
 
 - name: sponsor
   host: sponsor
-  port: 80
+  port: 50054
   protocol: grpc
   routes:
   - name: sponsor
@@ -106,7 +106,7 @@ services:
 
 - name: payment
   host: payment
-  port: 80
+  port: 50057
   protocol: grpc
   routes:
   - name: payment
@@ -127,7 +127,7 @@ services:
   
 - name: search
   host: search
-  port: 80
+  port: 50051
   protocol: grpc
   routes:
   - name: search

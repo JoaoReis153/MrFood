@@ -4,20 +4,44 @@ package proto;
 
 option go_package = "/pb;pb";
 
+import "google/api/annotations.proto";
+
 service AuthService {
-  rpc PingPong (Ping) returns (Pong);
-  rpc RegisterProcess (Register) returns (RegisterResponse);
-  rpc LoginProcess (Login) returns (LoginResponse);
-  rpc RefreshTokenProcess (RefreshRequest) returns (RefreshResponse);
-  rpc LogoutProcess (LogoutRequest) returns (LogoutResponse);
-}
+  
+  rpc PingPong (Ping) returns (Pong) {
+    option (google.api.http) = {
+      get: "/auth/ping/{id}"
+    };
+  }
 
-service AuthToNotificationService {
-  rpc SendRegistrationEmail (SendRegistrationEmailRequest) returns (SendRegistrationEmailResponse);
-}
+  rpc RegisterProcess (Register) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/auth/register"
+      body: "*"
+    };
+  }
 
-//Important repeated = all data comes back in one response
-//Important stream = data comes back in multiple responses, one at a time
+  rpc LoginProcess (Login) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/auth/login"
+      body: "*"
+    };
+  }
+
+  rpc RefreshTokenProcess (RefreshRequest) returns (RefreshResponse) {
+    option (google.api.http) = {
+      post: "/auth/refresh"
+      body: "*"
+    };
+  };
+  rpc LogoutProcess (LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/auth/logout"
+      body: "*"
+    };
+  };
+
+}
 
 message Ping {
   int32 id = 1;
@@ -43,7 +67,6 @@ message Login {
   string password = 2;
 }
 
-
 message LoginResponse {
   string access_token = 1;
   string refresh_token = 2;
@@ -66,14 +89,11 @@ message LogoutRequest {
 message LogoutResponse {
 }
 
+
 message User {
-  int64 id = 1;
+  int32 id = 1;
   string username = 2;
 }
 
-message SendRegistrationEmailRequest {
-  string email = 1;
-  string username = 2;
-}
 
-message SendRegistrationEmailResponse {}
+

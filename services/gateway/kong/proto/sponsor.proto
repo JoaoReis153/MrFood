@@ -6,29 +6,19 @@ option go_package = "/pb;pb";
 import "google/protobuf/timestamp.proto";
 
 service SponsorService {
-  rpc Sponsor (SponsorshipRequest) returns (SponsorshipResponse);
-  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse);
-}
+  rpc Sponsor (SponsorshipRequest) returns (SponsorshipResponse) {
+    option (google.api.http) = {
+      post: "/sponsor/{id}"
+      body: "*"
+    };
+  }
 
-service RestaurantToSponsorService {
-  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (GetRestaurantSponsorshipResponse);
-}
-
-service PaymentCommandService {
-  rpc MakePayment (PaymentRequest) returns (PaymentResponse);
-}
-
-message PaymentRequest {
-  int64 user_id = 1;
-  float amount = 2;
-  string user_email = 3;
-  string idempotency_key = 4;
-  string payment_description = 5;
-  string type = 6;
-}
-
-message PaymentResponse {
-  int32 receipt_id = 1;
+  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (SponsorshipResponse) {
+    option (google.api.http) = {
+      get: "/sponsor/{id}"
+      body: "*"
+    };
+  };
 }
 
 //Important repeated = all data comes back in one response

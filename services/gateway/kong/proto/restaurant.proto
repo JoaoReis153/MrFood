@@ -3,58 +3,37 @@ syntax = "proto3";
 package proto;
 
 option go_package = "/pb;pb";
-import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
 
 service RestaurantService {
-  rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse);
+  rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse){
+    option (google.api.http) = {
+      get: "/restaurants/{id}"
+    };
+  };
 
-  rpc CreateRestaurant(CreateRestaurantRequest) returns (CreateRestaurantResponse);
+  rpc CreateRestaurant(CreateRestaurantRequest) returns (CreateRestaurantResponse){
+    option (google.api.http) = {
+      post: "/restaurants"
+      body: "*"
+    };
+  };
 
-  rpc UpdateRestaurant(UpdateRestaurantRequest) returns (UpdateRestaurantResponse);
+  rpc UpdateRestaurant(UpdateRestaurantRequest) returns (UpdateRestaurantResponse){
+    option (google.api.http) = {
+      put: "/restaurants/{id}"
+      body: "*"
+    };
+  };
 
-  rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse);
-}
 
-service RestaurantToBookingService {
-  rpc GetWorkingHours (WorkingHoursRequest) returns (WorkingHoursResponse);
-}
+  rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse){
+    option (google.api.http) = {
+      get: "/restaurants/compare"
+      body: "*"
+    };
+  };
 
-service RestaurantToReviewService {
-  rpc GetRestaurantStats (GetRestaurantStatsRequest) returns (GetRestaurantStatsResponse);
-}
-
-service ReviewToRestaurantService {
-  rpc GetRestaurantId(GetRestaurantRequest) returns (GetRestaurantResponse);
-}
-
-service RestaurantToSponsorService {
-  rpc GetRestaurantSponsorship(GetRestaurantSponsorshipRequest) returns (GetRestaurantSponsorshipResponse);
-}
-
-message RestaurantStats {
-  int64 restaurant_id = 1;
-  double average_rating = 2;
-  int32 review_count = 3;
-}
-
-message GetRestaurantStatsRequest {
-  int64 restaurant_id = 1;
-}
-
-message GetRestaurantStatsResponse {
-  RestaurantStats restaurant_stats = 1;
-}
-
-message WorkingHoursRequest {
-  int64 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
-}
-
-message WorkingHoursResponse {
-  int64 restaurant_id = 1;
-  google.protobuf.Timestamp time_start = 2;
-  google.protobuf.Timestamp time_end = 3;
-  int32 max_slots = 4;
 }
 
 message GetRestaurantDetailsRequest {
@@ -77,9 +56,10 @@ message CreateRestaurantRequest {
   bool has_media = 9;
 }
 
+
 message CreateRestaurantResponse {
   int64 restaurant_id = 1;
-  optional string presigned_url = 2;
+  string presigned_url = 2;
 }
 
 message UpdateRestaurantRequest {
@@ -107,7 +87,7 @@ message RestaurantDetails {
   string opening_time = 6;
   string closing_time = 7;
   repeated string categories = 8;
-  optional string media_url = 9;
+  string media_url = 9;
   int32 max_slots = 10;
   int64 owner_id = 11;
   string owner_name = 12;
@@ -117,6 +97,7 @@ message RestaurantDetails {
 
 }
 
+
 message CompareRestaurantDetailsRequest {
   int64 restaurant_id_1 = 1;
   int64 restaurant_id_2 = 2;
@@ -125,22 +106,4 @@ message CompareRestaurantDetailsRequest {
 message CompareRestaurantDetailsResponse {
   RestaurantDetails restaurant1 = 1;
   RestaurantDetails restaurant2 = 2;
-}
-
-message GetRestaurantRequest {
-  int64 restaurant_id = 1;
-}
-
-message GetRestaurantResponse {
-  int64 restaurant_id = 1;
-}
-
-message GetRestaurantSponsorshipRequest {
-  int64 id = 1;
-}
-
-message GetRestaurantSponsorshipResponse {
-  int64 id = 1;
-  repeated string categories = 2;
-  int64 owner_id = 3;
 }

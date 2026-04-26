@@ -5,31 +5,20 @@ import "google/protobuf/timestamp.proto";
 package proto;
 
 option go_package = "/pb;pb";
-
-service PaymentCommandService {
-  rpc MakePayment (PaymentRequest) returns (PaymentResponse);
-}
-
+ 
 service PaymentQueryService {
-  rpc GetReceiptById (ReceiptRequest) returns (GetReceiptResponse);
-  rpc GetReceiptsByUser (ReceiptRequest) returns (GetReceiptResponse);
-}
-
-service PaymentToNotificationService {
-  rpc SendReceipts (SendReceiptsRequest) returns (SendReceiptsResponse);
-}
-
-message PaymentRequest {
-  int64 user_id = 1;
-  float amount = 2;
-  string user_email = 3;
-  string idempotency_key = 4;
-  string payment_description = 5;
-  string type = 6;
-}
-
-message PaymentResponse {
-  int32 receipt_id = 1;
+  rpc GetReceiptById (ReceiptRequest) returns (GetReceiptResponse){
+    option (google.api.http) = {
+      get: "/payment/{receipt_id}"
+      body: "*"
+    };
+  };
+  rpc GetReceiptsByUser (ReceiptRequest) returns (GetReceiptResponse){
+    option (google.api.http) = {
+      get: "/payment"
+      body: "*"
+    };
+  };
 }
 
 message ReceiptRequest {
@@ -37,18 +26,3 @@ message ReceiptRequest {
 }
 
 message GetReceiptResponse {}
-
-message SendReceiptsRequest {
-  repeated Receipt receipts = 1;
-  string user_email = 2;
-}
-
-message SendReceiptsResponse {}
-
-message Receipt {
-  double amount = 1;
-  string payment_description = 2;
-  string current_payment_status = 3;
-  string payment_type = 4;
-  google.protobuf.Timestamp created_at = 5;
-}
