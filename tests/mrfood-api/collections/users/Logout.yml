@@ -1,17 +1,64 @@
 info:
-  name: Logout
-  type: grpc
-  seq: 5
+  name: Logout user
+  type: http
+  seq: 3
+  tags:
+    - Users
 
-grpc:
-  url: localhost:50051
-  method: /proto.AuthService/RefreshTokenProcess
-  methodType: unary
-  protoFilePath: ../../../../services/auth/internal/api/grpc/proto/protofile.proto
-  message: |
-    {
-      "username": "banana",
-      "email": "banana@gmail.com",
-      "password": "bananapass"
-    }
-  auth: inherit
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/logout"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+scripts:
+  - type: after-response
+    code: |-
+      if (res.status >= 200 && res.status < 300) {
+        bru.setEnvVar("token", "", { persist: true });
+        bru.setEnvVar("refreshToken", "", { persist: true });
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: User logged out successfully
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "message": "Logged out successfully"
+          }
+  - name: 401 Response
+    description: Unauthorized (invalid or missing token)
+    request:
+      url: "{{baseUrl}}/auth/logout"
+      method: POST
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }
