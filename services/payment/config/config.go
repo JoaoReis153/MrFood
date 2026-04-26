@@ -95,12 +95,12 @@ func Load(_ context.Context) (*Config, error) {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
+	cfg.Server.Port = getEnvInt("PAYMENT_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
 	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST", "POSTGRES_HOST")
-	cfg.DB.Name = getEnvAny(cfg.DB.Name, "DB_NAME", "POSTGRES_DB")
-	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER", "DB_USER")
+	cfg.DB.Name = getEnv("PAYMENT_POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("PAYMENT_POSTGRES_USER", cfg.DB.User)
 	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD", "DB_PASS")
 	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
 	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)

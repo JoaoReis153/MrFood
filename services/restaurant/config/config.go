@@ -87,12 +87,12 @@ func Load(ctx context.Context) *Config {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
+	cfg.Server.Port = getEnvInt("RESTAURANT_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
 
 	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
-	cfg.DB.Name = getEnv("POSTGRES_DB", cfg.DB.Name)
-	cfg.DB.User = getEnv("POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Name = getEnv("RESTAURANT_POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("RESTAURANT_POSTGRES_USER", cfg.DB.User)
 	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 	cfg.Review.GRPCAddr = getEnv("REVIEW_GRPC_ADDR", cfg.Review.GRPCAddr)

@@ -8,13 +8,12 @@ services:
     build: ./search/
     <<: *common
     ports:
-      - "50056:50051"
+      - "50056:50056"
     env_file:
       - ./config.env
       - .env            # shared secrets: AUTH_JWT_*
       - ./search/.env   # ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD
     environment:
-      APP_SERVER_PORT: 50051
       APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
       APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
     depends_on:

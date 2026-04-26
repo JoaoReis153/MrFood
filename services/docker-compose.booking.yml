@@ -18,11 +18,6 @@ services:
       - ./booking/.env   # BOOKING_POSTGRES_PASSWORD, DB_PASS
     environment:
       DB_HOST: booking_db
-      DB_NAME: mrfood_booking
-      DB_USER: booking
-      POSTGRES_DB: mrfood_booking
-      POSTGRES_USER: booking
-      APP_SERVER_PORT: 50053
     depends_on:
       booking_db:
         condition: service_healthy
@@ -39,8 +34,8 @@ services:
     env_file:
       - ./booking/.env   # POSTGRES_PASSWORD
     environment:
-      POSTGRES_DB: mrfood_booking
-      POSTGRES_USER: booking
+      POSTGRES_DB: ${BOOKING_POSTGRES_DB}
+      POSTGRES_USER: ${BOOKING_POSTGRES_USER}
     healthcheck:
       <<: *pg-healthcheck
 

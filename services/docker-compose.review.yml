@@ -18,9 +18,6 @@ services:
       - ./review/.env   # REVIEW_POSTGRES_PASSWORD
     environment:
       POSTGRES_HOST: review_db
-      POSTGRES_DB: mrfood_review
-      POSTGRES_USER: review
-      APP_SERVER_PORT: 50055
     depends_on:
       review_db:
         condition: service_healthy
@@ -35,8 +32,8 @@ services:
     env_file:
       - ./review/.env   # POSTGRES_PASSWORD
     environment:
-      POSTGRES_DB: mrfood_review
-      POSTGRES_USER: review
+      POSTGRES_DB: ${REVIEW_POSTGRES_DB}
+      POSTGRES_USER: ${REVIEW_POSTGRES_USER}
     healthcheck:
       <<: *pg-healthcheck
 

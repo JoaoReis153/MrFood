@@ -18,11 +18,6 @@ services:
       - ./sponsor/.env   # SPONSOR_POSTGRES_PASSWORD, DB_PASS
     environment:
       DB_HOST: sponsor_db
-      DB_NAME: mrfood_sponsor
-      DB_USER: sponsor
-      POSTGRES_DB: mrfood_sponsor
-      POSTGRES_USER: sponsor
-      APP_SERVER_PORT: 50054
     depends_on:
       sponsor_db:
         condition: service_healthy
@@ -39,8 +34,8 @@ services:
     env_file:
       - ./sponsor/.env   # POSTGRES_PASSWORD
     environment:
-      POSTGRES_DB: mrfood_sponsor
-      POSTGRES_USER: sponsor
+      POSTGRES_DB: ${SPONSOR_POSTGRES_DB}
+      POSTGRES_USER: ${SPONSOR_POSTGRES_USER}
     healthcheck:
       <<: *pg-healthcheck
 

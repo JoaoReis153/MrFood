@@ -20,14 +20,11 @@ services:
     environment:
       # Container topology (service DNS names, not in config.env)
       POSTGRES_HOST: auth_db
-      POSTGRES_DB: mrfood_auth
-      POSTGRES_USER: mrfood_auth_user
       REDIS_HOST: auth_redis
       REDIS_DB: 0
       # JWT var rename (app reads APP_ prefix)
       APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
       APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
-      APP_SERVER_PORT: 50051
     depends_on:
       auth_db:
         condition: service_healthy
@@ -44,8 +41,8 @@ services:
     env_file:
       - ./auth/.env   # POSTGRES_PASSWORD
     environment:
-      POSTGRES_DB: mrfood_auth
-      POSTGRES_USER: mrfood_auth_user
+      POSTGRES_DB: ${AUTH_POSTGRES_DB}
+      POSTGRES_USER: ${AUTH_POSTGRES_USER}
     healthcheck:
       <<: *pg-healthcheck
 

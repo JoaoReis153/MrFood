@@ -18,9 +18,6 @@ services:
       - ./restaurant/.env   # RESTAURANT_POSTGRES_PASSWORD
     environment:
       POSTGRES_HOST: restaurant_db
-      POSTGRES_DB: mrfood_restaurant
-      POSTGRES_USER: restaurant
-      APP_SERVER_PORT: 50052
     depends_on:
       restaurant_db:
         condition: service_healthy
@@ -37,8 +34,8 @@ services:
     env_file:
       - ./restaurant/.env   # POSTGRES_PASSWORD
     environment:
-      POSTGRES_DB: mrfood_restaurant
-      POSTGRES_USER: restaurant
+      POSTGRES_DB: ${RESTAURANT_POSTGRES_DB}
+      POSTGRES_USER: ${RESTAURANT_POSTGRES_USER}
     healthcheck:
       <<: *pg-healthcheck
 
