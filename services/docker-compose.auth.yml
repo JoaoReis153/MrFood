@@ -3,12 +3,6 @@ x-common: &common
   networks:
     - app-network
 
-x-auth-db-config: &auth-db-config
-  POSTGRES_HOST: auth_db
-  POSTGRES_DB: ${AUTH_POSTGRES_DB}
-  POSTGRES_USER: ${AUTH_POSTGRES_USER}
-  POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
-
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   interval: 5s
@@ -19,22 +13,21 @@ services:
   auth:
     build: ./auth/
     <<: *common
+    env_file:
+      - ./config.env  # non-sensitive config (ports, DB names, addresses…)
+      - .env          # shared secrets: AUTH_JWT_*
+      - ./auth/.env   # auth secrets: AUTH_POSTGRES_PASSWORD, AUTH_REDIS_PASS
     environment:
-      # Database
-      <<: *auth-db-config
-      AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:${NOTIFICATION_SERVER_PORT}"
-      DB_MIN_CONNS: 4
-      DB_MAX_CONNS: 20
-      DB_MAX_CONN_LIFETIME: 15m
-      DB_HEALTH_CHECK_PERIOD: 1m
-      # Redis
+      # Container topology (service DNS names, not in config.env)
+      POSTGRES_HOST: auth_db
+      POSTGRES_DB: mrfood_auth
+      POSTGRES_USER: mrfood_auth_user
       REDIS_HOST: auth_redis
-      REDIS_PASS: ${AUTH_REDIS_PASS}
       REDIS_DB: 0
-      # App
-      APP_LOG_LEVEL: debug
+      # JWT var rename (app reads APP_ prefix)
       APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
       APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
+      APP_SERVER_PORT: 50051
     depends_on:
       auth_db:
         condition: service_healthy
@@ -48,8 +41,11 @@ services:
     volumes:
       - auth_db_data:/var/lib/postgresql/data
       - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    env_file:
+      - ./auth/.env   # POSTGRES_PASSWORD
     environment:
-      <<: *auth-db-config
+      POSTGRES_DB: mrfood_auth
+      POSTGRES_USER: mrfood_auth_user
     healthcheck:
       <<: *pg-healthcheck
 

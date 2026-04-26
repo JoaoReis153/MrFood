@@ -3,7 +3,8 @@ PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
 TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
 
-# Load environment variables from .env file
+# Load non-sensitive config (committed) and secrets (git-ignored)
+-include services/config.env
 -include services/.env
 
 DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
@@ -18,7 +19,8 @@ help:
 	@echo "MrFood Make Commands"
 	@echo ""
 	@echo "Setup & Data:"
-	@echo "  make create_env                         - Create services/.env from template"
+	@echo "  make create_env                         - Create secret .env files from env.tmpl"
+	@echo "  (config.env is already committed — no setup needed)"
 	@echo "  make setup                              - Start services and load all data"
 	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
 	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
@@ -53,14 +55,15 @@ test-bruno:
 # ENVIRONMENT
 # ============================================================================
 
-## Create services/.env from services/env.tmpl
+## Create secret .env files from services/env.tmpl
+## config.env (non-sensitive) is already committed — no action needed for it.
 create_env:
 	@if [ -f services/.env ]; then \
 		echo "services/.env already exists. No changes made."; \
 	else \
 		cp services/env.tmpl services/.env; \
 		echo "Created services/.env from services/env.tmpl"; \
-		echo "Fill AUTH_JWT_ACCESS_TOKEN_SECRET and AUTH_JWT_REFRESH_TOKEN_SECRET in services/.env"; \
+		echo "Fill in secret values (passwords, JWT tokens) before running docker compose."; \
 	fi
 
 # ============================================================================
