@@ -59,12 +59,21 @@ test-bruno:
 ## config.env (non-sensitive) is already committed — no action needed for it.
 create_env:
 	@if [ -f services/.env ]; then \
-		echo "services/.env already exists. No changes made."; \
+		echo "services/.env already exists."; \
 	else \
 		cp services/env.tmpl services/.env; \
-		echo "Created services/.env from services/env.tmpl"; \
-		echo "Fill in secret values (passwords, JWT tokens) before running docker compose."; \
+		echo "Created services/.env"; \
 	fi
+	@for f in services/*/env.tmpl; do \
+		dir=$$(dirname "$$f"); \
+		if [ -f "$$dir/.env" ]; then \
+			echo "$$dir/.env already exists."; \
+		else \
+			cp "$$f" "$$dir/.env"; \
+			echo "Created $$dir/.env"; \
+		fi; \
+	done
+	@echo "Fill in secret values in all created .env files before running docker compose."
 
 # ============================================================================
 # DATA GENERATION
