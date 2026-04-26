@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+
+service AuthService {
+  rpc PingPong (Ping) returns (Pong);
+  rpc RegisterProcess (Register) returns (RegisterResponse);
+  rpc LoginProcess (Login) returns (LoginResponse);
+  rpc RefreshTokenProcess (RefreshRequest) returns (RefreshResponse);
+  rpc LogoutProcess (LogoutRequest) returns (LogoutResponse);
+}
+
+service AuthToNotificationService {
+  rpc SendRegistrationEmail (SendRegistrationEmailRequest) returns (SendRegistrationEmailResponse);
+}
+
+//Important repeated = all data comes back in one response
+//Important stream = data comes back in multiple responses, one at a time
+
+message Ping {
+  int32 id = 1;
+}
+
+message Pong {
+  int32 id = 1;
+}
+
+message Register {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  int64 id = 1;
+  string username = 2;
+}
+
+message Login {
+  string email = 1;
+  string password = 2;
+}
+
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  User user = 3;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string token = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {
+}
+
+message User {
+  int64 id = 1;
+  string username = 2;
+}
+
+message SendRegistrationEmailRequest {
+  string email = 1;
+  string username = 2;
+}
+
+message SendRegistrationEmailResponse {}
