@@ -7,7 +7,7 @@ TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restauran
 -include services/config.env
 -include services/.env
 
-DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
+DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file services/config.env
 PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,python3)
 CSV_SERVICES ?= all
 CSV_ROWS ?= 200
