@@ -5,6 +5,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONNECT_URL="${CONNECT_URL:-http://localhost:8083}"
 CONNECT_TIMEOUT_SECONDS="${CONNECT_TIMEOUT_SECONDS:-120}"
 
+# Load config.env from project root (adjust path if needed)
+CONFIG_FILE="${SCRIPT_DIR}/../config.env"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  set -a  
+  source "$CONFIG_FILE"
+  set +a
+else
+  echo "config.env not found at $CONFIG_FILE" >&2
+  exit 1
+fi
+
 wait_for_connect() {
   local deadline=$((SECONDS + CONNECT_TIMEOUT_SECONDS))
   echo "Waiting for Kafka Connect at $CONNECT_URL ..."
