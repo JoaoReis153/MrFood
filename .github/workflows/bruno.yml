@@ -36,75 +36,38 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Create services/.env
+      - name: Create environment files
         run: |
+          # 1. Create all .env files from templates
+          make create_env
+          
+          # 2. Populate shared secrets (JWT)
           cat > services/.env <<'EOF'
-          AUTH_SERVER_PORT=50051
-          AUTH_POSTGRES_PORT=5432
-          AUTH_POSTGRES_DB=mrfood_auth
-          AUTH_REDIS_PORT=6379
-          AUTH_POSTGRES_USER=mrfood_auth_user
-          AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
-          AUTH_REDIS_PASS=
           AUTH_JWT_ACCESS_TOKEN_SECRET=test-access-secret-for-ci-0123456789
           AUTH_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci-0123456789
+          EOF
 
-          RESTAURANT_SERVER_PORT=50052
-          RESTAURANT_POSTGRES_PORT=5433
-          RESTAURANT_POSTGRES_DB=mrfood_restaurant
-          RESTAURANT_POSTGRES_USER=restaurant
-          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
-
-          REVIEW_SERVER_PORT=50055
-          REVIEW_POSTGRES_PORT=5436
-          REVIEW_POSTGRES_DB=mrfood_review
-          REVIEW_POSTGRES_USER=review
-          REVIEW_POSTGRES_PASSWORD=reviewsecret
-
-          BOOKING_SERVER_PORT=50053
-          BOOKING_DB_PORT=5434
-          BOOKING_POSTGRES_DB=mrfood_booking
-          BOOKING_POSTGRES_USER=booking
-          BOOKING_POSTGRES_PASSWORD=bookingsecret
-
-          SPONSOR_SERVER_PORT=50054
-          SPONSOR_POSTGRES_PORT=5435
-          SPONSOR_POSTGRES_DB=mrfood_sponsor
-          SPONSOR_POSTGRES_USER=sponsor
-          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
-          SPONSOR_DB_PORT=5435
-
-          SEARCH_SERVER_PORT=50056
-          ELASTICSEARCH_HOST=localhost
-          ELASTICSEARCH_PORT=9200
-          ELASTICSEARCH_INDEX=restaurants
-          ELASTICSEARCH_USERNAME= #optional
-          ELASTICSEARCH_PASSWORD= #optional
-
-          CDC_RESTAURANT_DB=mrfood_restaurant
-          CDC_RESTAURANT_USER=restaurant
-          CDC_RESTAURANT_PASSWORD=restaurantsecret
-          CDC_RESTAURANT_DB_PORT=5434
-          CDC_ELASTIC_PORT=9200
-          CDC_CONNECT_PORT=8083
-          CDC_KAFKA_PORT=9092
-
-          PAYMENT_SERVER_PORT=50057
-          PAYMENT_POSTGRES_PORT=5437
-          PAYMENT_POSTGRES_DB=mrfood_payment
-          PAYMENT_POSTGRES_USER=payment
-          PAYMENT_POSTGRES_PASSWORD=paymentsecret
-
-          NOTIFICATION_SERVER_PORT=50058
-
-          NOTIFICATION_SMTP_USER=mrfood.api@gmail.com
-          NOTIFICATION_SMTP_PASSWORD=wpbp rgwe hplj smzy
-          NOTIFICATION_SMTP_FROM=mrfood.api@gmail.com
+          # 3. Populate per-service secrets (passwords)
+          # These match the values used in previous CI runs and tests
+          echo "POSTGRES_PASSWORD=mrfood_auth_secret" > services/auth/.env
+          echo "POSTGRES_PASSWORD=restaurantsecret" > services/restaurant/.env
+          echo "POSTGRES_PASSWORD=bookingsecret" > services/booking/.env
+          echo "DB_PASS=bookingsecret" >> services/booking/.env
+          echo "POSTGRES_PASSWORD=reviewsecret" > services/review/.env
+          echo "POSTGRES_PASSWORD=sponsorsecret" > services/sponsor/.env
+          echo "DB_PASS=sponsorsecret" >> services/sponsor/.env
+          echo "POSTGRES_PASSWORD=paymentsecret" > services/payment/.env
+          echo "CDC_RESTAURANT_PASSWORD=restaurantsecret" > services/cdc/.env
+          
+          # Notification secrets
+          cat > services/notification/.env <<'EOF'
+          SMTP_USER=mrfood.api@gmail.com
+          SMTP_PASSWORD=wpbp rgwe hplj smzy
+          SMTP_FROM=mrfood.api@gmail.com
           EOF
 
       - name: Start services
-        working-directory: services
-        run: docker compose up -d --build
+        run: make build run
 
       - name: Wait for API gateway
         run: |
@@ -126,11 +89,11 @@ jobs:
 
             if [ $((i % 10)) -eq 0 ]; then
               echo "--- docker compose ps ---"
-              docker compose -f services/docker-compose.yml ps || true
+              docker compose -f services/docker-compose.yml --env-file services/config.env ps || true
               echo "--- auth logs (tail) ---"
-              docker compose -f services/docker-compose.yml logs --tail=80 auth || true
+              docker compose -f services/docker-compose.yml --env-file services/config.env logs --tail=80 auth || true
               echo "--- kong logs (tail) ---"
-              docker compose -f services/docker-compose.yml logs --tail=80 kong || true
+              docker compose -f services/docker-compose.yml --env-file services/config.env logs --tail=80 kong || true
             fi
 
             sleep 5
@@ -141,9 +104,7 @@ jobs:
             echo "--- gateway ping response body ---"
             cat /tmp/gateway-auth-ping-body.txt || true
             echo "--- docker compose ps ---"
-            docker compose -f services/docker-compose.yml ps || true
-            echo "--- full service logs (tail) ---"
-            docker compose -f services/docker-compose.yml logs --tail=300 || true
+            make logs-dump
             exit 1
           fi
 
@@ -162,9 +123,8 @@ jobs:
 
       - name: Dump service logs on failure
         if: failure()
-        run: docker compose -f services/docker-compose.yml logs --tail=300
+        run: make logs-dump
 
       - name: Stop services
         if: always()
-        working-directory: services
-        run: docker compose down -v
+        run: make down-volumes
