@@ -160,26 +160,6 @@ func getEnvInt(key string, defaultValue int) int {
 	return defaultValue
 }
 
-func getEnvAny(defaultValue string, keys ...string) string {
-	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
-			return value
-		}
-	}
-	return defaultValue
-}
-
-func getEnvIntAny(defaultValue int, keys ...string) int {
-	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
-			if intVal, err := strconv.Atoi(value); err == nil {
-				return intVal
-			}
-		}
-	}
-	return defaultValue
-}
-
 func parseDuration(s string) time.Duration {
 	// Support "30s", "30", "30s" etc.
 	s = strings.TrimSuffix(s, "s")
