@@ -109,7 +109,11 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("REVIEW_POSTGRES_DB", cfg.DB.Name)
 	cfg.DB.User = getEnv("REVIEW_POSTGRES_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.Password = getEnv("REVIEW_POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.MinConns = int32(getEnvInt("POSTGRES_MIN_CONNS", int(cfg.DB.MinConns)))
+	cfg.DB.MaxConns = int32(getEnvInt("POSTGRES_MAX_CONNS", int(cfg.DB.MaxConns)))
+	cfg.DB.MaxConnLifetime = parseDuration(getEnv("POSTGRES_MAX_CONN_LIFETIME", "15m"))
+	cfg.DB.HealthCheckPeriod = parseDuration(getEnv("POSTGRES_HEALTH_CHECK_PERIOD", "1m"))
 }
 
 func validateConfig(cfg *Config) error {

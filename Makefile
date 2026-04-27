@@ -7,7 +7,12 @@ TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restauran
 -include services/config.env
 -include services/.env
 
-DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) --env-file services/config.env
+# Load all .env files (shared and per-service) for docker compose interpolation
+ENV_FILES := --env-file services/config.env
+ENV_FILES += $(if $(wildcard services/.env),--env-file services/.env,)
+ENV_FILES += $(foreach env,$(wildcard services/*/.env),--env-file $(env))
+
+DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) $(ENV_FILES)
 PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,python3)
 CSV_SERVICES ?= all
 CSV_ROWS ?= 200

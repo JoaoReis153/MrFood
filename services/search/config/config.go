@@ -120,8 +120,6 @@ func Load(_ context.Context) (*Config, error) {
 
 	slog.Info("config loaded",
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
-		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
-		slog.String("redis", fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)),
 		slog.String("elastic", fmt.Sprintf("%s:%d/%s", cfg.Elastic.Host, cfg.Elastic.Port, cfg.Elastic.Index)),
 		slog.String("log_level", cfg.Log.Level),
 	)
@@ -134,31 +132,31 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("SEARCH_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST")
+	cfg.DB.Host = getEnv(cfg.DB.Host, "POSTGRES_HOST")
 	cfg.DB.Port = getEnvIntAny(cfg.DB.Port, "DB_PORT")
-	cfg.DB.Name = getEnvAny(cfg.DB.Name, "DB_NAME", "POSTGRES_DB")
-	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER", "DB_USER")
-	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD", "DB_PASS")
+	cfg.DB.Name = getEnv(cfg.DB.Name, "REVIEW_POSTGRES_DB")
+	cfg.DB.User = getEnv(cfg.DB.User, "REVIEW_POSTGRES_USER")
+	cfg.DB.Password = getEnv(cfg.DB.Password, "REVIEW_POSTGRES_PASSWORD")
 	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
 	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
 	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
-	cfg.Redis.Host = getEnvAny(cfg.Redis.Host, "REDIS_HOST", "AUTH_REDIS_HOST")
-	cfg.Redis.Port = getEnvIntAny(cfg.Redis.Port, "REDIS_PORT", "AUTH_REDIS_PORT")
-	cfg.Redis.Password = getEnvAny(cfg.Redis.Password, "REDIS_PASS", "AUTH_REDIS_PASS")
+	cfg.Redis.Host = getEnv(cfg.Redis.Host, "REVIEW_REDIS_HOST")
+	cfg.Redis.Port = getEnvInt("REDIS_PORT", cfg.Redis.Port)
+	cfg.Redis.Password = getEnv(cfg.Redis.Password, "REVIEW_REDIS_PASS")
 	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
-	cfg.JWT.AccessTokenSecret = getEnvAny(cfg.JWT.AccessTokenSecret, "APP_JWT_ACCESS_TOKEN_SECRET", "AUTH_JWT_ACCESS_TOKEN_SECRET")
-	cfg.JWT.RefreshTokenSecret = getEnvAny(cfg.JWT.RefreshTokenSecret, "APP_JWT_REFRESH_TOKEN_SECRET", "AUTH_JWT_REFRESH_TOKEN_SECRET")
+	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
+	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
 
-	cfg.Elastic.Host = getEnvAny(cfg.Elastic.Host, "ELASTICSEARCH_HOST", "ES_HOST")
-	cfg.Elastic.Port = getEnvIntAny(cfg.Elastic.Port, "ELASTICSEARCH_PORT", "ES_PORT")
-	cfg.Elastic.Index = getEnvAny(cfg.Elastic.Index, "ELASTICSEARCH_INDEX", "ES_INDEX")
-	cfg.Elastic.Username = getEnvAny(cfg.Elastic.Username, "ELASTICSEARCH_USERNAME", "ES_USERNAME")
-	cfg.Elastic.Password = getEnvAny(cfg.Elastic.Password, "ELASTICSEARCH_PASSWORD", "ES_PASSWORD")
+	cfg.Elastic.Host = getEnv("ELASTICSEARCH_HOST", cfg.Elastic.Host)
+	cfg.Elastic.Port = getEnvInt("ELASTICSEARCH_PORT", cfg.Elastic.Port)
+	cfg.Elastic.Index = getEnv("ELASTICSEARCH_INDEX", cfg.Elastic.Index)
+	cfg.Elastic.Username = getEnv("ELASTICSEARCH_USERNAME", cfg.Elastic.Username)
+	cfg.Elastic.Password = getEnv("ELASTICSEARCH_PASSWORD", cfg.Elastic.Password)
 }
 
 func validateConfig(cfg *Config) error {
@@ -179,15 +177,6 @@ func validateConfig(cfg *Config) error {
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
-	}
-	return defaultValue
-}
-
-func getEnvAny(defaultValue string, keys ...string) string {
-	for _, key := range keys {
-		if value := os.Getenv(key); value != "" {
-			return value
-		}
 	}
 	return defaultValue
 }

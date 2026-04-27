@@ -139,14 +139,14 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
 	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("AUTH_POSTGRES_DB", cfg.DB.Name)
 	cfg.DB.User = getEnv("AUTH_POSTGRES_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
-
-	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
-	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
-	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
-	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
+	cfg.DB.Password = getEnv("AUTH_POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.MinConns = getEnvInt32("POSTGRES_MIN_CONNS", cfg.DB.MinConns)
+	cfg.DB.MaxConns = getEnvInt32("POSTGRES_MAX_CONNS", cfg.DB.MaxConns)
+	cfg.DB.MaxConnLifetime = getEnvDuration("POSTGRES_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
+	cfg.DB.HealthCheckPeriod = getEnvDuration("POSTGRES_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
 	cfg.Redis.Port = getEnvInt("AUTH_REDIS_PORT", cfg.Redis.Port)

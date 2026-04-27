@@ -49,14 +49,12 @@ jobs:
 
           # 3. Populate per-service secrets (passwords)
           # These match the values used in previous CI runs and tests
-          echo "POSTGRES_PASSWORD=mrfood_auth_secret" > services/auth/.env
-          echo "POSTGRES_PASSWORD=restaurantsecret" > services/restaurant/.env
-          echo "POSTGRES_PASSWORD=bookingsecret" > services/booking/.env
-          echo "DB_PASS=bookingsecret" >> services/booking/.env
-          echo "POSTGRES_PASSWORD=reviewsecret" > services/review/.env
-          echo "POSTGRES_PASSWORD=sponsorsecret" > services/sponsor/.env
-          echo "DB_PASS=sponsorsecret" >> services/sponsor/.env
-          echo "POSTGRES_PASSWORD=paymentsecret" > services/payment/.env
+          echo "AUTH_POSTGRES_PASSWORD=mrfood_auth_secret" > services/auth/.env
+          echo "RESTAURANT_POSTGRES_PASSWORD=restaurantsecret" > services/restaurant/.env
+          echo "BOOKING_POSTGRES_PASSWORD=bookingsecret" > services/booking/.env
+          echo "REVIEW_POSTGRES_PASSWORD=reviewsecret" > services/review/.env
+          echo "SPONSOR_POSTGRES_PASSWORD=sponsorsecret" > services/sponsor/.env
+          echo "PAYMENT_POSTGRES_PASSWORD=paymentsecret" > services/payment/.env
           echo "CDC_RESTAURANT_PASSWORD=restaurantsecret" > services/cdc/.env
           
           # Notification secrets

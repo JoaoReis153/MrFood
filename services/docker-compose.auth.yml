@@ -43,6 +43,7 @@ services:
     environment:
       POSTGRES_DB: ${AUTH_POSTGRES_DB}
       POSTGRES_USER: ${AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
 

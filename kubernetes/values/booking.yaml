@@ -7,13 +7,17 @@ service:
 
 env:
   secrets:
-    DB_PASS: mrfood_booking_secret
+    BOOKING_POSTGRES_PASSWORD: mrfood_booking_secret
   config:
-    APP_SERVER_PORT: 50053
-    DB_NAME: mrfood_booking
-    DB_USER: mrfood_booking_user
-    DB_HOST: 127.0.0.1
-    DB_PORT: 5432
+    BOOKING_SERVER_PORT: 50053
+    BOOKING_POSTGRES_DB: mrfood_booking
+    BOOKING_POSTGRES_USER: mrfood_booking_user
+    POSTGRES_HOST: 127.0.0.1
+    POSTGRES_PORT: 5432
+    POSTGRES_MIN_CONNS: 4
+    POSTGRES_MAX_CONNS: 20
+    POSTGRES_MAX_CONN_LIFETIME: 15m
+    POSTGRES_HEALTH_CHECK_PERIOD: 1m
     APP_LOG_LEVEL: debug
     RESTAURANT_GRPC_ADDR: "restaurant:80"
     PAYMENT_GRPC_ADDR: "payment:80"

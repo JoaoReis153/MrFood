@@ -34,6 +34,7 @@ services:
     environment:
       POSTGRES_DB: ${REVIEW_POSTGRES_DB}
       POSTGRES_USER: ${REVIEW_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${REVIEW_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
 

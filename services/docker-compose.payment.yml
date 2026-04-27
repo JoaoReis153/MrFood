@@ -39,6 +39,7 @@ services:
     environment:
       POSTGRES_DB: ${PAYMENT_POSTGRES_DB}
       POSTGRES_USER: ${PAYMENT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
 
