@@ -41,7 +41,6 @@ help:
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean                              - Remove containers & images"
-	@echo "  make clean-volumes                      - Remove containers, images, volumes"
 	@echo "  make clean-all                          - Full reset (all containers, images, volumes)"
 
 ## Run Bruno REST CI smoke tests
@@ -144,7 +143,7 @@ build-no-cache:
 
 ## Start all services (detached)
 run:
-	$(DC) up -d
+	$(DC) up -d --pull=missing
 	@$(MAKE) --no-print-directory bootstrap-search
 
 bootstrap-search:
@@ -185,26 +184,11 @@ test:
 # CLEANUP
 # ============================================================================
 
-## Remove only this project's containers + images
-clean:
-	$(DC) down --rmi local --remove-orphans
-
 ## Remove containers + images + volumes (deletes DB data)
-clean-volumes:
+clean:
 	$(DC) down --rmi local --volumes --remove-orphans
 
 ## Full reset (containers, images, volumes)
 clean-all:
 	$(DC) down --rmi all --volumes --remove-orphans
-
-## check if images already exist to avoid rate-limiting -- pull if they dont
-check-images:
-	@for img in postgres:16 redis:7-alpine; do \
-		if ! docker image inspect $$img >/dev/null 2>&1; then \
-			echo "$$img missing → pulling"; \
-			docker pull $$img; \
-		else \
-			echo "$$img exists → skip"; \
-		fi; \
-	done
 
