@@ -3,15 +3,6 @@ x-common: &common
   networks:
     - app-network
 
-x-booking-db-config: &booking-db-config
-  DB_HOST: booking_db
-  DB_NAME: ${BOOKING_POSTGRES_DB}
-  DB_USER: ${BOOKING_POSTGRES_USER}
-  DB_PASS: ${BOOKING_POSTGRES_PASSWORD}
-  POSTGRES_DB: ${BOOKING_POSTGRES_DB}
-  POSTGRES_USER: ${BOOKING_POSTGRES_USER}
-  POSTGRES_PASSWORD: ${BOOKING_POSTGRES_PASSWORD}
-
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   interval: 5s
@@ -22,18 +13,11 @@ services:
   booking:
     build: ./booking/
     <<: *common
+    env_file:
+      - ./config.env
+      - ./booking/.env   # POSTGRES_PASSWORD
     environment:
-      # Database
-      <<: *booking-db-config
-      APP_SERVER_PORT: ${BOOKING_SERVER_PORT}
-      RESTAURANT_GRPC_ADDR: "restaurant:${RESTAURANT_SERVER_PORT}"
-      PAYMENT_GRPC_ADDR: "payment:${PAYMENT_SERVER_PORT}"
-      DB_MIN_CONNS: 4
-      DB_MAX_CONNS: 20
-      DB_MAX_CONN_LIFETIME: 15m
-      DB_HEALTH_CHECK_PERIOD: 1m
-      # App
-      APP_LOG_LEVEL: debug
+      POSTGRES_HOST: booking_db
     depends_on:
       booking_db:
         condition: service_healthy
@@ -47,8 +31,12 @@ services:
     volumes:
       - booking_db_data:/var/lib/postgresql/data
       - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    env_file:
+      - ./booking/.env   # POSTGRES_PASSWORD
     environment:
-      <<: *booking-db-config
+      POSTGRES_DB: ${BOOKING_POSTGRES_DB}
+      POSTGRES_USER: ${BOOKING_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${BOOKING_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
 

@@ -3,12 +3,6 @@ x-common: &common
   networks:
     - app-network
 
-x-payment-db-config: &payment-db-config
-  POSTGRES_HOST: payment_db
-  POSTGRES_DB: ${PAYMENT_POSTGRES_DB}
-  POSTGRES_USER: ${PAYMENT_POSTGRES_USER}
-  POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
-
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   interval: 5s
@@ -19,17 +13,12 @@ services:
   payment:
     build: ./payment/
     <<: *common
+    env_file:
+      - ./config.env
+      - .env             # shared secrets: AUTH_JWT_*
+      - ./payment/.env   # PAYMENT_POSTGRES_PASSWORD
     environment:
-      # Database
-      <<: *payment-db-config
-      APP_SERVER_PORT: ${PAYMENT_SERVER_PORT}
-      NOTIFICATION_GRPC_ADDR: "notification:${NOTIFICATION_SERVER_PORT}"
-      DB_MIN_CONNS: 4
-      DB_MAX_CONNS: 20
-      DB_MAX_CONN_LIFETIME: 15m
-      DB_HEALTH_CHECK_PERIOD: 1m
-      # App
-      APP_LOG_LEVEL: debug
+      POSTGRES_HOST: payment_db
       APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
       APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
     depends_on:
@@ -45,8 +34,12 @@ services:
     volumes:
       - payment_db_data:/var/lib/postgresql/data
       - ./payment/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    env_file:
+      - ./payment/.env   # POSTGRES_PASSWORD
     environment:
-      <<: *payment-db-config
+      POSTGRES_DB: ${PAYMENT_POSTGRES_DB}
+      POSTGRES_USER: ${PAYMENT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PAYMENT_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
 

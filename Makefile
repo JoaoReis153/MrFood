@@ -3,10 +3,16 @@ PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
 TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
 
-# Load environment variables from .env file
+# Load non-sensitive config (committed) and secrets (git-ignored)
+-include services/config.env
 -include services/.env
 
-DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
+# Load all .env files (shared and per-service) for docker compose interpolation
+ENV_FILES := --env-file services/config.env
+ENV_FILES += $(if $(wildcard services/.env),--env-file services/.env,)
+ENV_FILES += $(foreach env,$(wildcard services/*/.env),--env-file $(env))
+
+DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) $(ENV_FILES)
 PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,python3)
 CSV_SERVICES ?= all
 CSV_ROWS ?= 200
@@ -18,7 +24,8 @@ help:
 	@echo "MrFood Make Commands"
 	@echo ""
 	@echo "Setup & Data:"
-	@echo "  make create_env                         - Create services/.env from template"
+	@echo "  make create_env                         - Create secret .env files from env.tmpl"
+	@echo "  (config.env is already committed — no setup needed)"
 	@echo "  make setup                              - Start services and load all data"
 	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
 	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
@@ -39,7 +46,6 @@ help:
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean                              - Remove containers & images"
-	@echo "  make clean-volumes                      - Remove containers, images, volumes"
 	@echo "  make clean-all                          - Full reset (all containers, images, volumes)"
 
 ## Run Bruno REST CI smoke tests
@@ -53,15 +59,25 @@ test-bruno:
 # ENVIRONMENT
 # ============================================================================
 
-## Create services/.env from services/env.tmpl
+## Create secret .env files from services/env.tmpl
+## config.env (non-sensitive) is already committed — no action needed for it.
 create_env:
 	@if [ -f services/.env ]; then \
-		echo "services/.env already exists. No changes made."; \
+		echo "services/.env already exists."; \
 	else \
 		cp services/env.tmpl services/.env; \
-		echo "Created services/.env from services/env.tmpl"; \
-		echo "Fill AUTH_JWT_ACCESS_TOKEN_SECRET and AUTH_JWT_REFRESH_TOKEN_SECRET in services/.env"; \
+		echo "Created services/.env"; \
 	fi
+	@for f in services/*/env.tmpl; do \
+		dir=$$(dirname "$$f"); \
+		if [ -f "$$dir/.env" ]; then \
+			echo "$$dir/.env already exists."; \
+		else \
+			cp "$$f" "$$dir/.env"; \
+			echo "Created $$dir/.env"; \
+		fi; \
+	done
+	@echo "Fill in secret values in all created .env files before running docker compose."
 
 # ============================================================================
 # DATA GENERATION
@@ -132,7 +148,7 @@ build-no-cache:
 
 ## Start all services (detached)
 run:
-	$(DC) up -d
+	$(DC) up -d --pull=missing
 	@$(MAKE) --no-print-directory bootstrap-search
 
 bootstrap-search:
@@ -161,6 +177,9 @@ restart: down run
 logs:
 	$(DC) logs -f
 
+logs-dump:
+	$(DC) logs --tail=500
+
 # ============================================================================
 # TESTING & BUILDING
 # ============================================================================
@@ -173,26 +192,11 @@ test:
 # CLEANUP
 # ============================================================================
 
-## Remove only this project's containers + images
-clean:
-	$(DC) down --rmi local --remove-orphans
-
 ## Remove containers + images + volumes (deletes DB data)
-clean-volumes:
+clean:
 	$(DC) down --rmi local --volumes --remove-orphans
 
 ## Full reset (containers, images, volumes)
 clean-all:
 	$(DC) down --rmi all --volumes --remove-orphans
-
-## check if images already exist to avoid rate-limiting -- pull if they dont
-check-images:
-	@for img in postgres:16 redis:7-alpine; do \
-		if ! docker image inspect $$img >/dev/null 2>&1; then \
-			echo "$$img missing → pulling"; \
-			docker pull $$img; \
-		else \
-			echo "$$img exists → skip"; \
-		fi; \
-	done
 
