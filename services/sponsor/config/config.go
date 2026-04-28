@@ -25,11 +25,15 @@ type LogConfig struct {
 }
 
 type DBConfig struct {
-	Host     string `yaml:"host"     validate:"required"`
-	Port     int    `yaml:"port"     validate:"required,min=1,max=65535"`
-	Name     string `yaml:"name"     validate:"required"`
-	User     string `yaml:"user"     validate:"required"`
-	Password string `yaml:"password"`
+	Host              string        `yaml:"host"     validate:"required"`
+	Port              int           `yaml:"port"     validate:"required,min=1,max=65535"`
+	Name              string        `yaml:"name"     validate:"required"`
+	User              string        `yaml:"user"     validate:"required"`
+	Password          string        `yaml:"password"`
+	MinConns          int32         `yaml:"min_conns"`
+	MaxConns          int32         `yaml:"max_conns"`
+	MaxConnLifetime   time.Duration `yaml:"max_conn_lifetime"`
+	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 }
 
 type RestaurantConfig struct {
@@ -65,10 +69,14 @@ func Load(_ context.Context) (*Config, error) {
 			Level: "info",
 		},
 		DB: DBConfig{
-			Host: "localhost",
-			Port: 5432,
-			Name: "mrfood",
-			User: "postgres",
+			Host:              "localhost",
+			Port:              5432,
+			Name:              "mrfood",
+			User:              "postgres",
+			MinConns:          4,
+			MaxConns:          20,
+			MaxConnLifetime:   15 * time.Minute,
+			HealthCheckPeriod: 1 * time.Minute,
 		},
 		Restaurant: struct {
 			GRPCAddr string `yaml:"grpc_addr"`
@@ -114,14 +122,18 @@ func validateConfig(cfg *Config) error {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
+	cfg.Server.Port = getEnvInt("SPONSOR_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnv("DB_HOST", cfg.DB.Host)
-	cfg.DB.Port = getEnvInt("DB_PORT", cfg.DB.Port)
-	cfg.DB.Name = getEnv("DB_NAME", cfg.DB.Name)
-	cfg.DB.User = getEnv("DB_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("DB_PASS", cfg.DB.Password)
+	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
+	cfg.DB.Name = getEnv("SPONSOR_POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("SPONSOR_POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("SPONSOR_POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.MinConns = getEnvInt32("POSTGRES_MIN_CONNS", cfg.DB.MinConns)
+	cfg.DB.MaxConns = getEnvInt32("POSTGRES_MAX_CONNS", cfg.DB.MaxConns)
+	cfg.DB.MaxConnLifetime = getEnvDuration("POSTGRES_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
+	cfg.DB.HealthCheckPeriod = getEnvDuration("POSTGRES_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
@@ -152,6 +164,23 @@ func getEnvInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return intVal
+}
+
+func getEnvInt32(key string, defaultValue int32) int32 {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	intVal, err := strconv.ParseInt(value, 10, 32)
+	if err != nil {
+		slog.Warn("invalid int32 env var, using default",
+			slog.String("key", key),
+			slog.String("value", value),
+			slog.Int("default", int(defaultValue)),
+		)
+		return defaultValue
+	}
+	return int32(intVal)
 }
 
 func getEnvDuration(key string, defaultValue time.Duration) time.Duration {

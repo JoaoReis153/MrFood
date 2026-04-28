@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "/pb;pb";
+import "google/api/annotations.proto";
+
+service RestaurantService {
+  rpc GetRestaurantDetails(GetRestaurantDetailsRequest) returns (GetRestaurantDetailsResponse){
+    option (google.api.http) = {
+      get: "/restaurants/{id}"
+    };
+  };
+
+  rpc CreateRestaurant(CreateRestaurantRequest) returns (CreateRestaurantResponse){
+    option (google.api.http) = {
+      post: "/restaurants"
+      body: "*"
+    };
+  };
+
+  rpc UpdateRestaurant(UpdateRestaurantRequest) returns (UpdateRestaurantResponse){
+    option (google.api.http) = {
+      put: "/restaurants/{id}"
+      body: "*"
+    };
+  };
+
+
+  rpc CompareRestaurantDetails(CompareRestaurantDetailsRequest) returns (CompareRestaurantDetailsResponse){
+    option (google.api.http) = {
+      get: "/restaurants/compare"
+      body: "*"
+    };
+  };
+
+}
+
+message GetRestaurantDetailsRequest {
+  int64 id = 1;
+}
+
+message GetRestaurantDetailsResponse {
+  RestaurantDetails restaurant = 1;
+}
+
+message CreateRestaurantRequest {
+  string name = 1;
+  double latitude = 2;
+  double longitude = 3;
+  string address = 4;
+  string opening_time = 5;
+  string closing_time = 6;
+  repeated string categories = 7;
+  int32 max_slots = 8;
+  bool has_media = 9;
+}
+
+
+message CreateRestaurantResponse {
+  int64 restaurant_id = 1;
+  string presigned_url = 2;
+}
+
+message UpdateRestaurantRequest {
+  int64 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  string opening_time = 6;
+  string closing_time = 7;
+  repeated string categories = 8;
+  int32 max_slots = 9;
+}
+
+message UpdateRestaurantResponse {
+  RestaurantDetails restaurant = 1;
+}
+
+message RestaurantDetails {
+  int64 id = 1;
+  string name = 2;
+  double latitude = 3;
+  double longitude = 4;
+  string address = 5;
+  string opening_time = 6;
+  string closing_time = 7;
+  repeated string categories = 8;
+  string media_url = 9;
+  int32 max_slots = 10;
+  int64 owner_id = 11;
+  string owner_name = 12;
+  int32 sponsor_tier = 13;
+  double average_rating = 14;
+  int32 review_count = 15;
+
+}
+
+
+message CompareRestaurantDetailsRequest {
+  int64 restaurant_id_1 = 1;
+  int64 restaurant_id_2 = 2;
+}
+
+message CompareRestaurantDetailsResponse {
+  RestaurantDetails restaurant1 = 1;
+  RestaurantDetails restaurant2 = 2;
+}

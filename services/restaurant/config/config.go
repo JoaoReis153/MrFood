@@ -20,11 +20,15 @@ type Config struct {
 		Level string `yaml:"level"`
 	} `yaml:"log"`
 	DB struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Name     string `yaml:"name"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
+		Host              string        `yaml:"host"`
+		Port              int           `yaml:"port"`
+		Name              string        `yaml:"name"`
+		User              string        `yaml:"user"`
+		Password          string        `yaml:"password"`
+		MinConns          int32         `yaml:"min_conns"`
+		MaxConns          int32         `yaml:"max_conns"`
+		MaxConnLifetime   time.Duration `yaml:"max_conn_lifetime"`
+		HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 	} `yaml:"db"`
 	Review struct {
 		GRPCAddr string `yaml:"grpc_addr"`
@@ -50,17 +54,25 @@ func Load(ctx context.Context) *Config {
 			Level: "info",
 		},
 		DB: struct {
-			Host     string `yaml:"host"`
-			Port     int    `yaml:"port"`
-			Name     string `yaml:"name"`
-			User     string `yaml:"user"`
-			Password string `yaml:"password"`
+			Host              string        `yaml:"host"`
+			Port              int           `yaml:"port"`
+			Name              string        `yaml:"name"`
+			User              string        `yaml:"user"`
+			Password          string        `yaml:"password"`
+			MinConns          int32         `yaml:"min_conns"`
+			MaxConns          int32         `yaml:"max_conns"`
+			MaxConnLifetime   time.Duration `yaml:"max_conn_lifetime"`
+			HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 		}{
-			Host:     "localhost",
-			Port:     5432,
-			Name:     "mrfood",
-			User:     "postgres",
-			Password: "",
+			Host:              "localhost",
+			Port:              5432,
+			Name:              "mrfood",
+			User:              "postgres",
+			Password:          "",
+			MinConns:          4,
+			MaxConns:          20,
+			MaxConnLifetime:   15 * time.Minute,
+			HealthCheckPeriod: 1 * time.Minute,
 		},
 		Review: struct {
 			GRPCAddr string `yaml:"grpc_addr"`
@@ -87,13 +99,18 @@ func Load(ctx context.Context) *Config {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
+	cfg.Server.Port = getEnvInt("RESTAURANT_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
 
 	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
-	cfg.DB.Name = getEnv("POSTGRES_DB", cfg.DB.Name)
-	cfg.DB.User = getEnv("POSTGRES_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
+	cfg.DB.Name = getEnv("RESTAURANT_POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("RESTAURANT_POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("RESTAURANT_POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.MinConns = int32(getEnvInt("POSTGRES_MIN_CONNS", int(cfg.DB.MinConns)))
+	cfg.DB.MaxConns = int32(getEnvInt("POSTGRES_MAX_CONNS", int(cfg.DB.MaxConns)))
+	cfg.DB.MaxConnLifetime = parseDuration(getEnv("POSTGRES_MAX_CONN_LIFETIME", "15m"))
+	cfg.DB.HealthCheckPeriod = parseDuration(getEnv("POSTGRES_HEALTH_CHECK_PERIOD", "1m"))
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 	cfg.Review.GRPCAddr = getEnv("REVIEW_GRPC_ADDR", cfg.Review.GRPCAddr)
 

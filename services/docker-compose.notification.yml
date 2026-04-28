@@ -3,29 +3,15 @@ x-common: &common
   networks:
     - app-network
 
-x-notification-smtp-config: &notification-smtp-config
-  SMTP_HOST: smtp.gmail.com
-  SMTP_PORT: 587
-  SMTP_USER: ${NOTIFICATION_SMTP_USER}
-  SMTP_PASSWORD: ${NOTIFICATION_SMTP_PASSWORD}
-  SMTP_FROM: ${NOTIFICATION_SMTP_FROM}
-
-x-redis-healthcheck: &redis-healthcheck
-  test: ["CMD", "redis-cli", "ping"]
-  interval: 5s
-  timeout: 5s
-  retries: 5
-
 services:
   notification:
     build: ./notification/
     <<: *common
+    env_file:
+      - ./config.env
+      - ./notification/.env   # SMTP_USER, SMTP_PASSWORD, SMTP_FROM
     environment:
-      <<: *notification-smtp-config
-      APP_SERVER_PORT: ${NOTIFICATION_SERVER_PORT}
-      APP_LOG_LEVEL: debug
       REDIS_HOST: notification_redis
-      REDIS_PORT: 6379
     depends_on:
       notification_redis:
         condition: service_healthy
@@ -34,8 +20,7 @@ services:
     image: redis:7-alpine
     <<: *common
     healthcheck:
-      <<: *redis-healthcheck
-
-networks:
-  app-network:
-    driver: bridge
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
