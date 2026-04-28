@@ -1,5 +1,12 @@
 _format_version: "3.0"
 
+plugins:
+  - name: opentelemetry
+    config:
+      endpoint: http://otel-collector:4318/v1/traces
+      sampling_rate: 1.0
+      resource_attributes:
+        service.name: kong-gateway
 services:
 - name: auth
   host: auth
@@ -127,7 +134,7 @@ services:
   
 - name: search
   host: search
-  port: 50051
+  port: 50056
   protocol: grpc
   routes:
   - name: search

@@ -1,7 +1,7 @@
 # Config
 PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
-TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
+TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/... ./services/observability/...
 
 # Load non-sensitive config (committed) and secrets (git-ignored)
 -include services/config.env

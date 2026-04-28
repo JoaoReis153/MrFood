@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -204,16 +205,12 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	}
 
 	jwtServiceInstance := auth.NewJWTService(&cfg.JWT, app.Repo)
-	notificationClient, notificationConn, err := newNotificationClient(cfg.Notification.GRPCAddr)
-	if err != nil {
-		return err
-	}
+	notificationClient := &notificationClient{conn: app.notificationConn}
 
-	defer func() {
-		_ = notificationConn.Close()
-	}()
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 
-	s := grpc.NewServer()
 	pb.RegisterAuthServiceServer(s, &Server{
 		authService:         app.Service,
 		jwtService:          jwtServiceInstance,
