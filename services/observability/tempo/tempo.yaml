@@ -1,7 +1,5 @@
 auth_enabled: false
 
-stream_over_http_enabled: true
-
 server:
   http_listen_port: 3200
 
@@ -10,9 +8,9 @@ distributor:
     otlp:
       protocols:
         grpc:
-          endpoint: "0.0.0.0:4317"
+          endpoint: 0.0.0.0:4317
         http:
-          endpoint: "0.0.0.0:4318"
+          endpoint: 0.0.0.0:4318
 
 ingester:
   trace_idle_period: 10s
@@ -29,12 +27,11 @@ compactor:
 storage:
   trace:
     backend: local
-    block:
-      bloom_filter_false_positive: .05
-    wal:
-      path: /var/tempo/wal
     local:
       path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal
+
     pool:
       max_workers: 100
       queue_depth: 10000
