@@ -149,15 +149,7 @@ build-no-cache:
 ## Start all services (detached)
 run:
 	$(DC) up -d --pull=missing
-	@$(MAKE) --no-print-directory bootstrap-search
-
-bootstrap-search:
-	@echo "Ensuring Elasticsearch index '$(ELASTICSEARCH_INDEX)' exists..."
-	@curl -fsS -X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
-		-H 'Content-Type: application/json' \
-		-d '{"settings":{"number_of_shards":1,"number_of_replicas":0},"mappings":{"properties":{"id":{"type":"integer"},"name":{"type":"text","fields":{"keyword":{"type":"keyword"}}},"address":{"type":"text"},"categories":{"type":"keyword"},"location":{"type":"geo_point"},"latitude":{"type":"double"},"longitude":{"type":"double"},"media_url":{"type":"keyword"},"max_slots":{"type":"integer"},"owner_id":{"type":"long"},"owner_name":{"type":"text"},"sponsor_tier":{"type":"integer"}}}}' >/dev/null || true
-	@echo "Registering CDC connectors..."
-	@CONNECT_URL="http://localhost:$(CDC_CONNECT_PORT)" services/cdc/register-connectors.sh
+	@$(MAKE) --no-print-directory search-bootstrap
 
 ## Stop services
 stop:
@@ -200,3 +192,40 @@ clean:
 clean-all:
 	$(DC) down --rmi all --volumes --remove-orphans
 
+
+# ============================================================================
+# SEARCH
+# ============================================================================
+
+SEARCH_COMPOSE_FILE := services/docker-compose.cdc.yml
+
+DCS := docker compose -p $(PROJECT_NAME) \
+	-f services/docker-compose.yml \
+	-f $(SEARCH_COMPOSE_FILE) \
+	$(ENV_FILES)
+
+## Start only search-related services (ES, Kafka, Connect)
+search-run:
+	$(DCS) up -d elasticsearch zookeeper kafka connect restaurant restaurant_db kong	
+	@$(MAKE) --no-print-directory search-bootstrap
+
+## Bootstrap ES index and register CDC connectors
+search-bootstrap:
+	@echo "Waiting for Elasticsearch..."
+	@until curl -fsS http://localhost:$(CDC_ELASTIC_PORT) >/dev/null 2>&1; do sleep 2; done
+	@echo "✔ Elasticsearch ready"
+
+	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
+		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
+		-H 'Content-Type: application/json' \
+		-d @services/cdc/mappings/restaurants.json || true); \
+	if [ "$$HTTP_CODE" = "400" ]; then \
+		echo "✔ Index already exists"; \
+	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
+		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
+	else \
+		echo "✔ Index created (HTTP $$HTTP_CODE)"; \
+	fi
+
+	@bash services/cdc/register-connectors.sh
+	@bash services/cdc/seed_elasticsearch.sh

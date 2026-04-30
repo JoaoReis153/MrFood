@@ -2,106 +2,69 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONNECT_URL="${CONNECT_URL:-http://localhost:8083}"
+CONNECT_URL="http://localhost:${CDC_CONNECT_PORT:-8083}"
 CONNECT_TIMEOUT_SECONDS="${CONNECT_TIMEOUT_SECONDS:-120}"
 
-# Load config.env from project root (adjust path if needed)
-CONFIG_FILE="${SCRIPT_DIR}/../config.env"
-
-if [[ -f "$CONFIG_FILE" ]]; then
-  set -a  
-  source "$CONFIG_FILE"
-  set +a
-else
-  echo "config.env not found at $CONFIG_FILE" >&2
-  exit 1
-fi
+log()  { echo "[register] $*"; }
+fail() { echo "[register][error] $*" >&2; exit 1; }
 
 wait_for_connect() {
   local deadline=$((SECONDS + CONNECT_TIMEOUT_SECONDS))
-  echo "Waiting for Kafka Connect at $CONNECT_URL ..."
+  local elapsed=0
+  log "Waiting for Kafka Connect at $CONNECT_URL (this takes ~60s on first run while plugins install)..."
   while (( SECONDS < deadline )); do
     if curl -fsS "$CONNECT_URL/connector-plugins" >/dev/null 2>&1; then
-      echo "Kafka Connect is ready."
+      log "✔ Kafka Connect ready (${elapsed}s)"
       return 0
     fi
-    sleep 2
+    printf "  [%ds] still waiting...\r" "$elapsed"
+    sleep 5
+    elapsed=$((elapsed + 5))
   done
-
-  echo "Kafka Connect did not become ready within ${CONNECT_TIMEOUT_SECONDS}s" >&2
-  return 1
+  fail "Kafka Connect did not become ready within ${CONNECT_TIMEOUT_SECONDS}s"
 }
 
 parse_name() {
-  local connector_file="$1"
-  python3 - <<'PY' "$connector_file"
-import json, sys
-with open(sys.argv[1], 'r', encoding='utf-8') as f:
-    obj = json.load(f)
-print(obj.get('name', ''))
-PY
+  python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['name'])" "$1"
 }
 
 upsert_connector() {
-  local connector_file="$1"
+  local file="$1"
   local name
-  name="$(parse_name "$connector_file")"
+  name="$(parse_name "$file")"
+  [[ -n "$name" ]] || fail "Could not parse connector name from: $file"
 
-  if [[ -z "$name" ]]; then
-    echo "Could not parse connector name from: $connector_file" >&2
-    exit 1
-  fi
+  local http_code
+  http_code="$(curl -s -o /dev/null -w '%{http_code}' "$CONNECT_URL/connectors/$name")"
 
-  local status
-  status="$(curl -s -o /dev/null -w '%{http_code}' "$CONNECT_URL/connectors/$name")"
+  local response
+  response="$(mktemp)"
+  trap "rm -f $response" RETURN
 
-  if [[ "$status" == "200" ]]; then
-    echo "Updating connector: $name"
-    local update_body
-    update_body="$(python3 - <<'PY' "$connector_file"
-import json, sys
-p = sys.argv[1]
-with open(p, 'r', encoding='utf-8') as f:
-    obj = json.load(f)
-print(json.dumps(obj['config']))
-PY
-)"
-
-    local update_response
-    update_response="$(mktemp)"
-    local update_code
-    update_code="$(curl -sS -o "$update_response" -w '%{http_code}' -X PUT "$CONNECT_URL/connectors/$name/config" \
+  if [[ "$http_code" == "200" ]]; then
+    log "Updating connector: $name"
+    local config
+    config="$(python3 -c "import json,sys; print(json.dumps(json.load(open(sys.argv[1]))['config']))" "$file")"
+    local code
+    code="$(curl -sS -o "$response" -w '%{http_code}' \
+      -X PUT "$CONNECT_URL/connectors/$name/config" \
       -H 'Content-Type: application/json' \
-      --data "$update_body")"
-
-    if [[ "$update_code" != "200" ]]; then
-      echo "Failed updating connector '$name' (HTTP $update_code):" >&2
-      cat "$update_response" >&2
-      rm -f "$update_response"
-      exit 1
-    fi
-    rm -f "$update_response"
+      --data "$config")"
+    [[ "$code" == "200" ]] || { cat "$response" >&2; fail "Update failed for '$name' (HTTP $code)"; }
   else
-    echo "Creating connector: $name"
-    local create_response
-    create_response="$(mktemp)"
-    local create_code
-    create_code="$(curl -sS -o "$create_response" -w '%{http_code}' -X POST "$CONNECT_URL/connectors" \
+    log "Creating connector: $name"
+    local code
+    code="$(curl -sS -o "$response" -w '%{http_code}' \
+      -X POST "$CONNECT_URL/connectors" \
       -H 'Content-Type: application/json' \
-      --data @"$connector_file")"
-
-    if [[ "$create_code" != "201" ]]; then
-      echo "Failed creating connector '$name' (HTTP $create_code):" >&2
-      cat "$create_response" >&2
-      rm -f "$create_response"
-      exit 1
-    fi
-    rm -f "$create_response"
+      --data @"$file")"
+    [[ "$code" == "201" ]] || { cat "$response" >&2; fail "Create failed for '$name' (HTTP $code)"; }
   fi
+
+  log "✔ Connector '$name' registered"
 }
 
 wait_for_connect
 upsert_connector "$SCRIPT_DIR/connectors/restaurant-source.json"
 upsert_connector "$SCRIPT_DIR/connectors/restaurants-sink.json"
-
-echo "Connectors are registered."
+log "All connectors registered"

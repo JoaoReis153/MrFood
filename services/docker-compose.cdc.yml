@@ -93,9 +93,14 @@ services:
       - -lc
       - |
         set -e
-        rm -rf /usr/share/confluent-hub-components/debezium-debezium-connector-postgresql
-        confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.4.2
+        if [ ! -d /usr/share/confluent-hub-components/debezium-debezium-connector-postgresql ]; then
+          echo "Installing Debezium PostgreSQL connector..."
+          confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.4.2
+        else
+          echo "Debezium connector already installed, skipping."
+        fi
         if [ ! -d /usr/share/confluent-hub-components/confluentinc-kafka-connect-elasticsearch ]; then
+          echo "Installing Elasticsearch connector..."
           confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
         fi
         /etc/confluent/docker/run
