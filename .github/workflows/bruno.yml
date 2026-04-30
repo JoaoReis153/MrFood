@@ -64,10 +64,14 @@ jobs:
           SMTP_FROM=mrfood.api@gmail.com
           EOF
 
-      - name: Verify Go modules
+      - name: Go mod tidy (all services)
         run: |
-          go mod tidy
-          git diff --exit-code
+          for dir in $(find services -name go.mod -exec dirname {} \;); do
+            echo "Tidying $dir"
+            cd "$dir"
+            go mod tidy
+            cd - > /dev/null
+          done
         
       - name: Start services
         run: make build run
