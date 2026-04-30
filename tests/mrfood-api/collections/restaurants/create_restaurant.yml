@@ -1,7 +1,7 @@
 info:
   name: Create restaurant
   type: http
-  seq: 6
+  seq: 2
   tags:
     - Restaurants
 
