@@ -198,6 +198,8 @@ clean-all:
 # ============================================================================
 
 SEARCH_COMPOSE_FILE := services/docker-compose.cdc.yml
+SEARCH_SERVICES := elasticsearch zookeeper kafka connect restaurant restaurant_db kong
+
 
 DCS := docker compose -p $(PROJECT_NAME) \
 	-f services/docker-compose.yml \
@@ -229,3 +231,20 @@ search-bootstrap:
 
 	@bash services/cdc/register-connectors.sh
 	@bash services/cdc/seed_elasticsearch.sh
+
+## Stop search services
+search-stop:
+	$(DCS) stop $(SEARCH_SERVICES)
+
+## Stop and remove search services
+search-down:
+	$(DCS) rm -sf $(SEARCH_SERVICES)
+
+## Tail logs for search services only
+search-logs:
+	$(DCS) logs -f $(SEARCH_SERVICES)
+
+## Full reset of search (removes elastic_data and connect_plugins volumes)
+search-clean:
+	$(DCS) rm -sf $(SEARCH_SERVICES)
+	docker volume rm -f $(PROJECT_NAME)_elastic_data $(PROJECT_NAME)_connect_plugins
