@@ -64,6 +64,11 @@ jobs:
           SMTP_FROM=mrfood.api@gmail.com
           EOF
 
+      - name: Verify Go modules
+        run: |
+          go mod tidy
+          git diff --exit-code
+        
       - name: Start services
         run: make build run
 
