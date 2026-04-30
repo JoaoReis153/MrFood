@@ -64,7 +64,7 @@ func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, 
 	}
 
 	return &reviewStatsClient{
-		client: pb.NewReviewServiceClient(conn),
+		client: pb.NewRestaurantToReviewServiceClient(conn),
 		conn:   conn,
 	}, conn, nil
 }
