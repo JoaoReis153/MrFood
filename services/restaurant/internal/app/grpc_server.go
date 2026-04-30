@@ -254,7 +254,6 @@ func (app *App) RunServer() {
 		os.Exit(1)
 	}
 
-	srv := &server{
 	s := grpc.NewServer(
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
