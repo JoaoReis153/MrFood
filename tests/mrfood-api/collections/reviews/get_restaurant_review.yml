@@ -1,7 +1,7 @@
 info:
   name: Get reviews of a restaurant
   type: http
-  seq: 1
+  seq: 3
   tags:
     - Reviews
 

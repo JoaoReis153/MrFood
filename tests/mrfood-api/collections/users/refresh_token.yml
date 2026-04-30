@@ -1,7 +1,7 @@
 info:
   name: Refresh token
   type: http
-  seq: 6
+  seq: 4
   tags:
     - Users
 

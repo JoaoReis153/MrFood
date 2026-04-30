@@ -1,7 +1,7 @@
 info:
   name: Update restaurant
   type: http
-  seq: 7
+  seq: 3
   tags:
     - Restaurants
 

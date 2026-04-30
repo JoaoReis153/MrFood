@@ -1,7 +1,7 @@
 info:
   name: Compare two restaurants
   type: http
-  seq: 9
+  seq: 4
   tags:
     - Restaurants
 
