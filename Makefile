@@ -87,52 +87,16 @@ create_env:
 generate-csv:
 	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
 
-## Generate only auth CSV seed files
-generate-csv-auth:
-	$(PYTHON) scripts/process_data.py --services auth $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
-## Generate only restaurant CSV seed files
-generate-csv-restaurant:
-	$(PYTHON) scripts/process_data.py --services restaurant $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
-## Generate only review CSV seed files
-generate-csv-review:
-	$(PYTHON) scripts/process_data.py --services review $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
 # ============================================================================
 # DATA LOADING
 # ============================================================================
 
-## Load auth data into database
-load-auth:
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "$(AUTH_POSTGRES_DB)" -c "TRUNCATE TABLE app_user CASCADE;"
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "$(AUTH_POSTGRES_DB)" -c "\\copy app_user(user_id, username, password, email) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/auth/app_user.csv
-
-## Load restaurant data into database
-load-restaurant:
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "TRUNCATE TABLE restaurant_categories, restaurants RESTART IDENTITY CASCADE;"
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurants(id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurants.csv
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurant_categories(restaurant_id, category) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurant_categories.csv
-
-## Load all seed data into databases
-
-load-reviews:
-	@if ! $(DC) ps --services | grep -qx "review_db"; then \
-		echo "Skipping load-reviews: review_db service is not configured in $(COMPOSE_FILE)"; \
-	elif ! $(DC) ps --services --status running | grep -qx "review_db"; then \
-		echo "Skipping load-reviews: review_db service is not running"; \
-	else \
-		$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "TRUNCATE TABLE review, restaurant_stats RESTART IDENTITY CASCADE;"; \
-		$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "\\copy review(review_id, restaurant_id, user_id, comment, rating, created_at) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/review/review.csv; \
-		$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('review', 'review_id'), COALESCE((SELECT MAX(review_id) FROM review), 1), (SELECT COUNT(*) > 0 FROM review));"; \
-	fi
-
-load-all:
+load-csvs:
 	@$(MAKE) --no-print-directory -j 3 load-auth load-restaurant load-reviews 
 	@echo "✓ All data loaded successfully"
 
 ## Complete setup: start services and load all data
-setup: run load-all
+setup: run load-csvs
 	@echo "✓ Setup complete! Services running and data loaded"
 
 # ============================================================================
@@ -198,7 +162,7 @@ clean-all:
 # ============================================================================
 
 SEARCH_COMPOSE_FILE := services/docker-compose.cdc.yml
-SEARCH_SERVICES := elasticsearch zookeeper kafka connect restaurant restaurant_db kong
+SEARCH_SERVICES := search elasticsearch zookeeper kafka connect restaurant restaurant_db kong auth auth_db otel-collector
 
 
 DCS := docker compose -p $(PROJECT_NAME) \
@@ -208,7 +172,7 @@ DCS := docker compose -p $(PROJECT_NAME) \
 
 ## Start only search-related services (ES, Kafka, Connect)
 search-run:
-	$(DCS) up -d elasticsearch zookeeper kafka connect restaurant restaurant_db kong	
+	$(DCS) up -d $(SEARCH_SERVICES)
 	@$(MAKE) --no-print-directory search-bootstrap
 
 ## Bootstrap ES index and register CDC connectors
