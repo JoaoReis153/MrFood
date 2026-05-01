@@ -13,8 +13,6 @@ services:
     ports:
       - "${OTEL_OTLP_GRPC_PORT:-4317}:4317"
       - "${OTEL_OTLP_HTTP_PORT:-4318}:4318"
-    depends_on:
-      - loki
 
   prometheus:
     image: prom/prometheus:latest
@@ -39,6 +37,8 @@ services:
     volumes:
       - ./observability/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
+    depends_on:
+      - otel-collector
 
   grafana:
     image: grafana/grafana:latest
@@ -48,6 +48,7 @@ services:
       - "${GRAFANA_PORT:-3000}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
@@ -66,6 +67,8 @@ services:
     volumes:
       - ./observability/tempo/tempo.yaml:/etc/tempo.yaml
       - tempo_data:/var/tempo
+    depends_on:
+      - otel-collector
 
 volumes:
   prometheus_data:
