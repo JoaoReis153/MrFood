@@ -132,20 +132,20 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("SEARCH_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnv(cfg.DB.Host, "POSTGRES_HOST")
+	cfg.DB.Host = getEnv("SEARCH_POSTGRES_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvIntAny(cfg.DB.Port, "DB_PORT")
-	cfg.DB.Name = getEnv(cfg.DB.Name, "REVIEW_POSTGRES_DB")
-	cfg.DB.User = getEnv(cfg.DB.User, "REVIEW_POSTGRES_USER")
-	cfg.DB.Password = getEnv(cfg.DB.Password, "REVIEW_POSTGRES_PASSWORD")
+	cfg.DB.Name = getEnv("SEARCH_POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("SEARCH_POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("SEARCH_POSTGRES_PASSWORD", cfg.DB.Password)
 	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
 	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
 	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
-	cfg.Redis.Host = getEnv(cfg.Redis.Host, "REVIEW_REDIS_HOST")
-	cfg.Redis.Port = getEnvInt("REDIS_PORT", cfg.Redis.Port)
-	cfg.Redis.Password = getEnv(cfg.Redis.Password, "REVIEW_REDIS_PASS")
-	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
+	cfg.Redis.Host = getEnv("SEARCH_REDIS_HOST", cfg.Redis.Host)
+	cfg.Redis.Port = getEnvInt("SEARCH_REDIS_PORT", cfg.Redis.Port)
+	cfg.Redis.Password = getEnv("SEARCH_REDIS_PASS", cfg.Redis.Password)
+	cfg.Redis.DB = getEnvInt("SEARCH_REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 

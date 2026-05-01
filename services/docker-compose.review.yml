@@ -16,8 +16,6 @@ services:
     env_file:
       - ./config.env
       - ./review/.env   # REVIEW_POSTGRES_PASSWORD
-    environment:
-      POSTGRES_HOST: review_db
     depends_on:
       review_db:
         condition: service_healthy

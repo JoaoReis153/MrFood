@@ -11,11 +11,8 @@ services:
       - "50056:50056"
     env_file:
       - ./config.env
-      - .env            # shared secrets: AUTH_JWT_*
+      - .env            # shared secrets: APP_JWT_*
       - ./search/.env   # ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD
-    environment:
-      APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
-      APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
     depends_on:
       elasticsearch:
         condition: service_healthy

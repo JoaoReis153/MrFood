@@ -7,14 +7,12 @@ services:
       - app-network
     env_file:
       - ./config.env
-      - .env   # shared secrets: AUTH_JWT_*
+      - .env   # shared secrets: APP_JWT_*
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
       KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
-      APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
-      APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
 
       # OTEL
       KONG_PLUGINS: "bundled,opentelemetry"

@@ -15,9 +15,7 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - ./sponsor/.env   # POSTGRES_PASSWORD
-    environment:
-      POSTGRES_HOST: sponsor_db
+      - ./sponsor/.env   # SPONSOR_POSTGRES_PASSWORD
     depends_on:
       sponsor_db:
         condition: service_healthy

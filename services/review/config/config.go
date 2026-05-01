@@ -105,7 +105,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Restaurant.GRPCAddr = getEnv("REVIEW_TO_RESTAURANT_GRPC_ADDR", cfg.Restaurant.GRPCAddr)
 
 	// Database config
-	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Host = getEnv("REVIEW_POSTGRES_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("REVIEW_POSTGRES_DB", cfg.DB.Name)
 	cfg.DB.User = getEnv("REVIEW_POSTGRES_USER", cfg.DB.User)

@@ -125,7 +125,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("SPONSOR_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Host = getEnv("SPONSOR_POSTGRES_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("SPONSOR_POSTGRES_DB", cfg.DB.Name)
 	cfg.DB.User = getEnv("SPONSOR_POSTGRES_USER", cfg.DB.User)
