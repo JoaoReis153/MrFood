@@ -17,6 +17,14 @@ http:
       }
   auth: inherit
 
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        const json = res.body;
+
+        bru.setEnvVar("token", json.access_token);
+
 settings:
   encodeUrl: true
   timeout: 0
