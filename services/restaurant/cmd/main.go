@@ -27,7 +27,6 @@ func main() {
 	shutdown, err := initTracer(ctx, "mrfood-restaurant")
 	if err != nil {
 		slog.Error("tracer init failed", "error", err)
-		os.Exit(1)
 	}
 	defer shutdown()
 
