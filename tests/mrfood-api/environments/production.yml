@@ -1,0 +1,8 @@
+name: production
+variables:
+  - name: baseUrl
+    value: http://10.10.10.10
+  - secret: true
+    name: token
+  - secret: true
+    name: refreshToken
