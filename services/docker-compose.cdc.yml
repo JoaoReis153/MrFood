@@ -1,11 +1,12 @@
-services:
-  # CDC reads from restaurant_db (managed in docker-compose.restaurant.yml)
-  # restaurant_db must have wal_level=logical enabled
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - app-network
 
+services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
     container_name: search_elasticsearch
-    restart: unless-stopped
     env_file:
       - ./config.env
     environment:
@@ -21,23 +22,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
-    networks:
-      - app-network
+    <<: *common
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
     container_name: search_zookeeper
-    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - app-network
+    <<: *common
 
   kafka:
     image: confluentinc/cp-kafka:7.6.1
     container_name: search_kafka
-    restart: unless-stopped
     depends_on:
       - zookeeper
     ports:
@@ -50,10 +47,14 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1 
       KAFKA_MIN_INSYNC_REPLICAS: 1
-    networks:
-      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    <<: *common
 
   connect:
     image: confluentinc/cp-kafka-connect:7.6.1
@@ -68,7 +69,8 @@ services:
       - "8083:8083"
     env_file:
       - ./config.env
-      - ./cdc/.env   # CDC_RESTAURANT_PASSWORD
+      - ./cdc/.env
+      - ./restaurant/.env
     environment:
       CONNECT_BOOTSTRAP_SERVERS: kafka:29092
       CONNECT_REST_PORT: 8083
@@ -85,6 +87,10 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
       CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
       CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      # Allow connector configs to reference env vars as ${env:VAR_NAME}
+      CONNECT_CONFIG_PROVIDERS: env
+      CONNECT_CONFIG_PROVIDERS_ENV_CLASS: org.apache.kafka.common.config.provider.EnvVarConfigProvider
+      KAFKA_HEAP_OPTS: "-Xms512M -Xmx2G"
     volumes:
       - connect_plugins:/usr/share/confluent-hub-components
       - ./cdc/connectors:/connectors:ro
@@ -93,19 +99,22 @@ services:
       - -lc
       - |
         set -e
+        echo "=== Installing connectors if needed ==="
         if [ ! -d /usr/share/confluent-hub-components/debezium-debezium-connector-postgresql ]; then
-          echo "Installing Debezium PostgreSQL connector..."
           confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.4.2
         else
-          echo "Debezium connector already installed, skipping."
+          echo "Debezium connector already installed."
         fi
+
         if [ ! -d /usr/share/confluent-hub-components/confluentinc-kafka-connect-elasticsearch ]; then
-          echo "Installing Elasticsearch connector..."
           confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
+        else
+          echo "Elasticsearch connector already installed."
         fi
-        /etc/confluent/docker/run
-    networks:
-      - app-network
+
+        echo "=== Starting Kafka Connect ==="
+        exec /etc/confluent/docker/run
+    <<: *common
 
 volumes:
   elastic_data:

@@ -7,8 +7,18 @@
     "connection.url": "http://elasticsearch:9200",
     "key.ignore": "false",
     "schema.ignore": "true",
-    "behavior.on.null.values": "delete",
+
+    "errors.tolerance": "all",
+    "errors.deadletterqueue.topic.name": "dlq-restaurants",
+    "errors.deadletterqueue.context.headers.enable": "true",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.log.enable": "true",
+    "errors.log.include.messages": "true",
+
     "write.method": "upsert",
+    "pipeline": "restaurants_location_pipeline",
+
+    "behavior.on.null.values": "delete",
     "type.name": "_doc",
     "external.resource.usage": "INDEX",
     "topic.to.external.resource.mapping": "restaurantdb.public.restaurants:restaurants",

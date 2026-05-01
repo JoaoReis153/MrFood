@@ -48,9 +48,17 @@ fi
 # ── 3. Fetch from Postgres and bulk index ─────────────────────────────────────
 
 QUERY="SELECT row_to_json(r) FROM (
-  SELECT id, name, latitude, longitude, address,
-         media_url, max_slots, owner_id, owner_name, sponsor_tier
-  FROM restaurants
+  SELECT
+    r.id, r.name, r.latitude, r.longitude, r.address,
+    r.media_url, r.max_slots, r.owner_id, r.owner_name, r.sponsor_tier,
+    COALESCE(
+      ARRAY_AGG(rc.category ORDER BY rc.id) FILTER (WHERE rc.category IS NOT NULL),
+      ARRAY[]::text[]
+    ) AS categories
+  FROM restaurants r
+  LEFT JOIN restaurant_categories rc ON rc.restaurant_id = r.id
+  GROUP BY r.id, r.name, r.latitude, r.longitude, r.address,
+           r.media_url, r.max_slots, r.owner_id, r.owner_name, r.sponsor_tier
 ) r;"
 
 log "Fetching restaurants from PostgreSQL..."

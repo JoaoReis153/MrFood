@@ -11,7 +11,7 @@ fail() { echo "[register][error] $*" >&2; exit 1; }
 wait_for_connect() {
   local deadline=$((SECONDS + CONNECT_TIMEOUT_SECONDS))
   local elapsed=0
-  log "Waiting for Kafka Connect at $CONNECT_URL (this takes ~60s on first run while plugins install)..."
+  log "Waiting for Kafka Connect at $CONNECT_URL (this takes ~60s)..."
   while (( SECONDS < deadline )); do
     if curl -fsS "$CONNECT_URL/connector-plugins" >/dev/null 2>&1; then
       log "✔ Kafka Connect ready (${elapsed}s)"
@@ -25,7 +25,10 @@ wait_for_connect() {
 }
 
 parse_name() {
-  python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['name'])" "$1"
+  python3 - <<EOF "$1"
+import json, sys
+print(json.load(open(sys.argv[1]))["name"])
+EOF
 }
 
 upsert_connector() {
