@@ -6,14 +6,8 @@ info:
     - Sponsor
 
 http:
-  method: POST
-  url: "{{baseUrl}}/sponsor/sponsorship"
-  body:
-    type: json
-    data: |-
-      {
-        "id": {{restaurantId}}
-      }
+  method: GET
+  url: "{{baseUrl}}/sponsor/{{restaurantId}}"
   auth:
     type: bearer
     token: "{{token}}"
