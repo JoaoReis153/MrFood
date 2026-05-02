@@ -107,7 +107,7 @@ services:
         fi
 
         if [ ! -d /usr/share/confluent-hub-components/confluentinc-kafka-connect-elasticsearch ]; then
-          confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:14.1.0
         else
           echo "Elasticsearch connector already installed."
         fi
