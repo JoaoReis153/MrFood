@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -53,12 +54,19 @@ type reviewStatsRPC interface {
 }
 
 func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, error) {
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("dial review grpc: %w", err)
 	}
 
-	return &reviewStatsClient{conn: conn}, conn, nil
+	return &reviewStatsClient{
+		client: pb.NewRestaurantToReviewServiceClient(conn),
+		conn:   conn,
+	}, conn, nil
 }
 
 func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int64) (*models.RestaurantStats, error) {
@@ -246,10 +254,11 @@ func (app *App) RunServer() {
 		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
-	srv := &server{
-		restaurantService: app.Service,
-	}
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
+
+	srv := &server{restaurantService: app.Service}
 
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)

@@ -1,7 +1,7 @@
 info:
   name: Get available booking slots for a given hour (GET)
   type: http
-  seq: 1
+  seq: 2
   tags:
     - Reservations
 

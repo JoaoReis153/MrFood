@@ -15,9 +15,7 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - ./booking/.env   # POSTGRES_PASSWORD
-    environment:
-      POSTGRES_HOST: booking_db
+      - ./booking/.env   # BOOKING_POSTGRES_PASSWORD
     depends_on:
       booking_db:
         condition: service_healthy

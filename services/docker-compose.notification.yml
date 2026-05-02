@@ -10,8 +10,6 @@ services:
     env_file:
       - ./config.env
       - ./notification/.env   # SMTP_USER, SMTP_PASSWORD, SMTP_FROM
-    environment:
-      REDIS_HOST: notification_redis
     depends_on:
       notification_redis:
         condition: service_healthy

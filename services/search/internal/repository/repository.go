@@ -68,7 +68,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 	if query.Filter.Category != nil {
 		must = append(must, map[string]any{
 			"term": map[string]any{
-				"categories.keyword": *query.Filter.Category,
+				"categories": *query.Filter.Category,
 			},
 		})
 	}

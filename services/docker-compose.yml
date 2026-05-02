@@ -9,6 +9,7 @@ include:
   - docker-compose.notification.yml
   - docker-compose.search.yml
   - docker-compose.cdc.yml
+  - docker-compose.observability.yml
 
 networks:
   app-network:

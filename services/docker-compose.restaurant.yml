@@ -15,9 +15,7 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - ./restaurant/.env   # RESTAURANT_POSTGRES_PASSWORD
-    environment:
-      POSTGRES_HOST: restaurant_db
+      - ./restaurant/.env
     depends_on:
       restaurant_db:
         condition: service_healthy
@@ -32,7 +30,7 @@ services:
       - restaurant_db_data:/var/lib/postgresql/data
       - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     env_file:
-      - ./restaurant/.env   # POSTGRES_PASSWORD
+      - ./restaurant/.env
     environment:
       POSTGRES_DB: ${RESTAURANT_POSTGRES_DB}
       POSTGRES_USER: ${RESTAURANT_POSTGRES_USER}

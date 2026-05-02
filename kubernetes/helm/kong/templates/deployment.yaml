@@ -38,6 +38,14 @@ spec:
               value: debug
             - name: KONG_ADMIN_LISTEN
               value: "0.0.0.0:8001"
+            - name: KONG_PLUGINS
+              value: "bundled,opentelemetry"
+
+            - name: KONG_TRACING_INSTRUMENTATIONS
+              value: "all"
+
+            - name: KONG_TRACING_SAMPLING_RATE
+              value: "1.0"
 
           volumeMounts:
           - name: kong-config

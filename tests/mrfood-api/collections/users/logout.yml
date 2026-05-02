@@ -1,24 +1,35 @@
 info:
   name: Logout user
   type: http
-  seq: 3
+  seq: 4
   tags:
     - Users
 
 http:
   method: POST
   url: "{{baseUrl}}/auth/logout"
+  body:
+    type: json
+    data: |-
+      {
+        "token": "{{token}}"
+      }
   auth:
     type: bearer
     token: "{{token}}"
 
-scripts:
-  - type: after-response
-    code: |-
-      if (res.status >= 200 && res.status < 300) {
-        bru.setEnvVar("token", "", { persist: true });
-        bru.setEnvVar("refreshToken", "", { persist: true });
-      }
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("logout returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          bru.setEnvVar("token", "");
+          bru.setEnvVar("refreshToken", "");
+        }
 
 settings:
   encodeUrl: true

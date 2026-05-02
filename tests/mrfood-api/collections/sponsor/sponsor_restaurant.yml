@@ -1,7 +1,7 @@
 info:
   name: Sponsor a restaurant
   type: http
-  seq: 3
+  seq: 1
   tags:
     - Users
 

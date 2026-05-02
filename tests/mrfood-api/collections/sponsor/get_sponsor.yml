@@ -1,7 +1,7 @@
 info:
   name: Get sponsorship
   type: http
-  seq: 4
+  seq: 2
   tags:
     - Users
 

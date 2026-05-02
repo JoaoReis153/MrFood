@@ -39,7 +39,7 @@ func (s *Service) StoreUser(ctx context.Context, user *pkg.User) (*pkg.User, err
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, ErrDuplicateUser
+			return nil, fmt.Errorf("user already exists")
 		}
 		slog.Error("create user failed", "error", err)
 		return nil, fmt.Errorf("failed to create user: %w", err)

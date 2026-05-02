@@ -15,12 +15,8 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - .env             # shared secrets: AUTH_JWT_*
+      - .env             # shared secrets: APP_JWT_*
       - ./payment/.env   # PAYMENT_POSTGRES_PASSWORD
-    environment:
-      POSTGRES_HOST: payment_db
-      APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
-      APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
     depends_on:
       payment_db:
         condition: service_healthy

@@ -102,7 +102,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("RESTAURANT_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = parseDuration(getEnv("APP_SERVER_TIMEOUT", "30s"))
 
-	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Host = getEnv("RESTAURANT_POSTGRES_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("RESTAURANT_POSTGRES_DB", cfg.DB.Name)
 	cfg.DB.User = getEnv("RESTAURANT_POSTGRES_USER", cfg.DB.User)

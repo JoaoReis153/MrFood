@@ -138,7 +138,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Server.Port = getEnvInt("AUTH_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Host = getEnv("AUTH_POSTGRES_HOST", cfg.DB.Host)
 	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
 	cfg.DB.Name = getEnv("AUTH_POSTGRES_DB", cfg.DB.Name)
 	cfg.DB.User = getEnv("AUTH_POSTGRES_USER", cfg.DB.User)
@@ -148,9 +148,9 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.MaxConnLifetime = getEnvDuration("POSTGRES_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
 	cfg.DB.HealthCheckPeriod = getEnvDuration("POSTGRES_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
-	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
+	cfg.Redis.Host = getEnv("AUTH_REDIS_HOST", cfg.Redis.Host)
 	cfg.Redis.Port = getEnvInt("AUTH_REDIS_PORT", cfg.Redis.Port)
-	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
+	cfg.Redis.Password = getEnv("AUTH_REDIS_PASS", cfg.Redis.Password)
 	cfg.Redis.DB = getEnvInt("AUTH_REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
