@@ -4,8 +4,11 @@ import (
 	"MrFood/services/auth/pkg"
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type mockUserStore struct {
@@ -46,6 +49,20 @@ func TestStoreUser(t *testing.T) {
 		_, err := svc.StoreUser(context.Background(), &pkg.User{Username: "john", Email: "john@mail.com", Password: "hashed"})
 		if err == nil || !strings.Contains(err.Error(), "failed to create user") {
 			t.Fatalf("expected create error, got %v", err)
+		}
+	})
+
+	t.Run("duplicate user returns ErrDuplicateUser sentinel", func(t *testing.T) {
+		pgDuplicateErr := &pgconn.PgError{Code: "23505"}
+		svc := &Service{repo: &mockUserStore{
+			createUserFn: func(ctx context.Context, username, password, email string) (int64, string, error) {
+				return 0, "", fmt.Errorf("failed to create user: %w", pgDuplicateErr)
+			},
+		}}
+
+		_, err := svc.StoreUser(context.Background(), &pkg.User{Username: "john", Email: "john@mail.com", Password: "hashed"})
+		if !errors.Is(err, ErrDuplicateUser) {
+			t.Fatalf("expected ErrDuplicateUser sentinel, got: %v (type %T)", err, err)
 		}
 	})
 
