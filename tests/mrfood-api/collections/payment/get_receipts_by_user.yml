@@ -1,7 +1,9 @@
 info:
-  name: GetReceiptsByUser
+  name: Get receipts by user
   type: http
-  seq: 1
+  seq: 4
+  tags:
+    - Payment
 
 http:
   method: GET
@@ -9,6 +11,14 @@ http:
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("get receipts by user returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
 
 settings:
   encodeUrl: true

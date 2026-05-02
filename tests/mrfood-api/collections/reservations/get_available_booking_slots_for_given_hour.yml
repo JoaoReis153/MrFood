@@ -1,155 +1,34 @@
 info:
-  name: Get available booking slots for a given hour (GET)
+  name: Get available booking slots for a given hour
   type: http
-  seq: 2
+  seq: 4
   tags:
     - Reservations
 
 http:
   method: GET
   url: "{{baseUrl}}/reservations/minimum"
+  params:
+    - name: restaurant_id
+      value: "{{restaurantId}}"
+      type: query
+    - name: time_start
+      value: "2026-12-31T11:00:00Z"
+      type: query
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("get working hours returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-examples:
-  - name: 200 Response
-    description: List of available Booking slots
-    request:
-      url: "{{baseUrl}}/reservations/minimum"
-      method: GET
-      params:
-        - name: numberOfPeople
-          value: ""
-          type: query
-          description: Number of people for the reservation
-        - name: day
-          value: ""
-          type: query
-          description: Day of the reservation (YYYY-MM-DD)
-    response:
-      status: 200
-      statusText: OK
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "hour": ""
-          }
-  - name: 400 Response
-    description: Bad Request
-    request:
-      url: "{{baseUrl}}/reservations/minimum"
-      method: GET
-      params:
-        - name: numberOfPeople
-          value: ""
-          type: query
-          description: Number of people for the reservation
-        - name: day
-          value: ""
-          type: query
-          description: Day of the reservation (YYYY-MM-DD)
-    response:
-      status: 400
-      statusText: Bad Request
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
-  - name: 401 Response
-    description: Unauthorized
-    request:
-      url: "{{baseUrl}}/reservations/minimum"
-      method: GET
-      params:
-        - name: numberOfPeople
-          value: ""
-          type: query
-          description: Number of people for the reservation
-        - name: day
-          value: ""
-          type: query
-          description: Day of the reservation (YYYY-MM-DD)
-    response:
-      status: 401
-      statusText: Unauthorized
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
-  - name: 404 Response
-    description: User not found
-    request:
-      url: "{{baseUrl}}/reservations/minimum"
-      method: GET
-      params:
-        - name: numberOfPeople
-          value: ""
-          type: query
-          description: Number of people for the reservation
-        - name: day
-          value: ""
-          type: query
-          description: Day of the reservation (YYYY-MM-DD)
-    response:
-      status: 404
-      statusText: Not Found
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
-  - name: 500 Response
-    description: Server Error
-    request:
-      url: "{{baseUrl}}/reservations/minimum"
-      method: GET
-      params:
-        - name: numberOfPeople
-          value: ""
-          type: query
-          description: Number of people for the reservation
-        - name: day
-          value: ""
-          type: query
-          description: Day of the reservation (YYYY-MM-DD)
-    response:
-      status: 500
-      statusText: Internal Server Error
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }

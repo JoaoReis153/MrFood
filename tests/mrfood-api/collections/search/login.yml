@@ -1,35 +1,31 @@
 info:
-  name: Get sponsorship
+  name: Login (fixture)
   type: http
-  seq: 4
+  seq: 1
   tags:
-    - Sponsor
+    - Search
 
 http:
   method: POST
-  url: "{{baseUrl}}/sponsor/sponsorship"
+  url: "{{baseUrl}}/auth/login"
   body:
     type: json
     data: |-
       {
-        "id": {{restaurantId}}
+        "email": "goncasmendonca42@gmail.com",
+        "password": "StrongPassword123"
       }
-  auth:
-    type: bearer
-    token: "{{token}}"
 
 runtime:
   scripts:
     - type: tests
       code: |-
-        test("get sponsorship returns 200", () => {
+        test("login returns 200", () => {
           expect(res.status).to.equal(200);
         });
 
         if (res.status === 200) {
-          test("response has id", () => {
-            expect(res.body).to.have.property("id");
-          });
+          bru.setEnvVar("token", res.body.access_token);
         }
 
 settings:

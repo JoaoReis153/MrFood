@@ -1,18 +1,20 @@
 info:
-  name: Get sponsorship
+  name: Book reservation (fixture)
   type: http
-  seq: 4
+  seq: 3
   tags:
-    - Sponsor
+    - Payment
 
 http:
   method: POST
-  url: "{{baseUrl}}/sponsor/sponsorship"
+  url: "{{baseUrl}}/reservations"
   body:
     type: json
     data: |-
       {
-        "id": {{restaurantId}}
+        "restaurant_id": {{restaurantId}},
+        "time_start": "2026-12-31T11:00:00Z",
+        "quantity": 2
       }
   auth:
     type: bearer
@@ -22,14 +24,12 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        test("get sponsorship returns 200", () => {
+        test("book reservation fixture returns 200", () => {
           expect(res.status).to.equal(200);
         });
 
         if (res.status === 200) {
-          test("response has id", () => {
-            expect(res.body).to.have.property("id");
-          });
+          bru.setEnvVar("receiptId", String(res.body.payment.receipt_id));
         }
 
 settings:

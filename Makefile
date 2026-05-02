@@ -53,6 +53,11 @@ test-bruno:
 	mkdir -p tests/mrfood-api/reports
 	cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json
 	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
+	cd tests/mrfood-api/collections/reservations && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reservations-junit.xml --reporter-json ../../reports/reservations-report.json
+	cd tests/mrfood-api/collections/reviews && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reviews-junit.xml --reporter-json ../../reports/reviews-report.json
+	cd tests/mrfood-api/collections/search && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/search-junit.xml --reporter-json ../../reports/search-report.json
+	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
+	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json
 
 ## Build services
 

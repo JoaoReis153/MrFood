@@ -128,6 +128,16 @@ jobs:
             tests/mrfood-api/reports/users-report.json
             tests/mrfood-api/reports/restaurants-junit.xml
             tests/mrfood-api/reports/restaurants-report.json
+            tests/mrfood-api/reports/reservations-junit.xml
+            tests/mrfood-api/reports/reservations-report.json
+            tests/mrfood-api/reports/reviews-junit.xml
+            tests/mrfood-api/reports/reviews-report.json
+            tests/mrfood-api/reports/search-junit.xml
+            tests/mrfood-api/reports/search-report.json
+            tests/mrfood-api/reports/payment-junit.xml
+            tests/mrfood-api/reports/payment-report.json
+            tests/mrfood-api/reports/sponsor-junit.xml
+            tests/mrfood-api/reports/sponsor-report.json
           if-no-files-found: warn
 
       - name: Dump service logs on failure

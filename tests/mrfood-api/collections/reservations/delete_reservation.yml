@@ -1,7 +1,7 @@
 info:
   name: Delete a reservation
   type: http
-  seq: 3
+  seq: 5
   tags:
     - Reservations
 
@@ -12,159 +12,22 @@ http:
     type: json
     data: |-
       {
-        "booking_id": 4
+        "booking_id": {{bookingId}}
       }
   auth:
     type: bearer
-    token: placeTokenHere
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("delete reservation returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-examples:
-  - name: 201 Response
-    description: Reservation created
-    request:
-      url: "{{baseUrl}}/reservations"
-      method: POST
-      body:
-        type: json
-        data: |-
-          {
-            "id": "res_12345",
-            "userId": "user_12345",
-            "restaurantId": "12345",
-            "dateTime": "2024-12-31T19:00:00Z",
-            "numberOfPeople": 4
-          }
-    response:
-      status: 201
-      statusText: Created
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "id": "res_12345",
-            "userId": "user_12345",
-            "restaurantId": "12345",
-            "dateTime": "2024-12-31T19:00:00Z",
-            "numberOfPeople": 4
-          }
-  - name: 400 Response
-    description: Bad Request
-    request:
-      url: "{{baseUrl}}/reservations"
-      method: POST
-      body:
-        type: json
-        data: |-
-          {
-            "id": "res_12345",
-            "userId": "user_12345",
-            "restaurantId": "12345",
-            "dateTime": "2024-12-31T19:00:00Z",
-            "numberOfPeople": 4
-          }
-    response:
-      status: 400
-      statusText: Bad Request
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
-  - name: 401 Response
-    description: Unauthorized
-    request:
-      url: "{{baseUrl}}/reservations"
-      method: POST
-      body:
-        type: json
-        data: |-
-          {
-            "id": "res_12345",
-            "userId": "user_12345",
-            "restaurantId": "12345",
-            "dateTime": "2024-12-31T19:00:00Z",
-            "numberOfPeople": 4
-          }
-    response:
-      status: 401
-      statusText: Unauthorized
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
-  - name: 404 Response
-    description: Restaurant not found
-    request:
-      url: "{{baseUrl}}/reservations"
-      method: POST
-      body:
-        type: json
-        data: |-
-          {
-            "id": "res_12345",
-            "userId": "user_12345",
-            "restaurantId": "12345",
-            "dateTime": "2024-12-31T19:00:00Z",
-            "numberOfPeople": 4
-          }
-    response:
-      status: 404
-      statusText: Not Found
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
-  - name: 500 Response
-    description: Server Error
-    request:
-      url: "{{baseUrl}}/reservations"
-      method: POST
-      body:
-        type: json
-        data: |-
-          {
-            "id": "res_12345",
-            "userId": "user_12345",
-            "restaurantId": "12345",
-            "dateTime": "2024-12-31T19:00:00Z",
-            "numberOfPeople": 4
-          }
-    response:
-      status: 500
-      statusText: Internal Server Error
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "code": 0,
-            "message": "Error message"
-          }
