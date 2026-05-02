@@ -19,7 +19,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/status"
@@ -46,15 +45,6 @@ type notificationClient struct {
 }
 
 const notificationSendRegistrationEmailMethod = "/notification.AuthToNotificationService/SendRegistrationEmail"
-
-func newNotificationClient(target string) (*notificationClient, *grpc.ClientConn, error) {
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, nil, fmt.Errorf("dial notification grpc: %w", err)
-	}
-
-	return &notificationClient{conn: conn}, conn, nil
-}
 
 func (c *notificationClient) SendRegistrationEmail(ctx context.Context, email, username string) error {
 	notifyCtx, cancel := context.WithTimeout(ctx, 5*time.Second)

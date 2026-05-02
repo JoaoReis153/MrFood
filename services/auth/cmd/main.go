@@ -94,5 +94,9 @@ func initTracer(ctx context.Context, serviceName string) (func(), error) {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
-	return func() { tp.Shutdown(ctx) }, nil
+	return func() {
+		if err := tp.Shutdown(ctx); err != nil {
+			slog.Error("failed to shutdown tracer provider", "error", err)
+		}
+	}, nil
 }
