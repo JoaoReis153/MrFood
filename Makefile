@@ -51,7 +51,8 @@ help:
 ## Run Bruno REST CI smoke tests
 test-bruno:
 	mkdir -p tests/mrfood-api/reports
-	cd tests/mrfood-api/collections/ci && npx --yes @usebruno/cli@latest run -r --tests-only --reporter-junit ../../reports/bruno-junit.xml --reporter-json ../../reports/bruno-report.json
+	cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json
+	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
 
 ## Build services
 
