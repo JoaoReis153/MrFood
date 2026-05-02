@@ -43,7 +43,7 @@ jobs:
           
           # 2. Populate shared secrets (JWT)
           cat > services/.env <<'EOF'
-          APP_JWT_ACCESS_TOKEN_SECRET=test-access-secret-for-ci-0123456789
+          APP_JWT_ACCESS_TOKEN_SECRET=CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
           APP_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci-0123456789
           EOF
 
