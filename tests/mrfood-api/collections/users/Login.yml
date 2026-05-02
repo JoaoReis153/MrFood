@@ -12,7 +12,7 @@ http:
     type: json
     data: |-
       {
-        "email": "goncasmendonca42@gmail.com",
+        "email": "mrfood.api@gmail.com",
         "password": "StrongPassword123"
       }
   auth: inherit
