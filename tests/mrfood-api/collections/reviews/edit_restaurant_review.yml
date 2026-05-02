@@ -7,7 +7,7 @@ info:
 
 http:
   method: PUT
-  url: "{{baseUrl}}/reviews/update/{{reviewId}}"
+  url: "{{baseUrl}}/reviews/{{reviewId}}"
   body:
     type: json
     data: |-
