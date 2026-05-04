@@ -612,8 +612,10 @@ func TestUUIDToInt64_Valid(t *testing.T) {
 
 func TestUUIDToInt64_Deterministic(t *testing.T) {
 	uuid := "4f774104-1234-5678-abcd-ef0123456789"
-	if uuidToInt64(uuid) != uuidToInt64(uuid) {
-		t.Fatal("uuidToInt64 is not deterministic")
+	first := uuidToInt64(uuid)
+	second := uuidToInt64(uuid)
+	if first != second {
+		t.Fatalf("uuidToInt64 is not deterministic: got %d and %d", first, second)
 	}
 }
 
