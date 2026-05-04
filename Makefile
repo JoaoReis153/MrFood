@@ -102,7 +102,7 @@ load-csvs:
 	@echo "✓ All data loaded successfully"
 
 ## Complete setup: start services and load all data
-setup: run load-csvs
+setup: run search-bootstrap load-csvs
 	@echo "✓ Setup complete! Services running and data loaded"
 
 # ============================================================================
@@ -119,7 +119,6 @@ build-no-cache:
 ## Start all services (detached)
 run:
 	$(DC) up -d --pull=missing
-	@$(MAKE) --no-print-directory search-bootstrap
 
 ## Stop services
 stop:
@@ -184,7 +183,7 @@ search-run:
 ## Bootstrap ES index and register CDC connectors
 search-bootstrap:
 	@echo "Waiting for Elasticsearch..."
-	@until curl -fsS http://localhost:$(CDC_ELASTIC_PORT) >/dev/null 2>&1; do sleep 2; done
+	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
 	@echo "✔ Elasticsearch ready"
 
 	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \

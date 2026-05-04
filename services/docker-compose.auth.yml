@@ -3,51 +3,28 @@ x-common: &common
   networks:
     - app-network
 
-x-pg-healthcheck: &pg-healthcheck
-  test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-  interval: 5s
-  timeout: 5s
-  retries: 5
-
 services:
   auth:
     build: ./auth/
     <<: *common
     env_file:
-      - ./config.env  # non-sensitive config (ports, DB names/hosts, addresses…)
-      - .env          # shared secrets: APP_JWT_*
-      - ./auth/.env   # auth secrets: AUTH_POSTGRES_PASSWORD, AUTH_REDIS_PASS
+      - ./config.env   # non-sensitive config (ports, addresses…)
+      - ./auth/.env    # auth secrets: KEYCLOAK_CLIENT_SECRET, KEYCLOAK_ADMIN_PASS
     depends_on:
-      auth_db:
-        condition: service_healthy
-      auth_redis:
-        condition: service_healthy
+      keycloak:
+        condition: service_started
 
-  auth_db:
-    image: postgres:16
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.6.1
     <<: *common
-    command: postgres -c ssl=off -c log_statement=ddl
-    volumes:
-      - auth_db_data:/var/lib/postgresql/data
-      - ./auth/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
-    env_file:
-      - ./auth/.env   # POSTGRES_PASSWORD
+    command: start-dev --import-realm
     environment:
-      POSTGRES_DB: ${AUTH_POSTGRES_DB}
-      POSTGRES_USER: ${AUTH_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${AUTH_POSTGRES_PASSWORD}
-    healthcheck:
-      <<: *pg-healthcheck
-
-  auth_redis:
-    image: redis:7-alpine
-    <<: *common
-    command: redis-server --save "" --appendonly no
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  auth_db_data:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASS:-admin}
+      KC_DB: dev-mem          # in-memory H2 — swap for postgres in production
+      KC_HTTP_PORT: 8080
+      KC_HOSTNAME: "http://keycloak:8080"   # pins the iss claim; must match Kong consumer key
+    volumes:
+      - ./keycloak/realm-import.json:/opt/keycloak/data/import/mrfood-realm.json:ro
+    ports:
+      - "8080:8080"           # expose admin console on host for development

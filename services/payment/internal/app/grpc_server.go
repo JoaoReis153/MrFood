@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"hash/fnv"
 	"strconv"
 	"strings"
 
@@ -129,10 +130,7 @@ func (s *queryServer) GetReceiptsByUser(ctx context.Context, req *pb.ReceiptRequ
 		return nil, err
 	}
 
-	user_id, err := parseInt64(claims.UserID)
-	if err != nil {
-		return nil, err
-	}
+	user_id := uuidToInt64(claims.Subject)
 
 	err = s.paymentService.GetReceiptsByUser(ctx, user_id)
 
@@ -151,10 +149,7 @@ func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt64(claims.UserID)
-	if err != nil {
-		return nil, err
-	}
+	user_id := uuidToInt64(claims.Subject)
 
 	err = s.paymentService.GetReceiptById(ctx, req.ReceiptId, user_id)
 
@@ -190,15 +185,12 @@ type Claims struct {
 	TokenType    string `json:"token_type"` // access or refresh
 }
 
-func parseInt64(value string) (int64, error) {
-	v, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int64 range")
-	}
-	return int64(v), nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
