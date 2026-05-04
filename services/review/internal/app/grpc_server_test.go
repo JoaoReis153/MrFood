@@ -599,33 +599,28 @@ func TestExtractUserFromContext_ValidToken(t *testing.T) {
 }
 
 // ===================================================
-// ================= parseInt32 ======================
+// ================ uuidToInt64 ======================
 // ===================================================
 
-func TestParseInt32_Valid(t *testing.T) {
-	v, err := parseInt64("42")
-	if err != nil || v != 42 {
-		t.Fatalf("expected 42, got %d err %v", v, err)
+func TestUUIDToInt64_Valid(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	id := uuidToInt64(uuid)
+	if id <= 0 {
+		t.Fatalf("expected positive int64, got %d", id)
 	}
 }
 
-func TestParseInt32_Zero(t *testing.T) {
-	_, err := parseInt64("0")
-	if err == nil {
-		t.Fatal("expected error for 0, got nil")
+func TestUUIDToInt64_Deterministic(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	if uuidToInt64(uuid) != uuidToInt64(uuid) {
+		t.Fatal("uuidToInt64 is not deterministic")
 	}
 }
 
-func TestParseInt32_Negative(t *testing.T) {
-	_, err := parseInt64("-1")
-	if err == nil {
-		t.Fatal("expected error for negative, got nil")
-	}
-}
-
-func TestParseInt32_NonNumeric(t *testing.T) {
-	_, err := parseInt64("abc")
-	if err == nil {
-		t.Fatal("expected error for non-numeric, got nil")
+func TestUUIDToInt64_NonNegative(t *testing.T) {
+	for _, s := range []string{"", "abc", "-1", "0", "4f774104-1234-5678-abcd-ef0123456789"} {
+		if v := uuidToInt64(s); v < 0 {
+			t.Fatalf("expected non-negative for %q, got %d", s, v)
+		}
 	}
 }

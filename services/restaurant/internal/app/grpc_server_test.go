@@ -258,16 +258,21 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	}
 }
 
-func TestParseInt32(t *testing.T) {
-	if _, err := parseInt64("0"); err == nil {
-		t.Fatal("expected validation error")
+func TestUUIDToInt64(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	id := uuidToInt64(uuid)
+	if id <= 0 {
+		t.Fatalf("expected positive int64, got %d", id)
 	}
-	value, err := parseInt64("42")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	// Must be deterministic
+	if uuidToInt64(uuid) != id {
+		t.Fatal("uuidToInt64 is not deterministic")
 	}
-	if value != 42 {
-		t.Fatalf("expected 42, got %d", value)
+	// High bit cleared → always non-negative
+	for _, s := range []string{"", "abc", uuid} {
+		if v := uuidToInt64(s); v < 0 {
+			t.Fatalf("expected non-negative for %q, got %d", s, v)
+		}
 	}
 }
 

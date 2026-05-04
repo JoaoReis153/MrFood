@@ -123,7 +123,7 @@ func (c *Client) CreateUser(ctx context.Context, username, email, password strin
 	if err != nil {
 		return "", fmt.Errorf("create user: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	switch httpResp.StatusCode {
 	case http.StatusCreated:
@@ -194,7 +194,7 @@ func (c *Client) setUserAttribute(ctx context.Context, adminToken, userID, usern
 	if err != nil {
 		return fmt.Errorf("do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNoContent {
 		rb, _ := io.ReadAll(resp.Body)
@@ -221,7 +221,7 @@ func (c *Client) GetUserByEmail(ctx context.Context, email string) (*UserReprese
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	if httpResp.StatusCode != http.StatusOK {
 		rb, _ := io.ReadAll(httpResp.Body)
@@ -256,7 +256,7 @@ func (c *Client) RevokeAllUserSessions(ctx context.Context, userID string) error
 	if err != nil {
 		return fmt.Errorf("logout: %w", err)
 	}
-	defer httpResp.Body.Close()
+	defer func() { _ = httpResp.Body.Close() }()
 
 	if httpResp.StatusCode != http.StatusNoContent {
 		rb, _ := io.ReadAll(httpResp.Body)
@@ -330,7 +330,7 @@ func (c *Client) postForm(ctx context.Context, u string, data url.Values, wantSt
 	if err != nil {
 		return fmt.Errorf("do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != wantStatus {
 		rb, _ := io.ReadAll(resp.Body)
