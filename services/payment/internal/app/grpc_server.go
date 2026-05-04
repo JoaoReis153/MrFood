@@ -130,7 +130,7 @@ func (s *queryServer) GetReceiptsByUser(ctx context.Context, req *pb.ReceiptRequ
 		return nil, err
 	}
 
-	user_id := uuidToInt64(claims.Subject)
+	user_id := uuidToInt64(claims.UserID)
 
 	err = s.paymentService.GetReceiptsByUser(ctx, user_id)
 
@@ -149,7 +149,7 @@ func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest
 		return nil, err
 	}
 
-	user_id := uuidToInt64(claims.Subject)
+	user_id := uuidToInt64(claims.UserID)
 
 	err = s.paymentService.GetReceiptById(ctx, req.ReceiptId, user_id)
 

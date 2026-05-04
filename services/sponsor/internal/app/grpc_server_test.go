@@ -34,10 +34,10 @@ func (m *mockSponsorService) Sponsor(ctx context.Context, s *models.Sponsorship,
 // JWT Helper
 // -----------------------------
 func createAuthContext(userID string, username string, email string) context.Context {
-	claims := jwt.MapClaims{
-		"user_id":  userID,
-		"username": username,
-		"email":    email,
+	claims := &Claims{
+		UserID:   userID,
+		Username: username,
+		Email:    email,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -154,7 +154,7 @@ func TestExtractUserFromContext_Success(t *testing.T) {
 	user, err := ExtractUserFromContext(ctx)
 
 	require.NoError(t, err)
-	require.Equal(t, int64(42), user.UserID)
+	require.Equal(t, uuidToInt64("42"), user.UserID)
 	require.Equal(t, "alice", user.Username)
 	require.Equal(t, "alice@test.com", user.Email)
 }

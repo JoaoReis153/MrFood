@@ -125,7 +125,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID := uuidToInt64(claims.Subject)
+	userID := uuidToInt64(claims.UserID)
 
 	userInfo := &UserInfo{
 		UserID:   userID,
@@ -134,7 +134,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	}
 
 	slog.Info("USER INFO",
-		"sub", claims.Subject,
+		"user_id_claim", claims.UserID,
 		"user_id", userID,
 		"username", claims.Username,
 		"email", claims.Email,

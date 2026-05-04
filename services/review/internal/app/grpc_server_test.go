@@ -185,7 +185,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) {
-			if review.RestaurantID != 1 || review.UserID != 2 || review.Rating != 5 || review.Comment != "good" {
+			if review.RestaurantID != 1 || review.UserID != uuidToInt64("2") || review.Rating != 5 || review.Comment != "good" {
 				t.Fatalf("unexpected review in service: %+v", review)
 			}
 			review.ReviewID = 10
@@ -203,7 +203,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	r := resp.Review
-	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != 2 || r.Rating != 5 || r.Comment != "good" {
+	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != uuidToInt64("2") || r.Rating != 5 || r.Comment != "good" {
 		t.Fatalf("unexpected review resp: %+v", r)
 	}
 }
@@ -273,7 +273,7 @@ func TestServer_UpdateReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
-			if review.ReviewID != 10 || review.UserID != 2 {
+			if review.ReviewID != 10 || review.UserID != uuidToInt64("2") {
 				t.Fatalf("unexpected update request: %+v", review)
 			}
 			if review.Comment == nil || *review.Comment != "new" {
@@ -378,7 +378,7 @@ func TestServer_DeleteReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error {
-			if deleteReq.ReviewID != 7 || deleteReq.UserID != 2 {
+			if deleteReq.ReviewID != 7 || deleteReq.UserID != uuidToInt64("2") {
 				t.Fatalf("unexpected delete request: %+v", deleteReq)
 			}
 			return nil

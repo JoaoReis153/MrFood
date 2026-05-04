@@ -103,7 +103,7 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		return nil, err
 	}
 
-	user_id := uuidToInt64(claims.Subject)
+	user_id := uuidToInt64(claims.UserID)
 
 	slog.Info("received booking CREATION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
@@ -138,7 +138,7 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 		return nil, err
 	}
 
-	user_id := uuidToInt64(claims.Subject)
+	user_id := uuidToInt64(claims.UserID)
 
 	delete_request := &models.DeleteBooking{
 		BookingID: req.BookingId,
@@ -177,6 +177,11 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	if err != nil {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+
+	if claims.UserID == "" {
+		slog.Error("missing user_id claim in token")
+		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
 	}
 
 	slog.Info("USER INFO",

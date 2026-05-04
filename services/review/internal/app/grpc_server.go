@@ -127,7 +127,7 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	user_id := uuidToInt64(claims.Subject)
+	user_id := uuidToInt64(claims.UserID)
 	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
 		RestaurantID: req.GetRestaurantId(),
@@ -160,7 +160,7 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 		slog.Error("Failed to extract user from context", "error", err)
 		return nil, mapToGRPCError(err)
 	}
-	user_id := uuidToInt64(claims.Subject)
+	user_id := uuidToInt64(claims.UserID)
 	slog.Info("Received UpdateReview request", "reviewID", req.GetReviewId(), "userID", user_id)
 	review := models.UpdateReview{
 		ReviewID: req.GetReviewId(),
@@ -199,7 +199,7 @@ func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	userID := uuidToInt64(claims.Subject)
+	userID := uuidToInt64(claims.UserID)
 	slog.Info("Received DeleteReview request", "reviewID", req.GetReviewId(), "userID", userID)
 
 	err = s.svc.DeleteReview(ctx, models.DeleteReview{
