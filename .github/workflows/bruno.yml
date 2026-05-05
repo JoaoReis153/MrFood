@@ -115,6 +115,9 @@ jobs:
             exit 1
           fi
 
+      - name: Bootstrap search (ES index + CDC connectors)
+        run: make search-bootstrap
+
       - name: Run Bruno tests
         run: make test-bruno
 
