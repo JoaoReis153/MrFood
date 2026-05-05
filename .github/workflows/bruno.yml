@@ -49,7 +49,7 @@ jobs:
 
           # 3. Populate per-service secrets (passwords)
           # These match the values used in previous CI runs and tests
-          printf 'AUTH_POSTGRES_PASSWORD=mrfood_auth_secret\nAUTH_REDIS_PASS=\n' > services/auth/.env
+          printf 'AUTH_POSTGRES_PASSWORD=mrfood_auth_secret\nAUTH_REDIS_PASS=\nKEYCLOAK_CLIENT_SECRET=mrfood-auth-client-secret\nKEYCLOAK_ADMIN_PASS=admin\n' > services/auth/.env
           echo "RESTAURANT_POSTGRES_PASSWORD=restaurantsecret" > services/restaurant/.env
           echo "BOOKING_POSTGRES_PASSWORD=bookingsecret" > services/booking/.env
           echo "REVIEW_POSTGRES_PASSWORD=reviewsecret" > services/review/.env
