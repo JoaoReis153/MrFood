@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	jwtlib "github.com/golang-jwt/jwt/v5"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -36,6 +37,33 @@ type Server struct {
 	pb.UnimplementedAuthServiceServer
 	kc                  keycloakClient
 	notificationService notificationService
+	jwtSecret           []byte
+}
+
+const jwtIssuer = "mrfood-auth"
+
+const accessTokenTTL = 300 * time.Second
+
+type appClaims struct {
+	jwtlib.RegisteredClaims
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
+}
+
+func (s *Server) mintAccessToken(sub, username string) (string, error) {
+	now := time.Now()
+	claims := appClaims{
+		RegisteredClaims: jwtlib.RegisteredClaims{
+			Issuer:    jwtIssuer,
+			Subject:   sub,
+			IssuedAt:  jwtlib.NewNumericDate(now),
+			ExpiresAt: jwtlib.NewNumericDate(now.Add(accessTokenTTL)),
+		},
+		UserID:   sub,
+		Username: username,
+	}
+	token := jwtlib.NewWithClaims(jwtlib.SigningMethodHS256, claims)
+	return token.SignedString(s.jwtSecret)
 }
 
 type notificationService interface {
@@ -113,17 +141,23 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	claims, err := parseJWTPayload(tokenResp.AccessToken)
+	kcClaims, err := parseJWTPayload(tokenResp.AccessToken)
 	if err != nil {
 		slog.Error("failed to parse keycloak access token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to parse token claims")
 	}
 
-	sub, _ := claims["sub"].(string)
-	username, _ := claims["preferred_username"].(string)
+	sub, _ := kcClaims["sub"].(string)
+	username, _ := kcClaims["preferred_username"].(string)
+
+	accessToken, err := s.mintAccessToken(sub, username)
+	if err != nil {
+		slog.Error("failed to mint access token", "error", err)
+		return nil, status.Error(codes.Internal, "failed to mint token")
+	}
 
 	return &pb.LoginResponse{
-		AccessToken:  tokenResp.AccessToken,
+		AccessToken:  accessToken,
 		RefreshToken: tokenResp.RefreshToken,
 		User: &pb.User{
 			Id:       uuidToInt64(sub),
@@ -142,8 +176,23 @@ func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
+	kcClaims, err := parseJWTPayload(tokenResp.AccessToken)
+	if err != nil {
+		slog.Error("failed to parse refreshed keycloak token", "error", err)
+		return nil, status.Error(codes.Internal, "failed to parse refreshed token")
+	}
+
+	sub, _ := kcClaims["sub"].(string)
+	username, _ := kcClaims["preferred_username"].(string)
+
+	accessToken, err := s.mintAccessToken(sub, username)
+	if err != nil {
+		slog.Error("failed to mint refreshed access token", "error", err)
+		return nil, status.Error(codes.Internal, "failed to mint token")
+	}
+
 	return &pb.RefreshResponse{
-		Token:        tokenResp.AccessToken,
+		Token:        accessToken,
 		RefreshToken: tokenResp.RefreshToken,
 	}, nil
 }
@@ -183,6 +232,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	pb.RegisterAuthServiceServer(s, &Server{
 		kc:                  app.KC,
 		notificationService: &notificationClient{conn: app.notificationConn},
+		jwtSecret:           []byte(cfg.JWTSecret),
 	})
 
 	healthServer := health.NewServer()

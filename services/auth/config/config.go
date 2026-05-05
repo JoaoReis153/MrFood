@@ -48,6 +48,7 @@ type Config struct {
 	Log          LogConfig          `yaml:"log"`
 	Keycloak     KeycloakConfig     `yaml:"keycloak"`
 	Notification NotificationConfig `yaml:"notification"`
+	JWTSecret    string             `yaml:"jwt_secret" validate:"required"`
 }
 
 var (
@@ -111,6 +112,7 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Keycloak.AdminPass = getEnv("KEYCLOAK_ADMIN_PASS", cfg.Keycloak.AdminPass)
 
 	cfg.Notification.GRPCAddr = getEnv("AUTH_TO_NOTIFICATION_GRPC_ADDR", cfg.Notification.GRPCAddr)
+	cfg.JWTSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWTSecret)
 }
 
 func validateConfig(cfg *Config) error {
