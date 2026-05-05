@@ -9,6 +9,7 @@ services:
     <<: *common
     env_file:
       - ./config.env   # non-sensitive config (ports, addresses…)
+      - .env           # shared secrets: APP_JWT_ACCESS_TOKEN_SECRET
       - ./auth/.env    # auth secrets: KEYCLOAK_CLIENT_SECRET, KEYCLOAK_ADMIN_PASS
     depends_on:
       keycloak:
@@ -24,6 +25,13 @@ services:
       KC_DB: dev-mem          # in-memory H2 — swap for postgres in production
       KC_HTTP_PORT: 8080
       KC_HOSTNAME: "http://keycloak:8080"   # pins the iss claim; must match Kong consumer key
+    healthcheck:
+      # Polls the mrfood realm endpoint — only succeeds once the realm is fully imported.
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/mrfood || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 24       # up to 2 minutes
+      start_period: 20s # Keycloak needs time before the first check
     volumes:
       - ./keycloak/realm-import.json:/opt/keycloak/data/import/mrfood-realm.json:ro
     ports:

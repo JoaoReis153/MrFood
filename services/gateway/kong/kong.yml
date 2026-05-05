@@ -154,22 +154,11 @@ services:
       - exp
 
 consumers:
-- username: keycloak
+- username: mrfood-auth
   jwt_secrets:
-  # The `key` must match the `iss` claim in Keycloak-issued JWTs.
-  # Keycloak sets iss = <KEYCLOAK_BASE_URL>/realms/<REALM>
-  # Update this value if Keycloak is exposed on a different host.
-  - key: "http://keycloak:8080/realms/mrfood"
-    algorithm: RS256
-    # Public key from the mrfood realm — matches the key embedded in
-    # services/keycloak/realm-import.json (the mrfood-rsa-key component).
-    rsa_public_key: |
-      -----BEGIN PUBLIC KEY-----
-      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwXPBBTEVkQN1Ky3c5iC/
-      cOz1jVVwlfbEYyVuDuUS5/OV5Ck+opPG/MovzUsKXZI4sfofiPb4iopq5xlGFsHW
-      /BVwgapSjGw0JX+WJarTuksVUpsKopXA+fKAxTi0N+JJDuylGdQXjyWB8CzUkZTi
-      6u4PlGo/N7YVrNFk7H1U0eIAtemEqTQMTmJXnxk87OhfP6qlI4FYvodsbhp9Wfqt
-      GTAqiNtM7W7pJfWQ/3yf+OpUlY1SrLuvQko7ik2/l3moWlfuyzoIhavFyAkvdMh9
-      5mdkZeZnV4iicLlTfxurFDvgytOehtUwYEzuTH+rF9GSUJL09eRJWNL+utpA8Wbr
-      6wIDAQAB
-      -----END PUBLIC KEY-----
+  # key must match the `iss` claim minted by the auth service (jwtIssuer const).
+  # algorithm is HS256 — Kong verifies with APP_JWT_ACCESS_TOKEN_SECRET.
+  # This is the dev/CI secret; replace for production.
+  - key: "mrfood-auth"
+    algorithm: HS256
+    secret: "CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE="
