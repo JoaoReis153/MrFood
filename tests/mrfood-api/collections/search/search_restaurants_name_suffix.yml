@@ -1,83 +1,48 @@
 info:
   name: Search restaurants by name suffix
   type: http
-  seq: 13
+  seq: 11
   tags:
-    - Restaurants
     - Search
 
 http:
   method: GET
-  url: "{{baseUrl}}/search?name_suffix=147&page=1&limit=10"
+  url: "{{baseUrl}}/search"
   params:
-    - name: name_suffix
-      value: "147"
-      type: query
     - name: page
       value: "1"
       type: query
     - name: limit
       value: "10"
       type: query
+    - name: name_suffix
+      value: "cafe"
+      type: query
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("search by name suffix returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has data array", () => {
+            expect(res.body).to.have.property("data");
+            expect(res.body.data).to.be.an("array");
+          });
+
+          test("response has pagination", () => {
+            expect(res.body).to.have.property("pagination");
+          });
+        }
 
 settings:
   encodeUrl: true
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-examples:
-  - name: 200 Response
-    description: Suffix-matching restaurants returned
-    request:
-      url: "{{baseUrl}}/search?name_suffix=147&page=1&limit=10"
-      method: GET
-    response:
-      status: 200
-      statusText: OK
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "data": [
-              {
-                "id": 1,
-                "name": "Le 147"
-              }
-            ],
-            "pagination": {
-              "page": 1,
-              "limit": 10,
-              "total": 1,
-              "pages": 1
-            }
-          }
-  - name: 200 Empty Response
-    description: No restaurants match the suffix
-    request:
-      url: "{{baseUrl}}/search?name_suffix=nonexistent&page=1&limit=10"
-      method: GET
-    response:
-      status: 200
-      statusText: OK
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "data": [],
-            "pagination": {
-              "page": 1,
-              "limit": 10,
-              "total": 0,
-              "pages": 0
-            }
-          }

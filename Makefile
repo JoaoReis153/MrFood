@@ -1,12 +1,18 @@
 # Config
 PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
-TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
+TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/... ./services/observability/...
 
-# Load environment variables from .env file
+# Load non-sensitive config (committed) and secrets (git-ignored)
+-include services/config.env
 -include services/.env
 
-DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE)
+# Load all .env files (shared and per-service) for docker compose interpolation
+ENV_FILES := --env-file services/config.env
+ENV_FILES += $(if $(wildcard services/.env),--env-file services/.env,)
+ENV_FILES += $(foreach env,$(wildcard services/*/.env),--env-file $(env))
+
+DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) $(ENV_FILES)
 PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,python3)
 CSV_SERVICES ?= all
 CSV_ROWS ?= 200
@@ -18,7 +24,8 @@ help:
 	@echo "MrFood Make Commands"
 	@echo ""
 	@echo "Setup & Data:"
-	@echo "  make create_env                         - Create services/.env from template"
+	@echo "  make create_env                         - Create secret .env files from env.tmpl"
+	@echo "  (config.env is already committed — no setup needed)"
 	@echo "  make setup                              - Start services and load all data"
 	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
 	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
@@ -39,13 +46,18 @@ help:
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean                              - Remove containers & images"
-	@echo "  make clean-volumes                      - Remove containers, images, volumes"
 	@echo "  make clean-all                          - Full reset (all containers, images, volumes)"
 
 ## Run Bruno REST CI smoke tests
 test-bruno:
 	mkdir -p tests/mrfood-api/reports
-	cd tests/mrfood-api/collections/ci && npx --yes @usebruno/cli@latest run -r --tests-only --reporter-junit ../../reports/bruno-junit.xml --reporter-json ../../reports/bruno-report.json
+	cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json
+	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
+	cd tests/mrfood-api/collections/reservations && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reservations-junit.xml --reporter-json ../../reports/reservations-report.json
+	cd tests/mrfood-api/collections/reviews && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reviews-junit.xml --reporter-json ../../reports/reviews-report.json
+	cd tests/mrfood-api/collections/search && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/search-junit.xml --reporter-json ../../reports/search-report.json
+	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
+	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json
 
 ## Build services
 
@@ -53,15 +65,25 @@ test-bruno:
 # ENVIRONMENT
 # ============================================================================
 
-## Create services/.env from services/env.tmpl
+## Create secret .env files from services/env.tmpl
+## config.env (non-sensitive) is already committed — no action needed for it.
 create_env:
 	@if [ -f services/.env ]; then \
-		echo "services/.env already exists. No changes made."; \
+		echo "services/.env already exists."; \
 	else \
 		cp services/env.tmpl services/.env; \
-		echo "Created services/.env from services/env.tmpl"; \
-		echo "Fill AUTH_JWT_ACCESS_TOKEN_SECRET and AUTH_JWT_REFRESH_TOKEN_SECRET in services/.env"; \
+		echo "Created services/.env"; \
 	fi
+	@for f in services/*/env.tmpl; do \
+		dir=$$(dirname "$$f"); \
+		if [ -f "$$dir/.env" ]; then \
+			echo "$$dir/.env already exists."; \
+		else \
+			cp "$$f" "$$dir/.env"; \
+			echo "Created $$dir/.env"; \
+		fi; \
+	done
+	@echo "Fill in secret values in all created .env files before running docker compose."
 
 # ============================================================================
 # DATA GENERATION
@@ -71,52 +93,16 @@ create_env:
 generate-csv:
 	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
 
-## Generate only auth CSV seed files
-generate-csv-auth:
-	$(PYTHON) scripts/process_data.py --services auth $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
-## Generate only restaurant CSV seed files
-generate-csv-restaurant:
-	$(PYTHON) scripts/process_data.py --services restaurant $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
-## Generate only review CSV seed files
-generate-csv-review:
-	$(PYTHON) scripts/process_data.py --services review $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
 # ============================================================================
 # DATA LOADING
 # ============================================================================
 
-## Load auth data into database
-load-auth:
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "$(AUTH_POSTGRES_DB)" -c "TRUNCATE TABLE app_user CASCADE;"
-	$(DC) exec -T auth_db psql -U "$(AUTH_POSTGRES_USER)" -d "$(AUTH_POSTGRES_DB)" -c "\\copy app_user(user_id, username, password, email) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/auth/app_user.csv
-
-## Load restaurant data into database
-load-restaurant:
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "TRUNCATE TABLE restaurant_categories, restaurants RESTART IDENTITY CASCADE;"
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurants(id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurants.csv
-	$(DC) exec -T restaurant_db psql -U "$(RESTAURANT_POSTGRES_USER)" -d "$(RESTAURANT_POSTGRES_DB)" -c "\\copy restaurant_categories(restaurant_id, category) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/restaurant/restaurant_categories.csv
-
-## Load all seed data into databases
-
-load-reviews:
-	@if ! $(DC) ps --services | grep -qx "review_db"; then \
-		echo "Skipping load-reviews: review_db service is not configured in $(COMPOSE_FILE)"; \
-	elif ! $(DC) ps --services --status running | grep -qx "review_db"; then \
-		echo "Skipping load-reviews: review_db service is not running"; \
-	else \
-		$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "TRUNCATE TABLE review, restaurant_stats RESTART IDENTITY CASCADE;"; \
-		$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "\\copy review(review_id, restaurant_id, user_id, comment, rating, created_at) FROM STDIN WITH (FORMAT csv, HEADER true)" < scripts/processed_data/review/review.csv; \
-		$(DC) exec -T review_db psql -U "$(REVIEW_POSTGRES_USER)" -d "$(REVIEW_POSTGRES_DB)" -c "SELECT setval(pg_get_serial_sequence('review', 'review_id'), COALESCE((SELECT MAX(review_id) FROM review), 1), (SELECT COUNT(*) > 0 FROM review));"; \
-	fi
-
-load-all:
+load-csvs:
 	@$(MAKE) --no-print-directory -j 3 load-auth load-restaurant load-reviews 
 	@echo "✓ All data loaded successfully"
 
 ## Complete setup: start services and load all data
-setup: run load-all
+setup: run search-bootstrap load-csvs
 	@echo "✓ Setup complete! Services running and data loaded"
 
 # ============================================================================
@@ -132,16 +118,7 @@ build-no-cache:
 
 ## Start all services (detached)
 run:
-	$(DC) up -d
-	@$(MAKE) --no-print-directory bootstrap-search
-
-bootstrap-search:
-	@echo "Ensuring Elasticsearch index '$(ELASTICSEARCH_INDEX)' exists..."
-	@curl -fsS -X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
-		-H 'Content-Type: application/json' \
-		-d '{"settings":{"number_of_shards":1,"number_of_replicas":0},"mappings":{"properties":{"id":{"type":"integer"},"name":{"type":"text","fields":{"keyword":{"type":"keyword"}}},"address":{"type":"text"},"categories":{"type":"keyword"},"location":{"type":"geo_point"},"latitude":{"type":"double"},"longitude":{"type":"double"},"media_url":{"type":"keyword"},"max_slots":{"type":"integer"},"owner_id":{"type":"long"},"owner_name":{"type":"text"},"sponsor_tier":{"type":"integer"}}}}' >/dev/null || true
-	@echo "Registering CDC connectors..."
-	@CONNECT_URL="http://localhost:$(CDC_CONNECT_PORT)" services/cdc/register-connectors.sh
+	$(DC) up -d --pull=missing
 
 ## Stop services
 stop:
@@ -161,6 +138,9 @@ restart: down run
 logs:
 	$(DC) logs -f
 
+logs-dump:
+	$(DC) logs --tail=500
+
 # ============================================================================
 # TESTING & BUILDING
 # ============================================================================
@@ -173,26 +153,67 @@ test:
 # CLEANUP
 # ============================================================================
 
-## Remove only this project's containers + images
-clean:
-	$(DC) down --rmi local --remove-orphans
-
 ## Remove containers + images + volumes (deletes DB data)
-clean-volumes:
+clean:
 	$(DC) down --rmi local --volumes --remove-orphans
 
 ## Full reset (containers, images, volumes)
 clean-all:
 	$(DC) down --rmi all --volumes --remove-orphans
 
-## check if images already exist to avoid rate-limiting -- pull if they dont
-check-images:
-	@for img in postgres:16 redis:7-alpine; do \
-		if ! docker image inspect $$img >/dev/null 2>&1; then \
-			echo "$$img missing → pulling"; \
-			docker pull $$img; \
-		else \
-			echo "$$img exists → skip"; \
-		fi; \
-	done
 
+# ============================================================================
+# SEARCH
+# ============================================================================
+
+SEARCH_COMPOSE_FILE := services/docker-compose.cdc.yml
+SEARCH_SERVICES := search elasticsearch zookeeper kafka connect restaurant restaurant_db kong auth auth_db otel-collector
+
+
+DCS := docker compose -p $(PROJECT_NAME) \
+	-f services/docker-compose.yml \
+	-f $(SEARCH_COMPOSE_FILE) \
+	$(ENV_FILES)
+
+## Start only search-related services (ES, Kafka, Connect)
+search-run:
+	$(DCS) up -d $(SEARCH_SERVICES)
+	@$(MAKE) --no-print-directory search-bootstrap
+
+## Bootstrap ES index and register CDC connectors
+search-bootstrap:
+	@echo "Waiting for Elasticsearch..."
+	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
+	@echo "✔ Elasticsearch ready"
+
+	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
+		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
+		-H 'Content-Type: application/json' \
+		-d @services/cdc/mappings/restaurants.json || true); \
+	if [ "$$HTTP_CODE" = "400" ]; then \
+		echo "✔ Index already exists"; \
+	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
+		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
+	else \
+		echo "✔ Index created (HTTP $$HTTP_CODE)"; \
+	fi
+
+	@bash services/cdc/register-connectors.sh
+	@bash services/cdc/seed_elasticsearch.sh
+
+## Stop search services
+search-stop:
+	$(DCS) stop $(SEARCH_SERVICES)
+
+## Stop and remove search services
+search-down:
+	$(DCS) rm -sf $(SEARCH_SERVICES)
+
+## Tail logs for search services only
+search-logs:
+	$(DCS) logs -f $(SEARCH_SERVICES)
+
+## Full reset of search (removes elastic_data and connect_plugins volumes)
+search-clean:
+	$(DCS) rm -sf $(SEARCH_SERVICES)
+	docker volume rm -f $(PROJECT_NAME)_elastic_data $(PROJECT_NAME)_connect_plugins

@@ -95,43 +95,12 @@ echo "Ensuring Elasticsearch index 'restaurants' exists..."
 if ! curl -fsS -I "$ELASTIC_URL/restaurants" >/dev/null 2>&1; then
   curl -fsS -X PUT "$ELASTIC_URL/restaurants" \
     -H 'Content-Type: application/json' \
-    -d '{
-      "settings": {
-        "number_of_shards": 1,
-        "number_of_replicas": 0,
-        "index.default_pipeline": "restaurants_location_pipeline"
-      },
-      "mappings": {
-        "properties": {
-          "id": {"type": "long"},
-          "name": {
-            "type": "text",
-            "fields": {
-              "keyword": {"type": "keyword"}
-            }
-          },
-          "address": {"type": "text"},
-          "categories": {"type": "keyword"},
-          "location": {"type": "geo_point"},
-          "latitude": {"type": "double"},
-          "longitude": {"type": "double"},
-          "media_url": {"type": "keyword"},
-          "max_slots": {"type": "integer"},
-          "owner_id": {"type": "long"},
-          "owner_name": {"type": "text"},
-          "sponsor_tier": {"type": "integer"}
-        }
-      }
-    }' >/dev/null
+    --data "@$SCRIPT_DIR/mappings/restaurants.json" >/dev/null
 else
   # Apply default ingest pipeline even when index already exists.
   curl -fsS -X PUT "$ELASTIC_URL/restaurants/_settings" \
     -H 'Content-Type: application/json' \
-    -d '{
-      "index": {
-        "default_pipeline": "restaurants_location_pipeline"
-      }
-    }' >/dev/null
+    -d '{"index": {"default_pipeline": "restaurants_location_pipeline"}}' >/dev/null
 fi
 
 CONNECT_URL="$CONNECT_URL" "$SCRIPT_DIR/register-connectors.sh"

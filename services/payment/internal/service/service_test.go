@@ -159,14 +159,20 @@ func TestGetReceiptById(t *testing.T) {
 	})
 
 	t.Run("SendReceipts error", func(t *testing.T) {
+		// Email delivery is best-effort: a notification failure must not
+		// cause GetReceiptById to return an error.
+		nc := &mockNotificationClient{err: errors.New("grpc fail")}
 		service := &Service{
 			repo:   &mockRepo{},
-			client: &mockNotificationClient{err: errors.New("grpc fail")},
+			client: nc,
 		}
 
 		err := service.GetReceiptById(context.Background(), 1, 1)
-		if err == nil {
-			t.Fatal("expected error")
+		if err != nil {
+			t.Fatalf("expected nil error when email delivery fails, got: %v", err)
+		}
+		if nc.calls != 1 {
+			t.Fatalf("expected SendReceipts to be called once, got %d", nc.calls)
 		}
 	})
 
@@ -200,14 +206,20 @@ func TestGetReceiptsByUser(t *testing.T) {
 	})
 
 	t.Run("SendReceipts error", func(t *testing.T) {
+		// Email delivery is best-effort: a notification failure must not
+		// cause GetReceiptsByUser to return an error.
+		nc := &mockNotificationClient{err: errors.New("grpc fail")}
 		service := &Service{
 			repo:   &mockRepo{},
-			client: &mockNotificationClient{err: errors.New("grpc fail")},
+			client: nc,
 		}
 
 		err := service.GetReceiptsByUser(context.Background(), 1)
-		if err == nil {
-			t.Fatal("expected error")
+		if err != nil {
+			t.Fatalf("expected nil error when email delivery fails, got: %v", err)
+		}
+		if nc.calls != 1 {
+			t.Fatalf("expected SendReceipts to be called once, got %d", nc.calls)
 		}
 	})
 

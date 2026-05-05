@@ -1,7 +1,9 @@
 *.DS_Store
 *.vscode
 *.idea
-*.env
+# Ignore all .env secret files; env.tmpl is the committed template
+**/.env
+!**/env.tmpl
 *__pycache__/
 data/*
 scripts/processed_data/*

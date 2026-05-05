@@ -1,0 +1,27 @@
+info:
+  name: Get receipt by ID
+  type: http
+  seq: 5
+  tags:
+    - Payment
+
+http:
+  method: GET
+  url: "{{baseUrl}}/payment/{{receiptId}}"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("get receipt by id returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

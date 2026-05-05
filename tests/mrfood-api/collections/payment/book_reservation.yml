@@ -1,0 +1,39 @@
+info:
+  name: Book reservation (fixture)
+  type: http
+  seq: 3
+  tags:
+    - Payment
+
+http:
+  method: POST
+  url: "{{baseUrl}}/reservations"
+  body:
+    type: json
+    data: |-
+      {
+        "restaurant_id": {{restaurantId}},
+        "time_start": "2026-12-31T11:00:00Z",
+        "quantity": 2
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("book reservation fixture returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          bru.setEnvVar("receiptId", String(res.body.payment.receipt_id));
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

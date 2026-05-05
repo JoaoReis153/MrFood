@@ -12,10 +12,33 @@ http:
     type: json
     data: |-
       {
-        "email": "goncasmendonca42@gmail.com",
+        "email": "mrfood.api@gmail.com",
         "password": "StrongPassword123"
       }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("login returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has access_token", () => {
+            expect(res.body).to.have.property("access_token");
+            expect(res.body.access_token).to.be.a("string").and.not.be.empty;
+          });
+
+          test("response has refresh_token", () => {
+            expect(res.body).to.have.property("refresh_token");
+            expect(res.body.refresh_token).to.be.a("string").and.not.be.empty;
+          });
+
+          bru.setEnvVar("token", res.body.access_token);
+          bru.setEnvVar("refreshToken", res.body.refresh_token);
+        }
 
 settings:
   encodeUrl: true

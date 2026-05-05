@@ -1,0 +1,45 @@
+info:
+  name: Create restaurant (fixture)
+  type: http
+  seq: 2
+  tags:
+    - Sponsor
+
+http:
+  method: POST
+  url: "{{baseUrl}}/restaurants"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "spon-fixture-{{testRunId}}",
+        "latitude": 38.716,
+        "longitude": -9.139,
+        "address": "Lisbon",
+        "opening_time": "09:00:00",
+        "closing_time": "22:00:00",
+        "categories": ["test"],
+        "max_slots": 50,
+        "has_media": false
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("create restaurant fixture returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          bru.setEnvVar("restaurantId", String(res.body.restaurant_id));
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

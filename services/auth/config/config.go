@@ -24,30 +24,19 @@ type LogConfig struct {
 	Level string `yaml:"level" validate:"required,oneof=debug info warn error"`
 }
 
-type DBConfig struct {
-	Host              string `yaml:"host"     validate:"required"`
-	Port              int    `yaml:"port"     validate:"required,min=1,max=65535"`
-	Name              string `yaml:"name"     validate:"required"`
-	User              string `yaml:"user"     validate:"required"`
-	Password          string `yaml:"password"`
-	MinConns          int32
-	MaxConns          int32         `yaml:"max_conns"`
-	MaxConnLifetime   time.Duration `yaml:"max_conn_lifetime"`
-	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
-}
-
-type RedisConfig struct {
-	Host     string `yaml:"host"     validate:"required"`
-	Port     int    `yaml:"port"     validate:"required,min=1,max=65535"`
-	Password string `yaml:"password"`
-	DB       int    `yaml:"db"       validate:"min=0"`
-}
-
-type JWTConfig struct {
-	AccessTokenSecret  string        `yaml:"secret"        validate:"required,min=32"`
-	RefreshTokenSecret string        `yaml:"refresh_secret" validate:"required,min=32"`
-	AccessTokenTTL     time.Duration `yaml:"access_token_ttl" validate:"required,min=5m,max=2h"`
-	RefreshTokenTTL    time.Duration `yaml:"refresh_token_ttl" validate:"required,min=1h,max=720h"`
+// KeycloakConfig holds all settings needed to talk to a Keycloak instance.
+type KeycloakConfig struct {
+	// BaseURL is the root URL of Keycloak, e.g. http://keycloak:8080
+	BaseURL string `yaml:"base_url" validate:"required"`
+	// Realm is the Keycloak realm name, e.g. mrfood
+	Realm string `yaml:"realm" validate:"required"`
+	// ClientID is the confidential client used for token operations
+	ClientID string `yaml:"client_id" validate:"required"`
+	// ClientSecret is the client secret for the confidential client
+	ClientSecret string `yaml:"client_secret" validate:"required"`
+	// AdminUser / AdminPass are master-realm admin credentials for the Admin API
+	AdminUser string `yaml:"admin_user" validate:"required"`
+	AdminPass string `yaml:"admin_pass" validate:"required"`
 }
 
 type NotificationConfig struct {
@@ -57,10 +46,9 @@ type NotificationConfig struct {
 type Config struct {
 	Server       ServerConfig       `yaml:"server"`
 	Log          LogConfig          `yaml:"log"`
-	DB           DBConfig           `yaml:"db"`
-	Redis        RedisConfig        `yaml:"redis"`
-	JWT          JWTConfig          `yaml:"jwt"`
+	Keycloak     KeycloakConfig     `yaml:"keycloak"`
 	Notification NotificationConfig `yaml:"notification"`
+	JWTSecret    string             `yaml:"jwt_secret" validate:"required"`
 }
 
 var (
@@ -79,26 +67,6 @@ func Load(_ context.Context) (*Config, error) {
 		Log: LogConfig{
 			Level: "info",
 		},
-		DB: DBConfig{
-			Host:              "localhost",
-			Port:              5432,
-			Name:              "mrfood",
-			User:              "postgres",
-			MinConns:          4,
-			MaxConns:          20,
-			MaxConnLifetime:   15 * time.Minute,
-			HealthCheckPeriod: 1 * time.Minute,
-		},
-		Redis: RedisConfig{
-			Host:     "localhost",
-			Port:     6379,
-			Password: "",
-			DB:       0,
-		},
-		JWT: JWTConfig{
-			AccessTokenTTL:  15 * time.Minute,
-			RefreshTokenTTL: 7 * 24 * time.Hour,
-		},
 	}
 
 	overrideWithEnv(cfg)
@@ -107,14 +75,10 @@ func Load(_ context.Context) (*Config, error) {
 		return nil, fmt.Errorf("config: %w", err)
 	}
 
-	if cfg.Notification.GRPCAddr == "" {
-		return nil, fmt.Errorf("notification gRPC address is required")
-	}
-
 	slog.Debug("config loaded",
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
-		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
-		slog.String("redis", fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)),
+		slog.String("keycloak_url", cfg.Keycloak.BaseURL),
+		slog.String("keycloak_realm", cfg.Keycloak.Realm),
 		slog.String("log_level", cfg.Log.Level),
 	)
 
@@ -135,28 +99,20 @@ func Get(ctx context.Context) *Config {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
+	cfg.Server.Port = getEnvInt("AUTH_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
-
-	cfg.DB.Host = getEnv("POSTGRES_HOST", cfg.DB.Host)
-	cfg.DB.Name = getEnv("POSTGRES_DB", cfg.DB.Name)
-	cfg.DB.User = getEnv("POSTGRES_USER", cfg.DB.User)
-	cfg.DB.Password = getEnv("POSTGRES_PASSWORD", cfg.DB.Password)
-
-	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
-	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
-	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
-	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
-
-	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
-	cfg.Redis.Password = getEnv("REDIS_PASS", cfg.Redis.Password)
-	cfg.Redis.DB = getEnvInt("REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 
-	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
-	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
+	cfg.Keycloak.BaseURL = getEnv("KEYCLOAK_BASE_URL", cfg.Keycloak.BaseURL)
+	cfg.Keycloak.Realm = getEnv("KEYCLOAK_REALM", cfg.Keycloak.Realm)
+	cfg.Keycloak.ClientID = getEnv("KEYCLOAK_CLIENT_ID", cfg.Keycloak.ClientID)
+	cfg.Keycloak.ClientSecret = getEnv("KEYCLOAK_CLIENT_SECRET", cfg.Keycloak.ClientSecret)
+	cfg.Keycloak.AdminUser = getEnv("KEYCLOAK_ADMIN_USER", cfg.Keycloak.AdminUser)
+	cfg.Keycloak.AdminPass = getEnv("KEYCLOAK_ADMIN_PASS", cfg.Keycloak.AdminPass)
 
 	cfg.Notification.GRPCAddr = getEnv("AUTH_TO_NOTIFICATION_GRPC_ADDR", cfg.Notification.GRPCAddr)
+	cfg.JWTSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWTSecret)
 }
 
 func validateConfig(cfg *Config) error {
@@ -196,23 +152,6 @@ func getEnvInt(key string, defaultValue int) int {
 		return defaultValue
 	}
 	return intVal
-}
-
-func getEnvInt32(key string, defaultValue int32) int32 {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	intVal, err := strconv.ParseInt(value, 10, 32)
-	if err != nil {
-		slog.Warn("invalid int32 env var, using default",
-			slog.String("key", key),
-			slog.String("value", value),
-			slog.Int("default", int(defaultValue)),
-		)
-		return defaultValue
-	}
-	return int32(intVal)
 }
 
 func getEnvDuration(key string, defaultValue time.Duration) time.Duration {

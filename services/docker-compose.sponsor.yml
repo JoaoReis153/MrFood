@@ -3,15 +3,6 @@ x-common: &common
   networks:
     - app-network
 
-x-sponsor-db-config: &sponsor-db-config
-  DB_HOST: sponsor_db
-  DB_NAME: ${SPONSOR_POSTGRES_DB}
-  DB_USER: ${SPONSOR_POSTGRES_USER}
-  DB_PASS: ${SPONSOR_POSTGRES_PASSWORD}
-  POSTGRES_DB: ${SPONSOR_POSTGRES_DB}
-  POSTGRES_USER: ${SPONSOR_POSTGRES_USER}
-  POSTGRES_PASSWORD: ${SPONSOR_POSTGRES_PASSWORD}
-
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   interval: 5s
@@ -22,18 +13,9 @@ services:
   sponsor:
     build: ./sponsor/
     <<: *common
-    environment:
-      # Database
-      <<: *sponsor-db-config
-      APP_SERVER_PORT: ${SPONSOR_SERVER_PORT}
-      RESTAURANT_GRPC_ADDR: "restaurant:${RESTAURANT_SERVER_PORT}"
-      PAYMENT_GRPC_ADDR: "payment:${PAYMENT_SERVER_PORT}"
-      DB_MIN_CONNS: 4
-      DB_MAX_CONNS: 20
-      DB_MAX_CONN_LIFETIME: 15m
-      DB_HEALTH_CHECK_PERIOD: 1m
-      # App
-      APP_LOG_LEVEL: debug
+    env_file:
+      - ./config.env
+      - ./sponsor/.env   # SPONSOR_POSTGRES_PASSWORD
     depends_on:
       sponsor_db:
         condition: service_healthy
@@ -47,14 +29,14 @@ services:
     volumes:
       - sponsor_db_data:/var/lib/postgresql/data
       - ./sponsor/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    env_file:
+      - ./sponsor/.env   # POSTGRES_PASSWORD
     environment:
-      <<: *sponsor-db-config
+      POSTGRES_DB: ${SPONSOR_POSTGRES_DB}
+      POSTGRES_USER: ${SPONSOR_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SPONSOR_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
-
-networks:
-  app-network:
-    driver: bridge
 
 volumes:
   sponsor_db_data:

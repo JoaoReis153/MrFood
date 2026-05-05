@@ -95,17 +95,18 @@ func Load(_ context.Context) (*Config, error) {
 
 func overrideWithEnv(cfg *Config) {
 	cfg.Server.Host = getEnv("APP_SERVER_HOST", cfg.Server.Host)
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
+	cfg.Server.Port = getEnvInt("PAYMENT_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 
-	cfg.DB.Host = getEnvAny(cfg.DB.Host, "DB_HOST", "POSTGRES_HOST")
-	cfg.DB.Name = getEnvAny(cfg.DB.Name, "DB_NAME", "POSTGRES_DB")
-	cfg.DB.User = getEnvAny(cfg.DB.User, "POSTGRES_USER", "DB_USER")
-	cfg.DB.Password = getEnvAny(cfg.DB.Password, "POSTGRES_PASSWORD", "DB_PASS")
-	cfg.DB.MinConns = getEnvInt32("DB_MIN_CONNS", cfg.DB.MinConns)
-	cfg.DB.MaxConns = getEnvInt32("DB_MAX_CONNS", cfg.DB.MaxConns)
-	cfg.DB.MaxConnLifetime = getEnvDuration("DB_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
-	cfg.DB.HealthCheckPeriod = getEnvDuration("DB_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
+	cfg.DB.Host = getEnv("PAYMENT_POSTGRES_HOST", cfg.DB.Host)
+	cfg.DB.Port = getEnvInt("POSTGRES_PORT", cfg.DB.Port)
+	cfg.DB.Name = getEnv("PAYMENT_POSTGRES_DB", cfg.DB.Name)
+	cfg.DB.User = getEnv("PAYMENT_POSTGRES_USER", cfg.DB.User)
+	cfg.DB.Password = getEnv("PAYMENT_POSTGRES_PASSWORD", cfg.DB.Password)
+	cfg.DB.MinConns = getEnvInt32("POSTGRES_MIN_CONNS", cfg.DB.MinConns)
+	cfg.DB.MaxConns = getEnvInt32("POSTGRES_MAX_CONNS", cfg.DB.MaxConns)
+	cfg.DB.MaxConnLifetime = getEnvDuration("POSTGRES_MAX_CONN_LIFETIME", cfg.DB.MaxConnLifetime)
+	cfg.DB.HealthCheckPeriod = getEnvDuration("POSTGRES_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
 

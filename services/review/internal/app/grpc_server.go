@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strconv"
+	"hash/fnv"
 	"strings"
 	"time"
 
@@ -127,11 +127,7 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	user_id, err := parseInt64(claims.UserID)
-	if err != nil {
-		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
-		return nil, mapToGRPCError(err)
-	}
+	user_id := uuidToInt64(claims.UserID)
 	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
 		RestaurantID: req.GetRestaurantId(),
@@ -164,11 +160,7 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 		slog.Error("Failed to extract user from context", "error", err)
 		return nil, mapToGRPCError(err)
 	}
-	user_id, err := parseInt64(claims.UserID)
-	if err != nil {
-		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
-		return nil, mapToGRPCError(err)
-	}
+	user_id := uuidToInt64(claims.UserID)
 	slog.Info("Received UpdateReview request", "reviewID", req.GetReviewId(), "userID", user_id)
 	review := models.UpdateReview{
 		ReviewID: req.GetReviewId(),
@@ -207,11 +199,7 @@ func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	userID, err := parseInt64(claims.UserID)
-	if err != nil {
-		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
-		return nil, mapToGRPCError(err)
-	}
+	userID := uuidToInt64(claims.UserID)
 	slog.Info("Received DeleteReview request", "reviewID", req.GetReviewId(), "userID", userID)
 
 	err = s.svc.DeleteReview(ctx, models.DeleteReview{
@@ -298,15 +286,12 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	return claims, nil
 }
 
-func parseInt64(value string) (int64, error) {
-	v, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int64 range")
-	}
-	return v, nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func mapToGRPCError(err error) error {
