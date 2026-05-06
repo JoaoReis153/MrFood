@@ -107,8 +107,8 @@ jobs:
             exit 1
           fi
 
-      - name: Bootstrap search (ES index + CDC connectors)
-        run: make search-bootstrap
+      - name: Create ES index (no CDC connectors needed in CI)
+        run: make search-seed
 
       - name: Wait for search service
         run: |

@@ -62,6 +62,7 @@ test-bruno:
 	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
 	cd tests/mrfood-api/collections/reservations && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reservations-junit.xml --reporter-json ../../reports/reservations-report.json
 	cd tests/mrfood-api/collections/reviews && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reviews-junit.xml --reporter-json ../../reports/reviews-report.json
+	@bash services/cdc/seed_elasticsearch.sh
 	cd tests/mrfood-api/collections/search && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/search-junit.xml --reporter-json ../../reports/search-report.json
 	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
 	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json
@@ -177,6 +178,25 @@ DCS := docker compose -p $(PROJECT_NAME) \
 search-run:
 	$(DCS) up -d $(SEARCH_SERVICES)
 	@$(MAKE) --no-print-directory search-bootstrap
+
+## Lightweight ES setup for CI: create index only, no CDC connectors.
+## seed_elasticsearch.sh is called automatically inside test-bruno.
+search-seed:
+	@echo "Waiting for Elasticsearch..."
+	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
+	@echo "✔ Elasticsearch ready"
+
+	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
+		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
+		-H 'Content-Type: application/json' \
+		-d @services/cdc/mappings/restaurants.json || true); \
+	if [ "$$HTTP_CODE" = "400" ]; then \
+		echo "✔ Index already exists"; \
+	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
+		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
+	else \
+		echo "✔ Index created (HTTP $$HTTP_CODE)"; \
+	fi
 
 ## Bootstrap ES index and register CDC connectors
 search-bootstrap:
