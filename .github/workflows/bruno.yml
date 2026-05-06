@@ -68,9 +68,6 @@ jobs:
       - name: Start services
         run: make build run
 
-      - name: Bootstrap search index (background)
-        run: make search-bootstrap &
-
       - name: Wait for API gateway
         run: |
           ready=0
@@ -109,6 +106,24 @@ jobs:
             make logs-dump
             exit 1
           fi
+
+      - name: Bootstrap search (ES index + CDC connectors)
+        run: make search-bootstrap
+
+      - name: Wait for search service
+        run: |
+          echo "Waiting for search service on port 50056..."
+          for i in $(seq 1 60); do
+            if nc -z localhost 50056 2>/dev/null; then
+              echo "Search service is ready"
+              exit 0
+            fi
+            echo "[$i/60] not yet..."
+            sleep 3
+          done
+          echo "Search service did not become ready"
+          docker compose -f services/docker-compose.yml logs --tail=60 search || true
+          exit 1
 
       - name: Run Bruno tests
         run: make test-bruno
