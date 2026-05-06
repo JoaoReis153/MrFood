@@ -32,21 +32,6 @@ func New(ctx context.Context, cfg *config.Config) (*Repository, error) {
 		return nil, fmt.Errorf("create elastic client: %w", err)
 	}
 
-	infoRes, err := es.Info(es.Info.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("elastic info: %w", err)
-	}
-	defer func() {
-		if err := infoRes.Body.Close(); err != nil {
-			slog.Error("error closing response body", "error", err)
-		}
-	}()
-
-	if infoRes.IsError() {
-		body, _ := io.ReadAll(infoRes.Body)
-		return nil, fmt.Errorf("elastic info status=%d body=%s", infoRes.StatusCode, string(body))
-	}
-
 	if err := ensureSearchIndexExists(ctx, es, cfg.Elastic.Index); err != nil {
 		return nil, err
 	}
@@ -227,7 +212,8 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, index string) error {
 	existsRes, err := es.Indices.Exists([]string{index}, es.Indices.Exists.WithContext(ctx))
 	if err != nil {
-		return fmt.Errorf("check index exists: %w", err)
+		slog.Warn("elasticsearch unreachable at startup; queries will fail until it is available", "index", index, "error", err)
+		return nil
 	}
 	defer func() {
 		if err := existsRes.Body.Close(); err != nil {
