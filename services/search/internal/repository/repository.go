@@ -239,13 +239,10 @@ func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, inde
 		return nil
 	}
 	if existsRes.StatusCode == 404 {
-		return fmt.Errorf("search index '%s' does not exist (expected to be managed by CDC service)", index)
+		slog.Warn("search index does not exist yet; queries will fail until CDC creates it", "index", index)
+		return nil
 	}
 
-	if existsRes.StatusCode != 404 {
-		body, _ := io.ReadAll(existsRes.Body)
-		return fmt.Errorf("check index exists status=%d body=%s", existsRes.StatusCode, string(body))
-	}
-
-	return nil
+	body, _ := io.ReadAll(existsRes.Body)
+	return fmt.Errorf("check index exists status=%d body=%s", existsRes.StatusCode, string(body))
 }

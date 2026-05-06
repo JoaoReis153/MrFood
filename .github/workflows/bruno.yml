@@ -68,6 +68,9 @@ jobs:
       - name: Start services
         run: make build run
 
+      - name: Bootstrap search index (background)
+        run: make search-bootstrap &
+
       - name: Wait for API gateway
         run: |
           ready=0
@@ -106,9 +109,6 @@ jobs:
             make logs-dump
             exit 1
           fi
-
-      - name: Bootstrap search (ES index + CDC connectors)
-        run: make search-bootstrap
 
       - name: Run Bruno tests
         run: make test-bruno
