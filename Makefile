@@ -7,10 +7,9 @@ TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restauran
 -include services/config.env
 -include services/.env
 
-# Load all .env files (shared and per-service) for docker compose interpolation
+# Load config and secrets for docker compose interpolation
 ENV_FILES := --env-file services/config.env
 ENV_FILES += $(if $(wildcard services/.env),--env-file services/.env,)
-ENV_FILES += $(foreach env,$(wildcard services/*/.env),--env-file $(env))
 
 DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) $(ENV_FILES)
 PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,python3)
@@ -73,7 +72,7 @@ test-bruno:
 # ENVIRONMENT
 # ============================================================================
 
-## Create secret .env files from services/env.tmpl
+## Create services/.env from services/env.tmpl
 ## config.env (non-sensitive) is already committed — no action needed for it.
 create_env:
 	@if [ -f services/.env ]; then \
@@ -82,16 +81,7 @@ create_env:
 		cp services/env.tmpl services/.env; \
 		echo "Created services/.env"; \
 	fi
-	@for f in services/*/env.tmpl; do \
-		dir=$$(dirname "$$f"); \
-		if [ -f "$$dir/.env" ]; then \
-			echo "$$dir/.env already exists."; \
-		else \
-			cp "$$f" "$$dir/.env"; \
-			echo "Created $$dir/.env"; \
-		fi; \
-	done
-	@echo "Fill in secret values in all created .env files before running docker compose."
+	@echo "Fill in secret values in services/.env before running docker compose."
 
 # ============================================================================
 # DATA GENERATION

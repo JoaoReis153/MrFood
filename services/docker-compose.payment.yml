@@ -15,8 +15,7 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - .env             # shared secrets: APP_JWT_*
-      - ./payment/.env   # PAYMENT_POSTGRES_PASSWORD
+      - .env
     depends_on:
       payment_db:
         condition: service_healthy
@@ -31,7 +30,7 @@ services:
       - payment_db_data:/var/lib/postgresql/data
       - ./payment/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     env_file:
-      - ./payment/.env   # POSTGRES_PASSWORD
+      - .env
     environment:
       POSTGRES_DB: ${PAYMENT_POSTGRES_DB}
       POSTGRES_USER: ${PAYMENT_POSTGRES_USER}

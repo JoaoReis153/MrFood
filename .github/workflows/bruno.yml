@@ -38,30 +38,22 @@ jobs:
 
       - name: Create environment files
         run: |
-          # 1. Create all .env files from templates
-          make create_env
-          
-          # 2. Populate shared secrets (JWT)
           cat > services/.env <<'EOF'
           APP_JWT_ACCESS_TOKEN_SECRET=CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
-          APP_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci-0123456789
-          EOF
-
-          # 3. Populate per-service secrets (passwords)
-          # These match the values used in previous CI runs and tests
-          printf 'AUTH_POSTGRES_PASSWORD=mrfood_auth_secret\nAUTH_REDIS_PASS=\nKEYCLOAK_CLIENT_SECRET=mrfood-auth-client-secret\nKEYCLOAK_ADMIN_PASS=admin\n' > services/auth/.env
-          echo "RESTAURANT_POSTGRES_PASSWORD=restaurantsecret" > services/restaurant/.env
-          echo "BOOKING_POSTGRES_PASSWORD=bookingsecret" > services/booking/.env
-          echo "REVIEW_POSTGRES_PASSWORD=reviewsecret" > services/review/.env
-          echo "SPONSOR_POSTGRES_PASSWORD=sponsorsecret" > services/sponsor/.env
-          echo "PAYMENT_POSTGRES_PASSWORD=paymentsecret" > services/payment/.env
-          echo "CDC_RESTAURANT_PASSWORD=restaurantsecret" > services/cdc/.env
-          
-          # Notification secrets
-          cat > services/notification/.env <<'EOF'
+          AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
+          AUTH_REDIS_PASS=
+          KEYCLOAK_CLIENT_SECRET=mrfood-auth-client-secret
+          KEYCLOAK_ADMIN_PASS=admin
+          BOOKING_POSTGRES_PASSWORD=bookingsecret
           SMTP_USER=mrfood.api@gmail.com
           SMTP_PASSWORD=wpbp rgwe hplj smzy
           SMTP_FROM=mrfood.api@gmail.com
+          PAYMENT_POSTGRES_PASSWORD=paymentsecret
+          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
+          REVIEW_POSTGRES_PASSWORD=reviewsecret
+          ELASTICSEARCH_USERNAME=
+          ELASTICSEARCH_PASSWORD=
+          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
           EOF
 
       - name: Go mod tidy (all services)

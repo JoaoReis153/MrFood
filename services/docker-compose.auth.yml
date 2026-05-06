@@ -9,8 +9,7 @@ services:
     <<: *common
     env_file:
       - ./config.env   # non-sensitive config (ports, addresses…)
-      - .env           # shared secrets: APP_JWT_ACCESS_TOKEN_SECRET
-      - ./auth/.env    # auth secrets: KEYCLOAK_CLIENT_SECRET, KEYCLOAK_ADMIN_PASS
+      - .env           # all secrets
     depends_on:
       keycloak:
         condition: service_started

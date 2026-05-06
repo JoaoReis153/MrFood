@@ -15,7 +15,7 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - ./booking/.env   # BOOKING_POSTGRES_PASSWORD
+      - .env
     depends_on:
       booking_db:
         condition: service_healthy
@@ -30,7 +30,7 @@ services:
       - booking_db_data:/var/lib/postgresql/data
       - ./booking/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     env_file:
-      - ./booking/.env   # POSTGRES_PASSWORD
+      - .env
     environment:
       POSTGRES_DB: ${BOOKING_POSTGRES_DB}
       POSTGRES_USER: ${BOOKING_POSTGRES_USER}

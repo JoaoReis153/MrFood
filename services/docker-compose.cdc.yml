@@ -69,8 +69,7 @@ services:
       - "8083:8083"
     env_file:
       - ./config.env
-      - ./cdc/.env
-      - ./restaurant/.env
+      - .env
     environment:
       CONNECT_BOOTSTRAP_SERVERS: kafka:29092
       CONNECT_REST_PORT: 8083

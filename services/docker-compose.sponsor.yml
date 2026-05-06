@@ -15,7 +15,7 @@ services:
     <<: *common
     env_file:
       - ./config.env
-      - ./sponsor/.env   # SPONSOR_POSTGRES_PASSWORD
+      - .env
     depends_on:
       sponsor_db:
         condition: service_healthy
@@ -30,7 +30,7 @@ services:
       - sponsor_db_data:/var/lib/postgresql/data
       - ./sponsor/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     env_file:
-      - ./sponsor/.env   # POSTGRES_PASSWORD
+      - .env
     environment:
       POSTGRES_DB: ${SPONSOR_POSTGRES_DB}
       POSTGRES_USER: ${SPONSOR_POSTGRES_USER}
