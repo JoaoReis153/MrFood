@@ -57,7 +57,7 @@ services:
     <<: *common
 
   connect:
-    image: confluentinc/cp-kafka-connect:7.6.1
+    build: ./cdc/
     container_name: search_connect
     restart: unless-stopped
     depends_on:
@@ -91,33 +91,11 @@ services:
       CONNECT_CONFIG_PROVIDERS_ENV_CLASS: org.apache.kafka.common.config.provider.EnvVarConfigProvider
       KAFKA_HEAP_OPTS: "-Xms512M -Xmx2G"
     volumes:
-      - connect_plugins:/usr/share/confluent-hub-components
       - ./cdc/connectors:/connectors:ro
-    command:
-      - bash
-      - -lc
-      - |
-        set -e
-        echo "=== Installing connectors if needed ==="
-        if [ ! -d /usr/share/confluent-hub-components/debezium-debezium-connector-postgresql ]; then
-          confluent-hub install --no-prompt debezium/debezium-connector-postgresql:2.4.2
-        else
-          echo "Debezium connector already installed."
-        fi
-
-        if [ ! -d /usr/share/confluent-hub-components/confluentinc-kafka-connect-elasticsearch ]; then
-          confluent-hub install --no-prompt confluentinc/kafka-connect-elasticsearch:14.1.0
-        else
-          echo "Elasticsearch connector already installed."
-        fi
-
-        echo "=== Starting Kafka Connect ==="
-        exec /etc/confluent/docker/run
     <<: *common
 
 volumes:
   elastic_data:
-  connect_plugins:
 
 networks:
   app-network:

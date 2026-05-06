@@ -231,7 +231,7 @@ search-down:
 search-logs:
 	$(DCS) logs -f $(SEARCH_SERVICES)
 
-## Full reset of search (removes elastic_data and connect_plugins volumes)
+## Full reset of search (removes elastic_data volume)
 search-clean:
 	$(DCS) rm -sf $(SEARCH_SERVICES)
-	docker volume rm -f $(PROJECT_NAME)_elastic_data $(PROJECT_NAME)_connect_plugins
+	docker volume rm -f $(PROJECT_NAME)_elastic_data
