@@ -58,6 +58,8 @@ jobs:
         service: ${{ fromJson(needs.detect-changed-services.outputs.services) }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-go@v6
         with:
@@ -65,15 +67,20 @@ jobs:
           cache: true
           cache-dependency-path: 'services/${{ matrix.service }}/go.sum'
 
+      - name: Cache Go build cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/go-build
+          key: go-build-${{ matrix.service }}-${{ hashFiles(format('services/{0}/go.sum', matrix.service)) }}
+          restore-keys: go-build-${{ matrix.service }}-
+
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          version: v1.64.8
           working-directory: ./services/${{ matrix.service }}
           args: --build-tags=integration -c .golangci.yml ./...
 
-      - name: Build & Test
+      - name: Test
         working-directory: ./services/${{ matrix.service }}
-        run: |
-          go build -v ./...
-          go test -v -race ./...
+        run: go test -race ./...
