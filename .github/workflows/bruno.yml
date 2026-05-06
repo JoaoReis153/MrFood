@@ -101,8 +101,10 @@ jobs:
             exit 1
           fi
 
-      - name: Create ES index (no CDC connectors needed in CI)
-        run: make search-seed
+      - name: Create ES index and start search service
+        run: |
+          make search-seed
+          docker compose -p mrfood -f services/docker-compose.yml up -d --no-deps search
 
       - name: Wait for search service
         run: |
@@ -116,7 +118,7 @@ jobs:
             sleep 3
           done
           echo "Search service did not become ready"
-          docker compose -f services/docker-compose.yml logs --tail=60 search || true
+          docker compose -p mrfood -f services/docker-compose.yml --env-file services/config.env logs --tail=60 search || true
           exit 1
 
       - name: Run Bruno tests
