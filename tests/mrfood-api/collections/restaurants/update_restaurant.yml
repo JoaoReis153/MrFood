@@ -13,8 +13,8 @@ http:
     data: |-
       {
         "name": "MrFood-{{testRunId}}",
-        "latitude": 289.41019114077517,
-        "longitude": 231.24068483866333,
+        "latitude": 38.716,
+        "longitude": -9.139,
         "address": "derelinquo",
         "opening_time": "10:00:00",
         "closing_time": "12:00:00",
