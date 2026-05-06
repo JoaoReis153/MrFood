@@ -63,7 +63,7 @@ jobs:
 
       - uses: actions/setup-go@v6
         with:
-          go-version: 'stable'
+          go-version-file: 'services/${{ matrix.service }}/go.mod'
           cache: true
           cache-dependency-path: 'services/${{ matrix.service }}/go.sum'
 
