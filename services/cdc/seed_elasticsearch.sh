@@ -74,20 +74,32 @@ if [[ "$ROW_COUNT" -eq 0 ]]; then
   exit 0
 fi
 
-# Build NDJSON with explicit _id so re-runs are idempotent
-NDJSON=$(while IFS= read -r row; do
+# Build NDJSON with explicit _id so re-runs are idempotent.
+# Write to a temp file — command substitution $(...) strips trailing newlines,
+# which would make the last line of the NDJSON body malformed (ES requires a
+# final newline).
+NDJSON_FILE=$(mktemp)
+trap 'rm -f "$NDJSON_FILE"' EXIT
+
+while IFS= read -r row; do
   [[ -z "$row" ]] && continue
   id=$(python3 -c "import json,sys; print(json.loads(sys.argv[1])['id'])" "$row")
   printf '{"index":{"_index":"%s","_id":"%s"}}\n%s\n' "$INDEX" "$id" "$row"
-done <<< "$ROWS")
+done <<< "$ROWS" > "$NDJSON_FILE"
 
 log "Bulk indexing $ROW_COUNT documents..."
-BULK_RESPONSE=$(curl -sS -X POST "$ELASTIC_URL/$INDEX/_bulk?refresh=wait_for" \
+# Capture both the HTTP status code and the response body.
+BULK_RESPONSE=$(curl -sS -w '\n%{http_code}' -X POST "$ELASTIC_URL/$INDEX/_bulk?refresh=wait_for" \
   -H "Content-Type: application/x-ndjson" \
-  --data-binary "$NDJSON")
+  --data-binary @"$NDJSON_FILE")
+
+BULK_HTTP_CODE=$(tail -1 <<< "$BULK_RESPONSE")
+BULK_BODY=$(head -n -1 <<< "$BULK_RESPONSE")
+
+[[ "$BULK_HTTP_CODE" == "200" ]] || fail "Bulk request failed (HTTP $BULK_HTTP_CODE): $BULK_BODY"
 
 # Check for per-document errors in the bulk response
-ERRORS=$(python3 - <<'PY' "$BULK_RESPONSE"
+ERRORS=$(python3 - <<'PY' "$BULK_BODY"
 import json, sys
 resp = json.loads(sys.argv[1])
 if not resp.get("errors"):

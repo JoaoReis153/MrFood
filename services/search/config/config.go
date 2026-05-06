@@ -51,19 +51,11 @@ type ElasticConfig struct {
 	Password string `yaml:"password"`
 }
 
-type JWTConfig struct {
-	AccessTokenSecret  string        `yaml:"secret"        validate:"required,min=32"`
-	RefreshTokenSecret string        `yaml:"refresh_secret" validate:"required,min=32"`
-	AccessTokenTTL     time.Duration `yaml:"access_token_ttl" validate:"required,min=5m,max=2h"`
-	RefreshTokenTTL    time.Duration `yaml:"refresh_token_ttl" validate:"required,min=1h,max=720h"`
-}
-
 type Config struct {
 	Server  ServerConfig  `yaml:"server"`
 	Log     LogConfig     `yaml:"log"`
 	DB      DBConfig      `yaml:"db"`
 	Redis   RedisConfig   `yaml:"redis"`
-	JWT     JWTConfig     `yaml:"jwt"`
 	Elastic ElasticConfig `yaml:"elastic"`
 }
 
@@ -98,12 +90,6 @@ func Load(_ context.Context) (*Config, error) {
 			Port:     6379,
 			Password: "",
 			DB:       0,
-		},
-		JWT: JWTConfig{
-			AccessTokenSecret:  "to-be-saved",
-			RefreshTokenSecret: "to-be-saved",
-			AccessTokenTTL:     15 * time.Minute,
-			RefreshTokenTTL:    7 * 24 * time.Hour,
 		},
 		Elastic: ElasticConfig{
 			Host:  "localhost",
@@ -148,9 +134,6 @@ func overrideWithEnv(cfg *Config) {
 	cfg.Redis.DB = getEnvInt("SEARCH_REDIS_DB", cfg.Redis.DB)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
-
-	cfg.JWT.AccessTokenSecret = getEnv("APP_JWT_ACCESS_TOKEN_SECRET", cfg.JWT.AccessTokenSecret)
-	cfg.JWT.RefreshTokenSecret = getEnv("APP_JWT_REFRESH_TOKEN_SECRET", cfg.JWT.RefreshTokenSecret)
 
 	cfg.Elastic.Host = getEnv("ELASTICSEARCH_HOST", cfg.Elastic.Host)
 	cfg.Elastic.Port = getEnvInt("ELASTICSEARCH_PORT", cfg.Elastic.Port)
