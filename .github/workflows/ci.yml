@@ -77,7 +77,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.1.6
+          version: latest
           working-directory: ./services/${{ matrix.service }}
           args: --build-tags=integration -c .golangci.yml ./...
 
