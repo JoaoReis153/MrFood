@@ -18,6 +18,14 @@ CSV_SERVICES ?= all
 CSV_ROWS ?= 200
 CSV_FULL ?=
 
+# Detect if using podman
+IS_PODMAN := $(shell docker --version 2>/dev/null | grep -i podman)
+
+PULL_FLAG :=
+ifeq ($(IS_PODMAN),)
+	PULL_FLAG := --pull=missing
+endif
+
 .PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run bootstrap-search stop down restart logs test clean clean-volumes clean-all test test-bruno
 
 help:
@@ -118,7 +126,7 @@ build-no-cache:
 
 ## Start all services (detached)
 run:
-	$(DC) up -d --pull=missing
+	$(DC) up -d $(PULL_FLAG)
 
 ## Stop services
 stop:
