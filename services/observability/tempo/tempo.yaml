@@ -44,3 +44,20 @@ query_frontend:
     throughput_bytes_slo: 1.073741824e+09
   trace_by_id:
     duration_slo: 5s
+
+metrics_generator:
+  processor:
+    service_graphs:
+      dimensions:
+        - http.method
+        - http.status_code
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs]
