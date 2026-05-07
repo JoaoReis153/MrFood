@@ -94,7 +94,7 @@ BULK_RESPONSE=$(curl -sS -w '\n%{http_code}' -X POST "$ELASTIC_URL/$INDEX/_bulk?
   --data-binary @"$NDJSON_FILE")
 
 BULK_HTTP_CODE=$(tail -1 <<< "$BULK_RESPONSE")
-BULK_BODY=$(head -n -1 <<< "$BULK_RESPONSE")
+BULK_BODY=$(sed '$d' <<< "$BULK_RESPONSE")
 
 [[ "$BULK_HTTP_CODE" == "200" ]] || fail "Bulk request failed (HTTP $BULK_HTTP_CODE): $BULK_BODY"
 
