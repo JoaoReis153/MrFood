@@ -8,25 +8,68 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func main() {
-	setupLogger(config.Get(context.Background()).Log.Level)
-	config.Get(context.Background())
-	app := app.New()
+	ctx := context.Background()
+	setupLogger(config.Get(ctx).Log.Level)
 
-	err := app.ConnectDb()
+	shutdown, err := initTracer(ctx, "mrfood-review")
 	if err != nil {
+		slog.Error("tracer init failed", "error", err)
+	}
+	defer shutdown()
+
+	application := app.New()
+	defer application.Close()
+
+	if err := application.ConnectDb(); err != nil {
 		log.Fatalf("DB connection failed: %v", err)
 	}
-	defer app.DB.Close()
-	defer app.Close()
-	app.InitDependencies()
-	app.RunServer()
+	defer application.DB.Close()
+
+	application.InitDependencies()
+	application.RunServer()
+}
+
+func initTracer(ctx context.Context, serviceName string) (func(), error) {
+	exporter, err := otlptracegrpc.New(ctx,
+		otlptracegrpc.WithEndpoint("otel-collector:4317"),
+		otlptracegrpc.WithInsecure(),
+	)
+	if err != nil {
+		return func() {}, err
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(serviceName),
+		)),
+	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	return func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := tp.Shutdown(shutdownCtx); err != nil {
+			slog.Error("tracer shutdown failed", "error", err)
+		}
+	}, nil
 }
 
 func setupLogger(logLevel string) {
-	level := slog.LevelInfo // Default
+	level := slog.LevelInfo
 
 	switch strings.ToLower(logLevel) {
 	case "debug":
@@ -41,7 +84,7 @@ func setupLogger(logLevel string) {
 
 	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		Level:     level,
-		AddSource: true, // file:line numbers
+		AddSource: true,
 	})
 
 	slog.SetDefault(slog.New(handler))

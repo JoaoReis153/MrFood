@@ -54,7 +54,9 @@ func RunServer(service bookingService) {
 		log.Fatal(err)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 	pb.RegisterBookingServiceServer(s, &server{
 		bookingService: service,
 	})
