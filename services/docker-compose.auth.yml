@@ -24,6 +24,9 @@ services:
       KC_DB: dev-mem          # in-memory H2 — swap for postgres in production
       KC_HTTP_PORT: 8080
       KC_HOSTNAME: "http://keycloak:8080"   # pins the iss claim; must match Kong consumer key
+      KC_TRACING_ENABLED: "true"
+      KC_TRACING_ENDPOINT: "http://otel-collector:4317"
+      KC_TRACING_SAMPLER_TYPE: "always_on"
     healthcheck:
       # Polls the mrfood realm endpoint — only succeeds once the realm is fully imported.
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/mrfood || exit 1"]

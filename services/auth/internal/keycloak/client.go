@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Client is a thin HTTP wrapper around the Keycloak REST and Admin APIs.
@@ -34,7 +36,7 @@ func New(baseURL, realm, clientID, clientSecret, adminUser, adminPass string) *C
 		clientSecret: clientSecret,
 		adminUser:    adminUser,
 		adminPass:    adminPass,
-		http:         &http.Client{Timeout: 10 * time.Second},
+		http:         &http.Client{Timeout: 10 * time.Second, Transport: otelhttp.NewTransport(http.DefaultTransport)},
 	}
 }
 
