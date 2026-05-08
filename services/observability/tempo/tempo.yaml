@@ -1,5 +1,4 @@
 auth_enabled: false
-
 stream_over_http_enabled: true
 
 server:
