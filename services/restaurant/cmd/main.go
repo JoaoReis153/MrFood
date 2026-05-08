@@ -11,9 +11,11 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
@@ -29,6 +31,12 @@ func main() {
 		slog.Error("tracer init failed", "error", err)
 	}
 	defer shutdown()
+
+	shutdownMeter, err := initMeter(ctx, "mrfood-restaurant")
+	if err != nil {
+		slog.Error("meter init failed", "error", err)
+	}
+	defer shutdownMeter()
 
 	app := app.New()
 	defer app.Close()
@@ -66,6 +74,33 @@ func initTracer(ctx context.Context, serviceName string) (func(), error) {
 		defer cancel()
 		if err := tp.Shutdown(shutdownCtx); err != nil {
 			slog.Error("tracer shutdown failed", "error", err)
+		}
+	}, nil
+}
+
+func initMeter(ctx context.Context, serviceName string) (func(), error) {
+	exporter, err := otlpmetricgrpc.New(ctx,
+		otlpmetricgrpc.WithEndpoint("otel-collector:4317"),
+		otlpmetricgrpc.WithInsecure(),
+	)
+	if err != nil {
+		return func() {}, err
+	}
+
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter)),
+		sdkmetric.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(serviceName),
+		)),
+	)
+	otel.SetMeterProvider(mp)
+
+	return func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := mp.Shutdown(shutdownCtx); err != nil {
+			slog.Error("meter shutdown failed", "error", err)
 		}
 	}, nil
 }
