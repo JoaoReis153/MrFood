@@ -7,6 +7,11 @@ plugins:
       sampling_rate: 1.0
       resource_attributes:
         service.name: kong-gateway
+      propagation:
+        extract:
+          - w3c
+        inject:
+          - w3c
 services:
 - name: auth
   host: auth
