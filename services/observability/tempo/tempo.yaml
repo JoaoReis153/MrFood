@@ -45,8 +45,16 @@ query_frontend:
     duration_slo: 5s
 
 metrics_generator:
+  registry:
+    collection_interval: 15s
+    external_labels:
+      source: tempo
   processor:
     service_graphs:
+      wait: 10s
+      max_items: 10000
+      enable_client_server_prefix: false
+      enable_virtual_node_label: false
       dimensions:
         - http.method
         - http.status_code
@@ -66,6 +74,9 @@ metrics_generator:
     remote_write:
       - url: http://prometheus:9090/api/v1/write
         send_exemplars: true
+        send_native_histograms: true
+  traces_storage:
+    path: /var/tempo/generator/traces
 
 overrides:
   defaults:
