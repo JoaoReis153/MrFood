@@ -25,7 +25,7 @@ ifeq ($(IS_PODMAN),)
 	PULL_FLAG := --pull=missing
 endif
 
-.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run bootstrap-search stop down restart logs test clean clean-volumes clean-all test test-bruno
+.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup setup-full build run run-full bootstrap-search stop down restart logs test clean clean-volumes clean-all test test-bruno
 
 help:
 	@echo "MrFood Make Commands"
@@ -33,14 +33,16 @@ help:
 	@echo "Setup & Data:"
 	@echo "  make create_env                         - Create secret .env files from env.tmpl"
 	@echo "  (config.env is already committed — no setup needed)"
-	@echo "  make setup                              - Start services and load all data"
+	@echo "  make setup                              - Start core services and load data (no search/CDC)"
+	@echo "  make setup-full                         - Start all services including search/CDC stack"
 	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
 	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
 	@echo "  make load-reviews                       - Load review seed data into database"
 	@echo "  make load-all                           - Load all seed data into databases"
 	@echo ""
 	@echo "Service Management:"
-	@echo "  make run                                - Start all services (detached)"
+	@echo "  make run                                - Start core services (detached)"
+	@echo "  make run-full                           - Start all services including search/CDC (detached)"
 	@echo "  make bootstrap-search                   - Create ES index and register CDC connectors"
 	@echo "  make stop                               - Stop services"
 	@echo "  make down                               - Stop and remove services"
@@ -100,24 +102,32 @@ load-csvs:
 	@$(MAKE) --no-print-directory -j 3 load-auth load-restaurant load-reviews 
 	@echo "✓ All data loaded successfully"
 
-## Complete setup: start services and load all data
-setup: run search-bootstrap load-csvs
+## Core setup: start services (no search/CDC) and load data
+setup: run load-csvs
 	@echo "✓ Setup complete! Services running and data loaded"
+
+## Full setup: start all services including search/CDC stack and load data
+setup-full: run-full search-bootstrap load-csvs
+	@echo "✓ Full setup complete! Services running with search and data loaded"
 
 # ============================================================================
 # SERVICE MANAGEMENT
 # ============================================================================
 
-## Build service images
+## Build service images (parallel, BuildKit enabled)
 build:
-	$(DC) build
+	DOCKER_BUILDKIT=1 $(DC) build --parallel
 
 build-no-cache:
-	$(DC) build --no-cache
+	DOCKER_BUILDKIT=1 $(DC) build --no-cache --parallel
 
-## Start all services (detached)
+## Start core services (detached)
 run:
 	$(DC) up -d $(PULL_FLAG)
+
+## Start all services including search/CDC profile (detached)
+run-full:
+	$(DC) --profile search up -d $(PULL_FLAG)
 
 ## Stop services
 stop:
@@ -165,18 +175,9 @@ clean-all:
 # SEARCH
 # ============================================================================
 
-SEARCH_COMPOSE_FILE := services/docker-compose.cdc.yml
-SEARCH_SERVICES := search elasticsearch zookeeper kafka connect restaurant restaurant_db kong auth auth_db otel-collector
-
-
-DCS := docker compose -p $(PROJECT_NAME) \
-	-f services/docker-compose.yml \
-	-f $(SEARCH_COMPOSE_FILE) \
-	$(ENV_FILES)
-
-## Start only search-related services (ES, Kafka, Connect)
+## Start only search-related services (ES, Kafka, Connect) + bootstrap
 search-run:
-	$(DCS) up -d $(SEARCH_SERVICES)
+	$(DC) --profile search up -d $(PULL_FLAG)
 	@$(MAKE) --no-print-directory search-bootstrap
 
 ## Lightweight ES setup for CI: create index only, no CDC connectors.
@@ -221,17 +222,17 @@ search-bootstrap:
 
 ## Stop search services
 search-stop:
-	$(DCS) stop $(SEARCH_SERVICES)
+	$(DC) --profile search stop elasticsearch zookeeper kafka connect search
 
 ## Stop and remove search services
 search-down:
-	$(DCS) rm -sf $(SEARCH_SERVICES)
+	$(DC) --profile search rm -sf elasticsearch zookeeper kafka connect search
 
 ## Tail logs for search services only
 search-logs:
-	$(DCS) logs -f $(SEARCH_SERVICES)
+	$(DC) --profile search logs -f elasticsearch zookeeper kafka connect search
 
 ## Full reset of search (removes elastic_data volume)
 search-clean:
-	$(DCS) rm -sf $(SEARCH_SERVICES)
+	$(DC) --profile search rm -sf elasticsearch zookeeper kafka connect search
 	docker volume rm -f $(PROJECT_NAME)_elastic_data
