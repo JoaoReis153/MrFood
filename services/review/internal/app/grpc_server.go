@@ -38,7 +38,11 @@ type RestaurantClient struct {
 }
 
 func NewRestaurantClient(target string) (*RestaurantClient, *grpc.ClientConn, error) {
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to dial restaurant grpc: %w", err)
 	}
