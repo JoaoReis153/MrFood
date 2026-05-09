@@ -71,6 +71,7 @@ services:
       - tempo_data:/var/tempo
     depends_on:
       - otel-collector
+      - prometheus
 
 volumes:
   prometheus_data:
