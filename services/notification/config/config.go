@@ -77,7 +77,7 @@ func Load(_ context.Context) (*Config, error) {
 	overrideWithEnv(cfg)
 
 	if cfg.Server.Port == 0 {
-		return nil, fmt.Errorf("config: APP_SERVER_PORT is required")
+		return nil, fmt.Errorf("config: NOTIFICATION_SERVER_PORT is required")
 	}
 	if cfg.SMTP.User == "" {
 		return nil, fmt.Errorf("config: SMTP_USER is required")
@@ -99,12 +99,12 @@ func Load(_ context.Context) (*Config, error) {
 }
 
 func overrideWithEnv(cfg *Config) {
-	cfg.Server.Port = getEnvInt("APP_SERVER_PORT", cfg.Server.Port)
+	cfg.Server.Port = getEnvInt("NOTIFICATION_SERVER_PORT", cfg.Server.Port)
 	cfg.Server.Timeout = getEnvDuration("APP_SERVER_TIMEOUT", cfg.Server.Timeout)
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
-	cfg.Redis.Host = getEnv("REDIS_HOST", cfg.Redis.Host)
-	cfg.Redis.Port = getEnvInt("REDIS_PORT", cfg.Redis.Port)
-	cfg.Redis.Password = getEnv("REDIS_PASSWORD", cfg.Redis.Password)
+	cfg.Redis.Host = getEnv("NOTIFICATION_REDIS_HOST", cfg.Redis.Host)
+	cfg.Redis.Port = getEnvInt("NOTIFICATION_REDIS_PORT", cfg.Redis.Port)
+	cfg.Redis.Password = getEnv("NOTIFICATION_REDIS_PASSWORD", cfg.Redis.Password)
 	cfg.SMTP.Host = getEnv("SMTP_HOST", cfg.SMTP.Host)
 	cfg.SMTP.Port = getEnvInt("SMTP_PORT", cfg.SMTP.Port)
 	cfg.SMTP.User = getEnv("SMTP_USER", cfg.SMTP.User)

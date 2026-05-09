@@ -185,7 +185,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) {
-			if review.RestaurantID != 1 || review.UserID != 2 || review.Rating != 5 || review.Comment != "good" {
+			if review.RestaurantID != 1 || review.UserID != uuidToInt64("2") || review.Rating != 5 || review.Comment != "good" {
 				t.Fatalf("unexpected review in service: %+v", review)
 			}
 			review.ReviewID = 10
@@ -203,7 +203,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	r := resp.Review
-	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != 2 || r.Rating != 5 || r.Comment != "good" {
+	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != uuidToInt64("2") || r.Rating != 5 || r.Comment != "good" {
 		t.Fatalf("unexpected review resp: %+v", r)
 	}
 }
@@ -273,7 +273,7 @@ func TestServer_UpdateReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
-			if review.ReviewID != 10 || review.UserID != 2 {
+			if review.ReviewID != 10 || review.UserID != uuidToInt64("2") {
 				t.Fatalf("unexpected update request: %+v", review)
 			}
 			if review.Comment == nil || *review.Comment != "new" {
@@ -378,7 +378,7 @@ func TestServer_DeleteReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error {
-			if deleteReq.ReviewID != 7 || deleteReq.UserID != 2 {
+			if deleteReq.ReviewID != 7 || deleteReq.UserID != uuidToInt64("2") {
 				t.Fatalf("unexpected delete request: %+v", deleteReq)
 			}
 			return nil
@@ -599,33 +599,30 @@ func TestExtractUserFromContext_ValidToken(t *testing.T) {
 }
 
 // ===================================================
-// ================= parseInt32 ======================
+// ================ uuidToInt64 ======================
 // ===================================================
 
-func TestParseInt32_Valid(t *testing.T) {
-	v, err := parseInt64("42")
-	if err != nil || v != 42 {
-		t.Fatalf("expected 42, got %d err %v", v, err)
+func TestUUIDToInt64_Valid(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	id := uuidToInt64(uuid)
+	if id <= 0 {
+		t.Fatalf("expected positive int64, got %d", id)
 	}
 }
 
-func TestParseInt32_Zero(t *testing.T) {
-	_, err := parseInt64("0")
-	if err == nil {
-		t.Fatal("expected error for 0, got nil")
+func TestUUIDToInt64_Deterministic(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	first := uuidToInt64(uuid)
+	second := uuidToInt64(uuid)
+	if first != second {
+		t.Fatalf("uuidToInt64 is not deterministic: got %d and %d", first, second)
 	}
 }
 
-func TestParseInt32_Negative(t *testing.T) {
-	_, err := parseInt64("-1")
-	if err == nil {
-		t.Fatal("expected error for negative, got nil")
-	}
-}
-
-func TestParseInt32_NonNumeric(t *testing.T) {
-	_, err := parseInt64("abc")
-	if err == nil {
-		t.Fatal("expected error for non-numeric, got nil")
+func TestUUIDToInt64_NonNegative(t *testing.T) {
+	for _, s := range []string{"", "abc", "-1", "0", "4f774104-1234-5678-abcd-ef0123456789"} {
+		if v := uuidToInt64(s); v < 0 {
+			t.Fatalf("expected non-negative for %q, got %d", s, v)
+		}
 	}
 }

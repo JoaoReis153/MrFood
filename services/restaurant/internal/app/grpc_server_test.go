@@ -41,10 +41,9 @@ func (f *fakeReviewRPCClient) GetRestaurantStats(ctx context.Context, in *pb.Get
 
 func authContext(t *testing.T, userID, username string) context.Context {
 	t.Helper()
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    userID,
-		"username":   username,
-		"token_type": "access",
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{
+		UserID:   userID,
+		Username: username,
 	}).SignedString([]byte("secret"))
 	if err != nil {
 		t.Fatalf("failed creating token: %v", err)
@@ -258,16 +257,21 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	}
 }
 
-func TestParseInt32(t *testing.T) {
-	if _, err := parseInt64("0"); err == nil {
-		t.Fatal("expected validation error")
+func TestUUIDToInt64(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	id := uuidToInt64(uuid)
+	if id <= 0 {
+		t.Fatalf("expected positive int64, got %d", id)
 	}
-	value, err := parseInt64("42")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	// Must be deterministic
+	if uuidToInt64(uuid) != id {
+		t.Fatal("uuidToInt64 is not deterministic")
 	}
-	if value != 42 {
-		t.Fatalf("expected 42, got %d", value)
+	// High bit cleared → always non-negative
+	for _, s := range []string{"", "abc", uuid} {
+		if v := uuidToInt64(s); v < 0 {
+			t.Fatalf("expected non-negative for %q, got %d", s, v)
+		}
 	}
 }
 
@@ -281,7 +285,7 @@ func TestExtractUserFromContext(t *testing.T) {
 		t.Fatalf("expected unauthenticated for bad token, got %v", err)
 	}
 
-	ctx = authContext(t, "0", "mario")
+	ctx = authContext(t, "", "mario")
 	if _, err := ExtractUserFromContext(ctx); status.Code(err) != codes.Unauthenticated {
 		t.Fatalf("expected unauthenticated for invalid user id, got %v", err)
 	}
@@ -291,7 +295,7 @@ func TestExtractUserFromContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if user.UserID != 7 || user.Username != "mario" {
+	if user.UserID != uuidToInt64("7") || user.Username != "mario" {
 		t.Fatalf("unexpected user info: %+v", user)
 	}
 }
@@ -302,7 +306,7 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 	srv := &server{restaurantService: &mockRestaurantService{
 		createFn: func(_ context.Context, r *models.Restaurant) (int64, error) {
 			createCalled = true
-			if r.OwnerID != 5 || r.OwnerName != "owner" {
+			if r.OwnerID != uuidToInt64("5") || r.OwnerName != "owner" {
 				t.Fatalf("unexpected owner in create: %+v", r)
 			}
 			if r.OpeningTime != "10:00:00" || r.ClosingTime != "18:00:00" {
@@ -312,7 +316,7 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 		},
 		updateFn: func(_ context.Context, r *models.Restaurant, requesterOwnerID int64) (*models.Restaurant, error) {
 			updateCalled = true
-			if requesterOwnerID != 5 || r.OpeningTime != "11:00:00" || r.ClosingTime != "20:00:00" {
+			if requesterOwnerID != uuidToInt64("5") || r.OpeningTime != "11:00:00" || r.ClosingTime != "20:00:00" {
 				t.Fatalf("unexpected update request: %+v owner=%d", r, requesterOwnerID)
 			}
 			return &models.Restaurant{ID: r.ID, Name: r.Name}, nil

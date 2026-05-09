@@ -3,11 +3,11 @@
   "config": {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "tasks.max": "1",
-    "database.hostname": "restaurant_db",
+    "database.hostname": "${env:RESTAURANT_POSTGRES_HOST}",
     "database.port": "5432",
-    "database.user": "restaurant",
-    "database.password": "restaurantsecret",
-    "database.dbname": "mrfood_restaurant",
+    "database.user": "${env:RESTAURANT_POSTGRES_USER}",
+    "database.password": "${env:RESTAURANT_POSTGRES_PASSWORD}",
+    "database.dbname": "${env:RESTAURANT_POSTGRES_DB}",
     "topic.prefix": "restaurantdb",
     "plugin.name": "pgoutput",
     "slot.name": "restaurant_search_slot",
@@ -23,8 +23,8 @@
     "value.converter.schemas.enable": "false",
     "transforms": "unwrap",
     "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
-    "transforms.unwrap.drop.tombstones": "false",
-    "transforms.unwrap.delete.handling.mode": "none"
+    "transforms.unwrap.drop.tombstones": "true",
+    "transforms.unwrap.delete.handling.mode": "rewrite"
   }
 }
 

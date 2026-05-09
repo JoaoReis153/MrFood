@@ -13,10 +13,19 @@ http:
     data: |-
       {
         "username": "menino",
-        "email": "goncasmendonca42@gmail.com",
+        "email": "mrfood.api@gmail.com",
         "password": "StrongPassword123"
       }
   auth: inherit
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // Success (200/201) or already exists (409) — login below proves the account is usable
+        test("register succeeds or user already exists", () => {
+          expect(res.status).to.be.oneOf([200, 201, 409]);
+        });
 
 settings:
   encodeUrl: true

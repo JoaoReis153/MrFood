@@ -1,7 +1,7 @@
 info:
   name: Refresh token
   type: http
-  seq: 6
+  seq: 3
   tags:
     - Users
 
@@ -12,11 +12,35 @@ http:
     type: json
     data: |-
       {
-        "token": "{{refreshToken}}"
+        "refresh_token": "{{refreshToken}}"
       }
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("refresh returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          // Refresh response uses "token" (not "access_token") per proto RefreshResponse
+          test("response has new token", () => {
+            expect(res.body).to.have.property("token");
+            expect(res.body.token).to.be.a("string").and.not.be.empty;
+          });
+
+          test("response has new refresh_token", () => {
+            expect(res.body).to.have.property("refresh_token");
+            expect(res.body.refresh_token).to.be.a("string").and.not.be.empty;
+          });
+
+          bru.setEnvVar("token", res.body.token);
+          bru.setEnvVar("refreshToken", res.body.refresh_token);
+        }
 
 settings:
   encodeUrl: true

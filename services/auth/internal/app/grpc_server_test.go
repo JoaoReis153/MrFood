@@ -2,81 +2,73 @@ package app
 
 import (
 	pb "MrFood/services/auth/internal/api/grpc/pb"
-	"MrFood/services/auth/internal/auth"
-	models "MrFood/services/auth/pkg"
+	"MrFood/services/auth/internal/keycloak"
 	"context"
+	"encoding/base64"
 	"errors"
+	"fmt"
+	"strings"
 	"testing"
 
-	"golang.org/x/crypto/bcrypt"
+	jwtlib "github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type authSvcMock struct {
-	store func(context.Context, *models.User) (*models.User, error)
-	get   func(context.Context, string) (*models.User, error)
+// ──────────────────────────────────────────────────────────────────────────────
+// Mock keycloakClient
+// ──────────────────────────────────────────────────────────────────────────────
+
+type kcMock struct {
+	login      func(context.Context, string, string) (*keycloak.TokenResponse, error)
+	refresh    func(context.Context, string) (*keycloak.TokenResponse, error)
+	createUser func(context.Context, string, string, string) (string, error)
+	revokeSess func(context.Context, string) error
 }
 
-func (m *authSvcMock) StoreUser(ctx context.Context, user *models.User) (*models.User, error) {
-	if m.store == nil {
+func (m *kcMock) Login(ctx context.Context, email, password string) (*keycloak.TokenResponse, error) {
+	if m.login == nil {
 		return nil, nil
 	}
-	return m.store(ctx, user)
+	return m.login(ctx, email, password)
 }
 
-func (m *authSvcMock) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	if m.get == nil {
-		return nil, nil
-	}
-	return m.get(ctx, email)
-}
-
-type jwtSvcMock struct {
-	revokeAll func(context.Context, string) error
-	genPair   func(context.Context, string, string, string) (*auth.TokenPair, error)
-	refresh   func(context.Context, string) (*auth.TokenPair, error)
-	validate  func(context.Context, string) (*auth.Claims, error)
-	revokeOne func(context.Context, string) error
-}
-
-func (m *jwtSvcMock) RevokeAllUserTokens(ctx context.Context, userID string) error {
-	if m.revokeAll == nil {
-		return nil
-	}
-	return m.revokeAll(ctx, userID)
-}
-
-func (m *jwtSvcMock) GenerateTokenPair(ctx context.Context, userID, username, email string) (*auth.TokenPair, error) {
-	if m.genPair == nil {
-		return nil, nil
-	}
-	return m.genPair(ctx, userID, username, email)
-}
-
-func (m *jwtSvcMock) RefreshTokens(ctx context.Context, tokenStr string) (*auth.TokenPair, error) {
+func (m *kcMock) RefreshToken(ctx context.Context, rt string) (*keycloak.TokenResponse, error) {
 	if m.refresh == nil {
 		return nil, nil
 	}
-	return m.refresh(ctx, tokenStr)
+	return m.refresh(ctx, rt)
 }
 
-func (m *jwtSvcMock) ValidateAccessToken(ctx context.Context, tokenString string) (*auth.Claims, error) {
-	if m.validate == nil {
-		return nil, nil
+func (m *kcMock) CreateUser(ctx context.Context, username, email, password string) (string, error) {
+	if m.createUser == nil {
+		return "fake-uuid", nil
 	}
-	return m.validate(ctx, tokenString)
+	return m.createUser(ctx, username, email, password)
 }
 
-func (m *jwtSvcMock) RevokeAccessToken(ctx context.Context, tokenString string) error {
-	if m.revokeOne == nil {
+func (m *kcMock) RevokeAllUserSessions(ctx context.Context, userID string) error {
+	if m.revokeSess == nil {
 		return nil
 	}
-	return m.revokeOne(ctx, tokenString)
+	return m.revokeSess(ctx, userID)
 }
 
+// fakeJWT builds a minimal unsigned JWT (header.payload.sig) for test purposes.
+func fakeJWT(sub, username string) string {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"RS256","typ":"JWT"}`))
+	payload := base64.RawURLEncoding.EncodeToString(
+		[]byte(fmt.Sprintf(`{"sub":%q,"preferred_username":%q}`, sub, username)),
+	)
+	return header + "." + payload + ".fakesig"
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tests
+// ──────────────────────────────────────────────────────────────────────────────
+
 func TestServer_PingPong(t *testing.T) {
-	s := &Server{}
+	s := &Server{kc: &kcMock{}}
 	resp, err := s.PingPong(context.Background(), &pb.Ping{Id: 10})
 	if err != nil || resp.Id != 1 {
 		t.Fatalf("unexpected ping response: resp=%+v err=%v", resp, err)
@@ -84,127 +76,181 @@ func TestServer_PingPong(t *testing.T) {
 }
 
 func TestServer_RegisterProcess(t *testing.T) {
-	t.Run("hash error", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{}, jwtService: &jwtSvcMock{}}
-		_, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "john@mail.com", Password: string(make([]byte, 73))})
-		if err == nil {
-			t.Fatal("expected hash error")
-		}
-	})
-
-	t.Run("store fail maps to internal", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{store: func(context.Context, *models.User) (*models.User, error) {
-			return nil, errors.New("db")
-		}}, jwtService: &jwtSvcMock{}}
-		_, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "john@mail.com", Password: "secret"})
+	t.Run("keycloak error maps to internal", func(t *testing.T) {
+		s := &Server{kc: &kcMock{createUser: func(context.Context, string, string, string) (string, error) {
+			return "", errors.New("kc down")
+		}}}
+		_, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "j@mail.com", Password: "secret"})
 		if status.Code(err) != codes.Internal {
 			t.Fatalf("expected internal, got %v", status.Code(err))
 		}
 	})
 
-	t.Run("success", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{store: func(_ context.Context, u *models.User) (*models.User, error) {
-			if bcrypt.CompareHashAndPassword([]byte(u.Password), []byte("secret")) != nil {
-				t.Fatal("password not hashed")
-			}
-			return &models.User{ID: 1, Username: "john"}, nil
-		}}, jwtService: &jwtSvcMock{}}
-		resp, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "john@mail.com", Password: "secret"})
-		if err != nil || resp.Id != 1 || resp.Username != "john" {
-			t.Fatalf("unexpected register result: resp=%+v err=%v", resp, err)
+	t.Run("duplicate user maps to AlreadyExists", func(t *testing.T) {
+		s := &Server{kc: &kcMock{createUser: func(context.Context, string, string, string) (string, error) {
+			return "", keycloak.ErrUserAlreadyExists
+		}}}
+		_, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "j@mail.com", Password: "secret"})
+		if status.Code(err) != codes.AlreadyExists {
+			t.Fatalf("expected AlreadyExists, got %v", status.Code(err))
+		}
+	})
+
+	t.Run("success returns deterministic id and username", func(t *testing.T) {
+		const fakeUUID = "11111111-1111-1111-1111-111111111111"
+		s := &Server{kc: &kcMock{createUser: func(context.Context, string, string, string) (string, error) {
+			return fakeUUID, nil
+		}}}
+		resp, err := s.RegisterProcess(context.Background(), &pb.Register{Username: "john", Email: "j@mail.com", Password: "secret"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resp.Id != uuidToInt64(fakeUUID) {
+			t.Fatalf("id mismatch: got %d, want %d", resp.Id, uuidToInt64(fakeUUID))
+		}
+		if resp.Username != "john" {
+			t.Fatalf("username mismatch: got %s", resp.Username)
 		}
 	})
 }
 
 func TestServer_LoginProcess(t *testing.T) {
-	h, _ := bcrypt.GenerateFromPassword([]byte("ok"), bcrypt.DefaultCost)
+	const (
+		sub      = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+		username = "johndoe"
+	)
+	kcToken := fakeJWT(sub, username) // Keycloak-issued token (what the mock returns)
 
-	t.Run("not found", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{get: func(context.Context, string) (*models.User, error) {
-			return nil, errors.New("missing")
-		}}, jwtService: &jwtSvcMock{}}
-		_, err := s.LoginProcess(context.Background(), &pb.Login{Email: "john@mail.com", Password: "ok"})
-		if status.Code(err) != codes.NotFound {
-			t.Fatalf("expected not found, got %v", status.Code(err))
-		}
-	})
-
-	t.Run("bad password", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{get: func(context.Context, string) (*models.User, error) {
-			return &models.User{ID: 1, Username: "john", Password: string(h)}, nil
-		}}, jwtService: &jwtSvcMock{}}
-		_, err := s.LoginProcess(context.Background(), &pb.Login{Email: "john@mail.com", Password: "nope"})
+	t.Run("invalid credentials maps to Unauthenticated", func(t *testing.T) {
+		s := &Server{kc: &kcMock{login: func(context.Context, string, string) (*keycloak.TokenResponse, error) {
+			return nil, keycloak.ErrInvalidCredentials
+		}}, jwtSecret: []byte("test-secret")}
+		_, err := s.LoginProcess(context.Background(), &pb.Login{Email: "j@mail.com", Password: "bad"})
 		if status.Code(err) != codes.Unauthenticated {
-			t.Fatalf("expected unauthenticated, got %v", status.Code(err))
+			t.Fatalf("expected Unauthenticated, got %v", status.Code(err))
 		}
 	})
 
-	t.Run("jwt revoke fail", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{get: func(context.Context, string) (*models.User, error) {
-			return &models.User{ID: 1, Username: "john", Password: string(h)}, nil
-		}}, jwtService: &jwtSvcMock{revokeAll: func(context.Context, string) error { return errors.New("fail") }}}
-		_, err := s.LoginProcess(context.Background(), &pb.Login{Email: "john@mail.com", Password: "ok"})
-		if status.Code(err) != codes.Internal {
-			t.Fatalf("expected internal, got %v", status.Code(err))
+	t.Run("success mints HS256 access token with correct claims", func(t *testing.T) {
+		s := &Server{kc: &kcMock{login: func(context.Context, string, string) (*keycloak.TokenResponse, error) {
+			return &keycloak.TokenResponse{AccessToken: kcToken, RefreshToken: "rt"}, nil
+		}}, jwtSecret: []byte("test-secret")}
+		resp, err := s.LoginProcess(context.Background(), &pb.Login{Email: "j@mail.com", Password: "ok"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
-	})
-
-	t.Run("success", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{get: func(context.Context, string) (*models.User, error) {
-			return &models.User{ID: 1, Username: "john", Password: string(h)}, nil
-		}}, jwtService: &jwtSvcMock{
-			revokeAll: func(context.Context, string) error { return nil },
-			genPair: func(context.Context, string, string, string) (*auth.TokenPair, error) {
-				return &auth.TokenPair{AccessToken: "a", RefreshToken: "r"}, nil
-			},
-		}}
-		resp, err := s.LoginProcess(context.Background(), &pb.Login{Email: "john@mail.com", Password: "ok"})
-		if err != nil || resp.AccessToken != "a" || resp.RefreshToken != "r" {
-			t.Fatalf("unexpected login result: resp=%+v err=%v", resp, err)
+		// Access token must be a fresh HS256 JWT (not the raw Keycloak token)
+		if resp.AccessToken == kcToken {
+			t.Fatal("expected a freshly minted token, got the raw Keycloak token")
+		}
+		if !strings.HasPrefix(resp.AccessToken, "ey") || strings.Count(resp.AccessToken, ".") != 2 {
+			t.Fatalf("access token does not look like a JWT: %s", resp.AccessToken)
+		}
+		if resp.RefreshToken != "rt" {
+			t.Fatalf("refresh token mismatch: got %s", resp.RefreshToken)
+		}
+		// Verify the minted token contains the right claims
+		var claims appClaims
+		if _, err := jwtlib.ParseWithClaims(resp.AccessToken, &claims, func(t *jwtlib.Token) (interface{}, error) {
+			return []byte("test-secret"), nil
+		}); err != nil {
+			t.Fatalf("failed to parse minted token: %v", err)
+		}
+		if claims.Subject != sub {
+			t.Fatalf("sub mismatch: got %s, want %s", claims.Subject, sub)
+		}
+		if claims.UserID != sub {
+			t.Fatalf("user_id mismatch: got %s, want %s", claims.UserID, sub)
+		}
+		if claims.Username != username {
+			t.Fatalf("username mismatch: got %s, want %s", claims.Username, username)
+		}
+		if resp.User.Id != uuidToInt64(sub) {
+			t.Fatalf("user id mismatch: got %d, want %d", resp.User.Id, uuidToInt64(sub))
 		}
 	})
 }
 
-func TestServer_RefreshAndLogout(t *testing.T) {
-	t.Run("refresh fail", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{}, jwtService: &jwtSvcMock{refresh: func(context.Context, string) (*auth.TokenPair, error) {
-			return nil, errors.New("bad")
-		}}}
-		_, err := s.RefreshTokenProcess(context.Background(), &pb.RefreshRequest{RefreshToken: "x"})
+func TestServer_RefreshTokenProcess(t *testing.T) {
+	const (
+		sub      = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+		username = "refreshuser"
+	)
+
+	t.Run("refresh failure maps to Unauthenticated", func(t *testing.T) {
+		s := &Server{kc: &kcMock{refresh: func(context.Context, string) (*keycloak.TokenResponse, error) {
+			return nil, errors.New("expired")
+		}}, jwtSecret: []byte("test-secret")}
+		_, err := s.RefreshTokenProcess(context.Background(), &pb.RefreshRequest{RefreshToken: "old"})
 		if status.Code(err) != codes.Unauthenticated {
-			t.Fatalf("expected unauthenticated, got %v", status.Code(err))
+			t.Fatalf("expected Unauthenticated, got %v", status.Code(err))
 		}
 	})
 
-	t.Run("refresh success", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{}, jwtService: &jwtSvcMock{refresh: func(context.Context, string) (*auth.TokenPair, error) {
-			return &auth.TokenPair{AccessToken: "a", RefreshToken: "r"}, nil
-		}}}
-		resp, err := s.RefreshTokenProcess(context.Background(), &pb.RefreshRequest{RefreshToken: "x"})
-		if err != nil || resp.Token != "a" || resp.RefreshToken != "r" {
-			t.Fatalf("unexpected refresh result: resp=%+v err=%v", resp, err)
+	t.Run("success mints new HS256 access token", func(t *testing.T) {
+		// The mock must return a parseable Keycloak JWT (with sub and preferred_username)
+		newKCToken := fakeJWT(sub, username)
+		s := &Server{kc: &kcMock{refresh: func(context.Context, string) (*keycloak.TokenResponse, error) {
+			return &keycloak.TokenResponse{AccessToken: newKCToken, RefreshToken: "new-rt"}, nil
+		}}, jwtSecret: []byte("test-secret")}
+		resp, err := s.RefreshTokenProcess(context.Background(), &pb.RefreshRequest{RefreshToken: "old"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resp.Token == newKCToken {
+			t.Fatal("expected a freshly minted token, got the raw Keycloak token")
+		}
+		if resp.RefreshToken != "new-rt" {
+			t.Fatalf("refresh token mismatch: got %s", resp.RefreshToken)
+		}
+		// Verify minted token claims
+		var claims appClaims
+		if _, err := jwtlib.ParseWithClaims(resp.Token, &claims, func(t *jwtlib.Token) (interface{}, error) {
+			return []byte("test-secret"), nil
+		}); err != nil {
+			t.Fatalf("failed to parse minted refresh token: %v", err)
+		}
+		if claims.UserID != sub || claims.Username != username {
+			t.Fatalf("claim mismatch: user_id=%s username=%s", claims.UserID, claims.Username)
 		}
 	})
+}
 
-	t.Run("logout validate fail", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{}, jwtService: &jwtSvcMock{validate: func(context.Context, string) (*auth.Claims, error) {
-			return nil, errors.New("bad")
-		}}}
-		_, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: "x"})
+func TestServer_LogoutProcess(t *testing.T) {
+	const sub = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
+	t.Run("malformed token maps to Unauthenticated", func(t *testing.T) {
+		s := &Server{kc: &kcMock{}, jwtSecret: []byte("test-secret")}
+		_, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: "not-a-jwt"})
 		if status.Code(err) != codes.Unauthenticated {
-			t.Fatalf("expected unauthenticated, got %v", status.Code(err))
+			t.Fatalf("expected Unauthenticated, got %v", status.Code(err))
 		}
 	})
 
-	t.Run("logout success", func(t *testing.T) {
-		s := &Server{authService: &authSvcMock{}, jwtService: &jwtSvcMock{
-			validate:  func(context.Context, string) (*auth.Claims, error) { return &auth.Claims{UserID: "u1"}, nil },
-			revokeOne: func(context.Context, string) error { return nil },
-			revokeAll: func(context.Context, string) error { return nil },
-		}}
-		resp, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: "x"})
+	t.Run("revoke failure maps to Internal", func(t *testing.T) {
+		token := fakeJWT(sub, "user")
+		s := &Server{kc: &kcMock{revokeSess: func(context.Context, string) error {
+			return errors.New("admin api down")
+		}}, jwtSecret: []byte("test-secret")}
+		_, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: token})
+		if status.Code(err) != codes.Internal {
+			t.Fatalf("expected Internal, got %v", status.Code(err))
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		token := fakeJWT(sub, "user")
+		var capturedSub string
+		s := &Server{kc: &kcMock{revokeSess: func(_ context.Context, id string) error {
+			capturedSub = id
+			return nil
+		}}, jwtSecret: []byte("test-secret")}
+		resp, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: token})
 		if err != nil || resp == nil {
 			t.Fatalf("unexpected logout result: resp=%+v err=%v", resp, err)
+		}
+		if capturedSub != sub {
+			t.Fatalf("wrong sub passed to revoke: got %s, want %s", capturedSub, sub)
 		}
 	})
 }

@@ -398,20 +398,6 @@ func TestRunServerGracefulShutdown(t *testing.T) {
 	}
 }
 
-func TestNewRedisClientError(t *testing.T) {
-	cfg := &config.Config{}
-	cfg.Redis.Host = "127.0.0.1"
-	cfg.Redis.Port = 1
-
-	client, err := newRedisClient(context.Background(), cfg)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-	if client != nil {
-		t.Fatal("expected nil client when ping fails")
-	}
-}
-
 func TestNewSMTPConfig(t *testing.T) {
 	cfg := &config.Config{}
 	cfg.SMTP.Host = "smtp.local"
@@ -423,24 +409,6 @@ func TestNewSMTPConfig(t *testing.T) {
 	smtpCfg := newSMTPConfig(cfg)
 	if smtpCfg.Host != cfg.SMTP.Host || smtpCfg.Port != cfg.SMTP.Port || smtpCfg.User != cfg.SMTP.User || smtpCfg.Password != cfg.SMTP.Password || smtpCfg.From != cfg.SMTP.From {
 		t.Fatal("newSMTPConfig did not map fields correctly")
-	}
-}
-
-func TestNewErrorWhenRedisUnavailable(t *testing.T) {
-	cfg := &config.Config{}
-	cfg.Redis.Host = "127.0.0.1"
-	cfg.Redis.Port = 1
-	cfg.SMTP.Host = "localhost"
-	cfg.SMTP.Port = 2525
-	cfg.RateLimit.EmailRateLimit = 1
-	cfg.RateLimit.TTL = time.Minute
-
-	app, err := New(context.Background(), cfg)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-	if app != nil {
-		t.Fatal("expected nil app when Redis is unavailable")
 	}
 }
 
@@ -475,10 +443,7 @@ func TestNewRedisClientSuccess(t *testing.T) {
 	cfg.Redis.Host = host
 	cfg.Redis.Port = port
 
-	client, err := newRedisClient(context.Background(), cfg)
-	if err != nil {
-		t.Fatalf("expected nil error, got %v", err)
-	}
+	client := newRedisClient(cfg)
 	if client == nil {
 		t.Fatal("expected non-nil client")
 	}

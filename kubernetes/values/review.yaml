@@ -7,15 +7,19 @@ service:
 
 env:
   secrets:
-    POSTGRES_PASSWORD: mrfood_review_secret
+    REVIEW_POSTGRES_PASSWORD: mrfood_review_secret
   config:
-    APP_SERVER_PORT: 50055
-    REVIEW_POSTGRES_PORT: 5432
-    POSTGRES_DB: mrfood_review
-    POSTGRES_USER: mrfood_review_user
+    REVIEW_SERVER_PORT: 50055
+    POSTGRES_PORT: 5432
+    REVIEW_POSTGRES_DB: mrfood_review
+    REVIEW_POSTGRES_USER: mrfood_review_user
+    POSTGRES_HOST: 127.0.0.1
+    POSTGRES_MIN_CONNS: 4
+    POSTGRES_MAX_CONNS: 20
+    POSTGRES_MAX_CONN_LIFETIME: 15m
+    POSTGRES_HEALTH_CHECK_PERIOD: 1m
     APP_LOG_LEVEL: debug
     REVIEW_TO_RESTAURANT_GRPC_ADDR: "restaurant:80"
-    POSTGRES_HOST: 127.0.0.1
 
 cloudsql:
   instance: mrfood-490623:europe-southwest1:mrfood-review-pg

@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strconv"
+	"hash/fnv"
 	"strings"
 	"time"
 
@@ -125,12 +125,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID, err := parseInt64(claims.UserID)
-
-	if err != nil {
-		slog.Error("failed to parse user id", "error", err)
-		return nil, status.Error(codes.Unauthenticated, "invalid user id in token")
-	}
+	userID := uuidToInt64(claims.UserID)
 
 	userInfo := &UserInfo{
 		UserID:   userID,
@@ -139,7 +134,8 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	}
 
 	slog.Info("USER INFO",
-		"user_id", claims.UserID,
+		"user_id_claim", claims.UserID,
+		"user_id", userID,
 		"username", claims.Username,
 		"email", claims.Email,
 		"token_type", claims.TokenType,
@@ -149,15 +145,12 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func parseInt64(value string) (int64, error) {
-	v, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int64 range")
-	}
-	return v, nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func (app *App) RunServer() {

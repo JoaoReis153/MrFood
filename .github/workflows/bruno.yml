@@ -1,12 +1,6 @@
 name: Bruno API Tests
 
 on:
-  push:
-    paths:
-      - 'tests/mrfood-api/**'
-      - '.github/workflows/bruno.yml'
-      - 'Makefile'
-      - 'services/**'
   pull_request:
     branches: [main]
     paths:
@@ -36,75 +30,37 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Create services/.env
+      - name: Create environment files
         run: |
           cat > services/.env <<'EOF'
-          AUTH_SERVER_PORT=50051
-          AUTH_POSTGRES_PORT=5432
-          AUTH_POSTGRES_DB=mrfood_auth
-          AUTH_REDIS_PORT=6379
-          AUTH_POSTGRES_USER=mrfood_auth_user
+          APP_JWT_ACCESS_TOKEN_SECRET=CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
           AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
           AUTH_REDIS_PASS=
-          AUTH_JWT_ACCESS_TOKEN_SECRET=test-access-secret-for-ci-0123456789
-          AUTH_JWT_REFRESH_TOKEN_SECRET=test-refresh-secret-for-ci-0123456789
-
-          RESTAURANT_SERVER_PORT=50052
-          RESTAURANT_POSTGRES_PORT=5433
-          RESTAURANT_POSTGRES_DB=mrfood_restaurant
-          RESTAURANT_POSTGRES_USER=restaurant
-          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
-
-          REVIEW_SERVER_PORT=50055
-          REVIEW_POSTGRES_PORT=5436
-          REVIEW_POSTGRES_DB=mrfood_review
-          REVIEW_POSTGRES_USER=review
-          REVIEW_POSTGRES_PASSWORD=reviewsecret
-
-          BOOKING_SERVER_PORT=50053
-          BOOKING_DB_PORT=5434
-          BOOKING_POSTGRES_DB=mrfood_booking
-          BOOKING_POSTGRES_USER=booking
+          KEYCLOAK_CLIENT_SECRET=mrfood-auth-client-secret
+          KEYCLOAK_ADMIN_PASS=admin
           BOOKING_POSTGRES_PASSWORD=bookingsecret
-
-          SPONSOR_SERVER_PORT=50054
-          SPONSOR_POSTGRES_PORT=5435
-          SPONSOR_POSTGRES_DB=mrfood_sponsor
-          SPONSOR_POSTGRES_USER=sponsor
-          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
-          SPONSOR_DB_PORT=5435
-
-          SEARCH_SERVER_PORT=50056
-          ELASTICSEARCH_HOST=localhost
-          ELASTICSEARCH_PORT=9200
-          ELASTICSEARCH_INDEX=restaurants
-          ELASTICSEARCH_USERNAME= #optional
-          ELASTICSEARCH_PASSWORD= #optional
-
-          CDC_RESTAURANT_DB=mrfood_restaurant
-          CDC_RESTAURANT_USER=restaurant
-          CDC_RESTAURANT_PASSWORD=restaurantsecret
-          CDC_RESTAURANT_DB_PORT=5434
-          CDC_ELASTIC_PORT=9200
-          CDC_CONNECT_PORT=8083
-          CDC_KAFKA_PORT=9092
-
-          PAYMENT_SERVER_PORT=50057
-          PAYMENT_POSTGRES_PORT=5437
-          PAYMENT_POSTGRES_DB=mrfood_payment
-          PAYMENT_POSTGRES_USER=payment
+          SMTP_USER=mrfood.api@gmail.com
+          SMTP_PASSWORD=wpbp rgwe hplj smzy
+          SMTP_FROM=mrfood.api@gmail.com
           PAYMENT_POSTGRES_PASSWORD=paymentsecret
-
-          NOTIFICATION_SERVER_PORT=50058
-
-          NOTIFICATION_SMTP_USER=mrfood.api@gmail.com
-          NOTIFICATION_SMTP_PASSWORD=wpbp rgwe hplj smzy
-          NOTIFICATION_SMTP_FROM=mrfood.api@gmail.com
+          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
+          REVIEW_POSTGRES_PASSWORD=reviewsecret
+          ELASTICSEARCH_USERNAME=
+          ELASTICSEARCH_PASSWORD=
+          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
           EOF
 
+      - name: Go mod tidy (all services)
+        run: |
+          for dir in $(find services -name go.mod -exec dirname {} \;); do
+            echo "Tidying $dir"
+            cd "$dir"
+            go mod tidy
+            cd - > /dev/null
+          done
+        
       - name: Start services
-        working-directory: services
-        run: docker compose up -d --build
+        run: make build run
 
       - name: Wait for API gateway
         run: |
@@ -126,11 +82,11 @@ jobs:
 
             if [ $((i % 10)) -eq 0 ]; then
               echo "--- docker compose ps ---"
-              docker compose -f services/docker-compose.yml ps || true
+              docker compose -f services/docker-compose.yml --env-file services/config.env ps || true
               echo "--- auth logs (tail) ---"
-              docker compose -f services/docker-compose.yml logs --tail=80 auth || true
+              docker compose -f services/docker-compose.yml --env-file services/config.env logs --tail=80 auth || true
               echo "--- kong logs (tail) ---"
-              docker compose -f services/docker-compose.yml logs --tail=80 kong || true
+              docker compose -f services/docker-compose.yml --env-file services/config.env logs --tail=80 kong || true
             fi
 
             sleep 5
@@ -141,11 +97,29 @@ jobs:
             echo "--- gateway ping response body ---"
             cat /tmp/gateway-auth-ping-body.txt || true
             echo "--- docker compose ps ---"
-            docker compose -f services/docker-compose.yml ps || true
-            echo "--- full service logs (tail) ---"
-            docker compose -f services/docker-compose.yml logs --tail=300 || true
+            make logs-dump
             exit 1
           fi
+
+      - name: Create ES index and start search service
+        run: |
+          make search-seed
+          docker compose -p mrfood -f services/docker-compose.yml up -d --no-deps search
+
+      - name: Wait for search service
+        run: |
+          echo "Waiting for search service on port 50056..."
+          for i in $(seq 1 60); do
+            if nc -z localhost 50056 2>/dev/null; then
+              echo "Search service is ready"
+              exit 0
+            fi
+            echo "[$i/60] not yet..."
+            sleep 3
+          done
+          echo "Search service did not become ready"
+          docker compose -p mrfood -f services/docker-compose.yml --env-file services/config.env logs --tail=60 search || true
+          exit 1
 
       - name: Run Bruno tests
         run: make test-bruno
@@ -156,15 +130,26 @@ jobs:
         with:
           name: bruno-reports
           path: |
-            tests/mrfood-api/reports/bruno-junit.xml
-            tests/mrfood-api/reports/bruno-report.json
+            tests/mrfood-api/reports/users-junit.xml
+            tests/mrfood-api/reports/users-report.json
+            tests/mrfood-api/reports/restaurants-junit.xml
+            tests/mrfood-api/reports/restaurants-report.json
+            tests/mrfood-api/reports/reservations-junit.xml
+            tests/mrfood-api/reports/reservations-report.json
+            tests/mrfood-api/reports/reviews-junit.xml
+            tests/mrfood-api/reports/reviews-report.json
+            tests/mrfood-api/reports/search-junit.xml
+            tests/mrfood-api/reports/search-report.json
+            tests/mrfood-api/reports/payment-junit.xml
+            tests/mrfood-api/reports/payment-report.json
+            tests/mrfood-api/reports/sponsor-junit.xml
+            tests/mrfood-api/reports/sponsor-report.json
           if-no-files-found: warn
 
       - name: Dump service logs on failure
         if: failure()
-        run: docker compose -f services/docker-compose.yml logs --tail=300
+        run: make logs-dump
 
       - name: Stop services
         if: always()
-        working-directory: services
-        run: docker compose down -v
+        run: make down-volumes

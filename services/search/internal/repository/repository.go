@@ -32,21 +32,6 @@ func New(ctx context.Context, cfg *config.Config) (*Repository, error) {
 		return nil, fmt.Errorf("create elastic client: %w", err)
 	}
 
-	infoRes, err := es.Info(es.Info.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("elastic info: %w", err)
-	}
-	defer func() {
-		if err := infoRes.Body.Close(); err != nil {
-			slog.Error("error closing response body", "error", err)
-		}
-	}()
-
-	if infoRes.IsError() {
-		body, _ := io.ReadAll(infoRes.Body)
-		return nil, fmt.Errorf("elastic info status=%d body=%s", infoRes.StatusCode, string(body))
-	}
-
 	if err := ensureSearchIndexExists(ctx, es, cfg.Elastic.Index); err != nil {
 		return nil, err
 	}
@@ -68,7 +53,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 	if query.Filter.Category != nil {
 		must = append(must, map[string]any{
 			"term": map[string]any{
-				"categories.keyword": *query.Filter.Category,
+				"categories": *query.Filter.Category,
 			},
 		})
 	}
@@ -227,7 +212,8 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, index string) error {
 	existsRes, err := es.Indices.Exists([]string{index}, es.Indices.Exists.WithContext(ctx))
 	if err != nil {
-		return fmt.Errorf("check index exists: %w", err)
+		slog.Warn("elasticsearch unreachable at startup; queries will fail until it is available", "index", index, "error", err)
+		return nil
 	}
 	defer func() {
 		if err := existsRes.Body.Close(); err != nil {
@@ -239,13 +225,10 @@ func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, inde
 		return nil
 	}
 	if existsRes.StatusCode == 404 {
-		return fmt.Errorf("search index '%s' does not exist (expected to be managed by CDC service)", index)
+		slog.Warn("search index does not exist yet; queries will fail until CDC creates it", "index", index)
+		return nil
 	}
 
-	if existsRes.StatusCode != 404 {
-		body, _ := io.ReadAll(existsRes.Body)
-		return fmt.Errorf("check index exists status=%d body=%s", existsRes.StatusCode, string(body))
-	}
-
-	return nil
+	body, _ := io.ReadAll(existsRes.Body)
+	return fmt.Errorf("check index exists status=%d body=%s", existsRes.StatusCode, string(body))
 }

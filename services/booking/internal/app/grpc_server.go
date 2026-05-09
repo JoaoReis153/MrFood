@@ -7,7 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"net"
-	"strconv"
+	"hash/fnv"
 	"strings"
 
 	"MrFood/services/booking/config"
@@ -16,6 +16,7 @@ import (
 	models "MrFood/services/booking/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -72,6 +73,7 @@ func NewRestaurantClient(address string) (pb.RestaurantToBookingServiceClient, *
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -84,6 +86,7 @@ func NewPaymentClient(address string) (pb.PaymentCommandServiceClient, *grpc.Cli
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -100,11 +103,7 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt64(claims.UserID)
-
-	if err != nil {
-		return nil, err
-	}
+	user_id := uuidToInt64(claims.UserID)
 
 	slog.Info("received booking CREATION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
@@ -139,11 +138,7 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt64(claims.UserID)
-
-	if err != nil {
-		return nil, err
-	}
+	user_id := uuidToInt64(claims.UserID)
 
 	delete_request := &models.DeleteBooking{
 		BookingID: req.BookingId,
@@ -184,6 +179,11 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
+	if claims.UserID == "" {
+		slog.Error("missing user_id claim in token")
+		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
+	}
+
 	slog.Info("USER INFO",
 		"user_id", claims.UserID,
 		"username", claims.Username,
@@ -195,15 +195,12 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	return claims, nil
 }
 
-func parseInt64(value string) (int64, error) {
-	v, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int64 range")
-	}
-	return v, nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func mapServiceError(err error) error {

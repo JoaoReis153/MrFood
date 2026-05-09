@@ -11,11 +11,12 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strconv"
+	"hash/fnv"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -53,12 +54,19 @@ type reviewStatsRPC interface {
 }
 
 func newReviewStatsClient(target string) (*reviewStatsClient, *grpc.ClientConn, error) {
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("dial review grpc: %w", err)
 	}
 
-	return &reviewStatsClient{conn: conn}, conn, nil
+	return &reviewStatsClient{
+		client: pb.NewRestaurantToReviewServiceClient(conn),
+		conn:   conn,
+	}, conn, nil
 }
 
 func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID int64) (*models.RestaurantStats, error) {
@@ -246,10 +254,11 @@ func (app *App) RunServer() {
 		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
-	srv := &server{
-		restaurantService: app.Service,
-	}
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
+
+	srv := &server{restaurantService: app.Service}
 
 	pb.RegisterRestaurantServiceServer(s, srv)
 	pb.RegisterRestaurantToBookingServiceServer(s, srv)
@@ -301,12 +310,11 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID, err := parseInt64(claims.UserID)
-
-	if err != nil {
-		slog.Error("failed to parse user id", "error", err)
-		return nil, status.Error(codes.Unauthenticated, "invalid user id in token")
+	if claims.UserID == "" {
+		slog.Error("missing user_id claim in token")
+		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
 	}
+	userID := uuidToInt64(claims.UserID)
 
 	userInfo := &UserInfo{
 		UserID:   userID,
@@ -314,7 +322,8 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	}
 
 	slog.Info("USER INFO",
-		"user_id", claims.UserID,
+		"user_id_claim", claims.UserID,
+		"user_id", userID,
 		"username", claims.Username,
 		"token_type", claims.TokenType,
 		"exp", claims.ExpiresAt,
@@ -323,15 +332,12 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func parseInt64(value string) (int64, error) {
-	v, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int64 range")
-	}
-	return v, nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {

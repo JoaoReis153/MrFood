@@ -33,7 +33,7 @@ func (m *mockCommandService) CreateReceipt(ctx context.Context, r *models.Receip
 type mockQueryService struct{}
 
 func (m *mockQueryService) GetReceiptsByUser(ctx context.Context, userID int64) error {
-	if userID == 0 {
+	if userID == uuidToInt64("0") {
 		return service.ErrUnauthorized
 	}
 	return nil
@@ -43,7 +43,7 @@ func (m *mockQueryService) GetReceiptById(ctx context.Context, receiptID int32, 
 	if receiptID == 0 {
 		return service.ErrReceiptNotFound
 	}
-	if userID == 0 {
+	if userID == uuidToInt64("0") {
 		return service.ErrUnauthorized
 	}
 	return nil
@@ -53,11 +53,7 @@ func (m *mockQueryService) GetReceiptById(ctx context.Context, receiptID int32, 
 // Helpers
 // -----------------------------
 func contextWithAuth(userID string) context.Context {
-	claims := &Claims{
-		UserID:   userID,
-		Username: "test",
-		Email:    "test@test.com",
-	}
+	claims := &Claims{UserID: userID}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, _ := token.SignedString([]byte("secret"))

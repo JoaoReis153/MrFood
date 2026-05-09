@@ -1,13 +1,13 @@
 info:
   name: Compare two restaurants
   type: http
-  seq: 9
+  seq: 4
   tags:
     - Restaurants
 
 http:
   method: GET
-  url: "{{baseUrl}}/restaurants/1"
+  url: "{{baseUrl}}/restaurants/{{restaurantId}}"
   body:
     type: json
     data: |-
@@ -16,6 +16,24 @@ http:
   auth:
     type: bearer
     token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("get restaurant returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has restaurant details", () => {
+            expect(res.body).to.have.property("restaurant");
+          });
+
+          test("restaurant id matches", () => {
+            expect(String(res.body.restaurant.id)).to.equal(bru.getEnvVar("restaurantId"));
+          });
+        }
 
 settings:
   encodeUrl: true

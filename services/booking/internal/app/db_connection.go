@@ -38,14 +38,7 @@ func (app *App) ConnectDb() error {
 		return fmt.Errorf("db connect: %w", err)
 	}
 
-	// Ping to verify
-	if err := pool.Ping(context.Background()); err != nil {
-		slog.Error("db ping failed", "error", err)
-		pool.Close()
-		return fmt.Errorf("db ping: %w", err)
-	}
-
 	app.DB = pool
-	slog.Info("db connected successfully")
+	slog.Info("db pool created")
 	return nil
 }
