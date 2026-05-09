@@ -18,8 +18,9 @@ datasources:
     jsonData:
       derivedFields:
         - name: TraceID
-          matcherRegex: '"trace_id":"(\w+)"'
-          url: '$${__value.raw}'
+          matcherType: label
+          matcherRegex: traceID
+          url: '${__value.raw}'
           datasourceUid: tempo
 
   - name: Tempo
@@ -31,7 +32,25 @@ datasources:
     jsonData:
       tracesToLogsV2:
         datasourceUid: loki
+        spanStartTimeShift: '-1m'
+        spanEndTimeShift: '1m'
+        filterByTraceID: true
+        filterBySpanID: false
+        customQuery: false
+      tracesToMetrics:
+        datasourceUid: prometheus
+        spanStartTimeShift: '-1m'
+        spanEndTimeShift: '1m'
+        queries:
+          - name: Request rate
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m]))'
+          - name: Error rate
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags,status_code="STATUS_CODE_ERROR"}[5m]))'
+          - name: Duration p95
+            query: 'histogram_quantile(0.95, sum(rate(traces_spanmetrics_duration_milliseconds_bucket{$$__tags}[5m])) by (le))'
       serviceMap:
         datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
       lokiSearch:
         datasourceUid: loki

@@ -50,6 +50,11 @@ metrics_generator:
       dimensions:
         - http.method
         - http.status_code
+    span_metrics:
+      dimensions:
+        - http.method
+        - http.status_code
+        - http.route
     local_blocks:
       max_live_traces: 50000
       max_block_duration: 30m
@@ -65,4 +70,4 @@ metrics_generator:
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs, local-blocks]
+      processors: [service-graphs, span-metrics, local-blocks]
