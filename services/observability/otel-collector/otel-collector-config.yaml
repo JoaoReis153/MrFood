@@ -9,6 +9,13 @@ receivers:
 processors:
   batch: {}
 
+  filter/drop_health_checks:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["rpc.method"] == "Check" and attributes["rpc.service"] == "grpc.health.v1.Health"'
+        - 'name == "grpc.health.v1.Health/Check"'
+
 exporters:
   otlp:
     endpoint: tempo:4317
@@ -30,7 +37,7 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [filter/drop_health_checks, batch]
       exporters: [otlp, debug]
 
     metrics:
@@ -41,4 +48,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlphttp/loki]
+      exporters: [otlphttp/loki, debug]
