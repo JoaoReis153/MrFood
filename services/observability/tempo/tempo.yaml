@@ -50,6 +50,12 @@ metrics_generator:
       dimensions:
         - http.method
         - http.status_code
+    local_blocks:
+      max_live_traces: 50000
+      max_block_duration: 30m
+      max_block_bytes: 300_000_000
+      flush_check_period: 10s
+      trace_idle_period: 10s
   storage:
     path: /var/tempo/generator/wal
     remote_write:
@@ -59,4 +65,4 @@ metrics_generator:
 overrides:
   defaults:
     metrics_generator:
-      processors: [service-graphs]
+      processors: [service-graphs, local-blocks]
