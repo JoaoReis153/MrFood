@@ -13,3 +13,8 @@ scrape_configs:
   - job_name: loki
     static_configs:
       - targets: ["loki:3100"]
+
+  - job_name: keycloak
+    static_configs:
+      - targets: ["keycloak:9000"]
+    metrics_path: /metrics
