@@ -12,7 +12,7 @@ services:
       - .env           # all secrets
     depends_on:
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.1
