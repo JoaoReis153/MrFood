@@ -27,6 +27,7 @@ services:
       KC_TRACING_ENABLED: "true"
       KC_TRACING_ENDPOINT: "http://otel-collector:4317"
       KC_TRACING_SAMPLER_TYPE: "always_on"
+      KC_METRICS_ENABLED: "true"
     healthcheck:
       # Uses bash /dev/tcp — no curl/wget needed in UBI9-micro image.
       # Succeeds only once the mrfood realm is fully imported and responding.
@@ -39,3 +40,4 @@ services:
       - ./keycloak/realm-import.json:/opt/keycloak/data/import/mrfood-realm.json:ro
     ports:
       - "8080:8080"           # expose admin console on host for development
+      - "9000:9000"           # management port: health + metrics
