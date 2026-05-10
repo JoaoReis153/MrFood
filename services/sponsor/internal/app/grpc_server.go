@@ -54,7 +54,7 @@ type SponsorService interface {
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
 
-	slog.Info("get restaurant sponsorship", "request", req)
+	slog.InfoContext(ctx, "get restaurant sponsorship", "restaurant_id", req.Id)
 
 	response, err := s.sponsorService.GetRestaurantSponsorship(ctx, req.Id)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	slog.Info("USER", "username", user.Username, "userID", user.UserID)
+	
 
 	sponsorship := &models.Sponsorship{
 		ID:         req.Id,
@@ -92,11 +92,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		return nil, err
 	}
 
-	slog.Info("ADDED TO DATABASE",
-		"id", response.ID,
-		"tier", response.Tier,
-		"until", response.Until,
-	)
+	slog.InfoContext(ctx, "sponsorship created", "id", response.ID, "tier", response.Tier, "until", response.Until)
 
 	return &pb.SponsorshipResponse{
 		Id:        response.ID,
@@ -123,7 +119,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 	userID := uuidToInt64(claims.UserID)
@@ -133,15 +129,6 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		Email:    claims.Email,
 		Username: claims.Username,
 	}
-
-	slog.Info("USER INFO",
-		"user_id_claim", claims.UserID,
-		"user_id", userID,
-		"username", claims.Username,
-		"email", claims.Email,
-		"token_type", claims.TokenType,
-		"exp", claims.ExpiresAt,
-	)
 
 	return userInfo, nil
 }

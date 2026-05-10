@@ -70,7 +70,7 @@ func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id 
 
 	if _, err = s.sendReceipts(ctx, receipts); err != nil {
 		// Email delivery is best-effort; log but don't fail the request.
-		slog.Warn("receipt email delivery failed, continuing", "error", err)
+		slog.WarnContext(ctx, "receipt email delivery failed, continuing", "error", err)
 	}
 
 	return nil
@@ -84,7 +84,7 @@ func (s *Service) GetReceiptsByUser(ctx context.Context, user_id int64) error {
 
 	if _, err = s.sendReceipts(ctx, receipts); err != nil {
 		// Email delivery is best-effort; log but don't fail the request.
-		slog.Warn("receipt email delivery failed, continuing", "error", err)
+		slog.WarnContext(ctx, "receipt email delivery failed, continuing", "error", err)
 	}
 
 	return nil

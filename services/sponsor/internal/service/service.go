@@ -34,8 +34,6 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, 0, err
 	}
 
-	slog.Info("RESTAURANT", "data", restaurant)
-
 	if restaurant.OwnerID != owner {
 		return nil, 0, errors.New("invalid restaurant owner")
 	}
@@ -76,11 +74,10 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 	})
 
 	if err != nil {
-		slog.Error("failed to get receipt", "error", err)
+		slog.ErrorContext(ctx, "payment failed", "error", err)
 		return 0, err
 	}
 
-	slog.Info("receipt id", "receipt_id", res.ReceiptId)
 	return res.ReceiptId, nil
 }
 

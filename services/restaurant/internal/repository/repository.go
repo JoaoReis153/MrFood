@@ -156,7 +156,7 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil {
-			slog.Error("rollback transaction", "error", err)
+			slog.ErrorContext(ctx, "rollback transaction", "error", err)
 			return
 		}
 	}(tx, ctx)
@@ -227,7 +227,7 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
 		if err != nil {
-			slog.Error("rollback transaction", "error", err)
+			slog.ErrorContext(ctx, "rollback transaction", "error", err)
 			return
 		}
 	}(tx, ctx)

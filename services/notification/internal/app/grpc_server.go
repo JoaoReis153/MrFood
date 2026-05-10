@@ -71,29 +71,28 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 }
 
 func (s *Server) SendRegistrationEmail(ctx context.Context, req *pb.SendRegistrationEmailRequest) (*pb.SendRegistrationEmailResponse, error) {
-	slog.Info("SendRegistrationEmail", "email", req.GetEmail(), "username", req.GetUsername())
+	slog.InfoContext(ctx, "sending registration email", "email", req.GetEmail(), "username", req.GetUsername())
 
 	_, err := s.svc.SendRegistrationEmail(ctx, req)
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
 	return &pb.SendRegistrationEmailResponse{}, nil
 }
 
 func (s *Server) SendReceipts(ctx context.Context, req *pb.SendReceiptsRequest) (*pb.SendReceiptsResponse, error) {
-	slog.Info("SendReceipts", "email", req.UserEmail, "receiptCount", len(req.GetReceipts()))
+	slog.InfoContext(ctx, "sending receipts", "email", req.UserEmail, "receipt_count", len(req.GetReceipts()))
 
 	_, err := s.svc.SendReceipts(ctx, req)
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
 	return &pb.SendReceiptsResponse{}, nil
 }
 
-func mapToGRPCError(err error) error {
-	slog.Error("gRPC Operation Failed", "error", err)
+func mapToGRPCError(_ context.Context, err error) error {
 	switch {
 	case errors.Is(err, models.ErrInvalidEmail), errors.Is(err, models.ErrInvalidUsername), errors.Is(err, models.ErrEmptyReceipts):
 		return status.Error(codes.InvalidArgument, err.Error())

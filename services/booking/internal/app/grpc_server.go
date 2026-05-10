@@ -107,7 +107,7 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 
 	user_id := uuidToInt64(claims.UserID)
 
-	slog.Info("received booking CREATION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
+	slog.InfoContext(ctx, "creating booking", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
 	booking := &models.Booking{
 		UserID:       user_id,
@@ -120,10 +120,10 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 	booking_id, receipt_id, err := s.bookingService.CreateBooking(ctx, booking)
 
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
-	slog.Info("Booking created", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart)
+	slog.InfoContext(ctx, "booking created", "user_id", user_id, "restaurant_id", req.RestaurantId)
 
 	return &pb.CreateBookingResponse{
 		BookingId: booking_id,
@@ -147,15 +147,13 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 		UserID:    user_id,
 	}
 
-	slog.Info("received booking DELETION request", "booking_id", delete_request.BookingID)
-
 	err = s.bookingService.DeleteBooking(ctx, delete_request)
 
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
-	slog.Info("booking DELETED", "booking_id", delete_request.BookingID)
+	slog.InfoContext(ctx, "booking deleted", "booking_id", delete_request.BookingID)
 
 	return &pb.DeleteBookingResponse{}, nil
 }
@@ -177,22 +175,14 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
 	if claims.UserID == "" {
-		slog.Error("missing user_id claim in token")
+		slog.ErrorContext(ctx, "missing user_id claim in token")
 		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
 	}
-
-	slog.Info("USER INFO",
-		"user_id", claims.UserID,
-		"username", claims.Username,
-		"user_email", claims.Email,
-		"token_type", claims.TokenType,
-		"exp", claims.ExpiresAt,
-	)
 
 	return claims, nil
 }
@@ -205,25 +195,19 @@ func uuidToInt64(id string) int64 {
 	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
-func mapServiceError(err error) error {
+func mapServiceError(_ context.Context, err error) error {
 	switch {
 	case errors.Is(err, service.ErrInvalidBooking):
-		slog.Error("Invalid booking fields", "error", err)
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, service.ErrBookingAlreadyExists):
-		slog.Error("Booking already exists", "error", err)
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, service.ErrForbidden):
-		slog.Error("Permission denied", "error", err)
 		return status.Error(codes.PermissionDenied, err.Error())
 	case errors.Is(err, service.ErrBookingNotFound):
-		slog.Error("Booking not found", "error", err)
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, service.ErrFailedWHGet):
-		slog.Error("Failed to get working hours", "error", err)
 		return status.Error(codes.FailedPrecondition, err.Error())
 	default:
-		slog.Error("internal service error", "error", err)
 		return status.Error(codes.Internal, "internal server error")
 	}
 }

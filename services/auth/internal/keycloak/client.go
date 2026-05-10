@@ -149,7 +149,7 @@ func (c *Client) CreateUser(ctx context.Context, username, email, password strin
 	// realm's user_id mapper can embed a numeric user_id in the JWT.
 	intID := uuidToPositiveInt64String(userUUID)
 	if err := c.setUserAttribute(ctx, adminToken, userUUID, username, email, "int_id", intID); err != nil {
-		slog.Warn("failed to set user id attribute", "uuid", userUUID, "error", err)
+		slog.WarnContext(ctx, "failed to set user id attribute", "uuid", userUUID, "error", err)
 	}
 
 	return userUUID, nil
@@ -316,7 +316,7 @@ func (c *Client) getAdminToken(ctx context.Context) (string, error) {
 	if err := c.postForm(ctx, masterTokenURL, data, http.StatusOK, &resp); err != nil {
 		return "", fmt.Errorf("admin token: %w", err)
 	}
-	slog.Debug("obtained keycloak admin token")
+	slog.DebugContext(ctx, "obtained keycloak admin token")
 	return resp.AccessToken, nil
 }
 

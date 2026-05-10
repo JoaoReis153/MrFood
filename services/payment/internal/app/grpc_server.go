@@ -104,8 +104,6 @@ func NewClient(address string) (pb.PaymentToNotificationServiceClient, *grpc.Cli
 }
 
 func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest) (*pb.PaymentResponse, error) {
-	slog.Info("received request for payment")
-
 	request := &models.Receipt{
 		IdempotencyKey:     req.IdempotencyKey,
 		Amount:             req.Amount,
@@ -126,8 +124,6 @@ func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest)
 }
 
 func (s *queryServer) GetReceiptsByUser(ctx context.Context, req *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
-	slog.Info("received request for receipts by user")
-
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -145,8 +141,6 @@ func (s *queryServer) GetReceiptsByUser(ctx context.Context, req *pb.ReceiptRequ
 }
 
 func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
-	slog.Info("received request for receipt by id")
-
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -174,7 +168,7 @@ func mapServiceError(err error) error {
 	case errors.Is(err, service.ErrUnauthorized):
 		return status.Error(codes.PermissionDenied, err.Error())
 	default:
-		slog.Error("payment rpc failed", "error", err)
+		slog.ErrorContext(ctx, "payment rpc failed", "error", err)
 		return status.Error(codes.Internal, "internal server error")
 	}
 }
@@ -213,17 +207,9 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-
-	slog.Info("USER INFO",
-		"user_id", claims.UserID,
-		"username", claims.Username,
-		"email", claims.Email,
-		"token_type", claims.TokenType,
-		"exp", claims.ExpiresAt,
-	)
 
 	return claims, nil
 }
