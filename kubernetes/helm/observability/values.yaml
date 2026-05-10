@@ -1,0 +1,21 @@
+namespace: mrfood
+
+storageClass: standard-rwo
+
+prometheus:
+  image: prom/prometheus:latest
+  storageSize: 10Gi
+
+loki:
+  image: grafana/loki:latest
+  storageSize: 10Gi
+
+tempo:
+  image: grafana/tempo:2.10.5
+  storageSize: 10Gi
+
+grafana:
+  image: grafana/grafana:latest
+  storageSize: 1Gi
+  adminUser: admin
+  adminPassword: admin
