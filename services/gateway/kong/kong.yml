@@ -3,16 +3,11 @@ _format_version: "3.0"
 plugins:
   - name: opentelemetry
     config:
-      traces_endpoint: http://otel-collector:4318/v1/traces
+      endpoint: http://otel-collector:4318/v1/traces
       sampling_rate: 1.0
       resource_attributes:
         service.name: kong-gateway
-      propagation:
-        default_format: w3c
-        extract:
-          - w3c
-        inject:
-          - w3c
+      header_type: w3c
 services:
 - name: auth
   host: auth
@@ -26,7 +21,6 @@ services:
     - https
     paths:
     - /auth
-    strip_path: true
 
   plugins:
   - name: grpc-gateway
