@@ -115,7 +115,7 @@ func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest)
 
 	receipt_id, err := s.paymentService.CreateReceipt(ctx, request)
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.PaymentResponse{
@@ -134,7 +134,7 @@ func (s *queryServer) GetReceiptsByUser(ctx context.Context, req *pb.ReceiptRequ
 	err = s.paymentService.GetReceiptsByUser(ctx, user_id)
 
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.GetReceiptResponse{}, nil
@@ -151,13 +151,13 @@ func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest
 	err = s.paymentService.GetReceiptById(ctx, req.ReceiptId, user_id)
 
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.GetReceiptResponse{}, nil
 }
 
-func mapServiceError(err error) error {
+func mapServiceError(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, service.ErrInvalidAmmount), errors.Is(err, service.ErrNullIdempotencyKey):
 		return status.Error(codes.InvalidArgument, err.Error())
