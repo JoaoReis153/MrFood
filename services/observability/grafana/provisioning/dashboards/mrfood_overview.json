@@ -967,7 +967,7 @@
       "title": "Recent Logs",
       "gridPos": {
         "x": 0,
-        "y": 50,
+        "y": 55,
         "w": 24,
         "h": 10
       },
@@ -1007,6 +1007,7 @@
         },
         "query": "label_values(traces_spanmetrics_calls_total, service)",
         "definition": "label_values(traces_spanmetrics_calls_total, service)",
+        "regex": "/^(?!keycloak$).+$/",
         "multi": true,
         "includeAll": true,
         "allValue": ".+",
