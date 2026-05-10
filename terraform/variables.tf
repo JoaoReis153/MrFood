@@ -167,12 +167,6 @@ variable "service_redis_instances" {
   }))
 
   default = {
-    auth = {
-      memory_size_gb = 1
-      labels = {
-        service = "auth"
-      }
-    }
     notification = {
       memory_size_gb = 1
       labels = {

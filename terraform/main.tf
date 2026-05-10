@@ -134,14 +134,6 @@ resource "google_project_iam_member" "cloudsql_admin_cloudsql" {
   depends_on = [google_project_service_identity.cloudsql]
 }
 
-resource "google_project_iam_member" "cloudsql_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
-  member  = google_project_service_identity.cloudsql.member
-
-  depends_on = [google_project_service_identity.cloudsql]
-}
-
 resource "google_storage_bucket_iam_member" "cloudsql_schema_reader" {
   bucket = google_storage_bucket.schema_bootstrap.name
   role   = "roles/storage.objectViewer"
@@ -152,10 +144,20 @@ resource "google_storage_bucket_iam_member" "cloudsql_schema_reader" {
 
 resource "google_storage_bucket_iam_member" "cloudsql_schema_bucket_reader" {
   bucket = google_storage_bucket.schema_bootstrap.name
-  role   = "roles/storage.admin"
+  role   = "roles/storage.legacyBucketReader"
   member = google_project_service_identity.cloudsql.member
 
   depends_on = [time_sleep.wait_for_cloudsql_service_identity]
+}
+
+# Grant each Cloud SQL instance's own SA read access to the schema bucket.
+# Replaces terraform/permisions.sh.
+resource "google_storage_bucket_iam_member" "instance_schema_reader" {
+  for_each = module.service_cloudsql
+
+  bucket = google_storage_bucket.schema_bootstrap.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${each.value.service_account_email}"
 }
 
 
@@ -176,9 +178,9 @@ resource "time_sleep" "wait_for_iam_propagation" {
   depends_on = [
     google_project_iam_member.terraform_sa_cloudsql_admin,
     google_project_iam_member.terraform_sa_storage_admin,
-    google_project_iam_member.cloudsql_storage_admin,
     google_storage_bucket_iam_member.cloudsql_schema_reader,
-    google_storage_bucket_iam_member.cloudsql_schema_bucket_reader
+    google_storage_bucket_iam_member.cloudsql_schema_bucket_reader,
+    google_storage_bucket_iam_member.instance_schema_reader,
   ]
 }
 
@@ -221,6 +223,43 @@ resource "time_sleep" "wait_for_cloudsql_service_identity" {
 
 
 
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Workload Identity — one GCP service account per k8s service
+# ──────────────────────────────────────────────────────────────────────────────
+
+locals {
+  # Services that connect to Cloud SQL and need cloudsql.client
+  cloudsql_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor"])
+  # All k8s service accounts that need a GCP SA
+  all_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "notification", "search", "otel-collector"])
+}
+
+resource "google_service_account" "service_sa" {
+  for_each = local.all_services
+
+  account_id   = "${each.key}-sa"
+  display_name = "Workload Identity SA for ${each.key}"
+  project      = var.project_id
+}
+
+# Bind each k8s ServiceAccount to its GCP SA via Workload Identity
+resource "google_service_account_iam_member" "workload_identity" {
+  for_each = local.all_services
+
+  service_account_id = google_service_account.service_sa[each.key].name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[mrfood/${each.key}]"
+}
+
+# Cloud SQL client access for services that use it
+resource "google_project_iam_member" "service_cloudsql_client" {
+  for_each = local.cloudsql_services
+
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.service_sa[each.key].email}"
+}
 
 resource "google_project_service" "redis" {
   project = var.project_id
