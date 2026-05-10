@@ -19,6 +19,10 @@ services:
     <<: *common
     command: start-dev --import-realm
     environment:
+      OTEL_SERVICE_NAME: keycloak
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASS:-admin}
       KC_DB: dev-mem          # in-memory H2 — swap for postgres in production
