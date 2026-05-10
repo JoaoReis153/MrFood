@@ -19,9 +19,10 @@ datasources:
       derivedFields:
         - name: TraceID
           matcherType: label
-          matcherRegex: traceID
-          url: '${__value.raw}'
+          matcherRegex: trace_id
+          url: ''
           datasourceUid: tempo
+          urlDisplayLabel: "View Trace in Tempo"
 
   - name: Tempo
     type: tempo
