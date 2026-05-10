@@ -1,5 +1,5 @@
 name: review
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/review:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/review:5c197bc
 port: 50055
 
 service:

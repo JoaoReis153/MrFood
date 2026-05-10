@@ -1,3 +1,11 @@
 name: cdc
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:v1.0.0
-port: 50051
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:5c197bc
+port: 8083
+
+service:
+  type: ClusterIP
+
+env:
+  secrets: {}
+  config:
+    CONNECT_REST_PORT: "8083"
