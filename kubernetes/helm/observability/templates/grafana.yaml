@@ -78,7 +78,7 @@ data:
         disableDeletion: false
         updateIntervalSeconds: 30
         options:
-          path: /etc/grafana/provisioning/dashboards
+          path: /var/lib/grafana/dashboards
           foldersFromFilesStructure: true
 ---
 apiVersion: v1
@@ -140,9 +140,10 @@ spec:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
             - name: dashboard-provider
-              mountPath: /etc/grafana/provisioning/dashboards/provider
+              mountPath: /etc/grafana/provisioning/dashboards/dashboard-provider.yaml
+              subPath: dashboard-provider.yaml
             - name: dashboards
-              mountPath: /etc/grafana/provisioning/dashboards
+              mountPath: /var/lib/grafana/dashboards
       volumes:
         - name: data
           persistentVolumeClaim:
