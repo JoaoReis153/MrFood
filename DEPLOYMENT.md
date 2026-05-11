@@ -5,9 +5,10 @@
 | Layer | Tool | Trigger |
 |---|---|---|
 | Infrastructure | Terraform | Push to `main` → `terraform/**` |
-| Container images | Docker + Artifact Registry | Manual / CI |
+| Container images | Docker + Artifact Registry | `services/build_and_push_images.sh` / CI |
 | Kubernetes workloads | Helm | `kubernetes/restart.sh` / CI |
 | Observability | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm |
+| Search | Elasticsearch + Kafka + Kafka Connect | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
 
 ---
 
@@ -33,7 +34,7 @@ Connect to the GKE cluster:
 
 ```bash
 gcloud container clusters get-credentials mrfood-cluster \
-  --region europe-southwest1 \
+  --zone europe-southwest1-b \
   --project mrfood-490623
 ```
 
@@ -41,7 +42,7 @@ gcloud container clusters get-credentials mrfood-cluster \
 
 ## 1. Infrastructure — Terraform
 
-Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instances (×6), Redis (×2), and all Workload Identity service accounts.
+Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instance, Redis, and all Workload Identity service accounts.
 
 ### Secrets
 
@@ -104,25 +105,13 @@ Configure Docker for Artifact Registry (one-time per machine):
 gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 ```
 
-Build and push all services:
+Build and push all services. The script also updates the `image:` tag in each `kubernetes/values/<service>.yaml` automatically:
 
 ```bash
-REGISTRY=europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo
-TAG=$(git rev-parse --short HEAD)
+./services/build_and_push_images.sh $(git rev-parse --short HEAD)
 
-for svc in auth restaurant booking review payment sponsor notification search cdc; do
-  docker buildx build --platform linux/amd64 \
-    -t "${REGISTRY}/${svc}:${TAG}" \
-    -t "${REGISTRY}/${svc}:latest" \
-    "services/${svc}" \
-    --push
-done
-```
-
-Update the image tag in each `kubernetes/values/<service>.yaml` before deploying:
-
-```yaml
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/auth:$TAG
+# Dry run to preview changes without building
+./services/build_and_push_images.sh $(git rev-parse --short HEAD) --dry-run
 ```
 
 ---
@@ -163,29 +152,57 @@ kubectl rollout status deployment/keycloak -n mrfood
 
 The `mrfood` realm and `mrfood-auth` client are imported automatically from `kubernetes/helm/keycloak/files/realm-import.json`.
 
-### Application services
+### Search stack (Elasticsearch + Kafka + CDC)
+
+Elasticsearch and Kafka must be running before deploying `search` or `cdc`.
 
 ```bash
-for svc in auth restaurant booking review payment sponsor notification search cdc; do
-  helm upgrade --install $svc kubernetes/helm/mrfood-service \
-    -f kubernetes/values/$svc.yaml \
-    --namespace mrfood
-done
+helm upgrade --install elasticsearch kubernetes/helm/elasticsearch \
+  --namespace mrfood
+
+helm upgrade --install kafka kubernetes/helm/kafka \
+  --namespace mrfood
+
+# Wait for all three to be ready before deploying CDC
+kubectl rollout status deployment/zookeeper -n mrfood
+kubectl rollout status deployment/kafka -n mrfood
+kubectl rollout status deployment/elasticsearch -n mrfood
 ```
 
-Or use the existing script (redeploys auth, booking, notification, payment, restaurant, review, sponsor, and gateway — **skips `cdc` and `search`**):
+Deploy the CDC connector (Kafka Connect) using its dedicated chart:
+
+```bash
+# Fill in the restaurant DB password in kubernetes/values/cdc.yaml before deploying
+helm upgrade --install cdc kubernetes/helm/kafka-connect \
+  -f kubernetes/values/cdc.yaml \
+  --namespace mrfood
+```
+
+After CDC is running, register the connectors (connector configs are baked into the image at `/connectors/`):
+
+```bash
+kubectl exec -n mrfood deployment/cdc -- bash -c \
+  "curl -sf http://localhost:8083/connectors | grep -q restaurant || \
+   curl -sf -X POST http://localhost:8083/connectors \
+     -H 'Content-Type: application/json' \
+     -d @/connectors/restaurant-source.json"
+
+kubectl exec -n mrfood deployment/cdc -- bash -c \
+  "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch || \
+   curl -sf -X POST http://localhost:8083/connectors \
+     -H 'Content-Type: application/json' \
+     -d @/connectors/restaurants-sink.json"
+```
+
+### Application services
+
+Deploys all services and the gateway (skips `cdc` and `search` which have dedicated charts above):
 
 ```bash
 bash kubernetes/restart.sh
 ```
 
 ### Kong gateway
-
-```bash
-helm upgrade --install gateway kubernetes/helm/kong \
-  -f kubernetes/values/gateway.yaml \
-  --namespace mrfood
-```
 
 > **Note:** After updating `services/gateway/kong/kong.yml`, patch the live ConfigMap and restart — Helm does not auto-update it:
 > ```bash
@@ -215,6 +232,9 @@ All pods should reach `Running`. Common failure modes:
 | Loki/Prometheus/Tempo Pending | PVCs not created | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
 | Gateway request hanging | Stale kong-config ConfigMap | Patch ConfigMap manually (see Kong gateway note above) |
 | Auth requests hanging | Keycloak not running | Deploy Keycloak before auth; restart auth after Keycloak is ready |
+| `search` pod CrashLoopBackOff | Elasticsearch not reachable | Deploy elasticsearch chart first, wait for readiness |
+| `cdc` pod not ready | Kafka not up or ES not ready | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
+| Connectors not registered | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above |
 
 ### Kong external IP
 
@@ -249,9 +269,7 @@ kubectl logs -n mrfood deployment/otel-collector
 
 ---
 
----
-
-## 6. Local Development
+## 5. Local Development
 
 ```bash
 # Start all core services (Docker Compose)
