@@ -51,36 +51,12 @@ DB passwords live in `terraform/terraform.tfvars` (gitignored). Create it before
 ```hcl
 # terraform/terraform.tfvars
 service_databases = {
-  auth = {
-    db_name     = "mrfood_auth"
-    db_user     = "mrfood_auth_user"
-    db_password = "REPLACE_ME"
-  }
-  restaurant = {
-    db_name     = "mrfood_restaurant"
-    db_user     = "mrfood_restaurant_user"
-    db_password = "REPLACE_ME"
-  }
-  booking = {
-    db_name     = "mrfood_booking"
-    db_user     = "mrfood_booking_user"
-    db_password = "REPLACE_ME"
-  }
-  review = {
-    db_name     = "mrfood_review"
-    db_user     = "mrfood_review_user"
-    db_password = "REPLACE_ME"
-  }
-  payment = {
-    db_name     = "mrfood_payment"
-    db_user     = "mrfood_payment_user"
-    db_password = "REPLACE_ME"
-  }
-  sponsor = {
-    db_name     = "mrfood_sponsor"
-    db_user     = "mrfood_sponsor_user"
-    db_password = "REPLACE_ME"
-  }
+  auth       = { db_name = "mrfood_auth",       db_user = "mrfood_auth_user",       db_password = "REPLACE_ME" }
+  restaurant = { db_name = "mrfood_restaurant", db_user = "mrfood_restaurant_user", db_password = "REPLACE_ME" }
+  booking    = { db_name = "mrfood_booking",    db_user = "mrfood_booking_user",    db_password = "REPLACE_ME" }
+  review     = { db_name = "mrfood_review",     db_user = "mrfood_review_user",     db_password = "REPLACE_ME" }
+  payment    = { db_name = "mrfood_payment",    db_user = "mrfood_payment_user",    db_password = "REPLACE_ME" }
+  sponsor    = { db_name = "mrfood_sponsor",    db_user = "mrfood_sponsor_user",    db_password = "REPLACE_ME" }
 }
 ```
 
@@ -182,13 +158,13 @@ After CDC is running, register the connectors (connector configs are baked into 
 
 ```bash
 kubectl exec -n mrfood deployment/cdc -- bash -c \
-  "curl -sf http://localhost:8083/connectors | grep -q restaurant || \
+  "curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
    curl -sf -X POST http://localhost:8083/connectors \
      -H 'Content-Type: application/json' \
      -d @/connectors/restaurant-source.json"
 
 kubectl exec -n mrfood deployment/cdc -- bash -c \
-  "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch || \
+  "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
    curl -sf -X POST http://localhost:8083/connectors \
      -H 'Content-Type: application/json' \
      -d @/connectors/restaurants-sink.json"
