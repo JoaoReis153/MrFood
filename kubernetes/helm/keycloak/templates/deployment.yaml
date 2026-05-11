@@ -33,6 +33,8 @@ spec:
               value: "false"
             - name: KC_HTTP_ENABLED
               value: "true"
+            - name: JAVA_OPTS_APPEND
+              value: "-Xms256m -Xmx512m"
           ports:
             - containerPort: 8080
           readinessProbe:
