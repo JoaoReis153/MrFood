@@ -91,6 +91,8 @@ data:
 {{ .Files.Get "files/dashboards/mrfood_overview.json" | indent 4 }}
   traces.json: |
 {{ .Files.Get "files/dashboards/traces.json" | indent 4 }}
+  keycloak.json: |
+{{ .Files.Get "files/dashboards/keycloak.json" | indent 4 }}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
