@@ -38,7 +38,7 @@ module "gke" {
   source = "./modules/gke"
 
   project_id   = var.project_id
-  region       = var.region
+  zone         = var.cluster_zone
   cluster_name = var.cluster_name
 
   network    = module.vpc.network_name
@@ -74,23 +74,16 @@ module "cloudsql_foundation" {
   depends_on = [module.vpc]
 }
 
+module "cloudsql" {
+  source = "./modules/cloudsql"
 
-
-module "service_cloudsql" {
-  for_each = var.service_databases
-  source   = "./modules/cloudsql-postgres"
-
-  project_id          = var.project_id
-  region              = coalesce(each.value.region, var.region)
-  instance_name       = "mrfood-${each.key}-pg"
-  db_name             = each.value.db_name
-  db_user             = each.value.db_user
-  db_password         = each.value.db_password
-  tier                = each.value.tier
-  disk_size           = each.value.disk_size
-  availability_type   = each.value.availability_type
-  deletion_protection = each.value.deletion_protection
-  private_network     = module.vpc.network_id
+  project_id      = var.project_id
+  region          = var.region
+  instance_name   = var.cloudsql_instance_name
+  tier            = var.cloudsql_tier
+  disk_size       = var.cloudsql_disk_size
+  private_network = module.vpc.network_id
+  databases       = var.service_databases
 
   depends_on = [module.cloudsql_foundation]
 }
@@ -103,7 +96,6 @@ resource "google_project_service_identity" "cloudsql" {
   depends_on = [module.cloudsql_foundation]
 }
 
-
 data "google_project" "current" {
   project_id = var.project_id
 }
@@ -112,9 +104,8 @@ locals {
   service_schema = {
     for svc, cfg in var.service_databases :
     svc => {
-      bootstrap_enabled = try(cfg.bootstrap_enabled, true)
-      schema_revision   = try(cfg.schema_revision, "v1")
-      schema_sql_path   = coalesce(try(cfg.schema_sql_path, null), "${path.root}/../services/${svc}/db_setup.sql")
+      schema_revision = "v1"
+      schema_sql_path = "${path.root}/../services/${svc}/db_setup.sql"
     }
   }
 }
@@ -134,6 +125,11 @@ resource "google_project_iam_member" "cloudsql_admin_cloudsql" {
   depends_on = [google_project_service_identity.cloudsql]
 }
 
+resource "time_sleep" "wait_for_cloudsql_service_identity" {
+  create_duration = "30s"
+  depends_on      = [google_project_service_identity.cloudsql]
+}
+
 resource "google_storage_bucket_iam_member" "cloudsql_schema_reader" {
   bucket = google_storage_bucket.schema_bootstrap.name
   role   = "roles/storage.objectViewer"
@@ -150,22 +146,17 @@ resource "google_storage_bucket_iam_member" "cloudsql_schema_bucket_reader" {
   depends_on = [time_sleep.wait_for_cloudsql_service_identity]
 }
 
-# Grant each Cloud SQL instance's own SA read access to the schema bucket.
-# Replaces terraform/permisions.sh.
 resource "google_storage_bucket_iam_member" "instance_schema_reader" {
-  for_each = module.service_cloudsql
-
   bucket = google_storage_bucket.schema_bootstrap.name
   role   = "roles/storage.objectViewer"
-  member = "serviceAccount:${each.value.service_account_email}"
+  member = "serviceAccount:${module.cloudsql.service_account_email}"
 }
-
 
 resource "google_storage_bucket_object" "service_schema_sql" {
   for_each = {
     for svc, cfg in local.service_schema :
     svc => cfg
-    if cfg.bootstrap_enabled && fileexists(cfg.schema_sql_path)
+    if fileexists(cfg.schema_sql_path)
   }
 
   bucket = google_storage_bucket.schema_bootstrap.name
@@ -174,7 +165,7 @@ resource "google_storage_bucket_object" "service_schema_sql" {
 }
 
 resource "time_sleep" "wait_for_iam_propagation" {
-  create_duration = "60s"
+  create_duration = "30s"
   depends_on = [
     google_project_iam_member.terraform_sa_cloudsql_admin,
     google_project_iam_member.terraform_sa_storage_admin,
@@ -185,54 +176,44 @@ resource "time_sleep" "wait_for_iam_propagation" {
 }
 
 resource "terraform_data" "apply_service_schema" {
-  for_each = google_storage_bucket_object.service_schema_sql
-
   triggers_replace = [
-    module.service_cloudsql[each.key].instance_name,
-    module.service_cloudsql[each.key].private_ip_address,
-    local.service_schema[each.key].schema_revision,
-    google_storage_bucket_object.service_schema_sql[each.key].name,
+    module.cloudsql.instance_name,
+    module.cloudsql.private_ip_address,
+    jsonencode({ for svc, obj in google_storage_bucket_object.service_schema_sql : svc => obj.name }),
   ]
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<-EOT
       set -euo pipefail
-      gcloud sql import sql "${module.service_cloudsql[each.key].instance_name}" \
-        "gs://${google_storage_bucket.schema_bootstrap.name}/${google_storage_bucket_object.service_schema_sql[each.key].name}" \
-        --database="${var.service_databases[each.key].db_name}" \
+      %{~ for svc, obj in google_storage_bucket_object.service_schema_sql }
+      echo "Importing schema for ${svc}..."
+      gcloud sql import sql "${module.cloudsql.instance_name}" \
+        "gs://${google_storage_bucket.schema_bootstrap.name}/${obj.name}" \
+        --database="${var.service_databases[svc].db_name}" \
         --project="${var.project_id}" \
         --quiet
+      %{~ endfor }
     EOT
   }
 
   depends_on = [
-    module.service_cloudsql,
+    module.cloudsql,
     google_project_iam_member.terraform_sa_cloudsql_admin,
     google_project_iam_member.terraform_sa_storage_admin,
     google_storage_bucket_iam_member.cloudsql_schema_reader,
     google_storage_bucket_iam_member.cloudsql_schema_bucket_reader,
-    time_sleep.wait_for_iam_propagation
+    time_sleep.wait_for_iam_propagation,
   ]
 }
-
-resource "time_sleep" "wait_for_cloudsql_service_identity" {
-  create_duration = "90s"
-  depends_on      = [google_project_service_identity.cloudsql]
-}
-
-
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Workload Identity — one GCP service account per k8s service
 # ──────────────────────────────────────────────────────────────────────────────
 
 locals {
-  # Services that connect to Cloud SQL and need cloudsql.client
-  cloudsql_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor"])
-  # All k8s service accounts that need a GCP SA
-  all_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "notification", "search", "otel-collector"])
+  cloudsql_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "cdc"])
+  all_services      = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "notification", "search", "otel-collector", "cdc"])
 }
 
 resource "google_service_account" "service_sa" {
@@ -243,7 +224,6 @@ resource "google_service_account" "service_sa" {
   project      = var.project_id
 }
 
-# Bind each k8s ServiceAccount to its GCP SA via Workload Identity
 resource "google_service_account_iam_member" "workload_identity" {
   for_each = local.all_services
 
@@ -252,7 +232,6 @@ resource "google_service_account_iam_member" "workload_identity" {
   member             = "serviceAccount:${var.project_id}.svc.id.goog[mrfood/${each.key}]"
 }
 
-# Cloud SQL client access for services that use it
 resource "google_project_iam_member" "service_cloudsql_client" {
   for_each = local.cloudsql_services
 
@@ -286,5 +265,3 @@ module "service_redis" {
 
   depends_on = [module.vpc, google_project_service.redis]
 }
-
-

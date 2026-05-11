@@ -94,27 +94,42 @@ variable "node_preemptible" {
   default     = false
 }
 
+variable "cluster_zone" {
+  description = "Zone for the zonal GKE cluster (e.g. europe-southwest1-b)"
+  type        = string
+  default     = "europe-southwest1-b"
+}
+
 variable "repository_id" {
   description = "Name of the Artifact Registry repository"
   type        = string
   default     = "mrfood-repo"
 }
 
-variable "service_databases" {
-  description = "Per-service Cloud SQL Postgres configuration"
-  type = map(object({
-    db_name             = string
-    db_user             = string
-    db_password         = string
-    region              = optional(string, "europe-southwest1")
-    tier                = optional(string, "db-f1-micro")
-    disk_size           = optional(number, 20)
-    availability_type   = optional(string, "ZONAL")
-    deletion_protection = optional(bool, true)
+variable "cloudsql_instance_name" {
+  description = "Name of the single shared Cloud SQL instance"
+  type        = string
+  default     = "mrfood-pg"
+}
 
-    bootstrap_enabled = optional(bool, true)
-    schema_sql_path   = optional(string)
-    schema_revision   = optional(string, "v1")
+variable "cloudsql_tier" {
+  description = "Cloud SQL machine tier"
+  type        = string
+  default     = "db-f1-micro"
+}
+
+variable "cloudsql_disk_size" {
+  description = "Disk size in GB for the Cloud SQL instance"
+  type        = number
+  default     = 20
+}
+
+variable "service_databases" {
+  description = "Per-service database credentials (all created on the shared Cloud SQL instance)"
+  type = map(object({
+    db_name     = string
+    db_user     = string
+    db_password = string
   }))
 
   default = {

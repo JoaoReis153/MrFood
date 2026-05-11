@@ -25,16 +25,14 @@ output "gke_cluster_ca_certificate" {
   sensitive   = true
 }
 
-output "service_db_private_ips" {
-  value = {
-    for svc, m in module.service_cloudsql : svc => m.private_ip_address
-  }
+output "db_private_ip" {
+  description = "Private IP of the shared Cloud SQL instance"
+  value       = module.cloudsql.private_ip_address
 }
 
-output "service_db_connection_names" {
-  value = {
-    for svc, m in module.service_cloudsql : svc => m.connection_name
-  }
+output "db_connection_name" {
+  description = "Connection name of the shared Cloud SQL instance"
+  value       = module.cloudsql.connection_name
 }
 
 output "service_redis_hosts" {
