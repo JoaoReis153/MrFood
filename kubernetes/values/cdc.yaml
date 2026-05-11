@@ -1,11 +1,34 @@
-name: cdc
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:5c197bc
-port: 8083
-
-service:
-  type: ClusterIP
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:ff22f5b
 
 env:
-  secrets: {}
+  secrets:
+    RESTAURANT_POSTGRES_PASSWORD: mrfood_restaurant_pass
   config:
+    CONNECT_BOOTSTRAP_SERVERS: kafka:9092
     CONNECT_REST_PORT: "8083"
+    CONNECT_GROUP_ID: search-cdc-connect
+    CONNECT_CONFIG_STORAGE_TOPIC: search-connect-configs
+    CONNECT_OFFSET_STORAGE_TOPIC: search-connect-offsets
+    CONNECT_STATUS_STORAGE_TOPIC: search-connect-status
+    CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+    CONNECT_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+    CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+    CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+    CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+    CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
+    CONNECT_REST_ADVERTISED_HOST_NAME: cdc
+    CONNECT_CONFIG_PROVIDERS: env
+    CONNECT_CONFIG_PROVIDERS_ENV_CLASS: org.apache.kafka.common.config.provider.EnvVarConfigProvider
+    KAFKA_HEAP_OPTS: "-Xms256M -Xmx512M"
+    # Connector env vars (referenced as ${env:VAR} in connector JSON)
+    RESTAURANT_POSTGRES_HOST: 127.0.0.1
+    RESTAURANT_POSTGRES_DB: mrfood_restaurant
+    RESTAURANT_POSTGRES_USER: mrfood_restaurant_user
+    ELASTICSEARCH_HOST: elasticsearch
+    ELASTICSEARCH_PORT: "9200"
+    ELASTICSEARCH_INDEX: restaurants
+
+cloudsql:
+  instance: mrfood-490623:europe-southwest1:mrfood-pg
