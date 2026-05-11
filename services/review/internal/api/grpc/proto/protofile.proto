@@ -29,16 +29,16 @@ service ReviewToRestaurantService {
 // ===================================================
 
 message Review {
-  int32 review_id = 1;
-  int32 restaurant_id = 2;
-  int32 user_id = 3;
+  int64 review_id = 1;
+  int64 restaurant_id = 2;
+  int64 user_id = 3;
   string comment = 4;
   int32 rating = 5;
   google.protobuf.Timestamp created_at = 6;
 }
 
 message RestaurantStats {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
   double average_rating = 2;
   int32 review_count = 3;
 }
@@ -55,33 +55,33 @@ message Pagination {
 // ===================================================
 
 message GetReviewsRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
   optional int32 page = 2;
   optional int32 limit = 3;
 }
 
 message CreateReviewRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
   string comment = 2;
   int32 rating = 3;
 }
 
 message UpdateReviewRequest {
-  int32 review_id = 1;
+  int64 review_id = 1;
   optional string comment = 2;
   optional int32 rating = 3;
 }
 
 message DeleteReviewRequest {
-  int32 review_id = 1;
+  int64 review_id = 1;
 }
 
 message GetRestaurantStatsRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
 }
 
 message GetRestaurantRequest {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
 }
 
 // ===================================================
@@ -108,5 +108,5 @@ message GetRestaurantStatsResponse {
 }
 
 message GetRestaurantResponse {
-  int32 restaurant_id = 1;
+  int64 restaurant_id = 1;
 }

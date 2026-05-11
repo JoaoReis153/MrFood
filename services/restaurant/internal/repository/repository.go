@@ -39,7 +39,7 @@ func NewWithDB(db dbExecutor) *Repository {
 	return &Repository{DB: db}
 }
 
-func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error) {
+func (r *Repository) GetRestaurantByID(ctx context.Context, id int64) (*models.Restaurant, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
@@ -102,7 +102,7 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int32) (*models.R
 	return restaurant, nil
 }
 
-func (r *Repository) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
+func (r *Repository) GetRestaurantID(ctx context.Context, id int64) (int64, error) {
 	if r.DB == nil {
 		return 0, ErrDatabaseNotSet
 	}
@@ -111,7 +111,7 @@ func (r *Repository) GetRestaurantID(ctx context.Context, id int32) (int32, erro
 		FROM restaurants
 		WHERE id = $1
 	`
-	var restaurantID int32
+	var restaurantID int64
 	err := r.DB.QueryRow(ctx, query, id).Scan(&restaurantID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -141,7 +141,7 @@ func (r *Repository) GetRestaurantByName(ctx context.Context, name string) (*mod
 	return restaurant, nil
 }
 
-func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error) {
+func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int64, error) {
 	if restaurant == nil || strings.TrimSpace(restaurant.Name) == "" {
 		return 0, ErrInvalidRestaurant
 	}
@@ -162,12 +162,18 @@ func (r *Repository) CreateRestaurant(ctx context.Context, restaurant *models.Re
 	}(tx, ctx)
 
 	query := `
-		INSERT INTO restaurants (name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier)
-		VALUES ($1, $2, $3, $4, $5::time, $6::time, $7, $8, $9, $10, $11)
+		INSERT INTO restaurants (id, name, latitude, longitude, address, opening_time, closing_time, media_url, max_slots, owner_id, owner_name, sponsor_tier)
+		VALUES (
+			COALESCE(
+				(SELECT MAX(id) + 1 FROM restaurants),
+				1
+			),
+			$1, $2, $3, $4, $5::time, $6::time, $7, $8, $9, $10, $11
+		)
 		RETURNING id
 	`
 
-	var newID int32
+	var newID int64
 	err = tx.QueryRow(ctx, query,
 		restaurant.Name,
 		restaurant.Latitude,
@@ -314,7 +320,7 @@ func (r *Repository) UpdateRestaurant(ctx context.Context, restaurant *models.Re
 	return r.GetRestaurantByID(ctx, restaurant.ID)
 }
 
-func (r *Repository) CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error) {
+func (r *Repository) CompareRestaurants(ctx context.Context, id1, id2 int64) (*models.Restaurant, *models.Restaurant, error) {
 	restaurant1, err := r.GetRestaurantByID(ctx, id1)
 	if err != nil {
 		return nil, nil, err
@@ -328,7 +334,7 @@ func (r *Repository) CompareRestaurants(ctx context.Context, id1, id2 int32) (*m
 	return restaurant1, restaurant2, nil
 }
 
-func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
+func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
 	}
@@ -361,7 +367,7 @@ func (r *Repository) GetWorkingHours(ctx context.Context, restaurantID int32, ti
 	return &models.WorkingHoursResponse{TimeStart: start, TimeEnd: end, MaxSlots: restaurant.MaxSlots}, nil
 }
 
-func (r *Repository) restaurantExists(ctx context.Context, restaurantID int32) (bool, error) {
+func (r *Repository) restaurantExists(ctx context.Context, restaurantID int64) (bool, error) {
 	var exists bool
 	if err := r.DB.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM restaurants WHERE id = $1)`, restaurantID).Scan(&exists); err != nil {
 		return false, fmt.Errorf("check restaurant: %w", err)

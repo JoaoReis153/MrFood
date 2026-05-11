@@ -1,0 +1,23 @@
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.default_pipeline": "restaurants_location_pipeline"
+  },
+  "mappings": {
+    "properties": {
+      "id":          { "type": "long" },
+      "name":        { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+      "address":     { "type": "text" },
+      "categories":  { "type": "keyword" },
+      "location":    { "type": "geo_point" },
+      "latitude":    { "type": "double" },
+      "longitude":   { "type": "double" },
+      "media_url":   { "type": "keyword" },
+      "max_slots":   { "type": "integer" },
+      "owner_id":    { "type": "long" },
+      "owner_name":  { "type": "text" },
+      "sponsor_tier":{ "type": "integer" }
+    }
+  }
+}

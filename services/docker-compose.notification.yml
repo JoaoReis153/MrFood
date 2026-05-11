@@ -1,0 +1,24 @@
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - app-network
+
+services:
+  notification:
+    build: ./notification/
+    <<: *common
+    env_file:
+      - ./config.env
+      - .env
+    depends_on:
+      notification_redis:
+        condition: service_healthy
+
+  notification_redis:
+    image: redis:7-alpine
+    <<: *common
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5

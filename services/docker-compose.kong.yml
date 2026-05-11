@@ -1,27 +1,34 @@
 services:
   kong:
-    image: '${GW_IMAGE:-kong/kong-gateway:3.13.0.2}'
+    image: 'kong/kong-gateway:3.13.0.2'
     container_name: kong
     restart: on-failure
     networks:
       - app-network
-      
+    env_file:
+      - ./config.env
+      - .env   # shared secrets: APP_JWT_*
     environment:
-      KONG_DATABASE: "off"                         # Disable database
-      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml  # Path to config file
-
-      APP_JWT_ACCESS_TOKEN_SECRET: ${AUTH_JWT_ACCESS_TOKEN_SECRET}
-      APP_JWT_REFRESH_TOKEN_SECRET: ${AUTH_JWT_REFRESH_TOKEN_SECRET}
-
-
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
       KONG_PROXY_LISTEN: 0.0.0.0:8000, 0.0.0.0:8443 ssl
-      KONG_ADMIN_LISTEN: 0.0.0.0:8001              # Admin API (optional in DB-less)
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+
+      # OTEL
+      KONG_PLUGINS: "bundled,opentelemetry"
+      KONG_TRACING_INSTRUMENTATIONS: "all"
+      KONG_TRACING_SAMPLING_RATE: "1.0"
+
+      # logs
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
 
     volumes:
       - ./gateway/kong/kong.yml:/etc/kong/kong.yml:Z
       - ./gateway/kong/proto:/etc/kong/proto:Z
-
     ports:
       - "8000:8000"   # Proxy HTTP
       - "8443:8443"   # Proxy HTTPS
-      - "8001:8001"   # Admin API (read-only in DB-less)
+      - "8001:8001"   # Admin API

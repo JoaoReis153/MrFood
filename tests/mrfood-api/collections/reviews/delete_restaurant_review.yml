@@ -1,0 +1,27 @@
+info:
+  name: Delete a review for a restaurant
+  type: http
+  seq: 6
+  tags:
+    - Reviews
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/reviews/{{reviewId}}"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("delete review returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

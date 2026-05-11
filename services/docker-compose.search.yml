@@ -1,0 +1,17 @@
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - app-network
+
+services:
+  search:
+    build: ./search/
+    <<: *common
+    ports:
+      - "50056:50056"
+    env_file:
+      - ./config.env
+      - .env
+    depends_on:
+      elasticsearch:
+        condition: service_healthy

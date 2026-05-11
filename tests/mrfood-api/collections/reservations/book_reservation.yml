@@ -1,0 +1,44 @@
+info:
+  name: Book a reservation
+  type: http
+  seq: 3
+  tags:
+    - Reservations
+
+http:
+  method: POST
+  url: "{{baseUrl}}/reservations"
+  body:
+    type: json
+    data: |-
+      {
+        "restaurant_id": {{restaurantId}},
+        "time_start": "2026-12-31T11:00:00Z",
+        "quantity": 2
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("book reservation returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has booking_id", () => {
+            expect(res.body).to.have.property("booking_id");
+            expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
+          });
+
+          bru.setEnvVar("bookingId", String(res.body.booking_id));
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

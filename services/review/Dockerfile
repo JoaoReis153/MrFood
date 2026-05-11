@@ -11,5 +11,5 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /
 COPY --from=builder /review .
-EXPOSE 8080
+EXPOSE 50055
 CMD ["./review"]

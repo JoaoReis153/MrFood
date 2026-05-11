@@ -1,0 +1,12 @@
+name: development
+variables:
+  - name: baseUrl
+    value: http://localhost:8000
+  - secret: true
+    name: token
+  - name: testRunId
+    value: ""
+  - name: restaurantId
+    value: ""
+  - name: bookingId
+    value: ""

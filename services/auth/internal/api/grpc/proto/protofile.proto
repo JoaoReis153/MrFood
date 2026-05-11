@@ -11,6 +11,11 @@ service AuthService {
   rpc RefreshTokenProcess (RefreshRequest) returns (RefreshResponse);
   rpc LogoutProcess (LogoutRequest) returns (LogoutResponse);
 }
+
+service AuthToNotificationService {
+  rpc SendRegistrationEmail (SendRegistrationEmailRequest) returns (SendRegistrationEmailResponse);
+}
+
 //Important repeated = all data comes back in one response
 //Important stream = data comes back in multiple responses, one at a time
 
@@ -66,4 +71,9 @@ message User {
   string username = 2;
 }
 
+message SendRegistrationEmailRequest {
+  string email = 1;
+  string username = 2;
+}
 
+message SendRegistrationEmailResponse {}

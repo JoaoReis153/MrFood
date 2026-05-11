@@ -1,0 +1,46 @@
+info:
+  name: Add a review for a restaurant
+  type: http
+  seq: 3
+  tags:
+    - Reviews
+
+http:
+  method: POST
+  url: "{{baseUrl}}/reviews/{{restaurantId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "rating": 5,
+        "comment": "Amazing food and great service!"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("create review returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has review", () => {
+            expect(res.body).to.have.property("review");
+          });
+
+          test("review has review_id", () => {
+            expect(res.body.review).to.have.property("review_id");
+          });
+
+          bru.setEnvVar("reviewId", String(res.body.review.review_id));
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

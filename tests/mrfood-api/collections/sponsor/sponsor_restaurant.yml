@@ -1,0 +1,43 @@
+info:
+  name: Sponsor a restaurant
+  type: http
+  seq: 3
+  tags:
+    - Sponsor
+
+http:
+  method: POST
+  url: "{{baseUrl}}/sponsor/{{restaurantId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "tier": 1
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("sponsor restaurant returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has id", () => {
+            expect(res.body).to.have.property("id");
+          });
+
+          test("response has tier", () => {
+            expect(res.body).to.have.property("tier");
+          });
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

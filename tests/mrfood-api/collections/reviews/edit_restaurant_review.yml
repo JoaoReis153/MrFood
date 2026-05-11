@@ -1,0 +1,40 @@
+info:
+  name: Edit a review for a restaurant
+  type: http
+  seq: 5
+  tags:
+    - Reviews
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/reviews/{{reviewId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "comment": "Updated comment — still great!",
+        "rating": 4
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("edit review returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          test("response has review", () => {
+            expect(res.body).to.have.property("review");
+          });
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

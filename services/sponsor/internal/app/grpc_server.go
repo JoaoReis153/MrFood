@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strconv"
+	"hash/fnv"
 	"strings"
 	"time"
 
@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -30,7 +32,8 @@ type server struct {
 }
 
 type UserInfo struct {
-	UserID   int32
+	UserID   int64
+	Email    string
 	Username string
 }
 
@@ -38,13 +41,14 @@ type Claims struct {
 	jwt.RegisteredClaims
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
+	Email        string `json:"email"`
 	TokenVersion int    `json:"token_version"`
 	TokenType    string `json:"token_type"` // access or refresh
 }
 
 type SponsorService interface {
-	GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
-	Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
+	GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error)
+	Sponsor(ctx context.Context, s *models.Sponsorship, userID int64, email string) (*models.SponsorshipResponse, int32, error)
 }
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
@@ -57,7 +61,7 @@ func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestau
 	}
 
 	return &pb.SponsorshipResponse{
-		Id:    int32(response.ID),
+		Id:    response.ID,
 		Tier:  int32(response.Tier),
 		Until: timestamppb.New(response.Until),
 	}, nil
@@ -76,13 +80,13 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	slog.Info("USER", "username", user.Username, "userID", user.UserID)
 
 	sponsorship := &models.Sponsorship{
-		ID:         int(req.Id),
+		ID:         req.Id,
 		Tier:       int(req.Tier),
 		Until:      time.Now().AddDate(0, 1, 0),
 		Categories: []string{},
 	}
 
-	response, err := s.sponsorService.Sponsor(ctx, sponsorship, int(user.UserID))
+	response, receipt_id, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID, user.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -94,9 +98,10 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	)
 
 	return &pb.SponsorshipResponse{
-		Id:    int32(response.ID),
-		Tier:  int32(response.Tier),
-		Until: timestamppb.New(response.Until),
+		Id:        response.ID,
+		Tier:      int32(response.Tier),
+		Until:     timestamppb.New(response.Until),
+		ReceiptId: receipt_id,
 	}, nil
 }
 
@@ -120,21 +125,19 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		slog.Error("failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	userID, err := parseInt32(claims.UserID)
-
-	if err != nil {
-		slog.Error("failed to parse user id", "error", err)
-		return nil, status.Error(codes.Unauthenticated, "invalid user id in token")
-	}
+	userID := uuidToInt64(claims.UserID)
 
 	userInfo := &UserInfo{
 		UserID:   userID,
+		Email:    claims.Email,
 		Username: claims.Username,
 	}
 
 	slog.Info("USER INFO",
-		"user_id", claims.UserID,
+		"user_id_claim", claims.UserID,
+		"user_id", userID,
 		"username", claims.Username,
+		"email", claims.Email,
 		"token_type", claims.TokenType,
 		"exp", claims.ExpiresAt,
 	)
@@ -142,15 +145,12 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	return userInfo, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int32 range")
-	}
-	return int32(v), nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func (app *App) RunServer() {
@@ -170,6 +170,11 @@ func (app *App) RunServer() {
 
 	pb.RegisterSponsorServiceServer(s, srv)
 
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "sponsor")
+
 	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
 		slog.Error("failed", "error", err)
@@ -177,7 +182,7 @@ func (app *App) RunServer() {
 	}
 }
 
-func NewClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.ClientConn, error) {
+func NewRestaurantClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -187,4 +192,16 @@ func NewClient(address string) (pb.RestaurantToSponsorServiceClient, *grpc.Clien
 	}
 
 	return pb.NewRestaurantToSponsorServiceClient(conn), conn, nil
+}
+
+func NewPaymentClient(address string) (pb.PaymentCommandServiceClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pb.NewPaymentCommandServiceClient(conn), conn, nil
 }

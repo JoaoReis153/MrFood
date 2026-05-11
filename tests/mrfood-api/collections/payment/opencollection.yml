@@ -1,0 +1,25 @@
+opencollection: 1.0.0
+
+info:
+  name: payment
+config:
+  protobuf:
+    protoFiles:
+      - type: file
+        path: ../../../../services/payment/internal/api/grpc/proto/protofile.proto
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git

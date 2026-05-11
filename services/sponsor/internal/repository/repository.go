@@ -33,7 +33,7 @@ func New(db DB) *Repository {
 	return &Repository{DB: db}
 }
 
-func (r *Repository) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+func (r *Repository) GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 
 	if r.DB == nil {
 		return nil, ErrDatabaseNotSet
@@ -47,7 +47,7 @@ func (r *Repository) GetRestaurantSponsorship(ctx context.Context, id int32) (*m
 
 	sponsorship := &models.SponsorshipResponse{}
 
-	var idTemp int32
+	var idTemp int64
 	var tierTemp int32
 
 	err := r.DB.QueryRow(ctx, query, id).Scan(
@@ -56,7 +56,7 @@ func (r *Repository) GetRestaurantSponsorship(ctx context.Context, id int32) (*m
 		&sponsorship.Until,
 	)
 
-	sponsorship.ID = int(idTemp)
+	sponsorship.ID = idTemp
 	sponsorship.Tier = int(tierTemp)
 
 	if err != nil {
@@ -82,7 +82,7 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 
 	sponsorship := &models.SponsorshipResponse{}
 
-	var idTemp int32
+	var idTemp int64
 	var tierTemp int32
 
 	err := r.DB.QueryRow(ctx, query_select, request.ID).Scan(
@@ -91,7 +91,7 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 		&sponsorship.Until,
 	)
 
-	sponsorship.ID = int(idTemp)
+	sponsorship.ID = idTemp
 	sponsorship.Tier = int(tierTemp)
 
 	if request.Tier <= sponsorship.Tier {
@@ -121,7 +121,7 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 		RETURNING restaurant_id, tier, until
 	`
 
-	var restaurantId int32
+	var restaurantId int64
 	var tier int32
 	var until time.Time
 
@@ -144,5 +144,5 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 		}
 	}
 
-	return &models.SponsorshipResponse{ID: int(restaurantId), Tier: int(tier), Until: until}, nil
+	return &models.SponsorshipResponse{ID: restaurantId, Tier: int(tier), Until: until}, nil
 }

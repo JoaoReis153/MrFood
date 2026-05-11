@@ -6,6 +6,8 @@ info:
 collections:
   - name: "notifications"
     path: "collections/notifications"
+  - name: "ci"
+    path: "collections/ci"
   - name: "reservations"
     path: "collections/reservations"
   - name: "restaurants"
@@ -16,7 +18,13 @@ collections:
     path: "collections/users"
   - name: "sponsor"
     path: "collections/sponsor"
+  - name: "payment"
+    path: "collections/payment"
+  - name: "search"
+    path: "collections/search"
 
 specs:
 
 docs: ''
+
+activeEnvironmentUid: 12fibti00000000000000

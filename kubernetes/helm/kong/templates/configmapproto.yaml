@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-protos
+data:
+{{- range $path, $bytes := .Files.Glob "files/proto/**" }}
+  {{ trimPrefix "files/proto/" $path | replace "/" "_" }}: |-
+{{ $bytes | toString | indent 4 }}
+{{- end }}
+

@@ -1,0 +1,33 @@
+info:
+  name: Delete a reservation
+  type: http
+  seq: 5
+  tags:
+    - Reservations
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/reservations/delete"
+  body:
+    type: json
+    data: |-
+      {
+        "booking_id": {{bookingId}}
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("delete reservation returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

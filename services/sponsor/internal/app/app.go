@@ -16,6 +16,7 @@ type App struct {
 	Repo           *repository.Repository
 	DB             *pgxpool.Pool
 	RestaurantConn *grpc.ClientConn
+	PaymentConn    *grpc.ClientConn
 }
 
 func New() *App {
@@ -28,14 +29,20 @@ func (app *App) InitDependencies() {
 	}
 	cfg := config.Get(context.Background())
 
-	client, restaurant_conn, err := NewClient(cfg.Restaurant.GRPCAddr)
+	restaurantClient, restaurant_conn, err := NewRestaurantClient(cfg.Restaurant.GRPCAddr)
+	if err != nil {
+		panic(fmt.Errorf("client init failed: %w", err))
+	}
+
+	paymentClient, payment_conn, err := NewPaymentClient(cfg.Payment.GRPCAddr)
 	if err != nil {
 		panic(fmt.Errorf("client init failed: %w", err))
 	}
 
 	app.RestaurantConn = restaurant_conn
+	app.PaymentConn = payment_conn
 	app.Repo = repository.New(app.DB)
-	app.Service = service.New(app.Repo, client)
+	app.Service = service.New(app.Repo, restaurantClient, paymentClient)
 }
 
 func (app *App) Close() {

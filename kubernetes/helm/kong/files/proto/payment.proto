@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package proto;
+
+option go_package = "/pb;pb";
+ 
+service PaymentQueryService {
+  rpc GetReceiptById (ReceiptRequest) returns (GetReceiptResponse){
+    option (google.api.http) = {
+      get: "/payment/{receipt_id}"
+      body: "*"
+    };
+  };
+  rpc GetReceiptsByUser (ReceiptRequest) returns (GetReceiptResponse){
+    option (google.api.http) = {
+      get: "/payment"
+      body: "*"
+    };
+  };
+}
+
+message ReceiptRequest {
+  int32 receipt_id = 1;
+}
+
+message GetReceiptResponse {}

@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+import hashlib
+import re
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import pandas as pd
+
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = SCRIPT_DIR.parent
+DATA_DIR = PROJECT_DIR / "data"
+OUTPUT_DIR = SCRIPT_DIR / "processed_data"
+
+# Default password for seed users: "mrfood123" (bcrypt hashed)
+DEFAULT_PASSWORD = "mrfood123"
+DEFAULT_PASSWORD_HASH = "$2a$10$h7oCCYsXlom0bwjwYE7md.82mYEHrXlD9oq3tAJSKsqOTzkhfiR3q"
+WEEK_BASE_DATE = datetime(2026, 1, 5)  # Monday
+
+
+def print_progress_start(label: str) -> None:
+    print(f"{label}: 0%")
+
+
+def print_progress_end(label: str) -> None:
+    print(f"{label}: 100%")
+
+
+def print_progress_step(label: str, done: int, total: int, last_pct: int, step: int = 5) -> int:
+    if total <= 0:
+        if last_pct < 100:
+            print(f"{label}: 100%")
+            return 100
+        return last_pct
+
+    pct = min((done * 100) // total, 100)
+    milestone_pct = (pct // step) * step
+
+    if milestone_pct <= last_pct:
+        return last_pct
+
+    for value in range(last_pct + step, milestone_pct + 1, step):
+        print(f"{label}: {value}%")
+
+    return milestone_pct
+
+
+@dataclass
+class UserRecord:
+    user_id: int
+    username: str
+    password: str
+    email: str
+    source_gplus_user_id: Optional[str]
+
+
+def clean_text(value: object, max_len: Optional[int] = None) -> str:
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
+    if max_len is not None:
+        return text[:max_len]
+    return text
+
+
+def clean_id(value: object) -> str:
+    text = clean_text(value)
+    if not text:
+        return ""
+
+    if text.endswith(".0") and text[:-2].isdigit():
+        return text[:-2]
+
+    return text
+
+
+def hash_to_bigint(value: object) -> str:
+    """Hash a source identifier into a positive signed BIGINT range."""
+    text = clean_id(value)
+    if not text:
+        return ""
+
+    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    # Keep value in PostgreSQL BIGINT positive range: 1..2^63-1
+    number = int.from_bytes(digest[:8], "big") & ((1 << 63) - 1)
+    if number == 0:
+        number = 1
+    return str(number)
+
+
+def normalize_name(name: str) -> str:
+    return re.sub(r"\s+", " ", clean_text(name).lower())

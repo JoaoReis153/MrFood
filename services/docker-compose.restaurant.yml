@@ -3,12 +3,6 @@ x-common: &common
   networks:
     - app-network
 
-x-restaurant-db-config: &restaurant-db-config
-  POSTGRES_HOST: restaurant_db
-  POSTGRES_DB: ${RESTAURANT_POSTGRES_DB}
-  POSTGRES_USER: ${RESTAURANT_POSTGRES_USER}
-  POSTGRES_PASSWORD: ${RESTAURANT_POSTGRES_PASSWORD}
-
 x-pg-healthcheck: &pg-healthcheck
   test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
   interval: 5s
@@ -18,18 +12,10 @@ x-pg-healthcheck: &pg-healthcheck
 services:
   restaurant:
     build: ./restaurant/
-    ports: ["${RESTAURANT_SERVER_PORT}:${RESTAURANT_SERVER_PORT}"]
     <<: *common
-    environment:
-      # Database
-      <<: *restaurant-db-config
-      APP_SERVER_PORT: ${RESTAURANT_SERVER_PORT}
-      DB_MIN_CONNS: 4
-      DB_MAX_CONNS: 20
-      DB_MAX_CONN_LIFETIME: 15m
-      DB_HEALTH_CHECK_PERIOD: 1m
-      # App
-      APP_LOG_LEVEL: debug
+    env_file:
+      - ./config.env
+      - .env
     depends_on:
       restaurant_db:
         condition: service_healthy
@@ -38,14 +24,17 @@ services:
 
   restaurant_db:
     image: postgres:16
-    ports: ["${RESTAURANT_POSTGRES_PORT}:5432"]
     <<: *common
-    command: postgres -c ssl=off -c log_statement=ddl
+    command: postgres -c ssl=off -c log_statement=ddl -c wal_level=logical -c max_wal_senders=10 -c max_replication_slots=10
     volumes:
       - restaurant_db_data:/var/lib/postgresql/data
       - ./restaurant/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
+    env_file:
+      - .env
     environment:
-      <<: *restaurant-db-config
+      POSTGRES_DB: ${RESTAURANT_POSTGRES_DB}
+      POSTGRES_USER: ${RESTAURANT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${RESTAURANT_POSTGRES_PASSWORD}
     healthcheck:
       <<: *pg-healthcheck
 

@@ -20,14 +20,14 @@ import (
 // ===================================================
 
 type mockReviewService struct {
-	GetReviewsFn         func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
+	GetReviewsFn         func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error)
 	CreateReviewFn       func(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReviewFn       func(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReviewFn       func(ctx context.Context, deleteReq models.DeleteReview) error
-	GetRestaurantStatsFn func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
+	GetRestaurantStatsFn func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error)
 }
 
-func (m *mockReviewService) GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+func (m *mockReviewService) GetReviews(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 	return m.GetReviewsFn(ctx, restaurantID, page, limit)
 }
 func (m *mockReviewService) CreateReview(ctx context.Context, review models.Review) (models.Review, error) {
@@ -39,7 +39,7 @@ func (m *mockReviewService) UpdateReview(ctx context.Context, review models.Upda
 func (m *mockReviewService) DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error {
 	return m.DeleteReviewFn(ctx, deleteReq)
 }
-func (m *mockReviewService) GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+func (m *mockReviewService) GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 	return m.GetRestaurantStatsFn(ctx, restaurantID)
 }
 
@@ -75,7 +75,7 @@ func TestServer_GetReviews_Success(t *testing.T) {
 	now := time.Now()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			if restaurantID != 5 || page != 2 || limit != 3 {
 				t.Fatalf("unexpected args: id=%d page=%d limit=%d", restaurantID, page, limit)
 			}
@@ -117,7 +117,7 @@ func TestServer_GetReviews_Defaults(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			if page != 1 || limit != 10 {
 				t.Fatalf("expected default page=1 limit=10, got page=%d limit=%d", page, limit)
 			}
@@ -141,7 +141,7 @@ func TestServer_GetReviews_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			return models.ReviewsPage{}, models.ErrRestaurantNotFound
 		},
 	}
@@ -160,7 +160,7 @@ func TestServer_GetReviews_InvalidArgument(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetReviewsFn: func(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error) {
+		GetReviewsFn: func(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 			return models.ReviewsPage{}, models.ErrInvalidRestaurantID
 		},
 	}
@@ -185,7 +185,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		CreateReviewFn: func(ctx context.Context, review models.Review) (models.Review, error) {
-			if review.RestaurantID != 1 || review.UserID != 2 || review.Rating != 5 || review.Comment != "good" {
+			if review.RestaurantID != 1 || review.UserID != uuidToInt64("2") || review.Rating != 5 || review.Comment != "good" {
 				t.Fatalf("unexpected review in service: %+v", review)
 			}
 			review.ReviewID = 10
@@ -203,7 +203,7 @@ func TestServer_CreateReview_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	r := resp.Review
-	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != 2 || r.Rating != 5 || r.Comment != "good" {
+	if r.ReviewId != 10 || r.RestaurantId != 1 || r.UserId != uuidToInt64("2") || r.Rating != 5 || r.Comment != "good" {
 		t.Fatalf("unexpected review resp: %+v", r)
 	}
 }
@@ -273,7 +273,7 @@ func TestServer_UpdateReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		UpdateReviewFn: func(ctx context.Context, review models.UpdateReview) (models.Review, error) {
-			if review.ReviewID != 10 || review.UserID != 2 {
+			if review.ReviewID != 10 || review.UserID != uuidToInt64("2") {
 				t.Fatalf("unexpected update request: %+v", review)
 			}
 			if review.Comment == nil || *review.Comment != "new" {
@@ -378,7 +378,7 @@ func TestServer_DeleteReview_Success(t *testing.T) {
 
 	ms := &mockReviewService{
 		DeleteReviewFn: func(ctx context.Context, deleteReq models.DeleteReview) error {
-			if deleteReq.ReviewID != 7 || deleteReq.UserID != 2 {
+			if deleteReq.ReviewID != 7 || deleteReq.UserID != uuidToInt64("2") {
 				t.Fatalf("unexpected delete request: %+v", deleteReq)
 			}
 			return nil
@@ -453,7 +453,7 @@ func TestServer_GetRestaurantStats_Success(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			if restaurantID != 5 {
 				t.Fatalf("expected id 5, got %d", restaurantID)
 			}
@@ -479,7 +479,7 @@ func TestServer_GetRestaurantStats_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			return models.RestaurantStats{}, models.ErrRestaurantNotFound
 		},
 	}
@@ -498,7 +498,7 @@ func TestServer_GetRestaurantStats_Internal(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			return models.RestaurantStats{}, errors.New("db error")
 		},
 	}
@@ -517,7 +517,7 @@ func TestServer_GetRestaurantStats_InvalidArgument(t *testing.T) {
 	ctx := context.Background()
 
 	ms := &mockReviewService{
-		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int32) (models.RestaurantStats, error) {
+		GetRestaurantStatsFn: func(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 			return models.RestaurantStats{}, models.ErrInvalidRestaurantID
 		},
 	}
@@ -599,33 +599,30 @@ func TestExtractUserFromContext_ValidToken(t *testing.T) {
 }
 
 // ===================================================
-// ================= parseInt32 ======================
+// ================ uuidToInt64 ======================
 // ===================================================
 
-func TestParseInt32_Valid(t *testing.T) {
-	v, err := parseInt32("42")
-	if err != nil || v != 42 {
-		t.Fatalf("expected 42, got %d err %v", v, err)
+func TestUUIDToInt64_Valid(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	id := uuidToInt64(uuid)
+	if id <= 0 {
+		t.Fatalf("expected positive int64, got %d", id)
 	}
 }
 
-func TestParseInt32_Zero(t *testing.T) {
-	_, err := parseInt32("0")
-	if err == nil {
-		t.Fatal("expected error for 0, got nil")
+func TestUUIDToInt64_Deterministic(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	first := uuidToInt64(uuid)
+	second := uuidToInt64(uuid)
+	if first != second {
+		t.Fatalf("uuidToInt64 is not deterministic: got %d and %d", first, second)
 	}
 }
 
-func TestParseInt32_Negative(t *testing.T) {
-	_, err := parseInt32("-1")
-	if err == nil {
-		t.Fatal("expected error for negative, got nil")
-	}
-}
-
-func TestParseInt32_NonNumeric(t *testing.T) {
-	_, err := parseInt32("abc")
-	if err == nil {
-		t.Fatal("expected error for non-numeric, got nil")
+func TestUUIDToInt64_NonNegative(t *testing.T) {
+	for _, s := range []string{"", "abc", "-1", "0", "4f774104-1234-5678-abcd-ef0123456789"} {
+		if v := uuidToInt64(s); v < 0 {
+			t.Fatalf("expected non-negative for %q, got %d", s, v)
+		}
 	}
 }

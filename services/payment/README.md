@@ -1,0 +1,70 @@
+# payment Microservice
+
+## Current Status
+
+- Transport: **gRPC only** (no REST endpoints exposed by this service).
+- API contract: `internal/api/grpc/proto/protofile.proto`.
+- Server startup: `cmd/main.go` initializes config, logger, app dependencies, then runs the gRPC server.
+- Shutdown: graceful stop on `SIGINT`/`SIGTERM`.
+
+## Operations (gRPC)
+
+Service: `TemplateService`
+
+- `PingPong(Ping) -> Pong`
+
+## Workflow and Logic
+
+### 1) Ping
+
+1. Receives a `Ping` message.
+2. Returns a `Pong` response.
+
+## Configuration
+
+Main environment variables used by the service:
+
+- Server/logging: `APP_SERVER_HOST`, `APP_SERVER_PORT`, `APP_SERVER_TIMEOUT`, `APP_LOG_LEVEL`
+
+Defaults and validation rules are defined in `config/config.go`.
+
+## Development
+
+### Run locally
+
+```bash
+go run ./cmd/main.go
+```
+
+### Build and test
+
+```bash
+make build
+make test
+```
+
+### Run in Docker
+
+```bash
+make docker-build
+make docker-up
+```
+
+## gRPC Code Generation
+
+Proto file:
+
+- `internal/api/grpc/proto/protofile.proto`
+
+Generate stubs (from `services/payment`):
+
+```bash
+make proto
+```
+
+This updates generated files under `internal/api/grpc/pb`.
+
+`protoc` installation examples:
+
+- macOS: `brew install protobuf`
+- Linux (dnf): `sudo dnf install protobuf-compiler`

@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
-	"strconv"
+	"hash/fnv"
 	"strings"
 	"time"
 
@@ -19,6 +19,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -43,14 +45,14 @@ func NewRestaurantClient(target string) (*RestaurantClient, *grpc.ClientConn, er
 }
 
 type ReviewService interface {
-	GetReviews(ctx context.Context, restaurantID int32, page, limit int) (models.ReviewsPage, error)
+	GetReviews(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error)
 	CreateReview(ctx context.Context, review models.Review) (models.Review, error)
 	UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error)
 	DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error
-	GetRestaurantStats(ctx context.Context, restaurantID int32) (models.RestaurantStats, error)
+	GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error)
 }
 
-func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int32) (models.Restaurant, error) {
+func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int64) (models.Restaurant, error) {
 	ctx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
 	defer cancel()
 
@@ -91,7 +93,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 	if limit == 0 {
 		limit = 10
 	}
-	results, err := s.svc.GetReviews(ctx, int32(req.GetRestaurantId()), page, limit)
+	results, err := s.svc.GetReviews(ctx, req.GetRestaurantId(), page, limit)
 	if err != nil {
 		return nil, mapToGRPCError(err)
 	}
@@ -125,14 +127,10 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	user_id, err := parseInt32(claims.UserID)
-	if err != nil {
-		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
-		return nil, mapToGRPCError(err)
-	}
+	user_id := uuidToInt64(claims.UserID)
 	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
-		RestaurantID: int32(req.GetRestaurantId()),
+		RestaurantID: req.GetRestaurantId(),
 		UserID:       user_id,
 		Rating:       req.GetRating(),
 		Comment:      req.GetComment(),
@@ -162,11 +160,7 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 		slog.Error("Failed to extract user from context", "error", err)
 		return nil, mapToGRPCError(err)
 	}
-	user_id, err := parseInt32(claims.UserID)
-	if err != nil {
-		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
-		return nil, mapToGRPCError(err)
-	}
+	user_id := uuidToInt64(claims.UserID)
 	slog.Info("Received UpdateReview request", "reviewID", req.GetReviewId(), "userID", user_id)
 	review := models.UpdateReview{
 		ReviewID: req.GetReviewId(),
@@ -205,11 +199,7 @@ func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) 
 		return nil, mapToGRPCError(err)
 	}
 
-	userID, err := parseInt32(claims.UserID)
-	if err != nil {
-		slog.Error("Invalid user ID in token", "userID", claims.UserID, "error", err)
-		return nil, mapToGRPCError(err)
-	}
+	userID := uuidToInt64(claims.UserID)
 	slog.Info("Received DeleteReview request", "reviewID", req.GetReviewId(), "userID", userID)
 
 	err = s.svc.DeleteReview(ctx, models.DeleteReview{
@@ -258,6 +248,11 @@ func (app *App) RunServer() {
 	pb.RegisterReviewServiceServer(s, srv)
 	pb.RegisterReviewToRestaurantServiceServer(s, srv)
 
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "review")
+
 	slog.Info("Server running on", "address", addr)
 	if err := s.Serve(lis); err != nil {
 		slog.Error("Failed to serve", "error", err)
@@ -291,15 +286,12 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	return claims, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int32 range")
-	}
-	return int32(v), nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func mapToGRPCError(err error) error {

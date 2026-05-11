@@ -18,25 +18,26 @@ import (
 // Mock Sponsor Service
 // -----------------------------
 type mockSponsorService struct {
-	getFn     func(ctx context.Context, id int32) (*models.SponsorshipResponse, error)
-	sponsorFn func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error)
+	getFn     func(ctx context.Context, id int64) (*models.SponsorshipResponse, error)
+	sponsorFn func(ctx context.Context, s *models.Sponsorship, userID int64, email string) (*models.SponsorshipResponse, int32, error)
 }
 
-func (m *mockSponsorService) GetRestaurantSponsorship(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+func (m *mockSponsorService) GetRestaurantSponsorship(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 	return m.getFn(ctx, id)
 }
 
-func (m *mockSponsorService) Sponsor(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
-	return m.sponsorFn(ctx, s, userID)
+func (m *mockSponsorService) Sponsor(ctx context.Context, s *models.Sponsorship, userID int64, email string) (*models.SponsorshipResponse, int32, error) {
+	return m.sponsorFn(ctx, s, userID, email)
 }
 
 // -----------------------------
 // JWT Helper
 // -----------------------------
-func createAuthContext(userID string, username string) context.Context {
-	claims := jwt.MapClaims{
-		"user_id":  userID,
-		"username": username,
+func createAuthContext(userID string, username string, email string) context.Context {
+	claims := &Claims{
+		UserID:   userID,
+		Username: username,
+		Email:    email,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -54,9 +55,9 @@ func createAuthContext(userID string, username string) context.Context {
 // -----------------------------
 func TestGetRestaurantSponsorship(t *testing.T) {
 	mock := &mockSponsorService{
-		getFn: func(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+		getFn: func(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 			return &models.SponsorshipResponse{
-				ID:    int(id),
+				ID:    id,
 				Tier:  2,
 				Until: time.Now(),
 			}, nil
@@ -65,20 +66,22 @@ func TestGetRestaurantSponsorship(t *testing.T) {
 
 	s := &server{sponsorService: mock}
 	resp, err := s.GetRestaurantSponsorship(context.Background(), &pb.GetRestaurantSponsorshipRequest{Id: 10})
+
 	require.NoError(t, err)
-	require.Equal(t, int32(10), resp.Id)
+	require.Equal(t, int64(10), resp.Id)
 	require.Equal(t, int32(2), resp.Tier)
 }
 
 func TestGetRestaurantSponsorship_Error(t *testing.T) {
 	mock := &mockSponsorService{
-		getFn: func(ctx context.Context, id int32) (*models.SponsorshipResponse, error) {
+		getFn: func(ctx context.Context, id int64) (*models.SponsorshipResponse, error) {
 			return nil, errors.New("db error")
 		},
 	}
 
 	s := &server{sponsorService: mock}
 	resp, err := s.GetRestaurantSponsorship(context.Background(), &pb.GetRestaurantSponsorshipRequest{Id: 1})
+
 	require.Error(t, err)
 	require.Nil(t, resp)
 }
@@ -88,47 +91,56 @@ func TestGetRestaurantSponsorship_Error(t *testing.T) {
 // -----------------------------
 func TestSponsor_Success(t *testing.T) {
 	mock := &mockSponsorService{
-		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
+		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int64, email string) (*models.SponsorshipResponse, int32, error) {
 			return &models.SponsorshipResponse{
-				ID:    int(s.ID),
+				ID:    s.ID,
 				Tier:  int(s.Tier),
 				Until: s.Until,
-			}, nil
+			}, 123, nil
 		},
 	}
 
 	s := &server{sponsorService: mock}
-	ctx := createAuthContext("1", "john")
+	ctx := createAuthContext("1", "john", "john@test.com")
+
 	resp, err := s.Sponsor(ctx, &pb.SponsorshipRequest{Id: 5, Tier: 2})
+
 	require.NoError(t, err)
-	require.Equal(t, int32(5), resp.Id)
+	require.Equal(t, int64(5), resp.Id)
 	require.Equal(t, int32(2), resp.Tier)
+	require.Equal(t, int32(123), resp.ReceiptId)
 }
 
 func TestSponsor_InvalidTier(t *testing.T) {
 	s := &server{}
+
 	resp, err := s.Sponsor(context.Background(), &pb.SponsorshipRequest{Id: 1, Tier: 10})
+
 	require.Error(t, err)
 	require.Nil(t, resp)
 }
 
 func TestSponsor_NoAuth(t *testing.T) {
 	s := &server{}
+
 	resp, err := s.Sponsor(context.Background(), &pb.SponsorshipRequest{Id: 1, Tier: 2})
+
 	require.Error(t, err)
 	require.Nil(t, resp)
 }
 
 func TestSponsor_ServiceError(t *testing.T) {
 	mock := &mockSponsorService{
-		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int) (*models.SponsorshipResponse, error) {
-			return nil, errors.New("failed")
+		sponsorFn: func(ctx context.Context, s *models.Sponsorship, userID int64, email string) (*models.SponsorshipResponse, int32, error) {
+			return nil, 0, errors.New("failed")
 		},
 	}
 
 	s := &server{sponsorService: mock}
-	ctx := createAuthContext("1", "john")
+	ctx := createAuthContext("1", "john", "john@test.com")
+
 	resp, err := s.Sponsor(ctx, &pb.SponsorshipRequest{Id: 1, Tier: 2})
+
 	require.Error(t, err)
 	require.Nil(t, resp)
 }
@@ -137,11 +149,14 @@ func TestSponsor_ServiceError(t *testing.T) {
 // ExtractUserFromContext Tests
 // -----------------------------
 func TestExtractUserFromContext_Success(t *testing.T) {
-	ctx := createAuthContext("42", "alice")
+	ctx := createAuthContext("42", "alice", "alice@test.com")
+
 	user, err := ExtractUserFromContext(ctx)
+
 	require.NoError(t, err)
-	require.Equal(t, int32(42), user.UserID)
+	require.Equal(t, uuidToInt64("42"), user.UserID)
 	require.Equal(t, "alice", user.Username)
+	require.Equal(t, "alice@test.com", user.Email)
 }
 
 func TestExtractUserFromContext_NoMetadata(t *testing.T) {
@@ -150,8 +165,11 @@ func TestExtractUserFromContext_NoMetadata(t *testing.T) {
 }
 
 func TestExtractUserFromContext_InvalidToken(t *testing.T) {
-	md := metadata.New(map[string]string{"authorization": "Bearer invalid.token.here"})
+	md := metadata.New(map[string]string{
+		"authorization": "Bearer invalid.token.here",
+	})
 	ctx := metadata.NewIncomingContext(context.Background(), md)
+
 	_, err := ExtractUserFromContext(ctx)
 	require.Error(t, err)
 }

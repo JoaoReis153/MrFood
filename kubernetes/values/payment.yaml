@@ -1,0 +1,25 @@
+name: payment
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.1
+port: 50057
+
+service:
+  type: ClusterIP
+
+env:
+  secrets:
+    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_secret
+  config:
+    PAYMENT_SERVER_PORT: 50057
+    POSTGRES_PORT: 5432
+    PAYMENT_POSTGRES_DB: mrfood_payment
+    PAYMENT_POSTGRES_USER: mrfood_payment_user
+    POSTGRES_HOST: 127.0.0.1
+    POSTGRES_MIN_CONNS: 4
+    POSTGRES_MAX_CONNS: 20
+    POSTGRES_MAX_CONN_LIFETIME: 15m
+    POSTGRES_HEALTH_CHECK_PERIOD: 1m
+    APP_LOG_LEVEL: debug
+    NOTIFICATION_GRPC_ADDR: "notification:80"
+
+cloudsql:
+  instance: mrfood-490623:europe-southwest1:mrfood-payment-pg

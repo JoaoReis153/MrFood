@@ -1,0 +1,155 @@
+name: Bruno API Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/mrfood-api/**'
+      - '.github/workflows/bruno.yml'
+      - 'Makefile'
+      - 'services/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bruno-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bruno-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Create environment files
+        run: |
+          cat > services/.env <<'EOF'
+          APP_JWT_ACCESS_TOKEN_SECRET=CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
+          AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
+          AUTH_REDIS_PASS=
+          KEYCLOAK_CLIENT_SECRET=mrfood-auth-client-secret
+          KEYCLOAK_ADMIN_PASS=admin
+          BOOKING_POSTGRES_PASSWORD=bookingsecret
+          SMTP_USER=mrfood.api@gmail.com
+          SMTP_PASSWORD=wpbp rgwe hplj smzy
+          SMTP_FROM=mrfood.api@gmail.com
+          PAYMENT_POSTGRES_PASSWORD=paymentsecret
+          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
+          REVIEW_POSTGRES_PASSWORD=reviewsecret
+          ELASTICSEARCH_USERNAME=
+          ELASTICSEARCH_PASSWORD=
+          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
+          EOF
+
+      - name: Go mod tidy (all services)
+        run: |
+          for dir in $(find services -name go.mod -exec dirname {} \;); do
+            echo "Tidying $dir"
+            cd "$dir"
+            go mod tidy
+            cd - > /dev/null
+          done
+        
+      - name: Start services
+        run: make build run
+
+      - name: Wait for API gateway
+        run: |
+          ready=0
+          for i in {1..90}; do
+            status=$(curl -sS -o /tmp/gateway-auth-ping-body.txt -w "%{http_code}" http://localhost:8000/auth/ping/1 || true)
+
+            if [ "$status" = "200" ]; then
+              echo "Gateway and auth upstream are ready"
+              ready=1
+              break
+            fi
+
+            echo "Waiting for gateway/auth upstream... ($i/90) status=$status"
+
+            if [ "$status" = "503" ]; then
+              echo "Gateway is up but auth upstream is not ready yet"
+            fi
+
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "--- docker compose ps ---"
+              docker compose -f services/docker-compose.yml --env-file services/config.env ps || true
+              echo "--- auth logs (tail) ---"
+              docker compose -f services/docker-compose.yml --env-file services/config.env logs --tail=80 auth || true
+              echo "--- kong logs (tail) ---"
+              docker compose -f services/docker-compose.yml --env-file services/config.env logs --tail=80 kong || true
+            fi
+
+            sleep 5
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "Gateway/auth upstream did not become ready in time"
+            echo "--- gateway ping response body ---"
+            cat /tmp/gateway-auth-ping-body.txt || true
+            echo "--- docker compose ps ---"
+            make logs-dump
+            exit 1
+          fi
+
+      - name: Create ES index and start search service
+        run: |
+          make search-seed
+          docker compose -p mrfood -f services/docker-compose.yml up -d --no-deps search
+
+      - name: Wait for search service
+        run: |
+          echo "Waiting for search service on port 50056..."
+          for i in $(seq 1 60); do
+            if nc -z localhost 50056 2>/dev/null; then
+              echo "Search service is ready"
+              exit 0
+            fi
+            echo "[$i/60] not yet..."
+            sleep 3
+          done
+          echo "Search service did not become ready"
+          docker compose -p mrfood -f services/docker-compose.yml --env-file services/config.env logs --tail=60 search || true
+          exit 1
+
+      - name: Run Bruno tests
+        run: make test-bruno
+
+      - name: Upload Bruno reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: bruno-reports
+          path: |
+            tests/mrfood-api/reports/users-junit.xml
+            tests/mrfood-api/reports/users-report.json
+            tests/mrfood-api/reports/restaurants-junit.xml
+            tests/mrfood-api/reports/restaurants-report.json
+            tests/mrfood-api/reports/reservations-junit.xml
+            tests/mrfood-api/reports/reservations-report.json
+            tests/mrfood-api/reports/reviews-junit.xml
+            tests/mrfood-api/reports/reviews-report.json
+            tests/mrfood-api/reports/search-junit.xml
+            tests/mrfood-api/reports/search-report.json
+            tests/mrfood-api/reports/payment-junit.xml
+            tests/mrfood-api/reports/payment-report.json
+            tests/mrfood-api/reports/sponsor-junit.xml
+            tests/mrfood-api/reports/sponsor-report.json
+          if-no-files-found: warn
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: make logs-dump
+
+      - name: Stop services
+        if: always()
+        run: make down-volumes

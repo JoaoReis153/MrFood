@@ -8,10 +8,10 @@ import (
 )
 
 type Restaurant struct {
-	ID            int32    `json:"id"`
+	ID            int64    `json:"id"`
 	SponsorTier   int32    `json:"sponsor_tier"`
 	MaxSlots      int32    `json:"max_slots"`
-	OwnerID       int32    `json:"owner_id"`
+	OwnerID       int64    `json:"owner_id"`
 	ReviewCount   *int32   `json:"review_count,omitempty"`
 	Latitude      float64  `json:"latitude"`
 	Longitude     float64  `json:"longitude"`
@@ -26,7 +26,7 @@ type Restaurant struct {
 }
 
 type RestaurantCreateRequest struct {
-	OwnerID     int32    `json:"owner_id"`
+	OwnerID     int64    `json:"owner_id"`
 	MaxSlots    int32    `json:"max_slots"`
 	Longitude   float64  `json:"longitude"`
 	Latitude    float64  `json:"latitude"`
@@ -44,7 +44,7 @@ type WorkingHoursResponse struct {
 }
 
 type RestaurantStats struct {
-	RestaurantID  int32   `json:"restaurant_id"`
+	RestaurantID  int64   `json:"restaurant_id"`
 	AverageRating float64 `json:"average_rating"`
 	ReviewCount   int32   `json:"review_count"`
 }

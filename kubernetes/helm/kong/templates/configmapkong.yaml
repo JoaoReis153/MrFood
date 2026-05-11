@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-config
+data:
+  kong.yml: |-
+{{ .Files.Get "files/kong.yml" | indent 4 }}

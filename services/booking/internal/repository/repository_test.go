@@ -17,6 +17,7 @@ func TestCreateBooking(t *testing.T) {
 
 	baseBooking := &models.Booking{
 		UserID:       1,
+		UserEmail:    "test@test.com",
 		RestaurantID: 10,
 		TimeStart:    time.Now(),
 		TimeEnd:      time.Now().Add(time.Hour),
@@ -34,6 +35,7 @@ func TestCreateBooking(t *testing.T) {
 
 		booking := &models.Booking{
 			UserID:       1,
+			UserEmail:    "test@test.com",
 			RestaurantID: 1,
 			TimeStart:    time.Now(),
 			TimeEnd:      time.Now().Add(time.Hour),
@@ -133,7 +135,7 @@ func TestCreateBooking(t *testing.T) {
 			WillReturnError(pgx.ErrNoRows)
 
 		mock.ExpectQuery(`INSERT INTO booking`).
-			WithArgs(booking.UserID, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).
+			WithArgs(booking.UserID, booking.UserEmail, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(42)))
 
 		mock.ExpectCommit()

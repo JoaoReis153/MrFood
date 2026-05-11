@@ -1,0 +1,35 @@
+info:
+  name: Login (fixture)
+  type: http
+  seq: 1
+  tags:
+    - Search
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "mrfood.api@gmail.com",
+        "password": "StrongPassword123"
+      }
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("login returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          bru.setEnvVar("token", res.body.access_token);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

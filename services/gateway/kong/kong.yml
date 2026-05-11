@@ -1,5 +1,12 @@
 _format_version: "3.0"
 
+plugins:
+  - name: opentelemetry
+    config:
+      endpoint: http://otel-collector:4318/v1/traces
+      sampling_rate: 1.0
+      resource_attributes:
+        service.name: kong-gateway
 services:
 - name: auth
   host: auth
@@ -13,6 +20,7 @@ services:
     - https
     paths:
     - /auth
+    strip_path: true
 
   plugins:
   - name: grpc-gateway
@@ -103,9 +111,54 @@ services:
       claims_to_verify:
       - exp
 
+- name: payment
+  host: payment
+  port: 50057
+  protocol: grpc
+  routes:
+  - name: payment
+    protocols:
+    - http
+    - https
+    paths:
+    - /payment
+    
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/payment.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+  
+- name: search
+  host: search
+  port: 50056
+  protocol: grpc
+  routes:
+  - name: search
+    protocols:
+    - http
+    - https
+    paths:
+    - /search
+
+  plugins:
+  - name: grpc-gateway
+    config:
+      proto: /etc/kong/proto/search.proto
+  - name: jwt
+    config:
+      claims_to_verify:
+      - exp
+
 consumers:
-- username: my-client
+- username: mrfood-auth
   jwt_secrets:
-  - key: generate-key
-    secret: /m6LosSwzwgW9f2cGZBB0q257O9R4wPUepn4xp9vNAQ=
+  # key must match the `iss` claim minted by the auth service (jwtIssuer const).
+  # algorithm is HS256 — Kong verifies with APP_JWT_ACCESS_TOKEN_SECRET.
+  # This is the dev/CI secret; replace for production.
+  - key: "mrfood-auth"
     algorithm: HS256
+    secret: "CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE="

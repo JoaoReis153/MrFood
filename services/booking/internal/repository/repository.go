@@ -92,13 +92,13 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 
 	// create booking
 	query = `
-		INSERT INTO booking (user_id, restaurant_id, time_start, time_end, people_count)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO booking (user_id, user_email, restaurant_id, time_start, time_end, people_count)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
 	`
 	var booking_id int32
 
-	err = tx.QueryRow(ctx, query, booking.UserID, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).Scan(&booking_id)
+	err = tx.QueryRow(ctx, query, booking.UserID, booking.UserEmail, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).Scan(&booking_id)
 
 	if err != nil {
 		return 0, err

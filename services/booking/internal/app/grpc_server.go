@@ -7,7 +7,7 @@ import (
 	"log"
 	"log/slog"
 	"net"
-	"strconv"
+	"hash/fnv"
 	"strings"
 
 	"MrFood/services/booking/config"
@@ -16,16 +16,18 @@ import (
 	models "MrFood/services/booking/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
 
 type bookingService interface {
-	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
+	CreateBooking(ctx context.Context, booking *models.Booking) (int32, int32, error)
 	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
@@ -38,6 +40,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
+	Email        string `json:"email"`
 	TokenVersion int    `json:"token_version"`
 	TokenType    string `json:"token_type"` // access or refresh
 }
@@ -55,7 +58,10 @@ func RunServer(service bookingService) {
 	pb.RegisterBookingServiceServer(s, &server{
 		bookingService: service,
 	})
-	reflection.Register(s)
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, healthServer)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Info("health check registered for service", "service", "booking")
 
 	fmt.Println("Server running on", addr)
 	if err := s.Serve(lis); err != nil {
@@ -63,16 +69,30 @@ func RunServer(service bookingService) {
 	}
 }
 
-func NewClient(address string) (pb.RestaurantToBookingServiceClient, *grpc.ClientConn, error) {
+func NewRestaurantClient(address string) (pb.RestaurantToBookingServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return pb.NewRestaurantToBookingServiceClient(conn), conn, nil
+}
+
+func NewPaymentClient(address string) (pb.PaymentCommandServiceClient, *grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return pb.NewPaymentCommandServiceClient(conn), conn, nil
 }
 
 func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest) (*pb.CreateBookingResponse, error) {
@@ -83,22 +103,19 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt32(claims.UserID)
-
-	if err != nil {
-		return nil, err
-	}
+	user_id := uuidToInt64(claims.UserID)
 
 	slog.Info("received booking CREATION request", "user_id", user_id, "restaurant_id", req.RestaurantId, "time_start", req.TimeStart, "people_count", req.Quantity)
 
 	booking := &models.Booking{
 		UserID:       user_id,
+		UserEmail:    claims.Email,
 		RestaurantID: req.RestaurantId,
 		TimeStart:    req.TimeStart.AsTime(),
 		PeopleCount:  req.Quantity,
 	}
 
-	booking_id, err := s.bookingService.CreateBooking(ctx, booking)
+	booking_id, receipt_id, err := s.bookingService.CreateBooking(ctx, booking)
 
 	if err != nil {
 		return nil, mapServiceError(err)
@@ -108,6 +125,9 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 
 	return &pb.CreateBookingResponse{
 		BookingId: booking_id,
+		Payment: &pb.PaymentResponse{
+			ReceiptId: receipt_id,
+		},
 	}, nil
 }
 
@@ -118,11 +138,7 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 		return nil, err
 	}
 
-	user_id, err := parseInt32(claims.UserID)
-
-	if err != nil {
-		return nil, err
-	}
+	user_id := uuidToInt64(claims.UserID)
 
 	delete_request := &models.DeleteBooking{
 		BookingID: req.BookingId,
@@ -163,9 +179,15 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
+	if claims.UserID == "" {
+		slog.Error("missing user_id claim in token")
+		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
+	}
+
 	slog.Info("USER INFO",
 		"user_id", claims.UserID,
 		"username", claims.Username,
+		"user_email", claims.Email,
 		"token_type", claims.TokenType,
 		"exp", claims.ExpiresAt,
 	)
@@ -173,15 +195,12 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	return claims, nil
 }
 
-func parseInt32(value string) (int32, error) {
-	v, err := strconv.ParseInt(value, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-	if v < 1 {
-		return 0, errors.New("out of int32 range")
-	}
-	return int32(v), nil
+// uuidToInt64 hashes a UUID to a positive int64 via FNV-64a.
+// Matches the implementation in the auth service.
+func uuidToInt64(id string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(id))
+	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
 func mapServiceError(err error) error {

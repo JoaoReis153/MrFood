@@ -1,0 +1,87 @@
+info:
+  name: Refresh token
+  type: http
+  seq: 3
+  tags:
+    - Users
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/refresh"
+  body:
+    type: json
+    data: |-
+      {
+        "refresh_token": "{{refreshToken}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("refresh returns 200", () => {
+          expect(res.status).to.equal(200);
+        });
+
+        if (res.status === 200) {
+          // Refresh response uses "token" (not "access_token") per proto RefreshResponse
+          test("response has new token", () => {
+            expect(res.body).to.have.property("token");
+            expect(res.body.token).to.be.a("string").and.not.be.empty;
+          });
+
+          test("response has new refresh_token", () => {
+            expect(res.body).to.have.property("refresh_token");
+            expect(res.body.refresh_token).to.be.a("string").and.not.be.empty;
+          });
+
+          bru.setEnvVar("token", res.body.token);
+          bru.setEnvVar("refreshToken", res.body.refresh_token);
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: 200 Response
+    description: Token refreshed successfully
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "token": "",
+            "refresh_token": ""
+          }
+  - name: 401 Response
+    description: Unauthorized (invalid or missing refresh token)
+    request:
+      url: "{{baseUrl}}/auth/refresh"
+      method: POST
+    response:
+      status: 401
+      statusText: Unauthorized
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "code": 0,
+            "message": "Error message"
+          }

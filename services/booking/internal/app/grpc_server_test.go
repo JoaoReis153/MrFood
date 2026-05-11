@@ -16,11 +16,11 @@ import (
 )
 
 type mockService struct {
-	createFn func(ctx context.Context, booking *models.Booking) (int32, error)
+	createFn func(ctx context.Context, booking *models.Booking) (int32, int32, error)
 	deleteFn func(ctx context.Context, delete_request *models.DeleteBooking) error
 }
 
-func (m *mockService) CreateBooking(ctx context.Context, b *models.Booking) (int32, error) {
+func (m *mockService) CreateBooking(ctx context.Context, b *models.Booking) (int32, int32, error) {
 	return m.createFn(ctx, b)
 }
 
@@ -30,9 +30,7 @@ func (m *mockService) DeleteBooking(ctx context.Context, b *models.DeleteBooking
 
 // helper to create context with JWT
 func ctxWithToken(userID string) context.Context {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-	})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{UserID: userID})
 	str, _ := token.SignedString([]byte("secret"))
 
 	md := metadata.New(map[string]string{
@@ -73,7 +71,7 @@ func TestCreateBooking(t *testing.T) {
 	})
 
 	t.Run("invalid user_id parse", func(t *testing.T) {
-		ctx := ctxWithToken("invalid")
+		ctx := ctxWithToken("")
 
 		s := &server{}
 
@@ -88,8 +86,8 @@ func TestCreateBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				createFn: func(ctx context.Context, b *models.Booking) (int32, error) {
-					return 0, service.ErrInvalidBooking
+				createFn: func(ctx context.Context, b *models.Booking) (int32, int32, error) {
+					return 0, 0, service.ErrInvalidBooking
 				},
 			},
 		}
@@ -105,8 +103,8 @@ func TestCreateBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				createFn: func(ctx context.Context, b *models.Booking) (int32, error) {
-					return 0, service.ErrBookingAlreadyExists
+				createFn: func(ctx context.Context, b *models.Booking) (int32, int32, error) {
+					return 0, 0, service.ErrBookingAlreadyExists
 				},
 			},
 		}
@@ -122,11 +120,11 @@ func TestCreateBooking(t *testing.T) {
 
 		s := &server{
 			bookingService: &mockService{
-				createFn: func(ctx context.Context, b *models.Booking) (int32, error) {
-					if b.UserID != 1 {
-						t.Fatalf("expected userID 1, got %d", b.UserID)
+				createFn: func(ctx context.Context, b *models.Booking) (int32, int32, error) {
+					if b.UserID != uuidToInt64("1") {
+						t.Fatalf("expected userID %d, got %d", uuidToInt64("1"), b.UserID)
 					}
-					return 42, nil
+					return 42, 1, nil
 				},
 			},
 		}
@@ -157,7 +155,7 @@ func TestDeleteBooking(t *testing.T) {
 	})
 
 	t.Run("invalid user_id", func(t *testing.T) {
-		ctx := ctxWithToken("bad")
+		ctx := ctxWithToken("")
 
 		s := &server{}
 
@@ -207,8 +205,8 @@ func TestDeleteBooking(t *testing.T) {
 		s := &server{
 			bookingService: &mockService{
 				deleteFn: func(ctx context.Context, b *models.DeleteBooking) error {
-					if b.UserID != 1 {
-						t.Fatalf("expected userID 1, got %d", b.UserID)
+					if b.UserID != uuidToInt64("1") {
+						t.Fatalf("expected userID %d, got %d", uuidToInt64("1"), b.UserID)
 					}
 					return nil
 				},

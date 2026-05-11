@@ -20,12 +20,12 @@ import (
 )
 
 type mockRestaurantService struct {
-	getByIDFn         func(context.Context, int32) (*models.Restaurant, error)
-	getIDFn           func(context.Context, int32) (int32, error)
-	createFn          func(context.Context, *models.Restaurant) (int32, error)
-	updateFn          func(context.Context, *models.Restaurant, int32) (*models.Restaurant, error)
-	compareFn         func(context.Context, int32, int32) (*models.Restaurant, *models.Restaurant, error)
-	getWorkingHoursFn func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error)
+	getByIDFn         func(context.Context, int64) (*models.Restaurant, error)
+	getIDFn           func(context.Context, int64) (int64, error)
+	createFn          func(context.Context, *models.Restaurant) (int64, error)
+	updateFn          func(context.Context, *models.Restaurant, int64) (*models.Restaurant, error)
+	compareFn         func(context.Context, int64, int64) (*models.Restaurant, *models.Restaurant, error)
+	getWorkingHoursFn func(context.Context, int64, time.Time) (*models.WorkingHoursResponse, error)
 }
 
 type fakeReviewRPCClient struct {
@@ -41,10 +41,9 @@ func (f *fakeReviewRPCClient) GetRestaurantStats(ctx context.Context, in *pb.Get
 
 func authContext(t *testing.T, userID, username string) context.Context {
 	t.Helper()
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    userID,
-		"username":   username,
-		"token_type": "access",
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &Claims{
+		UserID:   userID,
+		Username: username,
 	}).SignedString([]byte("secret"))
 	if err != nil {
 		t.Fatalf("failed creating token: %v", err)
@@ -54,42 +53,42 @@ func authContext(t *testing.T, userID, username string) context.Context {
 	return metadata.NewIncomingContext(context.Background(), md)
 }
 
-func (m *mockRestaurantService) GetRestaurantByID(ctx context.Context, id int32) (*models.Restaurant, error) {
+func (m *mockRestaurantService) GetRestaurantByID(ctx context.Context, id int64) (*models.Restaurant, error) {
 	if m.getByIDFn == nil {
 		return nil, errors.New("not configured")
 	}
 	return m.getByIDFn(ctx, id)
 }
 
-func (m *mockRestaurantService) GetRestaurantID(ctx context.Context, id int32) (int32, error) {
+func (m *mockRestaurantService) GetRestaurantID(ctx context.Context, id int64) (int64, error) {
 	if m.getIDFn == nil {
 		return 0, errors.New("not configured")
 	}
 	return m.getIDFn(ctx, id)
 }
 
-func (m *mockRestaurantService) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int32, error) {
+func (m *mockRestaurantService) CreateRestaurant(ctx context.Context, restaurant *models.Restaurant) (int64, error) {
 	if m.createFn == nil {
 		return 0, errors.New("not configured")
 	}
 	return m.createFn(ctx, restaurant)
 }
 
-func (m *mockRestaurantService) UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error) {
+func (m *mockRestaurantService) UpdateRestaurant(ctx context.Context, changes *models.Restaurant, requesterOwnerID int64) (*models.Restaurant, error) {
 	if m.updateFn == nil {
 		return nil, errors.New("not configured")
 	}
 	return m.updateFn(ctx, changes, requesterOwnerID)
 }
 
-func (m *mockRestaurantService) CompareRestaurants(ctx context.Context, id1, id2 int32) (*models.Restaurant, *models.Restaurant, error) {
+func (m *mockRestaurantService) CompareRestaurants(ctx context.Context, id1, id2 int64) (*models.Restaurant, *models.Restaurant, error) {
 	if m.compareFn == nil {
 		return nil, nil, errors.New("not configured")
 	}
 	return m.compareFn(ctx, id1, id2)
 }
 
-func (m *mockRestaurantService) GetWorkingHours(ctx context.Context, restaurantID int32, timeStart time.Time) (*models.WorkingHoursResponse, error) {
+func (m *mockRestaurantService) GetWorkingHours(ctx context.Context, restaurantID int64, timeStart time.Time) (*models.WorkingHoursResponse, error) {
 	if m.getWorkingHoursFn == nil {
 		return nil, errors.New("not configured")
 	}
@@ -98,7 +97,7 @@ func (m *mockRestaurantService) GetWorkingHours(ctx context.Context, restaurantI
 
 func TestGetRestaurantDetailsSuccess(t *testing.T) {
 	srv := &server{restaurantService: &mockRestaurantService{
-		getByIDFn: func(context.Context, int32) (*models.Restaurant, error) {
+		getByIDFn: func(context.Context, int64) (*models.Restaurant, error) {
 			return &models.Restaurant{ID: 3, Name: "Nori"}, nil
 		},
 	}}
@@ -123,7 +122,7 @@ func TestCreateRestaurantMissingMetadata(t *testing.T) {
 
 func TestGetRestaurantIdSuccess(t *testing.T) {
 	srv := &server{restaurantService: &mockRestaurantService{
-		getIDFn: func(context.Context, int32) (int32, error) {
+		getIDFn: func(context.Context, int64) (int64, error) {
 			return 3, nil
 		},
 	}}
@@ -139,7 +138,7 @@ func TestGetRestaurantIdSuccess(t *testing.T) {
 
 func TestGetRestaurantIdMapsNotFound(t *testing.T) {
 	srv := &server{restaurantService: &mockRestaurantService{
-		getIDFn: func(context.Context, int32) (int32, error) {
+		getIDFn: func(context.Context, int64) (int64, error) {
 			return 0, service.ErrNotFound
 		},
 	}}
@@ -155,7 +154,7 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 	end := start.Add(8 * time.Hour)
 
 	srv := &server{restaurantService: &mockRestaurantService{
-		getWorkingHoursFn: func(context.Context, int32, time.Time) (*models.WorkingHoursResponse, error) {
+		getWorkingHoursFn: func(context.Context, int64, time.Time) (*models.WorkingHoursResponse, error) {
 			return &models.WorkingHoursResponse{TimeStart: start, TimeEnd: end, MaxSlots: 40}, nil
 		},
 	}}
@@ -182,7 +181,7 @@ func TestGetWorkingHoursSuccess(t *testing.T) {
 func TestGetWorkingHoursWithoutTimestampUsesZeroTime(t *testing.T) {
 	called := false
 	srv := &server{restaurantService: &mockRestaurantService{
-		getWorkingHoursFn: func(_ context.Context, _ int32, ts time.Time) (*models.WorkingHoursResponse, error) {
+		getWorkingHoursFn: func(_ context.Context, _ int64, ts time.Time) (*models.WorkingHoursResponse, error) {
 			called = true
 			if !ts.IsZero() {
 				t.Fatalf("expected zero timestamp, got %s", ts)
@@ -253,21 +252,26 @@ func TestModelToPBMapsMediaAndWorkingHours(t *testing.T) {
 	model.AverageRating = nil
 	model.ReviewCount = nil
 	pbModel = modelToPB(model)
-	if pbModel.AverageRating != nil || pbModel.ReviewCount != nil {
-		t.Fatalf("expected nil optional stats, got rating=%v count=%v", pbModel.AverageRating, pbModel.ReviewCount)
+	if pbModel.GetAverageRating() != 0 || pbModel.GetReviewCount() != 0 {
+		t.Fatalf("expected zero-value stats, got rating=%v count=%v", pbModel.GetAverageRating(), pbModel.GetReviewCount())
 	}
 }
 
-func TestParseInt32(t *testing.T) {
-	if _, err := parseInt32("0"); err == nil {
-		t.Fatal("expected validation error")
+func TestUUIDToInt64(t *testing.T) {
+	uuid := "4f774104-1234-5678-abcd-ef0123456789"
+	id := uuidToInt64(uuid)
+	if id <= 0 {
+		t.Fatalf("expected positive int64, got %d", id)
 	}
-	value, err := parseInt32("42")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	// Must be deterministic
+	if uuidToInt64(uuid) != id {
+		t.Fatal("uuidToInt64 is not deterministic")
 	}
-	if value != 42 {
-		t.Fatalf("expected 42, got %d", value)
+	// High bit cleared → always non-negative
+	for _, s := range []string{"", "abc", uuid} {
+		if v := uuidToInt64(s); v < 0 {
+			t.Fatalf("expected non-negative for %q, got %d", s, v)
+		}
 	}
 }
 
@@ -281,7 +285,7 @@ func TestExtractUserFromContext(t *testing.T) {
 		t.Fatalf("expected unauthenticated for bad token, got %v", err)
 	}
 
-	ctx = authContext(t, "0", "mario")
+	ctx = authContext(t, "", "mario")
 	if _, err := ExtractUserFromContext(ctx); status.Code(err) != codes.Unauthenticated {
 		t.Fatalf("expected unauthenticated for invalid user id, got %v", err)
 	}
@@ -291,7 +295,7 @@ func TestExtractUserFromContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if user.UserID != 7 || user.Username != "mario" {
+	if user.UserID != uuidToInt64("7") || user.Username != "mario" {
 		t.Fatalf("unexpected user info: %+v", user)
 	}
 }
@@ -300,9 +304,9 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 	createCalled := false
 	updateCalled := false
 	srv := &server{restaurantService: &mockRestaurantService{
-		createFn: func(_ context.Context, r *models.Restaurant) (int32, error) {
+		createFn: func(_ context.Context, r *models.Restaurant) (int64, error) {
 			createCalled = true
-			if r.OwnerID != 5 || r.OwnerName != "owner" {
+			if r.OwnerID != uuidToInt64("5") || r.OwnerName != "owner" {
 				t.Fatalf("unexpected owner in create: %+v", r)
 			}
 			if r.OpeningTime != "10:00:00" || r.ClosingTime != "18:00:00" {
@@ -310,9 +314,9 @@ func TestCreateAndUpdateRestaurantSuccess(t *testing.T) {
 			}
 			return 99, nil
 		},
-		updateFn: func(_ context.Context, r *models.Restaurant, requesterOwnerID int32) (*models.Restaurant, error) {
+		updateFn: func(_ context.Context, r *models.Restaurant, requesterOwnerID int64) (*models.Restaurant, error) {
 			updateCalled = true
-			if requesterOwnerID != 5 || r.OpeningTime != "11:00:00" || r.ClosingTime != "20:00:00" {
+			if requesterOwnerID != uuidToInt64("5") || r.OpeningTime != "11:00:00" || r.ClosingTime != "20:00:00" {
 				t.Fatalf("unexpected update request: %+v owner=%d", r, requesterOwnerID)
 			}
 			return &models.Restaurant{ID: r.ID, Name: r.Name}, nil
@@ -418,7 +422,7 @@ func TestCreateRestaurantValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			createCalled := false
 			srv := &server{restaurantService: &mockRestaurantService{
-				createFn: func(_ context.Context, _ *models.Restaurant) (int32, error) {
+				createFn: func(_ context.Context, _ *models.Restaurant) (int64, error) {
 					createCalled = true
 					return 1, nil
 				},
@@ -437,7 +441,7 @@ func TestCreateRestaurantValidation(t *testing.T) {
 
 func TestCompareRestaurantDetailsAndMapInternal(t *testing.T) {
 	srv := &server{restaurantService: &mockRestaurantService{
-		compareFn: func(context.Context, int32, int32) (*models.Restaurant, *models.Restaurant, error) {
+		compareFn: func(context.Context, int64, int64) (*models.Restaurant, *models.Restaurant, error) {
 			return &models.Restaurant{ID: 1}, &models.Restaurant{ID: 2}, nil
 		},
 	}}
