@@ -1,5 +1,5 @@
 name: auth
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/auth:5c197bc
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/auth:ff22f5b
 port: 50051
 
 service:
@@ -20,4 +20,4 @@ env:
     AUTH_TO_NOTIFICATION_GRPC_ADDR: "notification:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-auth-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-pg

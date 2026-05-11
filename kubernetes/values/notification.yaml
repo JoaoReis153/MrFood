@@ -1,5 +1,5 @@
 name: notification
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/notification:5c197bc
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/notification:ff22f5b
 port: 50058
 
 service:
