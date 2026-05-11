@@ -223,11 +223,9 @@ curl http://<EXTERNAL-IP>/restaurants
 
 ### Grafana
 
-Grafana is ClusterIP only. Access via port-forward:
-
 ```bash
-kubectl port-forward -n mrfood svc/grafana 3000:3000
-# open http://localhost:3000  (admin / admin)
+kubectl get svc grafana -n mrfood
+# EXTERNAL-IP appears after ~2 min — open http://<EXTERNAL-IP>  (admin / admin)
 ```
 
 Dashboards provisioned automatically: **MrFood Overview** and **Traces**.
