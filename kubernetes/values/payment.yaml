@@ -1,13 +1,25 @@
 name: payment
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:ff22f5b
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.4
 port: 50057
+
+resources:
+  requests:
+    cpu: "10m"
+    memory: "32Mi"
+  limits:
+    cpu: "50m"
+    memory: "64Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
 
 service:
   type: ClusterIP
 
 env:
   secrets:
-    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_pass
+    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_secret
   config:
     PAYMENT_SERVER_PORT: 50057
     POSTGRES_PORT: 5432

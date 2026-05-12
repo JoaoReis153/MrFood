@@ -2,3 +2,25 @@ namespace: mrfood
 image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
 storageSize: 10Gi
 javaOpts: "-Xms256m -Xmx256m"
+indexName: restaurants
+indexMappings:
+  properties:
+    id:
+      type: integer
+    name:
+      type: text
+      fields:
+        keyword:
+          type: keyword
+    latitude:
+      type: double
+    longitude:
+      type: double
+    location:
+      type: geo_point
+    address:
+      type: text
+    categories:
+      type: keyword
+    media_url:
+      type: keyword
