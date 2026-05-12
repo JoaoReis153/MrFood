@@ -87,7 +87,7 @@ main() {
     if [[ -f "$values_file" ]]; then
       echo "[$service_name] update $values_file image -> $image"
       if [[ "$dry_run" != "true" ]]; then
-        sed -i '' "s|^image:.*$|image: ${image}|" "$values_file"
+        perl -pi -e "s|^image:.*$|image: ${image}|" "$values_file"
       fi
     else
       echo "[$service_name] warning: values file not found at $values_file"
