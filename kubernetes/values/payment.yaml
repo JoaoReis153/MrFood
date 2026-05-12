@@ -7,7 +7,7 @@ service:
 
 env:
   secrets:
-    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_pass
+    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_secret
   config:
     PAYMENT_SERVER_PORT: 50057
     POSTGRES_PORT: 5432

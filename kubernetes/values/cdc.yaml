@@ -2,7 +2,7 @@ image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:ff22f5b
 
 env:
   secrets:
-    RESTAURANT_POSTGRES_PASSWORD: mrfood_restaurant_pass
+    RESTAURANT_POSTGRES_PASSWORD: mrfood_restaurant_secret
   config:
     CONNECT_BOOTSTRAP_SERVERS: kafka:9092
     CONNECT_REST_PORT: "8083"
