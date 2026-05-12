@@ -17,6 +17,16 @@ spec:
         - name: {{ .Values.name }}
           image: {{ .Values.image }}
 
+          {{- with .Values.resources }}
+          resources:
+            requests:
+              cpu: {{ .requests.cpu | quote }}
+              memory: {{ .requests.memory | quote }}
+            limits:
+              cpu: {{ .limits.cpu | quote }}
+              memory: {{ .limits.memory | quote }}
+          {{- end }}
+
           ports:
           - containerPort: 8000   # proxy
           - containerPort: 8001   # admin

@@ -1,3 +1,11 @@
 name: cdc
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:v1.0.0
 port: 50051
+
+resources:
+  requests:
+	cpu: "100m"
+	memory: "1Gi"
+  limits:
+	cpu: "200m"
+	memory: "1536Mi"

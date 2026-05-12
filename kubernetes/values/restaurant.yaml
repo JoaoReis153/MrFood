@@ -2,6 +2,14 @@ name: restaurant
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/restaurant:v1.0.1
 port: 50052
 
+resources:
+  requests:
+    cpu: "250m"
+    memory: "64Mi"
+  limits:
+    cpu: "500m"
+    memory: "128Mi"
+
 service:
   type: ClusterIP
 

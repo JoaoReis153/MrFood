@@ -2,6 +2,14 @@ name: sponsor
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/sponsor:v1.0.1
 port: 50054
 
+resources:
+  requests:
+    cpu: "200m"
+    memory: "64Mi"
+  limits:
+    cpu: "400m"
+    memory: "128Mi"
+
 service:
   type: ClusterIP
 
