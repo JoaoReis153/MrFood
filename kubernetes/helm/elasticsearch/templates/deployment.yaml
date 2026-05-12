@@ -20,6 +20,67 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /usr/share/elasticsearch/data
+        - name: create-index
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              INDEX_NAME="{{ .Values.indexName }}"
+              ES_URL="http://elasticsearch:9200"
+              MAX_RETRIES=30
+              RETRY_COUNT=0
+
+              echo "Waiting for Elasticsearch to be ready at $ES_URL..."
+              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+                if curl -sf "$ES_URL/_cluster/health" > /dev/null 2>&1; then
+                  echo "Elasticsearch is ready!"
+                  break
+                fi
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "Attempt $RETRY_COUNT/$MAX_RETRIES: Waiting for Elasticsearch..."
+                sleep 2
+              done
+
+              if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+                echo "ERROR: Elasticsearch did not become ready after $MAX_RETRIES attempts"
+                exit 1
+              fi
+
+              echo "Checking if index $INDEX_NAME exists..."
+              if curl -sf "$ES_URL/$INDEX_NAME" > /dev/null 2>&1; then
+                echo "Index $INDEX_NAME already exists"
+                exit 0
+              fi
+
+              echo "Creating index $INDEX_NAME with mappings..."
+              curl -sf -X PUT "$ES_URL/$INDEX_NAME" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "mappings": {
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "name": {
+                        "type": "text",
+                        "fields": { "keyword": { "type": "keyword" } }
+                      },
+                      "latitude": { "type": "double" },
+                      "longitude": { "type": "double" },
+                      "location": { "type": "geo_point" },
+                      "address": { "type": "text" },
+                      "categories": { "type": "keyword" },
+                      "media_url": { "type": "keyword" }
+                    }
+                  }
+                }'
+
+              if curl -sf "$ES_URL/$INDEX_NAME" > /dev/null 2>&1; then
+                echo "Successfully created index $INDEX_NAME"
+              else
+                echo "ERROR: Failed to verify index creation"
+                exit 1
+              fi
       containers:
         - name: elasticsearch
           image: {{ .Values.image }}
