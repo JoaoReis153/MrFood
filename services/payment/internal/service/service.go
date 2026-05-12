@@ -1,6 +1,7 @@
 package service
 
 import (
+	"MrFood/services/payment/config"
 	"MrFood/services/payment/internal/api/grpc/pb"
 	"MrFood/services/payment/internal/repository"
 	models "MrFood/services/payment/pkg"
@@ -13,6 +14,9 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/paymentintent"
 )
 
 var (
@@ -35,7 +39,8 @@ type Service struct {
 	client pb.PaymentToNotificationServiceClient
 }
 
-func New(repo *repository.Repository, client pb.PaymentToNotificationServiceClient) *Service {
+func New(repo *repository.Repository, client pb.PaymentToNotificationServiceClient, cfg *config.Config) *Service {
+	stripe.Key = cfg.Stripe.SecretKey
 	return &Service{repo: repo, client: client}
 }
 
@@ -48,7 +53,25 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 		return 0, ErrNullIdempotencyKey
 	}
 
-	receipt_request.PaymentStatus = "success"
+	params := &stripe.PaymentIntentParams{
+		Amount:        stripe.Int64(receipt_request.Amount), // cents
+		Currency:      stripe.String("usd"),
+		Description:   stripe.String(receipt_request.PaymentDescription),
+		PaymentMethod: stripe.String("pm_card_visa"),
+		Confirm:       stripe.Bool(true),
+	}
+
+	params.SetIdempotencyKey(receipt_request.IdempotencyKey)
+
+	pi, err := paymentintent.New(params)
+	if err != nil {
+		slog.Error("failed to create stripe payment intent", "error", err)
+		return 0, err
+	}
+
+	receipt_request.PaymentStatus = string(pi.Status)
+
+	slog.Info(receipt_request.PaymentStatus)
 	receipt_request.CreatedAt = time.Now().UTC()
 
 	hash, err := generateRequestHash(receipt_request)
@@ -99,7 +122,7 @@ func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) 
 
 	for _, r := range receipts {
 		pbReceipts = append(pbReceipts, &pb.Receipt{
-			Amount:               float64(r.Amount),
+			Amount:               r.Amount,
 			PaymentDescription:   r.PaymentDescription,
 			CurrentPaymentStatus: r.PaymentStatus,
 			PaymentType:          r.PaymentType,
@@ -121,7 +144,7 @@ func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) 
 func generateRequestHash(r *models.Receipt) (string, error) {
 	input := struct {
 		UserID      int64
-		Amount      float32
+		Amount      int64
 		Description string
 		PaymentType string
 		TimeSlot    string

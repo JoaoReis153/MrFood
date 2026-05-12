@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS receipts (
     request_hash TEXT NOT NULL,
     user_id BIGINT NOT NULL,
     user_email VARCHAR(100) NOT NULL,
-    amount NUMERIC(12,2) NOT NULL CHECK (amount >= 0),
+    amount INT NOT NULL CHECK (amount >= 0),
     payment_description VARCHAR(255),
     current_payment_status payment_status NOT NULL,
     payment_type VARCHAR(16) NOT NULL,

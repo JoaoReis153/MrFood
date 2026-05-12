@@ -150,7 +150,7 @@ func TestSendReceiptsSendFailAndSuccess(t *testing.T) {
 	req := &pb.SendReceiptsRequest{
 		UserEmail: "a@b.com",
 		Receipts: []*pb.Receipt{{
-			Amount:               10.5,
+			Amount:               1050,
 			PaymentDescription:   "order-1",
 			CurrentPaymentStatus: "paid",
 			PaymentType:          "card",
@@ -209,7 +209,7 @@ func TestNewInitializesSMTPMailer(t *testing.T) {
 
 func TestBuildReceiptsBody(t *testing.T) {
 	body := buildReceiptsBody([]*pb.Receipt{{
-		Amount:               12.34,
+		Amount:               1234,
 		PaymentDescription:   "sushi",
 		CurrentPaymentStatus: "paid",
 		PaymentType:          "card",

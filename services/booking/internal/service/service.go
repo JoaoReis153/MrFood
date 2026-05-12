@@ -74,13 +74,13 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 		return 0, 0, err
 	}
 
-	amount := float32(booking.PeopleCount) * 10
+	amount := int64(booking.PeopleCount) * 10
 
 	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
 		UserID:         booking.UserID,
 		UserEmail:      booking.UserEmail,
-		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, amount, booking_id, "B"),
-		Amount:         float32(amount),
+		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, (float32)(amount), booking_id, "B"),
+		Amount:         amount,
 		PaymentDescription: fmt.Sprintf("BOOKING %d FOR USER %d IN RESTAURANT %d FROM %s TO %s",
 			booking_id, booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
 		PaymentType: "B",

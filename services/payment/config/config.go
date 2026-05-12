@@ -40,11 +40,16 @@ type Config struct {
 	Server       ServerConfig       `yaml:"server"`
 	Log          LogConfig          `yaml:"log"`
 	DB           DBConfig           `yaml:"db"`
+	Stripe       StripeConfig       `yaml:"stripe"`
 	Notification NotificationConfig `yaml:"notification"`
 }
 
 type NotificationConfig struct {
 	GRPCAddr string `yaml:"grpc_addr"`
+}
+
+type StripeConfig struct {
+	SecretKey string `yaml:"stripe_key"`
 }
 
 var (
@@ -72,6 +77,9 @@ func Load(_ context.Context) (*Config, error) {
 			MaxConns:          20,
 			MaxConnLifetime:   15 * time.Minute,
 			HealthCheckPeriod: 1 * time.Minute,
+		},
+		Stripe: StripeConfig{
+			SecretKey: "key",
 		},
 		Notification: NotificationConfig{
 			GRPCAddr: "notification:50058",
@@ -109,6 +117,8 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.HealthCheckPeriod = getEnvDuration("POSTGRES_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+
+	cfg.Stripe.SecretKey = getEnvAny(cfg.Stripe.SecretKey, "STRIPE_SECRET_KEY")
 
 	cfg.Notification.GRPCAddr = getEnvAny(cfg.Notification.GRPCAddr, "NOTIFICATION_GRPC_ADDR")
 }
