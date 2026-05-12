@@ -2,6 +2,18 @@ name: notification
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/notification:ff22f5b
 port: 50058
 
+resources:
+  requests:
+    cpu: "10m"
+    memory: "16Mi"
+  limits:
+    cpu: "50m"
+    memory: "64Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 2
+
 service:
   type: ClusterIP
 

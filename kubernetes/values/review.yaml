@@ -2,6 +2,18 @@ name: review
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/review:ff22f5b
 port: 50055
 
+resources:
+  requests:
+    cpu: "10m"
+    memory: "32Mi"
+  limits:
+    cpu: "50m"
+    memory: "64Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+
 service:
   type: ClusterIP
 

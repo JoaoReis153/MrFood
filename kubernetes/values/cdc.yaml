@@ -1,5 +1,17 @@
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:ff22f5b
 
+resources:
+  requests:
+    cpu: "100m"
+    memory: "1Gi"
+  limits:
+    cpu: "200m"
+    memory: "1536Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 2
+
 env:
   secrets:
     RESTAURANT_POSTGRES_PASSWORD: mrfood_restaurant_secret

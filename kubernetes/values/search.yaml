@@ -2,6 +2,18 @@ name: search
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/search:ff22f5b
 port: 50056
 
+resources:
+  requests:
+    cpu: "25m"
+    memory: "128Mi"
+  limits:
+    cpu: "100m"
+    memory: "256Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 2
+
 service:
   type: ClusterIP
 
