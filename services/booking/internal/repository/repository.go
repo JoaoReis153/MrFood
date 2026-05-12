@@ -86,7 +86,7 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 			return 0, err
 		}
 	} else if booking.PeopleCount > max_slots-current_slots {
-		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "available_slots", max_slots-current_slots)
+		slog.ErrorContext(ctx, "Not enough slots", "people_count", booking.PeopleCount, "available_slots", max_slots-current_slots)
 		return 0, ErrInvalidBooking
 	}
 

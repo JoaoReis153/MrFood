@@ -1,0 +1,13 @@
+namespace: mrfood
+
+image: otel/opentelemetry-collector-contrib:0.103.0
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+gcpProject: mrfood-490623

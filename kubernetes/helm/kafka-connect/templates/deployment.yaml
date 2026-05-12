@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdc
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cdc
+  template:
+    metadata:
+      labels:
+        app: cdc
+    spec:
+      serviceAccountName: cdc
+      containers:
+        - name: cdc
+          image: {{ .Values.image }}
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: cdc-config
+            - secretRef:
+                name: cdc-secret
+          readinessProbe:
+            httpGet:
+              path: /connectors
+              port: 8083
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /connectors
+              port: 8083
+            initialDelaySeconds: 120
+            periodSeconds: 30
+        {{- if and .Values.cloudsql .Values.cloudsql.instance }}
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+          args:
+            - "--structured-logs"
+            - "--port=5432"
+            - "--private-ip"
+            - "{{ .Values.cloudsql.instance }}"
+        {{- end }}

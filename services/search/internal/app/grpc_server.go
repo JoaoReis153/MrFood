@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	"golang.org/x/sync/errgroup"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/health"
@@ -96,7 +97,9 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 	pb.RegisterSearchServiceServer(s, newServer(app.Service))
 
 	healthServer := health.NewServer()

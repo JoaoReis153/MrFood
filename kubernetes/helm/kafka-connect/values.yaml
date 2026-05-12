@@ -1,0 +1,5 @@
+namespace: mrfood
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:latest
+env:
+  secrets: {}
+  config: {}

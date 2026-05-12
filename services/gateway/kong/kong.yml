@@ -7,6 +7,7 @@ plugins:
       sampling_rate: 1.0
       resource_attributes:
         service.name: kong-gateway
+      header_type: w3c
 services:
 - name: auth
   host: auth
@@ -20,7 +21,6 @@ services:
     - https
     paths:
     - /auth
-    strip_path: true
 
   plugins:
   - name: grpc-gateway

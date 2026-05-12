@@ -78,12 +78,12 @@ func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt,
 		err = r.DB.QueryRow(ctx, existing, receipt.IdempotencyKey).
 			Scan(&existingID, &existingHash)
 		if err != nil {
-			slog.Error("error checking hash", "error", err)
+			slog.ErrorContext(ctx, "error checking hash", "error", err)
 			return 0, err
 		}
 
 		if existingHash != requestHash {
-			slog.Error("duplicate payment")
+			slog.ErrorContext(ctx, "duplicate payment")
 			return 0, ErrDuplicatePaymentRequest
 		}
 
@@ -154,7 +154,7 @@ func (r *Repository) GetReceiptsByUser(ctx context.Context, user_id int64) ([]*m
 	receiptsRows, err := r.DB.Query(ctx, query, user_id)
 
 	if err != nil {
-		slog.Error("error querying DB", "error", err)
+		slog.ErrorContext(ctx, "error querying DB", "error", err)
 		return nil, err
 	}
 	defer receiptsRows.Close()
@@ -177,14 +177,14 @@ func (r *Repository) GetReceiptsByUser(ctx context.Context, user_id int64) ([]*m
 			&curr.CreatedAt,
 		)
 		if err != nil {
-			slog.Error("error scanning receipt row", "error", err)
+			slog.ErrorContext(ctx, "error scanning receipt row", "error", err)
 			return nil, err
 		}
 
 		receipts = append(receipts, curr)
 	}
 	if err := receiptsRows.Err(); err != nil {
-		slog.Error("error iterating receipts", "error", err)
+		slog.ErrorContext(ctx, "error iterating receipts", "error", err)
 		return nil, err
 	}
 

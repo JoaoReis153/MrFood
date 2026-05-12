@@ -557,7 +557,7 @@ func TestMapToGRPCError_AllCases(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		st, ok := status.FromError(mapToGRPCError(tc.err))
+		st, ok := status.FromError(mapToGRPCError(t.Context(), tc.err))
 		if !ok {
 			t.Fatalf("expected status error for %v", tc.err)
 		}

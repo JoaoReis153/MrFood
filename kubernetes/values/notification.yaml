@@ -1,5 +1,5 @@
 name: notification
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/notification:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/notification:ff22f5b
 port: 50058
 
 service:
@@ -9,13 +9,11 @@ env:
   secrets:
     SMTP_PASSWORD: wpbp rgwe hplj smzy
   config:
-    APP_SERVER_PORT: 50058
+    NOTIFICATION_SERVER_PORT: "50058"
+    APP_LOG_LEVEL: debug
     SMTP_FROM: mrfood.api@gmail.com
     SMTP_USER: mrfood.api@gmail.com
-    REDIS_HOST: 10.89.138.75
-    REDIS_PORT: 6379
+    NOTIFICATION_REDIS_HOST: 10.89.138.75
+    NOTIFICATION_REDIS_PORT: "6379"
     SMTP_HOST: smtp.gmail.com
-    SMTP_PORT: 587
-
-cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-notification-pg
+    SMTP_PORT: "587"

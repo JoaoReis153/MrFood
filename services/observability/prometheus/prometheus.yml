@@ -5,3 +5,16 @@ scrape_configs:
   - job_name: otel-collector
     static_configs:
       - targets: ["otel-collector:8889"]
+
+  - job_name: tempo
+    static_configs:
+      - targets: ["tempo:3200"]
+
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+
+  - job_name: keycloak
+    static_configs:
+      - targets: ["keycloak:9000"]
+    metrics_path: /metrics

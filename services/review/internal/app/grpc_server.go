@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"net"
 	"os"
-	"hash/fnv"
 	"strings"
 	"time"
 
@@ -16,6 +16,7 @@ import (
 	models "MrFood/services/review/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -37,7 +38,11 @@ type RestaurantClient struct {
 }
 
 func NewRestaurantClient(target string) (*RestaurantClient, *grpc.ClientConn, error) {
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to dial restaurant grpc: %w", err)
 	}
@@ -60,14 +65,14 @@ func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int64
 	if err != nil {
 		code := status.Code(err)
 		if code == codes.DeadlineExceeded || code == codes.Unavailable {
-			slog.Error("Restaurant service unavailable", "restaurantID", restaurantID, "error", err)
+			slog.ErrorContext(ctx, "restaurant service unavailable", "restaurant_id", restaurantID, "error", err)
 			return models.Restaurant{}, models.ErrRestaurantServiceUnavailable
 		}
 		if code == codes.NotFound {
-			slog.Info("Restaurant not found", "restaurantID", restaurantID)
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", restaurantID)
 			return models.Restaurant{}, models.ErrRestaurantNotFound
 		}
-		slog.Error("Failed to get restaurant", "restaurantID", restaurantID, "error", err)
+		slog.ErrorContext(ctx, "failed to get restaurant", "restaurant_id", restaurantID, "error", err)
 		return models.Restaurant{}, err
 	}
 
@@ -85,7 +90,6 @@ type Claims struct {
 }
 
 func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb.GetReviewsResponse, error) {
-	slog.Info("Received GetReviews request", "restaurantID", req.GetRestaurantId(), "page", req.GetPage(), "limit", req.GetLimit())
 	page, limit := int(req.GetPage()), int(req.GetLimit())
 	if page == 0 {
 		page = 1
@@ -95,7 +99,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 	}
 	results, err := s.svc.GetReviews(ctx, req.GetRestaurantId(), page, limit)
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 	pbReviews := make([]*pb.Review, len(results.Reviews))
 	for i, r := range results.Reviews {
@@ -108,7 +112,7 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 			CreatedAt:    timestamppb.New(r.CreatedAt),
 		}
 	}
-	slog.Info("GetReviews request successful", "restaurantID", req.GetRestaurantId(), "page", page, "limit", limit, "totalReviews", results.Pagination.Total)
+	slog.InfoContext(ctx, "reviews fetched", "restaurant_id", req.GetRestaurantId(), "page", page, "limit", limit, "total", results.Pagination.Total)
 	return &pb.GetReviewsResponse{
 		Reviews: pbReviews,
 		Pagination: &pb.Pagination{
@@ -123,12 +127,11 @@ func (s *server) GetReviews(ctx context.Context, req *pb.GetReviewsRequest) (*pb
 func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) (*pb.CreateReviewResponse, error) {
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
-		slog.Error("Failed to extract user from context", "error", err)
-		return nil, mapToGRPCError(err)
+		slog.ErrorContext(ctx, "failed to extract user from context", "error", err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
 	user_id := uuidToInt64(claims.UserID)
-	slog.Info("Received CreateReview request", "restaurantID", req.GetRestaurantId(), "userID", user_id, "rating", req.GetRating())
 	review := models.Review{
 		RestaurantID: req.GetRestaurantId(),
 		UserID:       user_id,
@@ -138,10 +141,10 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 
 	reviewResponse, err := s.svc.CreateReview(ctx, review)
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
-	slog.Info("CreateReview request successful", "reviewID", reviewResponse.ReviewID, "restaurantID", reviewResponse.RestaurantID, "userID", reviewResponse.UserID)
+	slog.InfoContext(ctx, "review created", "review_id", reviewResponse.ReviewID, "restaurant_id", reviewResponse.RestaurantID, "user_id", reviewResponse.UserID)
 	return &pb.CreateReviewResponse{
 		Review: &pb.Review{
 			ReviewId:     reviewResponse.ReviewID,
@@ -157,11 +160,10 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) (*pb.UpdateReviewResponse, error) {
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
-		slog.Error("Failed to extract user from context", "error", err)
-		return nil, mapToGRPCError(err)
+		slog.ErrorContext(ctx, "failed to extract user from context", "error", err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 	user_id := uuidToInt64(claims.UserID)
-	slog.Info("Received UpdateReview request", "reviewID", req.GetReviewId(), "userID", user_id)
 	review := models.UpdateReview{
 		ReviewID: req.GetReviewId(),
 		UserID:   user_id,
@@ -176,10 +178,10 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 	}
 	updated, err := s.svc.UpdateReview(ctx, review)
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
-	slog.Info("UpdateReview request successful", "reviewID", updated.ReviewID, "restaurantID", updated.RestaurantID, "userID", updated.UserID)
+	slog.InfoContext(ctx, "review updated", "review_id", updated.ReviewID, "restaurant_id", updated.RestaurantID, "user_id", updated.UserID)
 	return &pb.UpdateReviewResponse{
 		Review: &pb.Review{
 			ReviewId:     updated.ReviewID,
@@ -195,33 +197,31 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) (*pb.DeleteReviewResponse, error) {
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
-		slog.Error("Failed to extract user from context", "error", err)
-		return nil, mapToGRPCError(err)
+		slog.ErrorContext(ctx, "failed to extract user from context", "error", err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
 	userID := uuidToInt64(claims.UserID)
-	slog.Info("Received DeleteReview request", "reviewID", req.GetReviewId(), "userID", userID)
 
 	err = s.svc.DeleteReview(ctx, models.DeleteReview{
 		ReviewID: req.GetReviewId(),
 		UserID:   userID,
 	})
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
-	slog.Info("DeleteReview request successful", "reviewID", req.GetReviewId(), "userID", userID)
+	slog.InfoContext(ctx, "review deleted", "review_id", req.GetReviewId(), "user_id", userID)
 	return &pb.DeleteReviewResponse{}, nil
 }
 
 func (s *server) GetRestaurantStats(ctx context.Context, req *pb.GetRestaurantStatsRequest) (*pb.GetRestaurantStatsResponse, error) {
-	slog.Info("Received GetRestaurantStats request", "restaurantID", req.GetRestaurantId())
 	stats, err := s.svc.GetRestaurantStats(ctx, req.GetRestaurantId())
 	if err != nil {
-		return nil, mapToGRPCError(err)
+		return nil, mapToGRPCError(ctx, err)
 	}
 
-	slog.Info("GetRestaurantStats request successful", "restaurantID", req.GetRestaurantId(), "averageRating", stats.AverageRating, "reviewCount", stats.ReviewCount)
+	slog.InfoContext(ctx, "restaurant stats fetched", "restaurant_id", req.GetRestaurantId(), "avg_rating", stats.AverageRating, "review_count", stats.ReviewCount)
 	return &pb.GetRestaurantStatsResponse{
 		RestaurantStats: &pb.RestaurantStats{
 			RestaurantId:  stats.RestaurantID,
@@ -240,7 +240,9 @@ func (app *App) RunServer() {
 		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 	srv := &server{
 		svc: app.Service,
 	}
@@ -277,11 +279,9 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse token", "error", err)
 		return nil, models.ErrUnauthenticated
 	}
-
-	slog.Info("USER INFO", "user_id", claims.UserID, "username", claims.Username, "token_type", claims.TokenType, "exp", claims.ExpiresAt)
 
 	return claims, nil
 }
@@ -294,8 +294,7 @@ func uuidToInt64(id string) int64 {
 	return int64(h.Sum64() &^ (uint64(1) << 63))
 }
 
-func mapToGRPCError(err error) error {
-	slog.Error("gRPC Operation Failed", "error", err)
+func mapToGRPCError(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, models.ErrInvalidRating), errors.Is(err, models.ErrInvalidComment), errors.Is(err, models.ErrInvalidRestaurantID),
 		errors.Is(err, models.ErrInvalidUserID), errors.Is(err, models.ErrInvalidReviewID), errors.Is(err, models.ErrLimitTooLarge):

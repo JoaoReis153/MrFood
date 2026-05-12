@@ -1,5 +1,5 @@
 name: restaurant
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/restaurant:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/restaurant:ff22f5b
 port: 50052
 
 service:
@@ -7,7 +7,7 @@ service:
 
 env:
   secrets:
-    RESTAURANT_POSTGRES_PASSWORD: mrfood_restaurant_secret
+    RESTAURANT_POSTGRES_PASSWORD: mrfood_restaurant_pass
   config:
     RESTAURANT_SERVER_PORT: 50052
     POSTGRES_PORT: 5432
@@ -22,4 +22,4 @@ env:
     REVIEW_GRPC_ADDR: "review:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-restaurant-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-pg

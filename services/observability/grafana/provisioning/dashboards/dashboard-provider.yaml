@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: default
+    type: file
+    disableDeletion: false   # set true to prevent UI edits being lost on restart
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true  # subfolders become Grafana folders

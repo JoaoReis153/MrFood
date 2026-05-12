@@ -1,209 +1,68 @@
 # MrFood
 
-## 📦 Setup
+Food delivery platform built with Go microservices, gRPC, and Kubernetes.
 
-To run the services locally, Docker and Docker Compose are required.
+## Local Development
 
-Recommended first-time setup order:
+Requires Docker and Docker Compose.
 
-1. Create env file: make create_env
-2. Set JWT secrets in services/.env
-3. Generate CSV data: make generate-csv
-4. Start and load services: make setup
+### First-time setup
 
-### 📂 Data Preparation
-
-Download the data from Kaggle and place it in the `data` folder.
-
-- Only the following files are required:
-  - [places.csv](https://www.kaggle.com/datasets/danielkumlin/world-restaurants?select=places.csv)
-  - [reviews.csv](https://www.kaggle.com/datasets/danielkumlin/world-restaurants?select=reviews.csv)
-  - [users.csv](https://www.kaggle.com/datasets/danielkumlin/world-restaurants?select=users.csv)
-  - [tripadvisor_european_restaurants.csv](https://www.kaggle.com/datasets/stefanoleone992/tripadvisor-european-restaurants)
-
-#### 📝 Python Environment
-
-Use the following commands to create, activate and install the Python environment:
-
-```bash
-python3 -m venv scripts/.venv
-source scripts/.venv/bin/activate
-pip install -r scripts/requirements.txt
-```
-
-#### 📝 Data Preparation
-
-Generate seed CSV files using make:
-
-```bash
-make generate-csv
-```
-
-**Options:**
-
-- Default: Generates 200 rows per service (fast, for testing)
-- Full dataset: `make generate-csv CSV_FULL=1` (processes all data)
-- Custom rows: `make generate-csv CSV_ROWS=1000`
-- Specific service: `make generate-csv CSV_SERVICES=restaurant`
-
-**Default Credentials:**
-
-All generated users have the password `mrfood123`. See [SEED_DATA_CREDENTIALS.md](SEED_DATA_CREDENTIALS.md) for details.
-
-Generated files:
-
-- `scripts/processed_data/auth/app_user.csv`
-- `scripts/processed_data/restaurant/restaurants.csv`
-- `scripts/processed_data/restaurant/restaurant_working_hours.csv`
-- `scripts/processed_data/restaurant/restaurant_categories.csv`
-- `scripts/processed_data/review/review.csv`
-
-### 🚀 Quick Setup (Recommended)
-
-Start everything with one command - starts all services and loads all data:
-
-```bash
-make setup
-```
-
-Before running make setup for the first time, make sure you already ran:
+**1. Create the env file and fill in secrets:**
 
 ```bash
 make create_env
-make generate-csv
+# Edit services/.env — set JWT secrets and any other required values
 ```
 
-This runs:
-
-1. `make run` - Starts all services and databases
-2. `make load-all` - Loads seed data into databases
-
-### 🗄️ Manual Setup (Step-by-Step)
-
-If you prefer to do it step by step:
-
-**Step 1: Start services**
-
-```bash
-make run
-```
-
-**Step 2: Load data**
-
-```bash
-make load-all
-```
-
-If you changed database schemas and are re-running setup, reset volumes first so init SQL is reapplied:
-
-```bash
-make clean-volumes
-make run
-make load-all
-```
-
-Or load individual services:
-
-```bash
-make load-auth
-make load-restaurant
-```
-
-`restaurant_slots` is automatically populated by the `handle_booking_insert` trigger defined in `services/booking/db_setup.sql`.
-
-### 🔧 Environment
-
-Create your environment file:
-
-```bash
-make create_env
-```
-
-This creates `services/.env` from the template with sensible defaults.
-
-### JWT Secret
-
-Generate JWT secrets using:
+Generate a JWT secret:
 
 ```bash
 openssl rand -base64 32
 ```
 
-- Run the command 2 times and add each output to your `/services/.env.`, specifically `AUTH_JWT_ACCESS_TOKEN_SECRET` and `AUTH_JWT_REFRESH_TOKEN_SECRET`;
+Set `AUTH_JWT_ACCESS_TOKEN_SECRET`, `AUTH_JWT_REFRESH_TOKEN_SECRET`, and the `secret` field in `services/gateway/kong/kong.yml` to the same value.
 
-- Update the `secret` field in `services/gateway/kong/kong.yml` with the same value that was given to `AUTH_JWT_ACCESS_TOKEN_SECRET`.
+**2. Generate seed data:**
 
-### Dependencies
+Download the Kaggle datasets and place them in `data/`:
+- [places.csv + reviews.csv + users.csv](https://www.kaggle.com/datasets/danielkumlin/world-restaurants)
+- [tripadvisor_european_restaurants.csv](https://www.kaggle.com/datasets/stefanoleone992/tripadvisor-european-restaurants)
 
-In order to run the code, `protobuf-compiler` and `protobuf-devel` must be installed on the machine.
-
-## Running the Services
-
-### Available Commands
-
-View all available make commands:
+Set up the Python environment and generate CSVs:
 
 ```bash
-make help
+python3 -m venv scripts/.venv
+source scripts/.venv/bin/activate
+pip install -r scripts/requirements.txt
+
+make generate-csv           # 200 rows (fast)
+make generate-csv CSV_FULL=1  # full dataset
 ```
 
-### Quick Start
+All generated users have the password `mrfood123`.
 
-Build and start everything with seed data:
+**3. Start services:**
 
 ```bash
-make build
-make setup
+make setup        # core services only
+make setup-full   # includes Elasticsearch + Kafka + CDC
 ```
 
-### Manual Control
-
-Build services:
+### Common commands
 
 ```bash
-make build
+make logs         # tail logs
+make stop         # stop services
+make down         # stop and remove containers
+make restart      # restart services
+make test         # run Go tests
+make test-bruno   # run Bruno API tests
+make clean        # remove containers, images, volumes
 ```
 
-Start services:
+See `make help` for the full list.
 
-```bash
-make run
-```
+## Deployment
 
-View logs:
-
-```bash
-make logs
-```
-
-Stop services:
-
-```bash
-make stop
-```
-
-## 🧹 Cleanup
-
-Stop and remove containers:
-
-```bash
-make down
-```
-
-Remove containers and images (project only):
-
-```bash
-make clean
-```
-
-Remove everything including volumes (⚠️ deletes data):
-
-```bash
-make clean-volumes
-```
-
-Full reset (containers, images, volumes):
-
-```bash
-make clean-all
-```
+See [DEPLOYMENT.md](DEPLOYMENT.md) for GKE deployment instructions.

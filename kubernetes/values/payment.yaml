@@ -1,5 +1,5 @@
 name: payment
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:ff22f5b
 port: 50057
 
 service:
@@ -7,7 +7,7 @@ service:
 
 env:
   secrets:
-    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_secret
+    PAYMENT_POSTGRES_PASSWORD: mrfood_payment_pass
   config:
     PAYMENT_SERVER_PORT: 50057
     POSTGRES_PORT: 5432
@@ -22,4 +22,4 @@ env:
     NOTIFICATION_GRPC_ADDR: "notification:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-payment-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-pg

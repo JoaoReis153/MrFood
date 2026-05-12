@@ -36,6 +36,11 @@ if [[ ${#value_files[@]} -eq 0 ]]; then
   exit 1
 fi
 
+REDIS_HOST_NOTIFICATION=""
+if command -v terraform >/dev/null 2>&1 && [[ -d "$SCRIPT_DIR/../terraform" ]]; then
+  REDIS_HOST_NOTIFICATION=$(terraform -chdir="$SCRIPT_DIR/../terraform" output -json service_redis_hosts 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('notification',''))" 2>/dev/null || true)
+fi
+
 for values_file in "${value_files[@]}"; do
   service="$(basename "$values_file" .yaml)"
 
@@ -47,12 +52,17 @@ for values_file in "${value_files[@]}"; do
   echo "[${service}] Uninstalling release from namespace ${NAMESPACE}..."
   helm uninstall "$service" -n "$NAMESPACE" >/dev/null 2>&1 || true
 
+  extra_args=()
+  if [[ "$service" == "notification" && -n "${REDIS_HOST_NOTIFICATION:-}" ]]; then
+    extra_args+=(--set "env.config.NOTIFICATION_REDIS_HOST=${REDIS_HOST_NOTIFICATION}")
+  fi
+
   if [[ "$service" == "gateway" ]]; then
     echo "[${service}] Installing release with helm/kong and values/$(basename "$values_file")..."
-    helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace
+    helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]+"${extra_args[@]}"}"
   else
     echo "[${service}] Installing release with values/$(basename "$values_file")..."
-    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace
+    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]+"${extra_args[@]}"}"
   fi
 
 done

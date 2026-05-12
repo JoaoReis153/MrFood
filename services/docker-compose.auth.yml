@@ -12,26 +12,36 @@ services:
       - .env           # all secrets
     depends_on:
       keycloak:
-        condition: service_started
+        condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.6.1
     <<: *common
     command: start-dev --import-realm
     environment:
+      OTEL_SERVICE_NAME: keycloak
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASS:-admin}
       KC_DB: dev-mem          # in-memory H2 — swap for postgres in production
       KC_HTTP_PORT: 8080
       KC_HOSTNAME: "http://keycloak:8080"   # pins the iss claim; must match Kong consumer key
+      KC_TRACING_ENABLED: "true"
+      KC_TRACING_ENDPOINT: "http://otel-collector:4317"
+      KC_TRACING_SAMPLER_TYPE: "always_on"
+      KC_METRICS_ENABLED: "true"
     healthcheck:
-      # Polls the mrfood realm endpoint — only succeeds once the realm is fully imported.
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/realms/mrfood || exit 1"]
-      interval: 5s
+      # Uses bash /dev/tcp — no curl/wget needed in UBI9-micro image.
+      # Succeeds only once the mrfood realm is fully imported and responding.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /realms/mrfood HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q mrfood <&3"]
+      interval: 10s
       timeout: 5s
-      retries: 24       # up to 2 minutes
-      start_period: 20s # Keycloak needs time before the first check
+      retries: 18       # up to 3 minutes after start_period
+      start_period: 90s # Quarkus dev-mode augmentation alone takes ~60s
     volumes:
       - ./keycloak/realm-import.json:/opt/keycloak/data/import/mrfood-realm.json:ro
     ports:
       - "8080:8080"           # expose admin console on host for development
+      - "9000:9000"           # management port: health + metrics

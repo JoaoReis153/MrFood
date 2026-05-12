@@ -46,6 +46,7 @@ spec:
           - secretRef:
               name: {{ .Values.name }}-secret
 
+      {{- if and .Values.cloudsql .Values.cloudsql.instance }}
       - name: cloud-sql-proxy
         image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
         args:
@@ -53,3 +54,4 @@ spec:
           - "--port=5432"
           - "--private-ip"
           - "{{ .Values.cloudsql.instance }}"
+      {{- end }}
