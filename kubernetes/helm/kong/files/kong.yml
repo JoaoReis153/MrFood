@@ -155,8 +155,10 @@ services:
       - exp
 
 consumers:
-- username: my-client
-  jwt_secrets:
-  - key: generate-key
-    secret: CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
-    algorithm: HS256
+- username: mrfood-auth
+
+jwt_secrets:
+- consumer: mrfood-auth
+  key: mrfood-auth
+  algorithm: HS256
+  secret: "CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE="
