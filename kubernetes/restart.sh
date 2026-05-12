@@ -53,16 +53,16 @@ for values_file in "${value_files[@]}"; do
   helm uninstall "$service" -n "$NAMESPACE" >/dev/null 2>&1 || true
 
   extra_args=()
-  if [[ "$service" == "notification" && -n "$REDIS_HOST_NOTIFICATION" ]]; then
+  if [[ "$service" == "notification" && -n "${REDIS_HOST_NOTIFICATION:-}" ]]; then
     extra_args+=(--set "env.config.NOTIFICATION_REDIS_HOST=${REDIS_HOST_NOTIFICATION}")
   fi
 
   if [[ "$service" == "gateway" ]]; then
     echo "[${service}] Installing release with helm/kong and values/$(basename "$values_file")..."
-    helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]}"
+    helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]+"${extra_args[@]}"}"
   else
     echo "[${service}] Installing release with values/$(basename "$values_file")..."
-    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]}"
+    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]+"${extra_args[@]}"}"
   fi
 
 done
