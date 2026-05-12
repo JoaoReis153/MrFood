@@ -1,10 +1,4 @@
-name: cdc
 image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:v1.0.4
-
-port: 8083
-
-service:
-  type: ClusterIP
 
 resources:
   requests:
