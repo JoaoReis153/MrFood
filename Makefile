@@ -18,8 +18,11 @@ CSV_FULL ?=
 
 IS_PODMAN := $(shell docker --version 2>/dev/null | grep -i podman)
 PULL_FLAG :=
+BUILD_FLAG :=
+
 ifeq ($(IS_PODMAN),)
 	PULL_FLAG := --pull=missing
+	BUILD_FLAG := --parallel
 endif
 
 .PHONY: help create_env generate-csv setup setup-full build run run-full stop down restart logs test test-bruno clean clean-all search-bootstrap search-logs search-clean
@@ -70,7 +73,7 @@ generate-csv:
 # ============================================================================
 
 build:
-	DOCKER_BUILDKIT=1 $(DC) build --parallel
+	DOCKER_BUILDKIT=1 $(DC) build $(BUILD_FLAG)
 
 run:
 	$(DC) up -d $(PULL_FLAG)
