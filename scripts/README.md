@@ -16,6 +16,8 @@ The hash space is about $1.84 \times 10^{19}$ possible values. With roughly 3.5 
 - [csv_processing](csv_processing) contains the service-specific transformation logic.
 - [processed_data](processed_data) stores the generated output files.
 - [../data](../data) contains the source datasets consumed by the pipeline.
+- [load_seed_data_local.sh](load_seed_data_local.sh) loads seed data into local Docker containers.
+- [load_seed_data_cloud.sh](load_seed_data_cloud.sh) loads seed data into Cloud SQL via GCS.
 
 The structure is intentionally split so the orchestration code stays small while each service keeps its own CSV transformation rules in a dedicated module.
 
@@ -25,7 +27,7 @@ The main entry point is [process_data.py](process_data.py). It reads the raw CSV
 
 The generation flow is service-aware:
 
-1. `auth` processes user data and writes `app_user.csv`.
+1. `auth` processes user data and writes `users.csv` (loaded into Keycloak, not a database).
 2. `restaurant` builds restaurant records from `places.csv` and `tripadvisor_european_restaurants.csv`, then writes the restaurant to the CSVs.
 3. `review` reuses the generated user and restaurant mappings to build review records and writes `review.csv`.
 
