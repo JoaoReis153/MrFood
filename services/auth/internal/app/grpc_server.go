@@ -48,9 +48,10 @@ type appClaims struct {
 	jwtlib.RegisteredClaims
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
-func (s *Server) mintAccessToken(sub, username string) (string, error) {
+func (s *Server) mintAccessToken(sub, username, email string) (string, error) {
 	now := time.Now()
 	claims := appClaims{
 		RegisteredClaims: jwtlib.RegisteredClaims{
@@ -61,6 +62,7 @@ func (s *Server) mintAccessToken(sub, username string) (string, error) {
 		},
 		UserID:   sub,
 		Username: username,
+		Email:    email,
 	}
 	token := jwtlib.NewWithClaims(jwtlib.SigningMethodHS256, claims)
 	return token.SignedString(s.jwtSecret)
@@ -149,8 +151,9 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 
 	sub, _ := kcClaims["sub"].(string)
 	username, _ := kcClaims["preferred_username"].(string)
+	email, _ := kcClaims["email"].(string)
 
-	accessToken, err := s.mintAccessToken(sub, username)
+	accessToken, err := s.mintAccessToken(sub, username, email)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to mint access token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to mint token")
@@ -184,8 +187,9 @@ func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest
 
 	sub, _ := kcClaims["sub"].(string)
 	username, _ := kcClaims["preferred_username"].(string)
+	email, _ := kcClaims["email"].(string)
 
-	accessToken, err := s.mintAccessToken(sub, username)
+	accessToken, err := s.mintAccessToken(sub, username, email)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to mint refreshed access token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to mint token")
