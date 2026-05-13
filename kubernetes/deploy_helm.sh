@@ -84,6 +84,7 @@ run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" \
   --namespace "$NAMESPACE"
 
 # IMPORTANT: wait until deployment is actually ready
+run kubectl rollout restart deployment/cdc -n "$NAMESPACE"
 run kubectl rollout status deployment/cdc -n "$NAMESPACE" --timeout 5m
 
 # extra safety: ensure pod is actually Ready before exec
@@ -101,12 +102,14 @@ if [[ $SKIP_CONNECTORS -eq 0 ]]; then
   '
 
   # Connector 2: restaurants-elasticsearch-sink
-  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c '
-    curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
-    curl -sf -X POST http://localhost:8083/connectors \
-      -H "Content-Type: application/json" \
-      -d @/connectors/restaurants-sink.json
-  '
+  echo "Registering restaurants-elasticsearch-sink..."
+  cat "$ROOT_DIR/services/cdc/connectors/restaurants-sink.json" | \
+    run_allow_err kubectl exec -i -n "$NAMESPACE" deployment/cdc -- bash -c '
+      curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
+      curl -sf -X POST http://localhost:8083/connectors \
+        -H "Content-Type: application/json" \
+        -d @- 
+    '
 else
   echo "Skipping connector registration (--skip-connectors set)"
 fi
