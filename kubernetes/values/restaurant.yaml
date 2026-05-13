@@ -1,5 +1,5 @@
 name: restaurant
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/restaurant:v1.0.4
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/restaurant:c3008fbdcfaa460cd3d6feeba372e1b5a1bf55b6
 port: 50052
 
 resources:
