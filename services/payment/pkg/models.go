@@ -12,5 +12,6 @@ type Receipt struct {
 	PaymentDescription string    `json:"payment_description"`
 	PaymentStatus      string    `json:"payment_status"`
 	PaymentType        string    `json:"payment_type"`
+	PaymentIntentID    string    `json:"payment_intent_id"`
 	CreatedAt          time.Time `json:"created_at"`
 }

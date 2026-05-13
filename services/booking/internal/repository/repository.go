@@ -35,10 +35,13 @@ func New(db DB) *Repository {
 }
 
 func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
+	slog.InfoContext(ctx, "repository: CreateBooking called")
 	tx, err := r.DB.Begin(ctx)
 	if err != nil {
+		slog.ErrorContext(ctx, "repository: Begin failed", "error", err)
 		return 0, err
 	}
+	slog.InfoContext(ctx, "repository: transaction started")
 	defer func() {
 		_ = tx.Rollback(ctx)
 	}()
@@ -58,8 +61,10 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 	err = tx.QueryRow(ctx, query, booking.RestaurantID, booking.TimeStart, booking.UserID).Scan(&exists)
 
 	if err != nil && err != pgx.ErrNoRows {
+		slog.ErrorContext(ctx, "repository: exists check failed", "error", err)
 		return 0, err
 	}
+	slog.InfoContext(ctx, "repository: exists check done", "exists", exists)
 
 	if exists > 0 {
 		return 0, ErrBookingAlreadyExists
@@ -83,6 +88,7 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 			max_slots = MAX_SLOTS
 			current_slots = 0
 		} else {
+			slog.ErrorContext(ctx, "repository: slot check failed", "error", err)
 			return 0, err
 		}
 	} else if booking.PeopleCount > max_slots-current_slots {
@@ -101,10 +107,12 @@ func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking)
 	err = tx.QueryRow(ctx, query, booking.UserID, booking.UserEmail, booking.RestaurantID, booking.TimeStart, booking.TimeEnd, booking.PeopleCount).Scan(&booking_id)
 
 	if err != nil {
+		slog.ErrorContext(ctx, "repository: booking creation failed", "error", err)
 		return 0, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
+		slog.ErrorContext(ctx, "repository: transaction commit failed", "error", err)
 		return 0, err
 	}
 
@@ -121,6 +129,7 @@ func (r *Repository) DeleteBooking(ctx context.Context, delete_request *models.D
 	cmdTag, err := r.DB.Exec(ctx, query, delete_request.BookingID, delete_request.UserID)
 
 	if err != nil {
+		slog.ErrorContext(ctx, "repository: failed to delete booking", "error", err)
 		return fmt.Errorf("failed to delete booking: %w", err)
 	}
 

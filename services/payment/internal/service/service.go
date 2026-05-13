@@ -19,6 +19,8 @@ import (
 	"github.com/stripe/stripe-go/v85/paymentintent"
 )
 
+var createPaymentIntent = paymentintent.New
+
 var (
 	ErrInvalidAmmount          = errors.New("ammount cannot be negative")
 	ErrNullIdempotencyKey      = errors.New("idempotency key cannot be null")
@@ -30,6 +32,8 @@ var (
 
 type paymentRepository interface {
 	CreateReceipt(ctx context.Context, payment_request *models.Receipt, requestHash string) (int32, error)
+	UpdateReceiptStatus(ctx context.Context, paymentIntentID string, status string) error
+	GetReceiptByPaymentIntentID(ctx context.Context, paymentIntentID string) (*models.Receipt, error)
 	GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error)
 	GetReceiptsByUser(ctx context.Context, user_id int64) ([]*models.Receipt, error)
 }
@@ -59,16 +63,21 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 		Description:   stripe.String(receipt_request.PaymentDescription),
 		PaymentMethod: stripe.String("pm_card_visa"),
 		Confirm:       stripe.Bool(true),
+		AutomaticPaymentMethods: &stripe.PaymentIntentAutomaticPaymentMethodsParams{
+			Enabled:        stripe.Bool(true),
+			AllowRedirects: stripe.String("never"),
+		},
 	}
 
 	params.SetIdempotencyKey(receipt_request.IdempotencyKey)
 
-	pi, err := paymentintent.New(params)
+	pi, err := createPaymentIntent(params)
 	if err != nil {
 		slog.Error("failed to create stripe payment intent", "error", err)
 		return 0, err
 	}
 
+	receipt_request.PaymentIntentID = pi.ID
 	receipt_request.PaymentStatus = string(pi.Status)
 
 	slog.Info(receipt_request.PaymentStatus)
@@ -80,6 +89,23 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 	}
 
 	return s.repo.CreateReceipt(ctx, receipt_request, hash)
+}
+
+func (s *Service) ConfirmPayment(ctx context.Context, paymentIntentID string) error {
+	if err := s.repo.UpdateReceiptStatus(ctx, paymentIntentID, "succeeded"); err != nil {
+		return err
+	}
+
+	receipt, err := s.repo.GetReceiptByPaymentIntentID(ctx, paymentIntentID)
+	if err != nil {
+		return err
+	}
+
+	if _, err = s.sendReceipts(ctx, []*models.Receipt{receipt}); err != nil {
+		slog.Warn("receipt notification failed after payment confirmation", "error", err, "payment_intent_id", paymentIntentID)
+	}
+
+	return nil
 }
 
 func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) error {

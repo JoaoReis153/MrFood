@@ -45,8 +45,11 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 }
 
 func (a *App) Close(ctx context.Context) error {
-	if a.Repo == nil {
-		return nil
+	if a.NotificationConn != nil {
+		a.NotificationConn.Close()
 	}
-	return a.Repo.Close(ctx)
+	if a.DB != nil {
+		a.DB.Close()
+	}
+	return nil
 }

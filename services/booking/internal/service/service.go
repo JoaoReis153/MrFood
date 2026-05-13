@@ -54,11 +54,13 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "working hours received", "start", working_hours.TimeStart, "end", working_hours.TimeEnd)
 
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {
 		slog.ErrorContext(ctx, "Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
 		return 0, 0, ErrInvalidBooking
 	}
+	slog.InfoContext(ctx, "booking time valid, inserting")
 
 	var time_end = booking.TimeStart.Add(time.Hour)
 
@@ -73,8 +75,9 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "booking inserted", "booking_id", booking_id)
 
-	amount := int64(booking.PeopleCount) * 10
+	amount := int64(booking.PeopleCount) * 500 // 5.00 EUR per person
 
 	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
 		UserID:         booking.UserID,
@@ -88,6 +91,7 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "payment done", "receipt_id", receipt_id)
 
 	return booking_id, receipt_id, nil
 }

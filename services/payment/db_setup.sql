@@ -1,5 +1,10 @@
 DO $$ BEGIN
-    CREATE TYPE payment_status AS ENUM ('success', 'failed');
+    CREATE TYPE payment_status AS ENUM (
+        'processing',
+        'succeeded',
+        'canceled',
+        'failed'
+    );
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
@@ -13,5 +18,6 @@ CREATE TABLE IF NOT EXISTS receipts (
     payment_description    VARCHAR(255),
     current_payment_status payment_status NOT NULL,
     payment_type           VARCHAR(16)    NOT NULL,
+    payment_intent_id      TEXT           UNIQUE,
     created_at             TIMESTAMP      DEFAULT NOW()
 );
