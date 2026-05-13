@@ -33,12 +33,12 @@ spec:
         livenessProbe:
           grpc:
             port: {{ .Values.port }}
-          initialDelaySeconds: 10
+          initialDelaySeconds: 120
 
         readinessProbe:
           grpc:
             port: {{ .Values.port }}
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
         
         envFrom:
           - configMapRef:
