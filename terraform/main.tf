@@ -230,7 +230,7 @@ resource "terraform_data" "apply_service_schema" {
 # ──────────────────────────────────────────────────────────────────────────────
 
 locals {
-  cloudsql_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "cdc"])
+  cloudsql_services = toset(["restaurant", "booking", "review", "payment", "sponsor", "cdc"])
   all_services      = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "notification", "search", "otel-collector", "cdc"])
 }
 
