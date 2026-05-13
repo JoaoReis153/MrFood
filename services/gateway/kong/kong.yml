@@ -11,7 +11,7 @@ plugins:
 services:
 - name: auth
   host: auth
-  port: 50051
+  port: 80
   protocol: grpc
 
   routes:
@@ -29,7 +29,7 @@ services:
 
 - name: restaurant
   host: restaurant
-  port: 50052
+  port: 80
   protocol: grpc
   routes:
   - name: restaurant
@@ -50,7 +50,7 @@ services:
 
 - name: booking
   host: booking
-  port: 50053
+  port: 80
   protocol: grpc
   routes:
   - name: booking
@@ -71,7 +71,7 @@ services:
 
 - name: review
   host: review
-  port: 50055
+  port: 80
   protocol: grpc
   routes:
   - name: review
@@ -92,7 +92,7 @@ services:
 
 - name: sponsor
   host: sponsor
-  port: 50054
+  port: 80
   protocol: grpc
   routes:
   - name: sponsor
@@ -113,7 +113,7 @@ services:
 
 - name: payment
   host: payment
-  port: 50057
+  port: 80
   protocol: grpc
   routes:
   - name: payment
@@ -134,7 +134,7 @@ services:
   
 - name: search
   host: search
-  port: 50056
+  port: 80
   protocol: grpc
   routes:
   - name: search
