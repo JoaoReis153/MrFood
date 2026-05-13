@@ -79,19 +79,34 @@ run kubectl rollout status deployment/kafka -n "$NAMESPACE" --timeout "$TIMEOUT"
 run kubectl rollout status deployment/elasticsearch -n "$NAMESPACE" --timeout "$TIMEOUT"
 
 echo "==> Deploying CDC (Kafka Connect)"
-run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" -f "$ROOT_DIR/kubernetes/values/cdc.yaml" --namespace "$NAMESPACE"
+run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" \
+  -f "$ROOT_DIR/kubernetes/values/cdc.yaml" \
+  --namespace "$NAMESPACE"
+
+# IMPORTANT: wait until deployment is actually ready
+run kubectl rollout status deployment/cdc -n "$NAMESPACE" --timeout 5m
+
+# extra safety: ensure pod is actually Ready before exec
+run kubectl wait --for=condition=ready pod -l app=cdc -n "$NAMESPACE" --timeout=5m
 
 if [[ $SKIP_CONNECTORS -eq 0 ]]; then
   echo "==> Registering CDC connectors (if not already present)"
+
   # Connector 1: restaurant-postgres-source
-  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c \
-    "curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
-      curl -sf -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d @/connectors/restaurant-source.json"
+  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c '
+    curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
+    curl -sf -X POST http://localhost:8083/connectors \
+      -H "Content-Type: application/json" \
+      -d @/connectors/restaurant-source.json
+  '
 
   # Connector 2: restaurants-elasticsearch-sink
-  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c \
-    "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
-      curl -sf -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d @/connectors/restaurants-sink.json"
+  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c '
+    curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
+    curl -sf -X POST http://localhost:8083/connectors \
+      -H "Content-Type: application/json" \
+      -d @/connectors/restaurants-sink.json
+  '
 else
   echo "Skipping connector registration (--skip-connectors set)"
 fi
@@ -108,8 +123,9 @@ else
 fi
 
 echo "==> Patching Kong configmap and restarting gateway"
-run kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml" --dry-run=client -o yaml | kubectl apply -f -
+kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml" --dry-run=client -o yaml | kubectl apply -f -
 run kubectl rollout restart deployment/gateway -n "$NAMESPACE"
+run kubectl rollout status deployment/gateway -n "$NAMESPACE"
 
 echo "All Helm/Kubernetes tasks from DEPLOYMENT.md completed."
 

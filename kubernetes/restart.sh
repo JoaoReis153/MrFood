@@ -44,7 +44,7 @@ fi
 for values_file in "${value_files[@]}"; do
   service="$(basename "$values_file" .yaml)"
 
-  if [[ "$service" == "cdc" || "$service" == "search" ]]; then
+  if [[ "$service" == "cdc" ]]; then
     echo "[${service}] Skipping service as requested."
     continue
   fi
