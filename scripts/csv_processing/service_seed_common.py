@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import re
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -14,9 +13,8 @@ PROJECT_DIR = SCRIPT_DIR.parent
 DATA_DIR = PROJECT_DIR / "data"
 OUTPUT_DIR = SCRIPT_DIR / "processed_data"
 
-# Default password for seed users: "mrfood123" (bcrypt hashed)
+# Default password for seed users: "mrfood123"
 DEFAULT_PASSWORD = "mrfood123"
-DEFAULT_PASSWORD_HASH = "$2a$10$h7oCCYsXlom0bwjwYE7md.82mYEHrXlD9oq3tAJSKsqOTzkhfiR3q"
 WEEK_BASE_DATE = datetime(2026, 1, 5)  # Monday
 
 
@@ -45,15 +43,6 @@ def print_progress_step(label: str, done: int, total: int, last_pct: int, step: 
         print(f"{label}: {value}%")
 
     return milestone_pct
-
-
-@dataclass
-class UserRecord:
-    user_id: int
-    username: str
-    password: str
-    email: str
-    source_gplus_user_id: Optional[str]
 
 
 def clean_text(value: object, max_len: Optional[int] = None) -> str:

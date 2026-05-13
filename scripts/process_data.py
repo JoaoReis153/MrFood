@@ -270,7 +270,7 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         print("\n✓ Processing auth users")
         stream_auth_csv(
             DATA_DIR / DATASET_FILES["users"],
-            OUTPUT_DIR / "auth" / "app_user.csv",
+            OUTPUT_DIR / "auth" / "users.csv",
             nrows=rows,
         )
         print("\n✓ CSV generation completed for: auth")
@@ -287,7 +287,7 @@ def generate_csvs(selected_services: Iterable[str], rows: int = None):
         print("\n✓ Processing auth users")
         stream_auth_csv(
             DATA_DIR / DATASET_FILES["users"],
-            OUTPUT_DIR / "auth" / "app_user.csv",
+            OUTPUT_DIR / "auth" / "users.csv",
             nrows=rows,
         )
 
