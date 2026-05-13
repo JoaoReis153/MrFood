@@ -2,13 +2,13 @@
 
 ## Overview
 
-| Layer | Tool | Trigger |
-|---|---|---|
-| Infrastructure | Terraform | Push to `main` → `terraform/**` |
-| Container images | Docker + Artifact Registry | `services/build_and_push_images.sh` / CI |
-| Kubernetes workloads | Helm | `kubernetes/restart.sh` / CI |
-| Observability | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm |
-| Search | Elasticsearch + Kafka + Kafka Connect | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
+| Layer                | Tool                                           | Trigger                                          |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------ |
+| Infrastructure       | Terraform                                      | Push to `main` → `terraform/**`                  |
+| Container images     | Docker + Artifact Registry                     | `services/build_and_push_images.sh` / CI         |
+| Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
+| Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
+| Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
 
 ---
 
@@ -51,7 +51,6 @@ DB passwords live in `terraform/terraform.tfvars` (gitignored). Create it before
 ```hcl
 # terraform/terraform.tfvars
 service_databases = {
-  auth       = { db_name = "mrfood_auth",       db_user = "mrfood_auth_user",       db_password = "REPLACE_ME" }
   restaurant = { db_name = "mrfood_restaurant", db_user = "mrfood_restaurant_user", db_password = "REPLACE_ME" }
   booking    = { db_name = "mrfood_booking",    db_user = "mrfood_booking_user",    db_password = "REPLACE_ME" }
   review     = { db_name = "mrfood_review",     db_user = "mrfood_review_user",     db_password = "REPLACE_ME" }
@@ -59,6 +58,8 @@ service_databases = {
   sponsor    = { db_name = "mrfood_sponsor",    db_user = "mrfood_sponsor_user",    db_password = "REPLACE_ME" }
 }
 ```
+
+> **Note:** `auth` has no Cloud SQL database — user storage is handled entirely by Keycloak.
 
 ### Apply
 
@@ -122,17 +123,17 @@ kubectl get pods -n mrfood
 
 All pods should reach `Running`. Common failure modes:
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
-| Service pod CrashLoopBackOff | Missing env var or wrong DB password | `kubectl logs -n mrfood deployment/<svc>` |
-| OTel Collector failing | Loki/Tempo not ready yet | Deploy observability first, then restart collector |
-| Loki/Prometheus/Tempo Pending | PVCs not created | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
-| Gateway request hanging | Stale kong-config ConfigMap | Patch ConfigMap manually (see Kong gateway note above) |
-| Auth requests hanging | Keycloak not running | Deploy Keycloak before auth; restart auth after Keycloak is ready |
-| `search` pod CrashLoopBackOff | Elasticsearch not reachable | Deploy elasticsearch chart first, wait for readiness |
-| `cdc` pod not ready | Kafka not up or ES not ready | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
-| Connectors not registered | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above |
+| Symptom                            | Cause                                  | Fix                                                                  |
+| ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
+| Service pod CrashLoopBackOff       | Missing env var or wrong DB password   | `kubectl logs -n mrfood deployment/<svc>`                            |
+| OTel Collector failing             | Loki/Tempo not ready yet               | Deploy observability first, then restart collector                   |
+| Loki/Prometheus/Tempo Pending      | PVCs not created                       | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
+| Gateway request hanging            | Stale kong-config ConfigMap            | Patch ConfigMap manually (see Kong gateway note above)               |
+| Auth requests hanging              | Keycloak not running                   | Deploy Keycloak before auth; restart auth after Keycloak is ready    |
+| `search` pod CrashLoopBackOff      | Elasticsearch not reachable            | Deploy elasticsearch chart first, wait for readiness                 |
+| `cdc` pod not ready                | Kafka not up or ES not ready           | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
+| Connectors not registered          | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above         |
 
 ### Kong external IP
 
@@ -174,6 +175,10 @@ make setup
 # Start with search / CDC
 make setup-full
 
+# Generate seed data and load into local containers
+make generate-csv
+make load-local
+
 # Run tests
 make test
 
@@ -185,53 +190,54 @@ See `Makefile` for the full list of commands.
 
 ---
 
-## 6. Seed Data — CSV Import
+## 6. Seed Data
 
-Processed CSV files live under `scripts/processed_data/` and are generated by `make generate-csv`. Use this section to load them into the Cloud SQL databases after infrastructure is up.
+Processed CSV files live under `scripts/processed_data/` and are generated by `make generate-csv`.
 
-### List buckets
+### Local
+
+Loads Keycloak users via the Admin API and seeds Postgres containers directly via `psql COPY`. Tables are truncated before each load, making it idempotent.
 
 ```bash
-# List all buckets in the project
-gcloud storage buckets list --project=mrfood-490623
+make generate-csv
+make load-local
 
-# Inspect the schema/seed bucket specifically
-gsutil ls -l gs://kaggle_bucket_6194
-gsutil ls gs://kaggle_bucket_6194/processed_data/
+# Preview without executing
+./scripts/load_seed_data_local.sh --dry-run
 ```
 
-### How it works
+### Cloud (Cloud SQL via GCS)
 
-The script calls `gcloud sql import csv` for each file already present in the bucket, which runs a PostgreSQL `COPY FROM` under the hood. The bucket IAM is already wired by Terraform (`roles/storage.objectViewer` on the Cloud SQL service account).
-
-| CSV file | Database | Table |
-|---|---|---|
-| `processed_data/auth/app_user.csv` | `mrfood_auth` | `app_user` |
-| `processed_data/restaurant/restaurants.csv` | `mrfood_restaurant` | `restaurants` |
-| `processed_data/restaurant/restaurant_categories.csv` | `mrfood_restaurant` | `restaurant_categories` |
-| `processed_data/review/review.csv` | `mrfood_review` | `review` |
-
-### Load all seed data
+Uploads CSVs to GCS and imports them into Cloud SQL via `gcloud sql import`. Databases and tables must already exist (schemas are applied by `terraform apply`).
 
 ```bash
+# List buckets
+gcloud storage buckets list --project=mrfood-490623
+gsutil ls gs://kaggle_bucket_6194/processed_data/
+
 # Preview without executing
-./scripts/load_seed_data.sh --dry-run
+./scripts/load_seed_data_cloud.sh --dry-run
 
 # Run
-./scripts/load_seed_data.sh
+./scripts/load_seed_data_cloud.sh
 ```
 
-> **Note:** Databases and tables must already exist (schemas are applied by `terraform apply`). To reload, truncate the target tables first to avoid primary key conflicts.
+| CSV file                                              | Destination                              |
+| ----------------------------------------------------- | ---------------------------------------- |
+| `processed_data/auth/users.csv`                       | Keycloak `mrfood` realm (Admin API)      |
+| `processed_data/restaurant/restaurants.csv`           | Cloud SQL `mrfood_restaurant.restaurants` |
+| `processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
+| `processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`         |
 
-See `SEED_DATA_CREDENTIALS.md` for the default test password used by generated users (`mrfood123`).
+See `SEED_DATA_CREDENTIALS.md` for the default test password (`mrfood123`).
 
 ---
 
 ## CI / CD Summary
 
-| Workflow | File | Trigger | What it does |
-|---|---|---|---|
-| Lint & Test | `ci.yml` | PR → `services/**` | Lints and tests changed services only |
-| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**` | fmt, validate, plan |
-| Terraform Apply | `terraform_deploy.yml` | Push to `main` → `terraform/**` | `terraform apply` |
-| Bruno API Tests | `bruno.yml` | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests |
+| Workflow           | File                       | Trigger                                    | What it does                          |
+| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
+| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
+| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
+| Terraform Apply    | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform apply`                     |
+| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
