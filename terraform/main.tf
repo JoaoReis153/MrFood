@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "tf-state-manager-493721"
+    bucket = "mr_food_terraform_state"
     prefix = "mrfood/prod"
   }
 }
@@ -9,14 +9,14 @@ terraform {
 resource "google_project_iam_member" "terraform_sa_cloudsql_admin" {
   project = var.project_id
   role    = "roles/cloudsql.admin"
-  member  = "serviceAccount:terraform-sa@state-manager-493721.iam.gserviceaccount.com"
+  member  = "serviceAccount:terraform-state-sa@mr-food-terraform-state.iam.gserviceaccount.com"
 }
 
 # Grant Storage Admin role to terraform-sa for bucket access
 resource "google_project_iam_member" "terraform_sa_storage_admin" {
   project = var.project_id
   role    = "roles/storage.admin"
-  member  = "serviceAccount:terraform-sa@state-manager-493721.iam.gserviceaccount.com"
+  member  = "serviceAccount:terraform-state-sa@mr-food-terraform-state.iam.gserviceaccount.com"
 }
 
 module "vpc" {
