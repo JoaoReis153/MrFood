@@ -1,6 +1,18 @@
 name: payment
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.4
 port: 50057
+
+resources:
+  requests:
+    cpu: "10m"
+    memory: "32Mi"
+  limits:
+    cpu: "50m"
+    memory: "64Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
 
 service:
   type: ClusterIP
@@ -22,4 +34,4 @@ env:
     NOTIFICATION_GRPC_ADDR: "notification:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-payment-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-pg

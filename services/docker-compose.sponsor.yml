@@ -31,6 +31,7 @@ services:
       - ./sponsor/db_setup.sql:/docker-entrypoint-initdb.d/init.sql:Z
     env_file:
       - .env
+      - ./config.env
     environment:
       POSTGRES_DB: ${SPONSOR_POSTGRES_DB}
       POSTGRES_USER: ${SPONSOR_POSTGRES_USER}

@@ -34,8 +34,6 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, 0, err
 	}
 
-	slog.Info("RESTAURANT", "data", restaurant)
-
 	if restaurant.OwnerID != owner {
 		return nil, 0, errors.New("invalid restaurant owner")
 	}
@@ -47,12 +45,12 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, 0, err
 	}
 
-	amount := float32(res.Tier * 20)
+	amount := int64(res.Tier * 20)
 
 	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
 		UserID:         owner,
 		UserEmail:      email,
-		IdempotencyKey: GenerateIdempotencyKey(owner, amount, int32(res.ID), "S"),
+		IdempotencyKey: GenerateIdempotencyKey(owner, (float32)(amount), int32(res.ID), "S"),
 		Amount:         amount,
 		PaymentDescription: fmt.Sprintf("SPONSOR %d FOR RESTAURANT %d WITH TIER %d UNTIL %s",
 			res.ID, request.ID, res.Tier, FormatTime(res.Until)),
@@ -76,11 +74,10 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 	})
 
 	if err != nil {
-		slog.Error("failed to get receipt", "error", err)
+		slog.ErrorContext(ctx, "payment failed", "error", err)
 		return 0, err
 	}
 
-	slog.Info("receipt id", "receipt_id", res.ReceiptId)
 	return res.ReceiptId, nil
 }
 

@@ -20,6 +20,10 @@ type ServerConfig struct {
 	Timeout time.Duration `yaml:"timeout" validate:"required"`
 }
 
+type WebhookConfig struct {
+	Port int `yaml:"port" validate:"required,min=1,max=65535"`
+}
+
 type LogConfig struct {
 	Level string `yaml:"level" validate:"required,oneof=debug info warn error"`
 }
@@ -36,15 +40,22 @@ type DBConfig struct {
 	HealthCheckPeriod time.Duration `yaml:"health_check_period"`
 }
 
-type Config struct {
-	Server       ServerConfig       `yaml:"server"`
-	Log          LogConfig          `yaml:"log"`
-	DB           DBConfig           `yaml:"db"`
-	Notification NotificationConfig `yaml:"notification"`
-}
-
 type NotificationConfig struct {
 	GRPCAddr string `yaml:"grpc_addr"`
+}
+
+type StripeConfig struct {
+	SecretKey     string `yaml:"stripe_key"`
+	WebhookSecret string `yaml:"webhook_secret"`
+}
+
+type Config struct {
+	Server       ServerConfig       `yaml:"server"`
+	Webhook      WebhookConfig      `yaml:"webhook"`
+	Log          LogConfig          `yaml:"log"`
+	DB           DBConfig           `yaml:"db"`
+	Stripe       StripeConfig       `yaml:"stripe"`
+	Notification NotificationConfig `yaml:"notification"`
 }
 
 var (
@@ -60,6 +71,9 @@ func Load(_ context.Context) (*Config, error) {
 			Port:    8080,
 			Timeout: 30 * time.Second,
 		},
+		Webhook: WebhookConfig{
+			Port: 12111,
+		},
 		Log: LogConfig{
 			Level: "info",
 		},
@@ -72,6 +86,10 @@ func Load(_ context.Context) (*Config, error) {
 			MaxConns:          20,
 			MaxConnLifetime:   15 * time.Minute,
 			HealthCheckPeriod: 1 * time.Minute,
+		},
+		Stripe: StripeConfig{
+			SecretKey:     "key",
+			WebhookSecret: "",
 		},
 		Notification: NotificationConfig{
 			GRPCAddr: "notification:50058",
@@ -109,6 +127,9 @@ func overrideWithEnv(cfg *Config) {
 	cfg.DB.HealthCheckPeriod = getEnvDuration("POSTGRES_HEALTH_CHECK_PERIOD", cfg.DB.HealthCheckPeriod)
 
 	cfg.Log.Level = getEnv("APP_LOG_LEVEL", cfg.Log.Level)
+
+	cfg.Stripe.SecretKey = getEnvAny(cfg.Stripe.SecretKey, "STRIPE_SECRET_KEY")
+	cfg.Stripe.WebhookSecret = getEnvAny(cfg.Stripe.WebhookSecret, "STRIPE_WEBHOOK_SECRET")
 
 	cfg.Notification.GRPCAddr = getEnvAny(cfg.Notification.GRPCAddr, "NOTIFICATION_GRPC_ADDR")
 }

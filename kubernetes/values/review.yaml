@@ -1,6 +1,18 @@
 name: review
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/review:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/review:v1.0.4
 port: 50055
+
+resources:
+  requests:
+    cpu: "10m"
+    memory: "32Mi"
+  limits:
+    cpu: "50m"
+    memory: "64Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
 
 service:
   type: ClusterIP
@@ -22,4 +34,4 @@ env:
     REVIEW_TO_RESTAURANT_GRPC_ADDR: "restaurant:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-review-pg
+  instance: mrfood-490623:europe-southwest1:mrfood-pg

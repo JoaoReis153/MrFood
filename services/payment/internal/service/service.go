@@ -1,6 +1,7 @@
 package service
 
 import (
+	"MrFood/services/payment/config"
 	"MrFood/services/payment/internal/api/grpc/pb"
 	"MrFood/services/payment/internal/repository"
 	models "MrFood/services/payment/pkg"
@@ -13,7 +14,12 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/stripe/stripe-go/v85"
+	"github.com/stripe/stripe-go/v85/paymentintent"
 )
+
+var createPaymentIntent = paymentintent.New
 
 var (
 	ErrInvalidAmmount          = errors.New("ammount cannot be negative")
@@ -26,6 +32,8 @@ var (
 
 type paymentRepository interface {
 	CreateReceipt(ctx context.Context, payment_request *models.Receipt, requestHash string) (int32, error)
+	UpdateReceiptStatus(ctx context.Context, paymentIntentID string, status string) error
+	GetReceiptByPaymentIntentID(ctx context.Context, paymentIntentID string) (*models.Receipt, error)
 	GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) (*models.Receipt, error)
 	GetReceiptsByUser(ctx context.Context, user_id int64) ([]*models.Receipt, error)
 }
@@ -35,7 +43,8 @@ type Service struct {
 	client pb.PaymentToNotificationServiceClient
 }
 
-func New(repo *repository.Repository, client pb.PaymentToNotificationServiceClient) *Service {
+func New(repo *repository.Repository, client pb.PaymentToNotificationServiceClient, cfg *config.Config) *Service {
+	stripe.Key = cfg.Stripe.SecretKey
 	return &Service{repo: repo, client: client}
 }
 
@@ -48,7 +57,30 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 		return 0, ErrNullIdempotencyKey
 	}
 
-	receipt_request.PaymentStatus = "success"
+	params := &stripe.PaymentIntentParams{
+		Amount:        stripe.Int64(receipt_request.Amount), // cents
+		Currency:      stripe.String("usd"),
+		Description:   stripe.String(receipt_request.PaymentDescription),
+		PaymentMethod: stripe.String("pm_card_visa"),
+		Confirm:       stripe.Bool(true),
+		AutomaticPaymentMethods: &stripe.PaymentIntentAutomaticPaymentMethodsParams{
+			Enabled:        stripe.Bool(true),
+			AllowRedirects: stripe.String("never"),
+		},
+	}
+
+	params.SetIdempotencyKey(receipt_request.IdempotencyKey)
+
+	pi, err := createPaymentIntent(params)
+	if err != nil {
+		slog.Error("failed to create stripe payment intent", "error", err)
+		return 0, err
+	}
+
+	receipt_request.PaymentIntentID = pi.ID
+	receipt_request.PaymentStatus = string(pi.Status)
+
+	slog.Info(receipt_request.PaymentStatus)
 	receipt_request.CreatedAt = time.Now().UTC()
 
 	hash, err := generateRequestHash(receipt_request)
@@ -57,6 +89,23 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 	}
 
 	return s.repo.CreateReceipt(ctx, receipt_request, hash)
+}
+
+func (s *Service) ConfirmPayment(ctx context.Context, paymentIntentID string) error {
+	if err := s.repo.UpdateReceiptStatus(ctx, paymentIntentID, "succeeded"); err != nil {
+		return err
+	}
+
+	receipt, err := s.repo.GetReceiptByPaymentIntentID(ctx, paymentIntentID)
+	if err != nil {
+		return err
+	}
+
+	if _, err = s.sendReceipts(ctx, []*models.Receipt{receipt}); err != nil {
+		slog.Warn("receipt notification failed after payment confirmation", "error", err, "payment_intent_id", paymentIntentID)
+	}
+
+	return nil
 }
 
 func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) error {
@@ -70,7 +119,7 @@ func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id 
 
 	if _, err = s.sendReceipts(ctx, receipts); err != nil {
 		// Email delivery is best-effort; log but don't fail the request.
-		slog.Warn("receipt email delivery failed, continuing", "error", err)
+		slog.WarnContext(ctx, "receipt email delivery failed, continuing", "error", err)
 	}
 
 	return nil
@@ -84,7 +133,7 @@ func (s *Service) GetReceiptsByUser(ctx context.Context, user_id int64) error {
 
 	if _, err = s.sendReceipts(ctx, receipts); err != nil {
 		// Email delivery is best-effort; log but don't fail the request.
-		slog.Warn("receipt email delivery failed, continuing", "error", err)
+		slog.WarnContext(ctx, "receipt email delivery failed, continuing", "error", err)
 	}
 
 	return nil
@@ -99,7 +148,7 @@ func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) 
 
 	for _, r := range receipts {
 		pbReceipts = append(pbReceipts, &pb.Receipt{
-			Amount:               float64(r.Amount),
+			Amount:               r.Amount,
 			PaymentDescription:   r.PaymentDescription,
 			CurrentPaymentStatus: r.PaymentStatus,
 			PaymentType:          r.PaymentType,
@@ -121,7 +170,7 @@ func (s *Service) sendReceipts(ctx context.Context, receipts []*models.Receipt) 
 func generateRequestHash(r *models.Receipt) (string, error) {
 	input := struct {
 		UserID      int64
-		Amount      float32
+		Amount      int64
 		Description string
 		PaymentType string
 		TimeSlot    string

@@ -3,11 +3,12 @@ package main
 import (
 	"MrFood/services/notification/config"
 	"MrFood/services/notification/internal/app"
+	"MrFood/services/notification/internal/telemetry"
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -15,7 +16,12 @@ import (
 func main() {
 	ctx := context.Background()
 	cfg := config.Get(ctx)
-	setupLogger(cfg.Log.Level)
+
+	shutdownTelemetry, err := telemetry.Setup(ctx, "mrfood-notification", telemetry.ParseLevel(cfg.Log.Level))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "telemetry setup failed: %v\n", err)
+	}
+	defer shutdownTelemetry()
 
 	app, err := app.New(ctx, cfg)
 	if err != nil {
@@ -37,27 +43,4 @@ func main() {
 	if err := app.RunServer(shutdownCtx, cfg); err != nil {
 		slog.Error("server failed", "error", err)
 	}
-}
-
-func setupLogger(logLevel string) {
-	level := slog.LevelInfo
-
-	switch strings.ToLower(logLevel) {
-	case "debug":
-		level = slog.LevelDebug
-	case "warn":
-		level = slog.LevelWarn
-	case "error":
-		level = slog.LevelError
-	case "info":
-		level = slog.LevelInfo
-	}
-
-	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		Level:     level,
-		AddSource: true,
-	})
-
-	slog.SetDefault(slog.New(handler))
-	slog.Info("logger initialized", "level", logLevel)
 }

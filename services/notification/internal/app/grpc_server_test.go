@@ -187,7 +187,7 @@ func TestMapToGRPCError(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			err := mapToGRPCError(tc.in)
+			err := mapToGRPCError(t.Context(), tc.in)
 			if status.Code(err) != tc.expected {
 				t.Fatalf("unexpected code: got %v want %v", status.Code(err), tc.expected)
 			}

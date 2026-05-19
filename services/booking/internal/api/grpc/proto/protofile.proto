@@ -22,7 +22,7 @@ service PaymentCommandService {
 
 message PaymentRequest {
   int64 user_id = 1;
-  float amount = 2;
+  int64 amount = 2;
   string user_email = 3;
   string idempotency_key = 4;
   string payment_description = 5;

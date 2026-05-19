@@ -128,7 +128,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 	}
 	defer func() {
 		if err := searchRes.Body.Close(); err != nil {
-			slog.Error("error closing response body", "error", err)
+			slog.ErrorContext(ctx, "error closing response body", "error", err)
 		}
 	}()
 
@@ -212,12 +212,12 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, index string) error {
 	existsRes, err := es.Indices.Exists([]string{index}, es.Indices.Exists.WithContext(ctx))
 	if err != nil {
-		slog.Warn("elasticsearch unreachable at startup; queries will fail until it is available", "index", index, "error", err)
+		slog.WarnContext(ctx, "elasticsearch unreachable at startup; queries will fail until it is available", "index", index, "error", err)
 		return nil
 	}
 	defer func() {
 		if err := existsRes.Body.Close(); err != nil {
-			slog.Error("error closing response body", "error", err)
+			slog.ErrorContext(ctx, "error closing response body", "error", err)
 		}
 	}()
 
@@ -225,7 +225,7 @@ func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, inde
 		return nil
 	}
 	if existsRes.StatusCode == 404 {
-		slog.Warn("search index does not exist yet; queries will fail until CDC creates it", "index", index)
+		slog.WarnContext(ctx, "search index does not exist yet; queries will fail until CDC creates it", "index", index)
 		return nil
 	}
 

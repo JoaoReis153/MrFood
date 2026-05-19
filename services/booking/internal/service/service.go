@@ -42,7 +42,7 @@ func New(repo BookingRepository, restaurantClient pb.RestaurantToBookingServiceC
 func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (int32, int32, error) {
 	// check if people count is too high
 	if booking.PeopleCount > MAX_SLOTS {
-		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
+		slog.ErrorContext(ctx, "Not enough slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
 		return 0, 0, ErrInvalidBooking
 	}
 
@@ -54,11 +54,13 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "working hours received", "start", working_hours.TimeStart, "end", working_hours.TimeEnd)
 
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {
-		slog.Error("Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
+		slog.ErrorContext(ctx, "Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
 		return 0, 0, ErrInvalidBooking
 	}
+	slog.InfoContext(ctx, "booking time valid, inserting")
 
 	var time_end = booking.TimeStart.Add(time.Hour)
 
@@ -73,14 +75,15 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "booking inserted", "booking_id", booking_id)
 
-	amount := float32(booking.PeopleCount) * 10
+	amount := int64(booking.PeopleCount) * 500 // 5.00 EUR per person
 
 	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
 		UserID:         booking.UserID,
 		UserEmail:      booking.UserEmail,
-		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, amount, booking_id, "B"),
-		Amount:         float32(amount),
+		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, (float32)(amount), booking_id, "B"),
+		Amount:         amount,
 		PaymentDescription: fmt.Sprintf("BOOKING %d FOR USER %d IN RESTAURANT %d FROM %s TO %s",
 			booking_id, booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
 		PaymentType: "B",
@@ -88,6 +91,7 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "payment done", "receipt_id", receipt_id)
 
 	return booking_id, receipt_id, nil
 }
@@ -109,11 +113,10 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 	})
 
 	if err != nil {
-		slog.Error("failed to get receipt", "error", err)
+		slog.ErrorContext(ctx, "payment failed", "error", err)
 		return 0, err
 	}
 
-	slog.Info("receipt id", "receipt_id", res.ReceiptId)
 	return res.ReceiptId, nil
 }
 

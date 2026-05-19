@@ -1,0 +1,4 @@
+apiVersion: v2
+name: kafka
+description: Zookeeper + Kafka for MrFood CDC pipeline
+version: 0.1.0

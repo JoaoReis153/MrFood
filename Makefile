@@ -7,7 +7,6 @@ TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restauran
 -include services/config.env
 -include services/.env
 
-# Load config and secrets for docker compose interpolation
 ENV_FILES := --env-file services/config.env
 ENV_FILES += $(if $(wildcard services/.env),--env-file services/.env,)
 
@@ -17,45 +16,99 @@ CSV_SERVICES ?= all
 CSV_ROWS ?= 200
 CSV_FULL ?=
 
-# Detect if using podman
 IS_PODMAN := $(shell docker --version 2>/dev/null | grep -i podman)
-
 PULL_FLAG :=
+BUILD_FLAG :=
+
 ifeq ($(IS_PODMAN),)
 	PULL_FLAG := --pull=missing
+	BUILD_FLAG := --parallel
 endif
 
-.PHONY: help create_env generate-csv generate-csv-auth generate-csv-restaurant generate-csv-review load-auth load-restaurant load-reviews load-all setup build run bootstrap-search stop down restart logs test clean clean-volumes clean-all test test-bruno
+.PHONY: help create_env generate-csv setup setup-full build run run-full stop down restart logs test test-bruno clean clean-all search-bootstrap search-logs search-clean
 
 help:
-	@echo "MrFood Make Commands"
+	@echo "MrFood — available commands"
 	@echo ""
-	@echo "Setup & Data:"
-	@echo "  make create_env                         - Create secret .env files from env.tmpl"
-	@echo "  (config.env is already committed — no setup needed)"
-	@echo "  make setup                              - Start services and load all data"
-	@echo "  make generate-csv                       - Generate CSV seed data (default 200 rows)"
-	@echo "  make generate-csv CSV_FULL=1            - Generate CSV seed data (full dataset)"
-	@echo "  make load-reviews                       - Load review seed data into database"
-	@echo "  make load-all                           - Load all seed data into databases"
-	@echo ""
-	@echo "Service Management:"
-	@echo "  make run                                - Start all services (detached)"
-	@echo "  make bootstrap-search                   - Create ES index and register CDC connectors"
-	@echo "  make stop                               - Stop services"
-	@echo "  make down                               - Stop and remove services"
-	@echo "  make restart                            - Restart services"
-	@echo "  make logs                               - View service logs"
-	@echo ""
-	@echo "Build & Test:"
-	@echo "  make build                              - Build service images"
-	@echo "  make test                               - Run all Go tests"
-	@echo ""
-	@echo "Cleanup:"
-	@echo "  make clean                              - Remove containers & images"
-	@echo "  make clean-all                          - Full reset (all containers, images, volumes)"
+	@echo "  make create_env      Create services/.env from env.tmpl"
+	@echo "  make generate-csv    Generate CSV seed data (CSV_ROWS=200, CSV_FULL=1)"
+	@echo "  make setup           Start core services"
+	@echo "  make setup-full      Start all services including search/CDC"
+	@echo "  make run             Start core services (detached)"
+	@echo "  make run-full        Start all services including search/CDC (detached)"
+	@echo "  make stop            Stop services"
+	@echo "  make down            Stop and remove containers"
+	@echo "  make restart         Restart services"
+	@echo "  make logs            Tail logs"
+	@echo "  make build           Build service images"
+	@echo "  make test            Run Go tests"
+	@echo "  make test-bruno      Run Bruno API tests"
+	@echo "  make clean           Remove containers, images, volumes"
+	@echo "  make clean-all       Full reset (all images included)"
+	@echo "  make search-bootstrap  Create ES index and register CDC connectors"
+	@echo "  make search-logs     Tail search service logs"
+	@echo "  make search-clean    Remove search containers and volumes"
 
-## Run Bruno REST CI smoke tests
+# ============================================================================
+# ENVIRONMENT
+# ============================================================================
+
+create_env:
+	@if [ -f services/.env ]; then \
+		echo "services/.env already exists."; \
+	else \
+		cp services/env.tmpl services/.env; \
+		echo "Created services/.env — fill in secret values before running."; \
+	fi
+	@echo "Fill in secret values in services/.env before running docker compose."
+
+# ============================================================================
+# DATA GENERATION
+# ============================================================================
+
+generate-csv:
+	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
+
+# ============================================================================
+# SERVICE MANAGEMENT
+# ============================================================================
+
+build:
+	DOCKER_BUILDKIT=1 $(DC) build $(BUILD_FLAG)
+
+run:
+	$(DC) up -d $(PULL_FLAG)
+
+run-full:
+	$(DC) --profile search up -d $(PULL_FLAG)
+
+setup: run
+	@echo "✓ Core services running"
+
+setup-full: run-full search-bootstrap
+	@echo "✓ All services running with search"
+
+stop:
+	$(DC) stop
+
+down:
+	$(DC) down
+
+restart: down run
+
+logs:
+	$(DC) logs -f
+
+logs-dump:
+	$(DC) logs --tail=500
+
+# ============================================================================
+# TESTING
+# ============================================================================
+
+test:
+	go test -v -race $(TEST_PACKAGES)
+
 test-bruno:
 	mkdir -p tests/mrfood-api/reports
 	cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json
@@ -67,143 +120,24 @@ test-bruno:
 	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
 	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json
 
-## Build services
-
-# ============================================================================
-# ENVIRONMENT
-# ============================================================================
-
-## Create services/.env from services/env.tmpl
-## config.env (non-sensitive) is already committed — no action needed for it.
-create_env:
-	@if [ -f services/.env ]; then \
-		echo "services/.env already exists."; \
-	else \
-		cp services/env.tmpl services/.env; \
-		echo "Created services/.env"; \
-	fi
-	@echo "Fill in secret values in services/.env before running docker compose."
-
-# ============================================================================
-# DATA GENERATION
-# ============================================================================
-
-## Generate CSV seed data (default 200 rows, use CSV_FULL=1 for full dataset)
-generate-csv:
-	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
-
-# ============================================================================
-# DATA LOADING
-# ============================================================================
-
-load-csvs:
-	@$(MAKE) --no-print-directory -j 3 load-auth load-restaurant load-reviews 
-	@echo "✓ All data loaded successfully"
-
-## Complete setup: start services and load all data
-setup: run search-bootstrap load-csvs
-	@echo "✓ Setup complete! Services running and data loaded"
-
-# ============================================================================
-# SERVICE MANAGEMENT
-# ============================================================================
-
-## Build service images
-build:
-	$(DC) build
-
-build-no-cache:
-	$(DC) build --no-cache
-
-## Start all services (detached)
-run:
-	$(DC) up -d $(PULL_FLAG)
-
-## Stop services
-stop:
-	$(DC) stop
-
-## Stop and remove services
-down:
-	$(DC) down
-
-down-volumes:
-	$(DC) down -v
-
-## Restart services
-restart: down run
-
-## View service logs
-logs:
-	$(DC) logs -f
-
-logs-dump:
-	$(DC) logs --tail=500
-
-# ============================================================================
-# TESTING & BUILDING
-# ============================================================================
-
-## Run all Go tests
-test:
-	go test -v -race $(TEST_PACKAGES)
-
 # ============================================================================
 # CLEANUP
 # ============================================================================
 
-## Remove containers + images + volumes (deletes DB data)
 clean:
 	$(DC) down --rmi local --volumes --remove-orphans
 
-## Full reset (containers, images, volumes)
 clean-all:
 	$(DC) down --rmi all --volumes --remove-orphans
-
 
 # ============================================================================
 # SEARCH
 # ============================================================================
 
-SEARCH_COMPOSE_FILE := services/docker-compose.cdc.yml
-SEARCH_SERVICES := search elasticsearch zookeeper kafka connect restaurant restaurant_db kong auth auth_db otel-collector
-
-
-DCS := docker compose -p $(PROJECT_NAME) \
-	-f services/docker-compose.yml \
-	-f $(SEARCH_COMPOSE_FILE) \
-	$(ENV_FILES)
-
-## Start only search-related services (ES, Kafka, Connect)
-search-run:
-	$(DCS) up -d $(SEARCH_SERVICES)
-	@$(MAKE) --no-print-directory search-bootstrap
-
-## Lightweight ES setup for CI: create index only, no CDC connectors.
-## seed_elasticsearch.sh is called automatically inside test-bruno.
-search-seed:
-	@echo "Waiting for Elasticsearch..."
-	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
-	@echo "✔ Elasticsearch ready"
-
-	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
-		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
-		-H 'Content-Type: application/json' \
-		-d @services/cdc/mappings/restaurants.json || true); \
-	if [ "$$HTTP_CODE" = "400" ]; then \
-		echo "✔ Index already exists"; \
-	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
-		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
-	else \
-		echo "✔ Index created (HTTP $$HTTP_CODE)"; \
-	fi
-
-## Bootstrap ES index and register CDC connectors
 search-bootstrap:
 	@echo "Waiting for Elasticsearch..."
 	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
 	@echo "✔ Elasticsearch ready"
-
 	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
 		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
 		-H 'Content-Type: application/json' \
@@ -213,25 +147,14 @@ search-bootstrap:
 	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
 		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
 	else \
-		echo "✔ Index created (HTTP $$HTTP_CODE)"; \
+		echo "✔ Index created"; \
 	fi
-
 	@bash services/cdc/register-connectors.sh
 	@bash services/cdc/seed_elasticsearch.sh
 
-## Stop search services
-search-stop:
-	$(DCS) stop $(SEARCH_SERVICES)
-
-## Stop and remove search services
-search-down:
-	$(DCS) rm -sf $(SEARCH_SERVICES)
-
-## Tail logs for search services only
 search-logs:
-	$(DCS) logs -f $(SEARCH_SERVICES)
+	$(DC) --profile search logs -f elasticsearch zookeeper kafka connect search
 
-## Full reset of search (removes elastic_data volume)
 search-clean:
-	$(DCS) rm -sf $(SEARCH_SERVICES)
+	$(DC) --profile search rm -sf elasticsearch zookeeper kafka connect search
 	docker volume rm -f $(PROJECT_NAME)_elastic_data

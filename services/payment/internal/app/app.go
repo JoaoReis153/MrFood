@@ -34,7 +34,7 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("client connection: %w", err)
 	}
-	svc := service.New(repo, client)
+	svc := service.New(repo, client, cfg)
 
 	return &App{
 		Repo:             repo,
@@ -45,8 +45,11 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 }
 
 func (a *App) Close(ctx context.Context) error {
-	if a.Repo == nil {
-		return nil
+	if a.NotificationConn != nil {
+		a.NotificationConn.Close()
 	}
-	return a.Repo.Close(ctx)
+	if a.DB != nil {
+		a.DB.Close()
+	}
+	return nil
 }

@@ -3,47 +3,31 @@ package main
 import (
 	"MrFood/services/review/config"
 	"MrFood/services/review/internal/app"
+	"MrFood/services/review/internal/telemetry"
 	"context"
+	"fmt"
 	"log"
-	"log/slog"
 	"os"
-	"strings"
 )
 
 func main() {
-	setupLogger(config.Get(context.Background()).Log.Level)
-	config.Get(context.Background())
-	app := app.New()
+	ctx := context.Background()
+	cfg := config.Get(ctx)
 
-	err := app.ConnectDb()
+	shutdownTelemetry, err := telemetry.Setup(ctx, "mrfood-review", telemetry.ParseLevel(cfg.Log.Level))
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "telemetry setup failed: %v\n", err)
+	}
+	defer shutdownTelemetry()
+
+	application := app.New()
+	defer application.Close()
+
+	if err := application.ConnectDb(); err != nil {
 		log.Fatalf("DB connection failed: %v", err)
 	}
-	defer app.DB.Close()
-	defer app.Close()
-	app.InitDependencies()
-	app.RunServer()
-}
+	defer application.DB.Close()
 
-func setupLogger(logLevel string) {
-	level := slog.LevelInfo // Default
-
-	switch strings.ToLower(logLevel) {
-	case "debug":
-		level = slog.LevelDebug
-	case "warn":
-		level = slog.LevelWarn
-	case "error":
-		level = slog.LevelError
-	case "info":
-		level = slog.LevelInfo
-	}
-
-	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		Level:     level,
-		AddSource: true, // file:line numbers
-	})
-
-	slog.SetDefault(slog.New(handler))
-	slog.Info("logger initialized", "level", logLevel)
+	application.InitDependencies()
+	application.RunServer()
 }

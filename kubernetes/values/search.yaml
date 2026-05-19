@@ -1,6 +1,18 @@
 name: search
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/search:v1.0.1
+image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/search:v1.0.4
 port: 50056
+
+resources:
+  requests:
+    cpu: "25m"
+    memory: "128Mi"
+  limits:
+    cpu: "100m"
+    memory: "256Mi"
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 2
 
 service:
   type: ClusterIP
@@ -9,6 +21,6 @@ env:
   secrets:
   config:
     SEARCH_SERVER_PORT: 50056
-    ELASTICSEARCH_HOST: localhost
+    ELASTICSEARCH_HOST: elasticsearch
     ELASTICSEARCH_PORT: 9200
     ELASTICSEARCH_INDEX: restaurants

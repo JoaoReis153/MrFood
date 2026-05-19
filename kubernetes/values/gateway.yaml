@@ -2,5 +2,17 @@ name: gateway
 
 image: kong:3.6
 
+resources:
+  requests:
+    cpu: "50m"
+    memory: "256Mi"
+  limits:
+    cpu: "200m"
+    memory: "512Mi"
+
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 4
+
 service:
   type: LoadBalancer
