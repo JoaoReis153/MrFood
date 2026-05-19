@@ -1,8 +1,12 @@
 terraform {
   backend "gcs" {
     bucket = "tf-state-manager-493721"
-    prefix = "mrfood/prod"
+    prefix = "mrfood/prod-v2"
   }
+}
+
+locals {
+  schema_bootstrap_bucket_name = coalesce(var.schema_bootstrap_bucket_name, "mrfood-cloudsql-schema-bootstrap-${var.project_id}")
 }
 
 # Grant Cloud SQL Admin role to terraform-sa service account for schema imports
@@ -129,7 +133,7 @@ locals {
 }
 
 resource "google_storage_bucket" "schema_bootstrap" {
-  name                        = var.schema_bootstrap_bucket_name
+  name                        = local.schema_bootstrap_bucket_name
   project                     = var.project_id
   location                    = var.region
   uniform_bucket_level_access = true

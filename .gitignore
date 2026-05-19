@@ -1,4 +1,5 @@
 *.DS_Store
+terraform/terraform.tfvars
 *.vscode
 *.idea
 # Ignore all .env secret files; env.tmpl is the committed template

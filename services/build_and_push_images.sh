@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGISTRY_REPO="europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo"
+REGISTRY_REPO="europe-southwest1-docker.pkg.dev/${TF_VAR_project_id:?TF_VAR_project_id is not set}/mrfood-repo"
 
 usage() {
   cat <<'EOF'

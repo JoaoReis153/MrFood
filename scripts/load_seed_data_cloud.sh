@@ -12,7 +12,7 @@
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
-PROJECT_ID="mrfood-490623"
+PROJECT_ID="${TF_VAR_project_id:?TF_VAR_project_id is not set}"
 INSTANCE="mrfood-pg"
 BUCKET="kaggle_bucket_6194"
 DRY_RUN=false
