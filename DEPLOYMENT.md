@@ -2,13 +2,13 @@
 
 ## Overview
 
-| Layer | Tool | Trigger |
-|---|---|---|
-| Infrastructure | Terraform | Push to `main` → `terraform/**` |
-| Container images | Docker + Artifact Registry | `services/build_and_push_images.sh` / CI |
-| Kubernetes workloads | Helm | `kubernetes/restart.sh` / CI |
-| Observability | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm |
-| Search | Elasticsearch + Kafka + Kafka Connect | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
+| Layer                | Tool                                           | Trigger                                          |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------ |
+| Infrastructure       | Terraform                                      | Push to `main` → `terraform/**`                  |
+| Container images     | Docker + Artifact Registry                     | `services/build_and_push_images.sh` / CI         |
+| Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
+| Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
+| Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
 
 ---
 
@@ -122,17 +122,17 @@ kubectl get pods -n mrfood
 
 All pods should reach `Running`. Common failure modes:
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
-| Service pod CrashLoopBackOff | Missing env var or wrong DB password | `kubectl logs -n mrfood deployment/<svc>` |
-| OTel Collector failing | Loki/Tempo not ready yet | Deploy observability first, then restart collector |
-| Loki/Prometheus/Tempo Pending | PVCs not created | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
-| Gateway request hanging | Stale kong-config ConfigMap | Patch ConfigMap manually (see Kong gateway note above) |
-| Auth requests hanging | Keycloak not running | Deploy Keycloak before auth; restart auth after Keycloak is ready |
-| `search` pod CrashLoopBackOff | Elasticsearch not reachable | Deploy elasticsearch chart first, wait for readiness |
-| `cdc` pod not ready | Kafka not up or ES not ready | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
-| Connectors not registered | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above |
+| Symptom                            | Cause                                  | Fix                                                                  |
+| ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
+| Service pod CrashLoopBackOff       | Missing env var or wrong DB password   | `kubectl logs -n mrfood deployment/<svc>`                            |
+| OTel Collector failing             | Loki/Tempo not ready yet               | Deploy observability first, then restart collector                   |
+| Loki/Prometheus/Tempo Pending      | PVCs not created                       | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
+| Gateway request hanging            | Stale kong-config ConfigMap            | Patch ConfigMap manually (see Kong gateway note above)               |
+| Auth requests hanging              | Keycloak not running                   | Deploy Keycloak before auth; restart auth after Keycloak is ready    |
+| `search` pod CrashLoopBackOff      | Elasticsearch not reachable            | Deploy elasticsearch chart first, wait for readiness                 |
+| `cdc` pod not ready                | Kafka not up or ES not ready           | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
+| Connectors not registered          | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above         |
 
 ### Kong external IP
 
@@ -204,12 +204,12 @@ gsutil ls gs://kaggle_bucket_6194/processed_data/
 
 The script calls `gcloud sql import csv` for each file already present in the bucket, which runs a PostgreSQL `COPY FROM` under the hood. The bucket IAM is already wired by Terraform (`roles/storage.objectViewer` on the Cloud SQL service account).
 
-| CSV file | Database | Table |
-|---|---|---|
-| `processed_data/auth/app_user.csv` | `mrfood_auth` | `app_user` |
-| `processed_data/restaurant/restaurants.csv` | `mrfood_restaurant` | `restaurants` |
+| CSV file                                              | Database            | Table                   |
+| ----------------------------------------------------- | ------------------- | ----------------------- |
+| `processed_data/auth/app_user.csv`                    | `mrfood_auth`       | `app_user`              |
+| `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
 | `processed_data/restaurant/restaurant_categories.csv` | `mrfood_restaurant` | `restaurant_categories` |
-| `processed_data/review/review.csv` | `mrfood_review` | `review` |
+| `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
 
 ### Load all seed data
 
@@ -229,9 +229,9 @@ See `SEED_DATA_CREDENTIALS.md` for the default test password used by generated u
 
 ## CI / CD Summary
 
-| Workflow | File | Trigger | What it does |
-|---|---|---|---|
-| Lint & Test | `ci.yml` | PR → `services/**` | Lints and tests changed services only |
-| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**` | fmt, validate, plan |
-| Terraform Apply | `terraform_deploy.yml` | Push to `main` → `terraform/**` | `terraform apply` |
-| Bruno API Tests | `bruno.yml` | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests |
+| Workflow           | File                       | Trigger                                    | What it does                          |
+| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
+| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
+| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
+| Terraform Apply    | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform apply`                     |
+| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
