@@ -36,6 +36,11 @@ func main() {
 		}
 	}()
 
+	if err := telemetry.RegisterPoolMetrics(app.DB); err != nil {
+		slog.Error("pool metrics registration failed", "error", err)
+		os.Exit(1)
+	}
+
 	shutdownCtx, stop := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
