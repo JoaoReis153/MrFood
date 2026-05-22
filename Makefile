@@ -42,7 +42,7 @@ help:
 	@echo "  make logs            Tail logs"
 	@echo "  make build           Build service images"
 	@echo "  make test            Run Go tests"
-	@echo "  make test-bruno      Run Bruno API tests"
+	@echo "  make test-bruno      Run Bruno API tests (GATEWAY_IP=x.x.x.x to test against cloud)"
 	@echo "  make clean           Remove containers, images, volumes"
 	@echo "  make clean-all       Full reset (all images included)"
 	@echo "  make search-bootstrap  Create ES index and register CDC connectors"
@@ -109,16 +109,19 @@ logs-dump:
 test:
 	go test -v -race $(TEST_PACKAGES)
 
+GATEWAY_IP ?=
+BRUNO_URL_OVERRIDE := $(if $(GATEWAY_IP),--env-var "baseUrl=http://$(GATEWAY_IP)",)
+
 test-bruno:
 	mkdir -p tests/mrfood-api/reports
-	cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json
-	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
-	cd tests/mrfood-api/collections/reservations && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reservations-junit.xml --reporter-json ../../reports/reservations-report.json
-	cd tests/mrfood-api/collections/reviews && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/reviews-junit.xml --reporter-json ../../reports/reviews-report.json
+	cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json
+	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
+	cd tests/mrfood-api/collections/reservations && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/reservations-junit.xml --reporter-json ../../reports/reservations-report.json
+	cd tests/mrfood-api/collections/reviews && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/reviews-junit.xml --reporter-json ../../reports/reviews-report.json
 	@bash services/cdc/seed_elasticsearch.sh
-	cd tests/mrfood-api/collections/search && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/search-junit.xml --reporter-json ../../reports/search-report.json
-	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
-	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json
+	cd tests/mrfood-api/collections/search && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/search-junit.xml --reporter-json ../../reports/search-report.json
+	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
+	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json
 
 # ============================================================================
 # CLEANUP
