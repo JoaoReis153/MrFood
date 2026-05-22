@@ -9,14 +9,14 @@ terraform {
 resource "google_project_iam_member" "terraform_sa_cloudsql_admin" {
   project = var.project_id
   role    = "roles/cloudsql.admin"
-  member  = "serviceAccount:terraform-state-sa@mr-food-terraform-state.iam.gserviceaccount.com"
+  member  = "serviceAccount:terraform-state-sa@state-manager-496816.iam.gserviceaccount.com"
 }
 
 # Grant Storage Admin role to terraform-sa for bucket access
 resource "google_project_iam_member" "terraform_sa_storage_admin" {
   project = var.project_id
   role    = "roles/storage.admin"
-  member  = "serviceAccount:terraform-state-sa@mr-food-terraform-state.iam.gserviceaccount.com"
+  member  = "serviceAccount:terraform-state-sa@state-manager-496816.iam.gserviceaccount.com"
 }
 
 module "vpc" {
