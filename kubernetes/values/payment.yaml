@@ -1,5 +1,5 @@
 name: payment
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/payment:v1.0.4
+image: payment:2617bb1
 port: 50057
 
 resources:
@@ -34,4 +34,4 @@ env:
     NOTIFICATION_GRPC_ADDR: "notification:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-pg
+  instance: europe-southwest1:mrfood-pg
