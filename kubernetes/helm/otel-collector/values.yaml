@@ -10,4 +10,4 @@ resources:
     cpu: "500m"
     memory: "512Mi"
 
-gcpProject: mrfood-490623
+gcpProject: ""
