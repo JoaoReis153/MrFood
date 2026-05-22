@@ -6,12 +6,13 @@
 #
 # Prerequisites:
 #   gcloud auth application-default login
-#   gcloud config set project mrfood-490623
+#   gcloud config set project <GCP_PROJECT_ID>
 #
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
-PROJECT_ID="mrfood-490623"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../gcp.env"
 INSTANCE="mrfood-pg"
 BUCKET="kaggle_bucket_6194"
 DRY_RUN=false
@@ -42,7 +43,7 @@ for entry in "${IMPORTS[@]}"; do
 
   if $DRY_RUN; then
     echo "  [dry-run] strip header → gs://${BUCKET}/${tmp_object}"
-    echo "  [dry-run] gcloud sql import csv ${instance} gs://${BUCKET}/${tmp_object} --database=${db} --table=${table} --columns=${columns} --project=${PROJECT_ID} --quiet"
+    echo "  [dry-run] gcloud sql import csv ${instance} gs://${BUCKET}/${tmp_object} --database=${db} --table=${table} --columns=${columns} --project=${GCP_PROJECT_ID} --quiet"
   else
     echo "   downloading → ${local_file}"
     gsutil -q cp "gs://${BUCKET}/${gcs_object}" "${local_file}"
@@ -57,7 +58,7 @@ for entry in "${IMPORTS[@]}"; do
       --database="${db}" \
       --table="${table}" \
       --columns="${columns}" \
-      --project="${PROJECT_ID}" \
+      --project="${GCP_PROJECT_ID}" \
       --quiet
 
     gsutil -q rm "gs://${BUCKET}/${tmp_object}"
