@@ -170,6 +170,10 @@ helm upgrade --install cdc kubernetes/helm/kafka-connect \
   --namespace mrfood
 ```
 
+# Wait for CDC to be ready (autoscaler may need to provision a new node — this can take 1-2 min)
+kubectl rollout status deployment/cdc -n mrfood --timeout 5m
+```
+
 After CDC is running, register the connectors (connector configs are baked into the image at `/connectors/`):
 
 ```bash
