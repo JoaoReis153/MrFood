@@ -1,5 +1,5 @@
 name: payment
-image: payment:2617bb1
+image: payment:ed25456
 port: 50057
 
 resources:

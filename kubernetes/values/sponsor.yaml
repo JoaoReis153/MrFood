@@ -1,5 +1,5 @@
 name: sponsor
-image: sponsor:2617bb1
+image: sponsor:ed25456
 port: 50054
 
 resources:

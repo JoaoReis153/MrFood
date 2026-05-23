@@ -1,5 +1,5 @@
 name: restaurant
-image: restaurant:2617bb1
+image: restaurant:ed25456
 port: 50052
 
 resources:

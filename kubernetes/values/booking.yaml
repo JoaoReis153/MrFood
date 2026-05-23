@@ -1,5 +1,5 @@
 name: booking
-image: booking:2617bb1
+image: booking:ed25456
 port: 50053
 
 resources:
