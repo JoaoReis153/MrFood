@@ -1,5 +1,5 @@
 name: auth
-image: auth:ed25456
+image: auth:9ec2b4d
 port: 50051
 
 resources:
