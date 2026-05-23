@@ -207,6 +207,8 @@ func mapServiceError(_ context.Context, err error) error {
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, service.ErrFailedWHGet):
 		return status.Error(codes.FailedPrecondition, err.Error())
+	case errors.Is(err, service.ErrPaymentFailed):
+		return status.Error(codes.Unavailable, err.Error())
 	default:
 		return status.Error(codes.Internal, "internal server error")
 	}

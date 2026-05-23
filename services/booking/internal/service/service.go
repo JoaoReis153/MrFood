@@ -22,6 +22,7 @@ var (
 	ErrForbidden            = errors.New("booking does not belong to user")
 	ErrBookingNotFound      = errors.New("booking not found")
 	ErrFailedWHGet          = errors.New("failed to get working hours")
+	ErrPaymentFailed        = errors.New("payment service unavailable")
 )
 
 type BookingRepository interface {
@@ -114,7 +115,7 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 
 	if err != nil {
 		slog.ErrorContext(ctx, "payment failed", "error", err)
-		return 0, err
+		return 0, fmt.Errorf("%w: %v", ErrPaymentFailed, err)
 	}
 
 	return res.ReceiptId, nil

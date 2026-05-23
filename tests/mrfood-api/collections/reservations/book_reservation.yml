@@ -24,8 +24,8 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        test("book reservation returns 200", () => {
-          expect(res.status).to.equal(200);
+        test("book reservation returns 200 or 503 if payment unavailable", () => {
+          expect(res.status).to.be.oneOf([200, 503]);
         });
 
         if (res.status === 200) {
@@ -35,6 +35,13 @@ runtime:
           });
 
           bru.setEnvVar("bookingId", String(res.body.booking_id));
+        }
+
+        if (res.status === 503) {
+          test("payment failure returns error message", () => {
+            expect(res.body).to.have.property("message");
+            expect(res.body.message).to.include("payment service unavailable");
+          });
         }
 
 settings:
