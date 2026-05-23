@@ -174,11 +174,8 @@ helm upgrade --install cdc kubernetes/helm/kafka-connect \
   -f kubernetes/values/cdc.yaml \
   --set "gcpProjectId=${GCP_PROJECT_ID}" \
   --namespace mrfood
-```
 
 # Wait for CDC to be ready (autoscaler may need to provision a new node — this can take 1-2 min)
-
-```
 kubectl rollout status deployment/cdc -n mrfood --timeout 5m
 ```
 
@@ -211,9 +208,9 @@ bash kubernetes/restart.sh
 > **Note:** After updating `services/gateway/kong/kong.yml`, patch the live ConfigMap and restart — Helm does not auto-update it:
 >
 > ```bash
+> kubectl delete configmap kong-config -n mrfood --ignore-not-found
 > kubectl create configmap kong-config -n mrfood \
->   --from-file=kong.yml=services/gateway/kong/kong.yml \
->   --dry-run=client -o yaml | kubectl apply -f -
+>   --from-file=kong.yml=services/gateway/kong/kong.yml
 > kubectl rollout restart deployment/gateway -n mrfood
 > ```
 
