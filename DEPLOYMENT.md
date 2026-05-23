@@ -105,6 +105,12 @@ Build and push all services. The script also updates the `image:` tag in each `k
 
 ## 3. Kubernetes — Helm
 
+### Connect to the GKE cluster
+
+```bash
+gcloud container clusters get-credentials mrfood-cluster --zone europe-southwest1-b --project "${GCP_PROJECT_ID}"
+```
+
 ### Namespace
 
 ```bash
@@ -171,6 +177,8 @@ helm upgrade --install cdc kubernetes/helm/kafka-connect \
 ```
 
 # Wait for CDC to be ready (autoscaler may need to provision a new node — this can take 1-2 min)
+
+```
 kubectl rollout status deployment/cdc -n mrfood --timeout 5m
 ```
 
