@@ -9,7 +9,6 @@
 | Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
 | Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
 | Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
-
 ---
 
 ## Prerequisites
@@ -85,10 +84,10 @@ gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 Build and push all services. The script also updates the `image:` tag in each `kubernetes/values/<service>.yaml` automatically:
 
 ```bash
-./services/build_and_push_images.sh $(git rev-parse --short HEAD)
+./services/build_and_push_images.sh $(git rev-parse HEAD)
 
 # Dry run to preview changes without building
-./services/build_and_push_images.sh $(git rev-parse --short HEAD) --dry-run
+./services/build_and_push_images.sh $(git rev-parse HEAD) --dry-run
 ```
 
 ---
@@ -306,6 +305,7 @@ The script calls `gcloud sql import csv` for each file already present in the bu
 | `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
 | `processed_data/restaurant/restaurant_categories.csv` | `mrfood_restaurant` | `restaurant_categories` |
 | `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
+
 
 ### Load all seed data
 

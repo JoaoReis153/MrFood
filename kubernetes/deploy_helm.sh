@@ -83,15 +83,24 @@ run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" -f "$RO
 
 if [[ $SKIP_CONNECTORS -eq 0 ]]; then
   echo "==> Registering CDC connectors (if not already present)"
+
   # Connector 1: restaurant-postgres-source
-  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c \
-    "curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
-      curl -sf -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d @/connectors/restaurant-source.json"
+  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c '
+    curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
+    curl -sf -X POST http://localhost:8083/connectors \
+      -H "Content-Type: application/json" \
+      -d @/connectors/restaurant-source.json
+  '
 
   # Connector 2: restaurants-elasticsearch-sink
-  run_allow_err kubectl exec -n "$NAMESPACE" deployment/cdc -- bash -c \
-    "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
-      curl -sf -X POST http://localhost:8083/connectors -H 'Content-Type: application/json' -d @/connectors/restaurants-sink.json"
+  echo "Registering restaurants-elasticsearch-sink..."
+  cat "$ROOT_DIR/services/cdc/connectors/restaurants-sink.json" | \
+    run_allow_err kubectl exec -i -n "$NAMESPACE" deployment/cdc -- bash -c '
+      curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
+      curl -sf -X POST http://localhost:8083/connectors \
+        -H "Content-Type: application/json" \
+        -d @- 
+    '
 else
   echo "Skipping connector registration (--skip-connectors set)"
 fi
@@ -111,6 +120,7 @@ echo "==> Patching Kong configmap and restarting gateway"
 run kubectl delete configmap kong-config -n "$NAMESPACE" --ignore-not-found
 run kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml"
 run kubectl rollout restart deployment/gateway -n "$NAMESPACE"
+run kubectl rollout status deployment/gateway -n "$NAMESPACE"
 
 echo "All Helm/Kubernetes tasks from DEPLOYMENT.md completed."
 

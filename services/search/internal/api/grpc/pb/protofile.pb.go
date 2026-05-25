@@ -23,14 +23,14 @@ const (
 
 type SearchPaginatedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *int32                 `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	Limit         *int32                 `protobuf:"varint,2,opt,name=limit,proto3,oneof" json:"limit,omitempty"`
-	Category      *string                `protobuf:"bytes,3,opt,name=category,proto3,oneof" json:"category,omitempty"`
-	NameSuffix    *string                `protobuf:"bytes,4,opt,name=name_suffix,json=nameSuffix,proto3,oneof" json:"name_suffix,omitempty"`
-	FullName      *string                `protobuf:"bytes,5,opt,name=full_name,json=fullName,proto3,oneof" json:"full_name,omitempty"`
-	Latitude      *float64               `protobuf:"fixed64,6,opt,name=latitude,proto3,oneof" json:"latitude,omitempty"`
-	Longitude     *float64               `protobuf:"fixed64,7,opt,name=longitude,proto3,oneof" json:"longitude,omitempty"`
-	RadiusMeters  *float64               `protobuf:"fixed64,8,opt,name=radius_meters,json=radiusMeters,proto3,oneof" json:"radius_meters,omitempty"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Category      string                 `protobuf:"bytes,3,opt,name=category,proto3" json:"category,omitempty"`
+	NameSuffix    string                 `protobuf:"bytes,4,opt,name=name_suffix,json=nameSuffix,proto3" json:"name_suffix,omitempty"`
+	FullName      string                 `protobuf:"bytes,5,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty"`
+	Latitude      float64                `protobuf:"fixed64,6,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude     float64                `protobuf:"fixed64,7,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	RadiusMeters  float64                `protobuf:"fixed64,8,opt,name=radius_meters,json=radiusMeters,proto3" json:"radius_meters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,57 +66,57 @@ func (*SearchPaginatedRequest) Descriptor() ([]byte, []int) {
 }
 
 func (x *SearchPaginatedRequest) GetPage() int32 {
-	if x != nil && x.Page != nil {
-		return *x.Page
+	if x != nil {
+		return x.Page
 	}
 	return 0
 }
 
 func (x *SearchPaginatedRequest) GetLimit() int32 {
-	if x != nil && x.Limit != nil {
-		return *x.Limit
+	if x != nil {
+		return x.Limit
 	}
 	return 0
 }
 
 func (x *SearchPaginatedRequest) GetCategory() string {
-	if x != nil && x.Category != nil {
-		return *x.Category
+	if x != nil {
+		return x.Category
 	}
 	return ""
 }
 
 func (x *SearchPaginatedRequest) GetNameSuffix() string {
-	if x != nil && x.NameSuffix != nil {
-		return *x.NameSuffix
+	if x != nil {
+		return x.NameSuffix
 	}
 	return ""
 }
 
 func (x *SearchPaginatedRequest) GetFullName() string {
-	if x != nil && x.FullName != nil {
-		return *x.FullName
+	if x != nil {
+		return x.FullName
 	}
 	return ""
 }
 
 func (x *SearchPaginatedRequest) GetLatitude() float64 {
-	if x != nil && x.Latitude != nil {
-		return *x.Latitude
+	if x != nil {
+		return x.Latitude
 	}
 	return 0
 }
 
 func (x *SearchPaginatedRequest) GetLongitude() float64 {
-	if x != nil && x.Longitude != nil {
-		return *x.Longitude
+	if x != nil {
+		return x.Longitude
 	}
 	return 0
 }
 
 func (x *SearchPaginatedRequest) GetRadiusMeters() float64 {
-	if x != nil && x.RadiusMeters != nil {
-		return *x.RadiusMeters
+	if x != nil {
+		return x.RadiusMeters
 	}
 	return 0
 }
@@ -181,7 +181,7 @@ type RestaurantSearchResult struct {
 	Longitude     float64                `protobuf:"fixed64,4,opt,name=longitude,proto3" json:"longitude,omitempty"`
 	Address       string                 `protobuf:"bytes,5,opt,name=address,proto3" json:"address,omitempty"`
 	Categories    []string               `protobuf:"bytes,6,rep,name=categories,proto3" json:"categories,omitempty"`
-	MediaUrl      *string                `protobuf:"bytes,7,opt,name=media_url,json=mediaUrl,proto3,oneof" json:"media_url,omitempty"`
+	MediaUrl      string                 `protobuf:"bytes,7,opt,name=media_url,json=mediaUrl,proto3" json:"media_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,8 +259,8 @@ func (x *RestaurantSearchResult) GetCategories() []string {
 }
 
 func (x *RestaurantSearchResult) GetMediaUrl() string {
-	if x != nil && x.MediaUrl != nil {
-		return *x.MediaUrl
+	if x != nil {
+		return x.MediaUrl
 	}
 	return ""
 }
@@ -337,32 +337,22 @@ var File_internal_api_grpc_proto_protofile_proto protoreflect.FileDescriptor
 
 const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\n" +
-	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\"\x8e\x03\n" +
-	"\x16SearchPaginatedRequest\x12\x17\n" +
-	"\x04page\x18\x01 \x01(\x05H\x00R\x04page\x88\x01\x01\x12\x19\n" +
-	"\x05limit\x18\x02 \x01(\x05H\x01R\x05limit\x88\x01\x01\x12\x1f\n" +
-	"\bcategory\x18\x03 \x01(\tH\x02R\bcategory\x88\x01\x01\x12$\n" +
-	"\vname_suffix\x18\x04 \x01(\tH\x03R\n" +
-	"nameSuffix\x88\x01\x01\x12 \n" +
-	"\tfull_name\x18\x05 \x01(\tH\x04R\bfullName\x88\x01\x01\x12\x1f\n" +
-	"\blatitude\x18\x06 \x01(\x01H\x05R\blatitude\x88\x01\x01\x12!\n" +
-	"\tlongitude\x18\a \x01(\x01H\x06R\tlongitude\x88\x01\x01\x12(\n" +
-	"\rradius_meters\x18\b \x01(\x01H\aR\fradiusMeters\x88\x01\x01B\a\n" +
-	"\x05_pageB\b\n" +
-	"\x06_limitB\v\n" +
-	"\t_categoryB\x0e\n" +
-	"\f_name_suffixB\f\n" +
-	"\n" +
-	"_full_nameB\v\n" +
-	"\t_latitudeB\f\n" +
-	"\n" +
-	"_longitudeB\x10\n" +
-	"\x0e_radius_meters\"\x7f\n" +
+	"'internal/api/grpc/proto/protofile.proto\x12\x05proto\"\xfb\x01\n" +
+	"\x16SearchPaginatedRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1a\n" +
+	"\bcategory\x18\x03 \x01(\tR\bcategory\x12\x1f\n" +
+	"\vname_suffix\x18\x04 \x01(\tR\n" +
+	"nameSuffix\x12\x1b\n" +
+	"\tfull_name\x18\x05 \x01(\tR\bfullName\x12\x1a\n" +
+	"\blatitude\x18\x06 \x01(\x01R\blatitude\x12\x1c\n" +
+	"\tlongitude\x18\a \x01(\x01R\tlongitude\x12#\n" +
+	"\rradius_meters\x18\b \x01(\x01R\fradiusMeters\"\x7f\n" +
 	"\x17SearchPaginatedResponse\x121\n" +
 	"\x04data\x18\x01 \x03(\v2\x1d.proto.RestaurantSearchResultR\x04data\x121\n" +
 	"\n" +
 	"pagination\x18\x02 \x01(\v2\x11.proto.PaginationR\n" +
-	"pagination\"\xe0\x01\n" +
+	"pagination\"\xcd\x01\n" +
 	"\x16RestaurantSearchResult\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
@@ -371,10 +361,8 @@ const file_internal_api_grpc_proto_protofile_proto_rawDesc = "" +
 	"\aaddress\x18\x05 \x01(\tR\aaddress\x12\x1e\n" +
 	"\n" +
 	"categories\x18\x06 \x03(\tR\n" +
-	"categories\x12 \n" +
-	"\tmedia_url\x18\a \x01(\tH\x00R\bmediaUrl\x88\x01\x01B\f\n" +
-	"\n" +
-	"_media_url\"b\n" +
+	"categories\x12\x1b\n" +
+	"\tmedia_url\x18\a \x01(\tR\bmediaUrl\"b\n" +
 	"\n" +
 	"Pagination\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
@@ -420,8 +408,6 @@ func file_internal_api_grpc_proto_protofile_proto_init() {
 	if File_internal_api_grpc_proto_protofile_proto != nil {
 		return
 	}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[0].OneofWrappers = []any{}
-	file_internal_api_grpc_proto_protofile_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
