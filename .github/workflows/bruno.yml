@@ -101,10 +101,18 @@ jobs:
             exit 1
           fi
 
+      - name: Start Elasticsearch
+        run: |
+          docker compose -p mrfood -f services/docker-compose.yml \
+            --env-file services/config.env --env-file services/.env \
+            up -d --no-deps elasticsearch
+
       - name: Create ES index and start search service
         run: |
           make search-seed
-          docker compose -p mrfood -f services/docker-compose.yml up -d --no-deps search
+          docker compose -p mrfood -f services/docker-compose.yml \
+            --env-file services/config.env --env-file services/.env \
+            up -d --no-deps search
 
       - name: Wait for search service
         run: |
