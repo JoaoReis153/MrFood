@@ -731,12 +731,161 @@
       ]
     },
     {
+      "id": 24,
+      "type": "row",
+      "title": "Saturation",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 25,
+      "type": "timeseries",
+      "title": "DB Pool Saturation by Service",
+      "description": "Ratio of acquired to max connections. Values above 0.8 indicate the pool is under pressure.",
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.6
+              },
+              {
+                "color": "red",
+                "value": 0.8
+              }
+            ]
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "db_pool_connections_acquired{service_name=~\"$service\"} / db_pool_connections_max{service_name=~\"$service\"}",
+          "legendFormat": "{{service_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "DB Pool Connections by Service",
+      "description": "Breakdown of acquired, idle, and max connections per service.",
+      "gridPos": {
+        "x": 12,
+        "y": 33,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max",
+            "last"
+          ]
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 5,
+            "lineWidth": 2
+          }
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "db_pool_connections_acquired{service_name=~\"$service\"}",
+          "legendFormat": "acquired \u2014 {{service_name}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "db_pool_connections_idle{service_name=~\"$service\"}",
+          "legendFormat": "idle \u2014 {{service_name}}",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "db_pool_connections_max{service_name=~\"$service\"}",
+          "legendFormat": "max \u2014 {{service_name}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
       "id": 17,
       "type": "row",
       "title": "Service Graph",
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 41,
         "w": 24,
         "h": 1
       },
@@ -749,7 +898,7 @@
       "title": "Service Graph \u2014 Request Rate",
       "gridPos": {
         "x": 0,
-        "y": 33,
+        "y": 42,
         "w": 12,
         "h": 8
       },
@@ -801,7 +950,7 @@
       "title": "Service Graph \u2014 Failed Requests",
       "gridPos": {
         "x": 12,
-        "y": 33,
+        "y": 42,
         "w": 12,
         "h": 8
       },
@@ -853,7 +1002,7 @@
       "title": "Logs",
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 50,
         "w": 24,
         "h": 1
       },
@@ -866,7 +1015,7 @@
       "title": "Log Volume by Service",
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 51,
         "w": 12,
         "h": 8
       },
@@ -916,7 +1065,7 @@
       "title": "Error Log Volume",
       "gridPos": {
         "x": 12,
-        "y": 42,
+        "y": 51,
         "w": 12,
         "h": 8
       },
@@ -967,7 +1116,7 @@
       "title": "Recent Logs",
       "gridPos": {
         "x": 0,
-        "y": 55,
+        "y": 64,
         "w": 24,
         "h": 10
       },
@@ -1019,5 +1168,6 @@
         "sort": 1
       }
     ]
-  }
+  },
+  "version": 2
 }

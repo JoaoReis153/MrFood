@@ -74,6 +74,24 @@ module "cloudsql_foundation" {
   depends_on = [module.vpc]
 }
 
+resource "terraform_data" "force_delete_vpc_peering" {
+  input = {
+    network = module.vpc.network_name
+    project = var.project_id
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      gcloud services vpc-peerings delete \
+        --service=servicenetworking.googleapis.com \
+        --network=${self.input.network} \
+        --project=${self.input.project} \
+        --force --quiet || true
+    EOT
+  }
+}
+
 module "cloudsql" {
   source = "./modules/cloudsql"
 
@@ -85,7 +103,7 @@ module "cloudsql" {
   private_network = module.vpc.network_id
   databases       = var.service_databases
 
-  depends_on = [module.cloudsql_foundation]
+  depends_on = [module.cloudsql_foundation, terraform_data.force_delete_vpc_peering]
 }
 
 resource "google_project_service_identity" "cloudsql" {
@@ -186,14 +204,14 @@ resource "terraform_data" "apply_service_schema" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<-EOT
       set -euo pipefail
-      %{~ for svc, obj in google_storage_bucket_object.service_schema_sql }
+      %{~for svc, obj in google_storage_bucket_object.service_schema_sql}
       echo "Importing schema for ${svc}..."
       gcloud sql import sql "${module.cloudsql.instance_name}" \
         "gs://${google_storage_bucket.schema_bootstrap.name}/${obj.name}" \
         --database="${var.service_databases[svc].db_name}" \
         --project="${var.project_id}" \
         --quiet
-      %{~ endfor }
+      %{~endfor}
     EOT
   }
 
@@ -263,5 +281,5 @@ module "service_redis" {
   transit_encryption_mode = each.value.transit_encryption_mode
   labels                  = each.value.labels
 
-  depends_on = [module.vpc, google_project_service.redis]
+  depends_on = [module.vpc, google_project_service.redis, module.cloudsql_foundation, terraform_data.force_delete_vpc_peering]
 }

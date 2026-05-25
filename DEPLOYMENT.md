@@ -9,6 +9,13 @@
 | Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
 | Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
 | Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
+| Layer                | Tool                                           | Trigger                                          |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------ |
+| Infrastructure       | Terraform                                      | Push to `main` → `terraform/**`                  |
+| Container images     | Docker + Artifact Registry                     | `services/build_and_push_images.sh` / CI         |
+| Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
+| Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
+| Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
 
 ---
 
@@ -85,10 +92,10 @@ gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 Build and push all services. The script also updates the `image:` tag in each `kubernetes/values/<service>.yaml` automatically:
 
 ```bash
-./services/build_and_push_images.sh $(git rev-parse --short HEAD)
+./services/build_and_push_images.sh $(git rev-parse HEAD)
 
 # Dry run to preview changes without building
-./services/build_and_push_images.sh $(git rev-parse --short HEAD) --dry-run
+./services/build_and_push_images.sh $(git rev-parse HEAD) --dry-run
 ```
 
 ---
@@ -101,7 +108,13 @@ Build and push all services. The script also updates the `image:` tag in each `k
 gcloud container clusters get-credentials mrfood-cluster --zone europe-southwest1-b --project "${GCP_PROJECT_ID}"
 ```
 
-### Namespace
+### Connect to the GKE cluster
+
+```bash
+gcloud container clusters get-credentials mrfood-cluster --zone europe-southwest1-b --project "${GCP_PROJECT_ID}"
+```
+
+Run the deployment script — it handles namespace, observability, Keycloak, Elasticsearch, Kafka, CDC, connector registration, application services, and the Kong gateway in the correct order:
 
 ```bash
 kubectl apply -f kubernetes/namespace.yaml
@@ -112,11 +125,8 @@ kubectl apply -f kubernetes/namespace.yaml
 Deploy first — services depend on the OTel Collector being reachable at `otel-collector:4317`.
 
 ```bash
-source gcp.env
-
 # OTel Collector (receives from services, forwards to Tempo/Loki/Prometheus)
 helm upgrade --install otel-collector kubernetes/helm/otel-collector \
-  --set gcpProject="${GCP_PROJECT_ID}" \
   --namespace mrfood
 
 # Prometheus, Loki, Tempo, Grafana
@@ -159,14 +169,9 @@ Deploy the CDC connector (Kafka Connect) using its dedicated chart:
 
 ```bash
 # Fill in the restaurant DB password in kubernetes/values/cdc.yaml before deploying
-source gcp.env
 helm upgrade --install cdc kubernetes/helm/kafka-connect \
   -f kubernetes/values/cdc.yaml \
-  --set "gcpProjectId=${GCP_PROJECT_ID}" \
   --namespace mrfood
-
-# Wait for CDC to be ready (autoscaler may need to provision a new node — this can take 1-2 min)
-kubectl rollout status deployment/cdc -n mrfood --timeout 5m
 ```
 
 After CDC is running, register the connectors (connector configs are baked into the image at `/connectors/`):
@@ -198,9 +203,9 @@ bash kubernetes/restart.sh
 > **Note:** After updating `services/gateway/kong/kong.yml`, patch the live ConfigMap and restart — Helm does not auto-update it:
 >
 > ```bash
-> kubectl delete configmap kong-config -n mrfood --ignore-not-found
 > kubectl create configmap kong-config -n mrfood \
->   --from-file=kong.yml=services/gateway/kong/kong.yml
+>   --from-file=kong.yml=services/gateway/kong/kong.yml \
+>   --dry-run=client -o yaml | kubectl apply -f -
 > kubectl rollout restart deployment/gateway -n mrfood
 > ```
 
@@ -216,6 +221,17 @@ kubectl get pods -n mrfood
 
 All pods should reach `Running`. Common failure modes:
 
+| Symptom                            | Cause                                  | Fix                                                                  |
+| ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
+| Service pod CrashLoopBackOff       | Missing env var or wrong DB password   | `kubectl logs -n mrfood deployment/<svc>`                            |
+| OTel Collector failing             | Loki/Tempo not ready yet               | Deploy observability first, then restart collector                   |
+| Loki/Prometheus/Tempo Pending      | PVCs not created                       | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
+| Gateway request hanging            | Stale kong-config ConfigMap            | Patch ConfigMap manually (see Kong gateway note above)               |
+| Auth requests hanging              | Keycloak not running                   | Deploy Keycloak before auth; restart auth after Keycloak is ready    |
+| `search` pod CrashLoopBackOff      | Elasticsearch not reachable            | Deploy elasticsearch chart first, wait for readiness                 |
+| `cdc` pod not ready                | Kafka not up or ES not ready           | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
+| Connectors not registered          | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above         |
 | Symptom                            | Cause                                  | Fix                                                                  |
 | ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
 | `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
@@ -304,7 +320,12 @@ The script calls `gcloud sql import csv` for each file already present in the bu
 | ----------------------------------------------------- | ------------------- | ----------------------- |
 | `processed_data/auth/app_user.csv`                    | `mrfood_auth`       | `app_user`              |
 | `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
+| CSV file                                              | Database            | Table                   |
+| ----------------------------------------------------- | ------------------- | ----------------------- |
+| `processed_data/auth/app_user.csv`                    | `mrfood_auth`       | `app_user`              |
+| `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
 | `processed_data/restaurant/restaurant_categories.csv` | `mrfood_restaurant` | `restaurant_categories` |
+| `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
 | `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
 
 ### Load all seed data
@@ -325,6 +346,12 @@ See `SEED_DATA_CREDENTIALS.md` for the default test password used by generated u
 
 ## CI / CD Summary
 
+| Workflow           | File                       | Trigger                                    | What it does                          |
+| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
+| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
+| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
+| Terraform Apply    | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform apply`                     |
+| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
 | Workflow           | File                       | Trigger                                    | What it does                          |
 | ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
 | Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |

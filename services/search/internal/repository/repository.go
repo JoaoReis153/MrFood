@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"math"
 	"strconv"
+	"strings"
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 )
@@ -212,23 +213,47 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, index string) error {
 	existsRes, err := es.Indices.Exists([]string{index}, es.Indices.Exists.WithContext(ctx))
 	if err != nil {
-		slog.WarnContext(ctx, "elasticsearch unreachable at startup; queries will fail until it is available", "index", index, "error", err)
-		return nil
+		return fmt.Errorf("pinging elasticsearch: %w", err)
 	}
-	defer func() {
-		if err := existsRes.Body.Close(); err != nil {
-			slog.ErrorContext(ctx, "error closing response body", "error", err)
-		}
-	}()
+	defer existsRes.Body.Close()
 
 	if existsRes.StatusCode == 200 {
-		return nil
-	}
-	if existsRes.StatusCode == 404 {
-		slog.WarnContext(ctx, "search index does not exist yet; queries will fail until CDC creates it", "index", index)
-		return nil
+		return nil // Index exists, we are good
 	}
 
-	body, _ := io.ReadAll(existsRes.Body)
-	return fmt.Errorf("check index exists status=%d body=%s", existsRes.StatusCode, string(body))
+	slog.InfoContext(ctx, "creating search index with geo_point mapping", "index", index)
+
+	// Define the correct mapping (Geo-Point is critical for your search)
+	mapping := `{
+      "mappings": {
+        "properties": {
+          "id": { "type": "long" },
+          "name": { 
+            "type": "text",
+            "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } }
+          },
+          "categories": { "type": "keyword" },
+          "location": { "type": "geo_point" },
+          "address": { "type": "text" },
+          "media_url": { "type": "keyword" }
+        }
+      }
+    }`
+
+	createRes, err := es.Indices.Create(
+		index,
+		es.Indices.Create.WithContext(ctx),
+		es.Indices.Create.WithBody(strings.NewReader(mapping)),
+	)
+	if err != nil {
+		return fmt.Errorf("create index request failed: %w", err)
+	}
+	defer createRes.Body.Close()
+
+	if createRes.IsError() {
+		body, _ := io.ReadAll(createRes.Body)
+		return fmt.Errorf("create index error: %s", string(body))
+	}
+
+	return nil
 }

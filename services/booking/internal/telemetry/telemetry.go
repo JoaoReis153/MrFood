@@ -8,12 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/log/global"
+	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
@@ -60,6 +62,47 @@ func Setup(ctx context.Context, serviceName string, level slog.Level) (func(), e
 		shutdownMeter()
 		shutdownTracer()
 	}, nil
+}
+
+func RegisterPoolMetrics(pool *pgxpool.Pool) error {
+	meter := otel.Meter("mrfood")
+
+	acquired, err := meter.Int64ObservableGauge(
+		"db.pool.connections.acquired",
+		metric.WithDescription("Connections currently acquired by the application"),
+	)
+	if err != nil {
+		return fmt.Errorf("register acquired gauge: %w", err)
+	}
+
+	idle, err := meter.Int64ObservableGauge(
+		"db.pool.connections.idle",
+		metric.WithDescription("Connections idle in the pool"),
+	)
+	if err != nil {
+		return fmt.Errorf("register idle gauge: %w", err)
+	}
+
+	max, err := meter.Int64ObservableGauge(
+		"db.pool.connections.max",
+		metric.WithDescription("Maximum connections allowed by the pool"),
+	)
+	if err != nil {
+		return fmt.Errorf("register max gauge: %w", err)
+	}
+
+	_, err = meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
+		stat := pool.Stat()
+		o.ObserveInt64(acquired, int64(stat.AcquiredConns()))
+		o.ObserveInt64(idle, int64(stat.IdleConns()))
+		o.ObserveInt64(max, int64(stat.MaxConns()))
+		return nil
+	}, acquired, idle, max)
+	if err != nil {
+		return fmt.Errorf("register pool callback: %w", err)
+	}
+
+	return nil
 }
 
 // ParseLevel converts a log level string to slog.Level, defaulting to Info.
