@@ -118,7 +118,7 @@ test-bruno:
 	cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json
 	cd tests/mrfood-api/collections/reservations && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/reservations-junit.xml --reporter-json ../../reports/reservations-report.json
 	cd tests/mrfood-api/collections/reviews && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/reviews-junit.xml --reporter-json ../../reports/reviews-report.json
-	@bash services/cdc/seed_elasticsearch.sh
+	$(if $(GATEWAY_IP),,@bash services/cdc/seed_elasticsearch.sh)
 	cd tests/mrfood-api/collections/search && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/search-junit.xml --reporter-json ../../reports/search-report.json
 	cd tests/mrfood-api/collections/payment && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/payment-junit.xml --reporter-json ../../reports/payment-report.json
 	cd tests/mrfood-api/collections/sponsor && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/sponsor-junit.xml --reporter-json ../../reports/sponsor-report.json

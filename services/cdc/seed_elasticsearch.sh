@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ELASTIC_URL="http://localhost:${CDC_ELASTIC_PORT:-9200}"
+ELASTIC_URL="${ELASTIC_URL:-http://localhost:${CDC_ELASTIC_PORT:-9200}}"
 DOCKER_COMPOSE_PROJECT="${DOCKER_COMPOSE_PROJECT:-mrfood}"
 DOCKER_COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-$SCRIPT_DIR/../docker-compose.yml}"
 MAPPING_FILE="${MAPPING_FILE:-$SCRIPT_DIR/mappings/restaurants.json}"
