@@ -24,8 +24,10 @@ runtime:
   scripts:
     - type: tests
       code: |-
+
         test("book reservation returns 200 or 503 if payment unavailable", () => {
           expect(res.status).to.be.oneOf([200, 503]);
+
         });
 
         if (res.status === 200) {
@@ -37,12 +39,12 @@ runtime:
           bru.setEnvVar("bookingId", String(res.body.booking_id));
         }
 
+
         if (res.status === 503) {
           bru.setEnvVar("bookingId", "0");
           // Kong's grpc-gateway does not serialize a body for gRPC error
           // responses — only the HTTP status code is forwarded.
         }
-
 settings:
   encodeUrl: true
   timeout: 0
