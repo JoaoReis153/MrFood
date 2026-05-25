@@ -25,7 +25,7 @@ ifeq ($(IS_PODMAN),)
 	BUILD_FLAG := --parallel
 endif
 
-.PHONY: help create_env generate-csv setup setup-full build run run-full stop down restart logs test test-bruno clean clean-all search-bootstrap search-logs search-clean
+.PHONY: help create_env generate-csv setup setup-full build run run-full stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean
 
 help:
 	@echo "MrFood — available commands"
@@ -43,9 +43,11 @@ help:
 	@echo "  make build           Build service images"
 	@echo "  make test            Run Go tests"
 	@echo "  make test-bruno      Run Bruno API tests (GATEWAY_IP=x.x.x.x to test against cloud)"
+	@echo "  make down-volumes    Stop and remove containers and volumes"
 	@echo "  make clean           Remove containers, images, volumes"
 	@echo "  make clean-all       Full reset (all images included)"
-	@echo "  make search-bootstrap  Create ES index and register CDC connectors"
+	@echo "  make search-bootstrap  Create ES index, register CDC connectors, and seed"
+	@echo "  make search-seed     Create ES index and seed data (no Kafka connectors)"
 	@echo "  make search-logs     Tail search service logs"
 	@echo "  make search-clean    Remove search containers and volumes"
 
@@ -93,6 +95,9 @@ stop:
 
 down:
 	$(DC) down
+
+down-volumes:
+	$(DC) down --volumes
 
 restart: down run
 
@@ -153,6 +158,23 @@ search-bootstrap:
 		echo "✔ Index created"; \
 	fi
 	@bash services/cdc/register-connectors.sh
+	@bash services/cdc/seed_elasticsearch.sh
+
+search-seed:
+	@echo "Waiting for Elasticsearch..."
+	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
+	@echo "✔ Elasticsearch ready"
+	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
+		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
+		-H 'Content-Type: application/json' \
+		-d @services/cdc/mappings/restaurants.json || true); \
+	if [ "$$HTTP_CODE" = "400" ]; then \
+		echo "✔ Index already exists"; \
+	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
+		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
+	else \
+		echo "✔ Index created"; \
+	fi
 	@bash services/cdc/seed_elasticsearch.sh
 
 search-logs:
