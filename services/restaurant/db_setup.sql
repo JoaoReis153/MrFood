@@ -23,4 +23,4 @@ CREATE TABLE IF NOT EXISTS restaurant_categories (
 CREATE INDEX IF NOT EXISTS idx_restaurant_categories_restaurant_id
     ON restaurant_categories (restaurant_id);
 
-ALTER ROLE mrfood_restaurant_user WITH REPLICATION;
+DO $$ BEGIN EXECUTE format('ALTER ROLE %I WITH REPLICATION', current_user); END $$;
