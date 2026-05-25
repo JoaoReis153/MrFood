@@ -80,7 +80,10 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 
 	amount := int64(booking.PeopleCount) * 500 // 5.00 EUR per person
 
-	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
+	payCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	receipt_id, err := s.makePayment(payCtx, &models.PaymentRequest{
 		UserID:         booking.UserID,
 		UserEmail:      booking.UserEmail,
 		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, (float32)(amount), booking_id, "B"),
