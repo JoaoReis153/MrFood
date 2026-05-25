@@ -1,5 +1,5 @@
 name: cdc
-image: cdc:9ec2b4d
+image: cdc:02e09f4
 
 port: 8083
 
