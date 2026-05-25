@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# load_seed_data.sh — Import seed CSVs from GCS into Cloud SQL.
+# load_seed_data_cloud.sh — Import seed CSVs from GCS into Cloud SQL.
 #
 # Usage:
-#   ./scripts/load_seed_data.sh [--dry-run]
+#   ./scripts/load_seed_data_cloud.sh [--dry-run]
 #
 # Prerequisites:
 #   gcloud auth application-default login
@@ -11,6 +11,7 @@
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
 INSTANCE="mrfood-pg"
@@ -25,7 +26,6 @@ fi
 # ── CSV → (gcs_object, database, table, columns) mapping ─────────────────────
 # Format: "gcs_object|db_name|table_name|col1,col2,..."
 IMPORTS=(
-  "processed_data/auth/app_user.csv|mrfood-pg|mrfood_auth|app_user|user_id,username,password,email"
   "processed_data/restaurant/restaurants.csv|mrfood-pg|mrfood_restaurant|restaurants|id,name,latitude,longitude,address,opening_time,closing_time,media_url,max_slots,owner_id,owner_name,sponsor_tier"
   "processed_data/restaurant/restaurant_categories.csv|mrfood-pg|mrfood_restaurant|restaurant_categories|restaurant_id,category"
   "processed_data/review/review.csv|mrfood-pg|mrfood_review|review|review_id,restaurant_id,user_id,comment,rating,created_at"
@@ -68,4 +68,4 @@ for entry in "${IMPORTS[@]}"; do
   echo ""
 done
 
-echo "✓ All seed data imported."
+echo "✓ All cloud seed data imported."

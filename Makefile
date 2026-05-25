@@ -27,11 +27,14 @@ endif
 
 .PHONY: help create_env generate-csv setup setup-full build run run-full stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean
 
+
 help:
 	@echo "MrFood — available commands"
 	@echo ""
 	@echo "  make create_env      Create services/.env from env.tmpl"
 	@echo "  make generate-csv    Generate CSV seed data (CSV_ROWS=200, CSV_FULL=1)"
+	@echo "  make load-local      Load seed data into local Docker containers"
+	@echo "  make load-cloud      Load seed data into Cloud SQL via GCS"
 	@echo "  make setup           Start core services"
 	@echo "  make setup-full      Start all services including search/CDC"
 	@echo "  make run             Start core services (detached)"
@@ -70,6 +73,12 @@ create_env:
 
 generate-csv:
 	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
+
+load-local:
+	@bash scripts/load_seed_data_local.sh $(LOAD_ARGS)
+
+load-cloud:
+	@bash scripts/load_seed_data_cloud.sh $(LOAD_ARGS)
 
 # ============================================================================
 # SERVICE MANAGEMENT

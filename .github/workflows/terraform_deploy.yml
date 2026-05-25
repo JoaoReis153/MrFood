@@ -44,4 +44,6 @@ jobs:
       run: terraform init
 
     - name: Terraform Apply
+      env:
+        TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
       run: terraform apply -auto-approve -input=false

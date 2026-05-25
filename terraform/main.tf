@@ -5,6 +5,10 @@ terraform {
   }
 }
 
+locals {
+  schema_bootstrap_bucket_name = coalesce(var.schema_bootstrap_bucket_name, "mrfood-cloudsql-schema-bootstrap-${var.project_id}")
+}
+
 # Grant Cloud SQL Admin role to terraform-sa service account for schema imports
 resource "google_project_iam_member" "terraform_sa_cloudsql_admin" {
   project = var.project_id
@@ -129,7 +133,7 @@ locals {
 }
 
 resource "google_storage_bucket" "schema_bootstrap" {
-  name                        = var.schema_bootstrap_bucket_name
+  name                        = local.schema_bootstrap_bucket_name
   project                     = var.project_id
   location                    = var.region
   uniform_bucket_level_access = true
@@ -230,7 +234,7 @@ resource "terraform_data" "apply_service_schema" {
 # ──────────────────────────────────────────────────────────────────────────────
 
 locals {
-  cloudsql_services = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "cdc"])
+  cloudsql_services = toset(["restaurant", "booking", "review", "payment", "sponsor", "cdc"])
   all_services      = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "notification", "search", "otel-collector", "cdc"])
 }
 

@@ -1,19 +1,12 @@
 # Auth Service
 
-## Current Status
+## Overview
 
-- Transport: **gRPC only** (no REST endpoints exposed by this service).
+- Transport: **gRPC only**.
 - API contract: `internal/api/grpc/proto/protofile.proto`.
-- Server startup: `cmd/main.go` initializes config, logger, app dependencies, then runs the gRPC server.
-- Dependencies: PostgreSQL (users, refresh tokens, token versions) + Redis (blacklist + token-version cache).
-- Shutdown: graceful stop on `SIGINT`/`SIGTERM`, with connection cleanup.
-
-Implemented and covered by unit tests:
-
-- User registration and lookup service logic.
-- Login with password verification + token pair generation.
-- Refresh token validation + rotation.
-- Logout with access-token blacklist and user-wide token revocation.
+- Storage: **Keycloak only** — no database, no Redis. All user storage, credential validation, and session management is delegated to Keycloak.
+- Server startup: `cmd/main.go` initializes config, Keycloak client, and runs the gRPC server.
+- Shutdown: graceful stop on `SIGINT`/`SIGTERM`.
 
 ## Operations (gRPC)
 
@@ -30,65 +23,53 @@ Service: `AuthService`
 ### 1) Register
 
 1. Receives `username`, `email`, `password`.
-2. Hashes password with bcrypt.
-3. Validates user payload (`username >= 3`, valid email, password required).
-4. Stores user in `app_user`.
-5. Returns only `id` and `username`.
+2. Creates the user in Keycloak via the Admin API.
+3. Sends a registration email via the notification service.
+4. Returns `id` (FNV hash of the Keycloak UUID) and `username`.
 
 ### 2) Login
 
-1. Fetches user by email.
-2. Compares provided password against stored bcrypt hash.
-3. Revokes all previous user refresh tokens.
-4. Increments user token version (invalidates older access tokens).
-5. Generates new token pair:
-   - Access token: JWT (`HS256`) with `user_id`, `username`, `token_version`, `token_type=access`.
-   - Refresh token: JWT (`HS256`) with `user_id`, `token_type=refresh`, persisted in `refresh_tokens`.
-6. Returns access token, refresh token, and basic user info.
+1. Calls Keycloak's token endpoint with the provided email and password.
+2. Parses `sub`, `preferred_username`, and `email` from the returned Keycloak JWT.
+3. Mints a short-lived app JWT (`HS256`) containing `user_id`, `username`, and `email`.
+4. Returns the app access token, the Keycloak refresh token, and basic user info.
 
 ### 3) Refresh Token
 
-1. Parses and verifies refresh JWT signature and expiry.
-2. Ensures token type is `refresh`.
-3. Checks refresh token state in DB (exists and not revoked).
-4. Revokes old refresh token (rotation).
-5. Issues and stores a new token pair.
+1. Passes the refresh token to Keycloak's refresh endpoint.
+2. Parses the new Keycloak JWT for `sub`, `preferred_username`, and `email`.
+3. Mints a new app JWT and returns it alongside the new Keycloak refresh token.
 
 ### 4) Logout
 
-1. Validates access token.
-2. Blacklists the specific access token in Redis until its expiration.
-3. Revokes all refresh tokens for that user in DB.
-4. Increments token version to invalidate other access tokens.
+1. Parses `sub` from the app JWT.
+2. Calls Keycloak's Admin API to revoke all sessions for that user.
 
-## Token Revocation Strategy
+## Token Format
 
-The service uses a layered revocation model:
+App access tokens are signed HS256 JWTs with the following claims:
 
-- **Access token blacklist** in Redis (`blacklist:<token_id>`).
-- **Per-user token version** in DB + Redis cache (`token_version:<user_id>`).
-- **Refresh token revocation** in PostgreSQL (`refresh_tokens.revoked`).
+| Claim      | Description                             |
+|------------|-----------------------------------------|
+| `sub`      | Keycloak user UUID                      |
+| `user_id`  | Same as `sub`                           |
+| `username` | Keycloak `preferred_username`           |
+| `email`    | Keycloak `email`                        |
+| `iss`      | `mrfood-auth`                           |
+| `iat`/`exp`| Issued at / expires at (TTL: 5 minutes) |
 
-This allows immediate single-token revocation (logout), plus full-session invalidation (login/logout-all behavior).
-
-## Data Model
-
-- `app_user(user_id, username, password, email)`
-- `refresh_tokens(token_id, user_id, expires_at, revoked, created_at)`
-- `user_token_versions(user_id, version)`
-
-Schema file: `db_setup.sql`.
+Refresh tokens are Keycloak-issued JWTs passed through as-is.
 
 ## Configuration
 
-Main environment variables used by the service:
+Main environment variables:
 
-- Server/logging: `APP_SERVER_HOST`, `APP_SERVER_PORT`, `APP_SERVER_TIMEOUT`, `APP_LOG_LEVEL`
-- DB: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_MIN_CONNS`, `DB_MAX_CONNS`, `DB_MAX_CONN_LIFETIME`, `DB_HEALTH_CHECK_PERIOD`
-- Redis: `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASS`, `REDIS_DB`
-- JWT: `APP_JWT_ACCESS_TOKEN_SECRET`, `APP_JWT_REFRESH_TOKEN_SECRET`
+- Server: `APP_SERVER_PORT`, `APP_LOG_LEVEL`
+- Keycloak: `KEYCLOAK_BASE_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_ADMIN_USER`, `KEYCLOAK_ADMIN_PASS`
+- JWT: `APP_JWT_SECRET`
+- Notification: `NOTIFICATION_GRPC_ADDR`
 
-Defaults and validation rules are defined in `config/config.go`.
+Defaults and validation are defined in `config/config.go`.
 
 ## Development
 
@@ -108,24 +89,18 @@ make test
 ### Run with Docker Compose (from `services/`)
 
 ```bash
-docker compose up --build auth auth_db redis
+docker compose up --build auth keycloak
 ```
 
 ## gRPC Code Generation
 
-Proto file:
-
-- `internal/api/grpc/proto/protofile.proto`
+Proto file: `internal/api/grpc/proto/protofile.proto`
 
 Generate stubs (from `services/auth`):
 
 ```bash
 make proto
 ```
-
-This updates generated files under `internal/api/grpc/pb`.
-
-`protoc` installation examples:
 
 - macOS: `brew install protobuf`
 - Linux (dnf): `sudo dnf install protobuf-compiler`

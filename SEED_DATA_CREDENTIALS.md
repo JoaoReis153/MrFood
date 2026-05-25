@@ -11,12 +11,6 @@ Username: (as generated from source data)
 Password: mrfood123
 ```
 
-### Password Hash (bcrypt)
-
-```
-$2a$10$h7oCCYsXlom0bwjwYE7md.82mYEHrXlD9oq3tAJSKsqOTzkhfiR3q
-```
-
 ### How to Use
 
 When testing or developing:

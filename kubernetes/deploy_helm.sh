@@ -79,7 +79,9 @@ run kubectl rollout status deployment/kafka -n "$NAMESPACE" --timeout "$TIMEOUT"
 run kubectl rollout status deployment/elasticsearch -n "$NAMESPACE" --timeout "$TIMEOUT"
 
 echo "==> Deploying CDC (Kafka Connect)"
+
 run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" -f "$ROOT_DIR/kubernetes/values/cdc.yaml" --namespace "$NAMESPACE" --set "gcpProjectId=${GCP_PROJECT_ID}"
+
 
 if [[ $SKIP_CONNECTORS -eq 0 ]]; then
   echo "==> Registering CDC connectors (if not already present)"

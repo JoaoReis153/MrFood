@@ -193,5 +193,5 @@ variable "service_redis_instances" {
 variable "schema_bootstrap_bucket_name" {
   description = "GCS bucket used to stage SQL bootstrap files for Cloud SQL import"
   type        = string
-  default     = "mrfood-cloudsql-schema-bootstrap-490623"
+  default     = null
 }
