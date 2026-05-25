@@ -215,7 +215,12 @@ func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, inde
 	if err != nil {
 		return fmt.Errorf("pinging elasticsearch: %w", err)
 	}
-	defer existsRes.Body.Close()
+
+	defer func() {
+		if err := existsRes.Body.Close(); err != nil {
+			slog.ErrorContext(ctx, "error closing index verification response body", "error", err)
+		}
+	}()
 
 	if existsRes.StatusCode == 200 {
 		return nil // Index exists, we are good
@@ -248,7 +253,11 @@ func ensureSearchIndexExists(ctx context.Context, es *elasticsearch.Client, inde
 	if err != nil {
 		return fmt.Errorf("create index request failed: %w", err)
 	}
-	defer createRes.Body.Close()
+	defer func() {
+		if err := createRes.Body.Close(); err != nil {
+			slog.ErrorContext(ctx, "error closing index creation response body", "error", err)
+		}
+	}()
 
 	if createRes.IsError() {
 		body, _ := io.ReadAll(createRes.Body)
