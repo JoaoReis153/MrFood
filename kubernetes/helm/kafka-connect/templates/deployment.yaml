@@ -16,7 +16,7 @@ spec:
       serviceAccountName: cdc
       containers:
         - name: cdc
-          image: {{ .Values.image }}
+          image: europe-southwest1-docker.pkg.dev/{{ .Values.gcpProjectId }}/mrfood-repo/{{ .Values.image }}
           ports:
             - containerPort: 8083
           envFrom:
@@ -44,5 +44,5 @@ spec:
             - "--structured-logs"
             - "--port=5432"
             - "--private-ip"
-            - "{{ .Values.cloudsql.instance }}"
+            - "{{ .Values.gcpProjectId }}:{{ .Values.cloudsql.instance }}"
         {{- end }}

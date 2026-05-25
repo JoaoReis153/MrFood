@@ -3,7 +3,9 @@ name: Lint & Test & Docker (Changed Only)
 on:
   pull_request:
     branches: [main]
-    paths: ['services/**']
+    paths:
+      - 'services/**'
+      - 'Makefile'
   workflow_dispatch:
 
 permissions:

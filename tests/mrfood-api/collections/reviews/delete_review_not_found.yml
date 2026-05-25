@@ -1,0 +1,30 @@
+info:
+  name: Delete review not owned by caller
+  type: http
+  seq: 9
+  tags:
+    - Reviews
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/reviews/999999999"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // DELETE runs WHERE review_id = $1 AND user_id = $2.
+        // 0 rows affected — whether the review doesn't exist or belongs to another user — always returns ErrForbidden (403).
+        // This avoids leaking whether a review ID exists.
+        test("delete with no matching row returns 403", () => {
+          expect(res.status).to.equal(403);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -9,10 +9,25 @@
 | Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
 | Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
 | Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
+| Layer                | Tool                                           | Trigger                                          |
+| -------------------- | ---------------------------------------------- | ------------------------------------------------ |
+| Infrastructure       | Terraform                                      | Push to `main` → `terraform/**`                  |
+| Container images     | Docker + Artifact Registry                     | `services/build_and_push_images.sh` / CI         |
+| Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
+| Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
+| Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
 
 ---
 
 ## Prerequisites
+
+> **Changing the GCP project?** Edit one line in **`gcp.env`** at the repo root:
+>
+> ```
+> GCP_PROJECT_ID=mrfood-496807   ← change this
+> ```
+>
+> All scripts, CI workflows, and Helm deploys read from that file automatically.
 
 ```bash
 gcloud --version     # >= 400
@@ -25,20 +40,12 @@ docker version
 Authenticate locally:
 
 ```bash
+source gcp.env
+
 gcloud auth login
 gcloud auth application-default login
-gcloud config set project mrfood-490623
+gcloud config set project "${GCP_PROJECT_ID}"
 ```
-
-Connect to the GKE cluster:
-
-```bash
-gcloud container clusters get-credentials mrfood-cluster \
-  --zone europe-southwest1-b \
-  --project mrfood-490623
-```
-
----
 
 ## 1. Infrastructure — Terraform
 
@@ -63,6 +70,7 @@ service_databases = {
 ### Apply
 
 ```bash
+source gcp.env  # exports TF_VAR_project_id for Terraform
 cd terraform
 terraform init
 terraform plan    # review before applying
@@ -94,21 +102,112 @@ Build and push all services. The script also updates the `image:` tag in each `k
 
 ## 3. Kubernetes — Helm
 
+### Connect to the GKE cluster
+
+```bash
+gcloud container clusters get-credentials mrfood-cluster --zone europe-southwest1-b --project "${GCP_PROJECT_ID}"
+```
+
+### Connect to the GKE cluster
+
+```bash
+gcloud container clusters get-credentials mrfood-cluster --zone europe-southwest1-b --project "${GCP_PROJECT_ID}"
+```
+
 Run the deployment script — it handles namespace, observability, Keycloak, Elasticsearch, Kafka, CDC, connector registration, application services, and the Kong gateway in the correct order:
 
 ```bash
-bash kubernetes/deploy_helm.sh
+kubectl apply -f kubernetes/namespace.yaml
 ```
 
-Options:
+### Observability stack
 
-```
---skip-connectors   Skip CDC connector registration (if already present)
---skip-restart      Skip application services (kubernetes/restart.sh)
---timeout <dur>     Rollout timeout for kubectl (default: 5m)
+Deploy first — services depend on the OTel Collector being reachable at `otel-collector:4317`.
+
+```bash
+# OTel Collector (receives from services, forwards to Tempo/Loki/Prometheus)
+helm upgrade --install otel-collector kubernetes/helm/otel-collector \
+  --namespace mrfood
+
+# Prometheus, Loki, Tempo, Grafana
+helm upgrade --install observability kubernetes/helm/observability \
+  --namespace mrfood
 ```
 
-> **Note:** The Kong ConfigMap is not auto-updated by Helm. The script patches it on every run, but if you update `services/gateway/kong/kong.yml` independently, re-run the script (or use `--skip-connectors --skip-restart` to only patch the gateway).
+### Keycloak
+
+The auth service requires Keycloak. Deploy it before auth:
+
+```bash
+helm upgrade --install keycloak kubernetes/helm/keycloak \
+  --namespace mrfood
+
+kubectl rollout status deployment/keycloak -n mrfood
+# Keycloak takes ~60 s to start and import the mrfood realm
+```
+
+The `mrfood` realm and `mrfood-auth` client are imported automatically from `kubernetes/helm/keycloak/files/realm-import.json`.
+
+### Search stack (Elasticsearch + Kafka + CDC)
+
+Elasticsearch and Kafka must be running before deploying `search` or `cdc`.
+
+```bash
+helm upgrade --install elasticsearch kubernetes/helm/elasticsearch \
+  --namespace mrfood
+
+helm upgrade --install kafka kubernetes/helm/kafka \
+  --namespace mrfood
+
+# Wait for all three to be ready before deploying CDC
+kubectl rollout status deployment/zookeeper -n mrfood
+kubectl rollout status deployment/kafka -n mrfood
+kubectl rollout status deployment/elasticsearch -n mrfood
+```
+
+Deploy the CDC connector (Kafka Connect) using its dedicated chart:
+
+```bash
+# Fill in the restaurant DB password in kubernetes/values/cdc.yaml before deploying
+helm upgrade --install cdc kubernetes/helm/kafka-connect \
+  -f kubernetes/values/cdc.yaml \
+  --namespace mrfood
+```
+
+After CDC is running, register the connectors (connector configs are baked into the image at `/connectors/`):
+
+```bash
+kubectl exec -n mrfood deployment/cdc -- bash -c \
+  "curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
+   curl -sf -X POST http://localhost:8083/connectors \
+     -H 'Content-Type: application/json' \
+     -d @/connectors/restaurant-source.json"
+
+kubectl exec -n mrfood deployment/cdc -- bash -c \
+  "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
+   curl -sf -X POST http://localhost:8083/connectors \
+     -H 'Content-Type: application/json' \
+     -d @/connectors/restaurants-sink.json"
+```
+
+### Application services
+
+Deploys all services and the gateway (skips `cdc` and `search` which have dedicated charts above):
+
+```bash
+bash kubernetes/restart.sh
+```
+
+### Kong gateway
+
+> **Note:** After updating `services/gateway/kong/kong.yml`, patch the live ConfigMap and restart — Helm does not auto-update it:
+>
+> ```bash
+> kubectl create configmap kong-config -n mrfood \
+>   --from-file=kong.yml=services/gateway/kong/kong.yml \
+>   --dry-run=client -o yaml | kubectl apply -f -
+> kubectl rollout restart deployment/gateway -n mrfood
+> ```
 
 ---
 
@@ -122,6 +221,17 @@ kubectl get pods -n mrfood
 
 All pods should reach `Running`. Common failure modes:
 
+| Symptom                            | Cause                                  | Fix                                                                  |
+| ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
+| Service pod CrashLoopBackOff       | Missing env var or wrong DB password   | `kubectl logs -n mrfood deployment/<svc>`                            |
+| OTel Collector failing             | Loki/Tempo not ready yet               | Deploy observability first, then restart collector                   |
+| Loki/Prometheus/Tempo Pending      | PVCs not created                       | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
+| Gateway request hanging            | Stale kong-config ConfigMap            | Patch ConfigMap manually (see Kong gateway note above)               |
+| Auth requests hanging              | Keycloak not running                   | Deploy Keycloak before auth; restart auth after Keycloak is ready    |
+| `search` pod CrashLoopBackOff      | Elasticsearch not reachable            | Deploy elasticsearch chart first, wait for readiness                 |
+| `cdc` pod not ready                | Kafka not up or ES not ready           | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
+| Connectors not registered          | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above         |
 | Symptom                            | Cause                                  | Fix                                                                  |
 | ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
 | `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
@@ -192,8 +302,10 @@ Processed CSV files live under `scripts/processed_data/` and are generated by `m
 ### List buckets
 
 ```bash
+source gcp.env
+
 # List all buckets in the project
-gcloud storage buckets list --project=mrfood-490623
+gcloud storage buckets list --project="${GCP_PROJECT_ID}"
 
 # Inspect the schema/seed bucket specifically
 gsutil ls -l gs://kaggle_bucket_6194
@@ -208,7 +320,12 @@ The script calls `gcloud sql import csv` for each file already present in the bu
 | ----------------------------------------------------- | ------------------- | ----------------------- |
 | `processed_data/auth/app_user.csv`                    | `mrfood_auth`       | `app_user`              |
 | `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
+| CSV file                                              | Database            | Table                   |
+| ----------------------------------------------------- | ------------------- | ----------------------- |
+| `processed_data/auth/app_user.csv`                    | `mrfood_auth`       | `app_user`              |
+| `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
 | `processed_data/restaurant/restaurant_categories.csv` | `mrfood_restaurant` | `restaurant_categories` |
+| `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
 | `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
 
 ### Load all seed data
@@ -229,6 +346,12 @@ See `SEED_DATA_CREDENTIALS.md` for the default test password used by generated u
 
 ## CI / CD Summary
 
+| Workflow           | File                       | Trigger                                    | What it does                          |
+| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
+| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
+| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
+| Terraform Apply    | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform apply`                     |
+| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
 | Workflow           | File                       | Trigger                                    | What it does                          |
 | ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
 | Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |

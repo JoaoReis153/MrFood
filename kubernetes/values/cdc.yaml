@@ -1,6 +1,10 @@
 name: cdc
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:v1.0.7
-port: 50053
+image: cdc:02e09f4
+
+port: 8083
+
+service:
+  type: ClusterIP
 
 resources:
   requests:
@@ -45,4 +49,4 @@ env:
     ELASTICSEARCH_INDEX: restaurants
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-pg
+  instance: europe-southwest1:mrfood-pg

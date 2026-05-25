@@ -30,6 +30,10 @@ func (m *mockCommandService) CreateReceipt(ctx context.Context, r *models.Receip
 	return 100, nil
 }
 
+func (m *mockCommandService) ConfirmPayment(ctx context.Context, paymentIntentID string) error {
+	return nil
+}
+
 type mockQueryService struct{}
 
 func (m *mockQueryService) GetReceiptsByUser(ctx context.Context, userID int64) error {

@@ -1,7 +1,6 @@
 variable "project_id" {
-  description = "GCP project ID"
+  description = "GCP project ID — set via TF_VAR_project_id (source gcp.env locally, CI loads it automatically)"
   type        = string
-  default     = "mrfood-490623"
 }
 
 variable "region" {

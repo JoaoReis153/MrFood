@@ -1,4 +1,5 @@
 name: gateway
+namespace: mrfood
 
 image: kong:3.6
 

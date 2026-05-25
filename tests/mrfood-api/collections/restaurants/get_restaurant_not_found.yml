@@ -1,0 +1,27 @@
+info:
+  name: Get non-existent restaurant
+  type: http
+  seq: 5
+  tags:
+    - Restaurants
+
+http:
+  method: GET
+  url: "{{baseUrl}}/restaurants/999999999"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("non-existent restaurant returns 404", () => {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

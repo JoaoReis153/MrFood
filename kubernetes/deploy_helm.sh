@@ -79,16 +79,7 @@ run kubectl rollout status deployment/kafka -n "$NAMESPACE" --timeout "$TIMEOUT"
 run kubectl rollout status deployment/elasticsearch -n "$NAMESPACE" --timeout "$TIMEOUT"
 
 echo "==> Deploying CDC (Kafka Connect)"
-run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" \
-  -f "$ROOT_DIR/kubernetes/values/cdc.yaml" \
-  --namespace "$NAMESPACE"
-
-# IMPORTANT: wait until deployment is actually ready
-run kubectl rollout restart deployment/cdc -n "$NAMESPACE"
-run kubectl rollout status deployment/cdc -n "$NAMESPACE" --timeout 5m
-
-# extra safety: ensure pod is actually Ready before exec
-run kubectl wait --for=condition=ready pod -l app=cdc -n "$NAMESPACE" --timeout=5m
+run helm upgrade --install cdc "$ROOT_DIR/kubernetes/helm/kafka-connect" -f "$ROOT_DIR/kubernetes/values/cdc.yaml" --namespace "$NAMESPACE" --set "gcpProjectId=${GCP_PROJECT_ID}"
 
 if [[ $SKIP_CONNECTORS -eq 0 ]]; then
   echo "==> Registering CDC connectors (if not already present)"
@@ -126,7 +117,7 @@ else
 fi
 
 echo "==> Patching Kong configmap and restarting gateway"
-kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml" --dry-run=client -o yaml | kubectl apply -f -
+run kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml" --dry-run=client -o yaml | kubectl apply -f -
 run kubectl rollout restart deployment/gateway -n "$NAMESPACE"
 run kubectl rollout status deployment/gateway -n "$NAMESPACE"
 

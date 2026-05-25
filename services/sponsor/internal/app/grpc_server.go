@@ -6,10 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"net"
 	"os"
-	"hash/fnv"
 	"strings"
 	"time"
 
@@ -77,8 +77,6 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-
-	
 
 	sponsorship := &models.Sponsorship{
 		ID:         req.Id,

@@ -10,15 +10,18 @@ servers:
 tags:
 - name: Users
 - name: Restaurants
+- name: Search
 - name: Reviews
 - name: Reservations
+- name: Payments
+- name: Sponsorship
 
 paths:
   /auth/register:
     post:
       tags:
       - Users
-      summary: Register a new user
+      summary: Register user
       requestBody:
         required: true
         content:
@@ -26,13 +29,13 @@ paths:
             schema:
               type: object
               required:
+              - username
               - email
               - password
-              - name
               properties:
-                name:
+                username:
                   type: string
-                  example: John Doe
+                  example: john_doe
                 email:
                   type: string
                   format: email
@@ -43,13 +46,13 @@ paths:
                   example: StrongPassword123
       responses:
         '201':
-          description: User successfully registered
+          description: User registered
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/RegisterResponse'
         '400':
-          description: Bad Request (e.g., missing fields, invalid email)
+          description: Bad Request
           content:
             application/json:
               schema:
@@ -65,7 +68,7 @@ paths:
     post:
       tags:
       - Users
-      summary: Login user
+      summary: User login
       requestBody:
         required: true
         content:
@@ -86,25 +89,19 @@ paths:
                   example: StrongPassword123
       responses:
         '200':
-          description: Successful login
+          description: Login successful
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: JWT authentication token
-                  user:
-                    $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/LoginResponse'
         '400':
-          description: Bad Request (e.g., missing fields)
+          description: Bad Request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Invalid email or password
+          description: Invalid credentials
           content:
             application/json:
               schema:
@@ -114,22 +111,18 @@ paths:
     post:
       tags:
       - Users
-      summary: Logout user
+      summary: User logout
       security:
       - bearerAuth: []
       responses:
         '200':
-          description: User logged out successfully
+          description: User logged out
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Logged out successfully
+                $ref: '#/components/schemas/LogoutResponse'
         '401':
-          description: Unauthorized (invalid or missing token)
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -138,31 +131,52 @@ paths:
     post:
       tags:
       - Users
-      summary: Refresh authentication token
+      summary: Refresh token
       security:
       - bearerAuth: []
       responses:
         '200':
-          description: Token refreshed successfully
+          description: Token refreshed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: New JWT authentication token
+                $ref: '#/components/schemas/RefreshResponse'
         '401':
           description: Unauthorized (invalid or missing token)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /restaurant:
+
+  /auth/ping/{id}:
+    get:
+      tags:
+      - Users
+      summary: Ping auth service
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Pong response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pong'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /restaurants:
     post:
       tags:
       - Restaurants
-      summary: Add a new restaurant (admin only)
+      summary: Create restaurant
       security:
       - bearerAuth: []
       requestBody:
@@ -170,14 +184,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Restaurant'
+              $ref: '#/components/schemas/CreateRestaurantRequest'
       responses:
         '201':
-          description: Restaurant created successfully
+          description: Restaurant created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Restaurant'
+                $ref: '#/components/schemas/CreateRestaurantResponse'
         '400':
           description: Bad Request (e.g., missing fields)
           content:
@@ -191,102 +205,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: Forbidden (user is not an admin)
+          description: Forbidden
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    put:
-      tags:
-      - Restaurants
-      summary: Update restaurant details (admin only)
-      security:
-      - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Restaurant'
-      responses:
-        '200':
-          description: Restaurant updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Restaurant'
-        '400':
-          description: Bad Request (e.g., missing fields)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Unauthorized (invalid or missing token)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (user is not an admin)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+
+  /restaurants/compare:
     get:
       tags:
       - Restaurants
-      summary: Search restaurants
+      summary: Compare two restaurants
       security:
       - bearerAuth: []
-      description: Search for nearby restaurants or perform semantic search
+      description: Compare two restaurants
       parameters:
       - in: query
-        name: query
-        schema:
-          type: string
-        description: Semantic search query
-      - in: query
-        name: latitude
-        schema:
-          type: number
-      - in: query
-        name: longitude
-        schema:
-          type: number
-      - in: query
-        name: page
+        name: restaurant_id_1
+        required: true
         schema:
           type: integer
-          minimum: 1
-          default: 1
-        description: Page number
       - in: query
-        name: limit
+        name: restaurant_id_2
+        required: true
         schema:
           type: integer
-          minimum: 1
-          maximum: 100
-          default: 25
-        description: Number of restaurants per page
       responses:
         '200':
-          description: List of restaurants
+          description: Comparison result
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 25
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Restaurant'
+                $ref: '#/components/schemas/CompareRestaurantDetailsResponse'
         '400':
           description: Bad Request
           content:
@@ -306,7 +256,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /restaurants/{Id}:
+  /restaurants/{id}:
     get:
       tags:
       - Restaurants
@@ -315,17 +265,17 @@ paths:
       summary: Get restaurant details
       parameters:
       - in: path
-        name: Id
+        name: id
         required: true
         schema:
-          type: string
+          type: integer
       responses:
         '200':
           description: Restaurant details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Restaurant'
+                $ref: '#/components/schemas/RestaurantDetails'
         '400':
           description: Bad Request
           content:
@@ -344,12 +294,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    put:
+      tags:
+      - Restaurants
+      summary: Update restaurant
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRestaurantRequest'
+      responses:
+        '200':
+          description: Restaurant updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateRestaurantResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /reviews/{restaurantId}:
     get:
       tags:
       - Reviews
-      summary: Get reviews of a restaurant
+      summary: Get reviews
       security:
       - bearerAuth: []
       parameters:
@@ -357,25 +356,14 @@ paths:
         name: restaurantId
         required: true
         schema:
-          type: string
+          type: integer
       responses:
         '200':
-          description: List of reviews
+          description: Reviews retrieved
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 25
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Review'
+                $ref: '#/components/schemas/GetReviewsResponse'
         '400':
           description: Bad Request
           content:
@@ -404,7 +392,7 @@ paths:
     post:
       tags:
       - Reviews
-      summary: Add a review for a restaurant
+      summary: Create review
       security:
       - bearerAuth: []
       parameters:
@@ -412,20 +400,20 @@ paths:
         name: restaurantId
         required: true
         schema:
-          type: string
+          type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Review'
+              $ref: '#/components/schemas/CreateReviewRequest'
       responses:
         '201':
           description: Review created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Review'
+                $ref: '#/components/schemas/CreateReviewResponse'
         '400':
           description: Bad Request
           content:
@@ -455,7 +443,7 @@ paths:
     put:
       tags:
       - Reviews
-      summary: Edit a review for a restaurant
+      summary: Update review
       security:
       - bearerAuth: []
       parameters:
@@ -463,20 +451,20 @@ paths:
         name: reviewId
         required: true
         schema:
-          type: string
+          type: integer
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Review'
+              $ref: '#/components/schemas/UpdateReviewRequest'
       responses:
         '200':
           description: Review updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Review'
+                $ref: '#/components/schemas/UpdateReviewResponse'
         '400':
           description: Bad Request
           content:
@@ -507,18 +495,13 @@ paths:
       - Reviews
       security:
       - bearerAuth: []
-      summary: Delete a review for a restaurant
+      summary: Delete review
       parameters:
-      - in: path
-        name: restaurantId
-        required: true
-        schema:
-          type: string
       - in: path
         name: reviewId
         required: true
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: Review deleted
@@ -547,143 +530,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /restaurants/{restaurantId}/similar:
-    get:
-      tags:
-      - Restaurants
-      security:
-      - bearerAuth: []
-      summary: Find similar restaurants
-      parameters:
-      - in: path
-        name: restaurantId
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: page
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-        description: Page number
-      - in: query
-        name: limit
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 25
-          default: 5
-        description: Number of similar restaurants per page
-      responses:
-        '200':
-          description: Similar restaurants
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 5
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Restaurant'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Restaurant not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /restaurants/compare:
-    get:
-      tags:
-      - Restaurants
-      security:
-      - bearerAuth: []
-      summary: Compare restaurants
-      parameters:
-      - in: query
-        name: ids
-        description: List of restaurant IDs
-        schema:
-          type: array
-          items:
-            type: string
-      responses:
-        '200':
-          description: Restaurant comparison
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  page:
-                    type: integer
-                    example: 1
-                  limit:
-                    type: integer
-                    example: 5
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Restaurant'
-        '400':
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: One or more restaurants not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /reservations:
     post:
       tags:
       - Reservations
       security:
       - bearerAuth: []
-      summary: Book a reservation
+      summary: Create reservation
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Reservation'
+              $ref: '#/components/schemas/CreateBookingRequest'
       responses:
         '201':
           description: Reservation created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Reservation'
+                $ref: '#/components/schemas/CreateBookingResponse'
         '400':
           description: Bad Request
           content:
@@ -709,18 +575,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /reservations/{booking_id}:
     delete:
       tags:
       - Reservations
       security:
       - bearerAuth: []
-      summary: Cancel a reservation
+      summary: Cancel reservation
       parameters:
-      - in: query
-        name: reservationId
+      - in: path
+        name: booking_id
         required: true
         schema:
-          type: string
+          type: integer
       responses:
         '204':
           description: Reservation cancelled
@@ -748,41 +615,122 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-  /reservations/minimum:
+  
+  /payment:
     get:
       tags:
-      - Reservations
-      summary: Get available booking slots for a given hour
+      - Payments
+      summary: Get payment receipts
       security:
       - bearerAuth: []
-      parameters:
-      - in: query
-        name: numberOfPeople
-        required: true
-        schema:
-          type: integer
-        description: Number of people for the reservation
-
-      - in: query
-        name: day
-        required: true
-        schema:
-          type: string
-          format: date
-        description: Day of the reservation (YYYY-MM-DD)
-
       responses:
         '200':
-          description: List of available Booking slots
+          description: Payment details retrieved successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  hour:
-                    type: string
+                $ref: '#/components/schemas/GetReceiptResponse'
+        '400':
+          description: Bad Request (e.g., invalid reservation ID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized (invalid or missing token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
+  /payment/{receipt_id}:
+    get:
+      tags:
+      - Payments
+      summary: Get receipt
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: receipt_id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Payment details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetReceiptResponse'
+        '400':
+          description: Bad Request (e.g., invalid receipt ID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized (invalid or missing token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Payment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sponsor/{id}:
+    post:
+      tags:
+      - Sponsorship
+      summary: Sponsor restaurant
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tier:
+                  type: integer
+                  minimum: 1
+                  example: 1
+      responses:
+        '200':
+          description: Sponsorship successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SponsorshipResponse'
         '400':
           description: Bad Request
           content:
@@ -790,13 +738,130 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized
+          description: Unauthorized (invalid or missing token)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: User not found
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+      - Sponsorship
+      summary: Check sponsorship
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: Sponsorship status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SponsorshipResponse'
+        '400':
+          description: Bad Request (e.g., invalid restaurant ID)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized (invalid or missing token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Restaurant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'   
+
+  /search:
+    get:
+      tags:
+      - Search
+      summary: Search restaurants
+      security:
+      - bearerAuth: []
+      description: Search for nearby restaurants or perform semantic search
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+        description: Page number
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
+        description: Number of restaurants per page
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: name_suffix
+        schema:
+          type: string
+      - in: query
+        name: full_name
+        schema:
+          type: string
+      - in: query
+        name: latitude
+        schema:
+          type: number
+      - in: query
+        name: longitude
+        schema:
+          type: number
+      - in: query
+        name: radius_meters
+        schema:
+          type: number
+      responses:
+        '200':
+          description: List of restaurants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchPaginatedResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:
@@ -815,26 +880,412 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    RegisterResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 12345
+        username:
+          type: string
+          example: "john_doe"
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "jwt-access-token"
+        refresh_token:
+          type: string
+          example: "jwt-refresh-token"
+        user:
+          $ref: '#/components/schemas/User'
+
+    RefreshResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "new-jwt-token"
+        refresh_token:
+          type: string
+          example: "new-refresh-token"
+
+    LogoutResponse:
+      type: object
+      properties: {}
+
     User:
       type: object
       properties:
         id:
+          type: integer
+          format: int32
+          example: 12345
+        username:
           type: string
-          example: "user_12345"
+          example: "john_doe"
+
+    Pong:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          example: 1
+
+    CreateRestaurantRequest:
+      type: object
+      properties:
         name:
           type: string
-          example: "John Doe"
-        email:
+          example: "Doce Sobral"
+        latitude:
+          type: number
+          example: 40.7128
+        longitude:
+          type: number
+          example: -74.006
+        address:
           type: string
-          format: email
-          example: "john.doe@example.com"
+          example: "123 Sobral Street, Lisbon, Portugal"
+        opening_time:
+          type: string
+          example: "08:00"
+        closing_time:
+          type: string
+          example: "22:00"
+        categories:
+          type: array
+          items:
+            type: string
+        max_slots:
+          type: integer
+          example: 20
+        has_media:
+          type: boolean
+          example: false
+
+    CreateRestaurantResponse:
+      type: object
+      properties:
+        restaurant_id:
+          type: integer
+          example: 12345
+        presigned_url:
+          type: string
+          nullable: true
+          example: "https://example.com/upload"
+
+    UpdateRestaurantRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12345
+        name:
+          type: string
+          example: "Doce Sobral"
+        latitude:
+          type: number
+          example: 40.7128
+        longitude:
+          type: number
+          example: -74.006
+        address:
+          type: string
+          example: "123 Sobral Street, Lisbon, Portugal"
+        opening_time:
+          type: string
+          example: "08:00"
+        closing_time:
+          type: string
+          example: "22:00"
+        categories:
+          type: array
+          items:
+            type: string
+        max_slots:
+          type: integer
+          example: 20
+
+    UpdateRestaurantResponse:
+      type: object
+      properties:
+        restaurant:
+          $ref: '#/components/schemas/RestaurantDetails'
+
+    RestaurantDetails:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 12345
+        name:
+          type: string
+          example: "Doce Sobral"
+        latitude:
+          type: number
+          format: double
+          example: 40.7128
+        longitude:
+          type: number
+          format: double
+          example: -74.006
+        address:
+          type: string
+          example: "123 Sobral Street, Lisbon, Portugal"
+        opening_time:
+          type: string
+          example: "08:00"
+        closing_time:
+          type: string
+          example: "22:00"
+        categories:
+          type: array
+          items:
+            type: string
+        media_url:
+          type: string
+          nullable: true
+          example: "https://example.com/media.jpg"
+        max_slots:
+          type: integer
+          format: int32
+          example: 20
+        owner_id:
+          type: integer
+          format: int64
+          example: 1
+        owner_name:
+          type: string
+          example: "John Doe"
+        sponsor_tier:
+          type: integer
+          format: int32
+          example: 0
+        average_rating:
+          type: number
+          format: double
+          example: 4.5
+        review_count:
+          type: integer
+          format: int32
+          example: 12
+
+    CompareRestaurantDetailsResponse:
+      type: object
+      properties:
+        restaurant1:
+          $ref: '#/components/schemas/RestaurantDetails'
+        restaurant2:
+          $ref: '#/components/schemas/RestaurantDetails'
+
+    RestaurantSearchResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 12345
+        name:
+          type: string
+          example: "Doce Sobral"
+        latitude:
+          type: number
+          format: double
+          example: 40.7128
+        longitude:
+          type: number
+          format: double
+          example: -74.006
+        address:
+          type: string
+          example: "123 Sobral Street, Lisbon, Portugal"
+        categories:
+          type: array
+          items:
+            type: string
+        media_url:
+          type: string
+          nullable: true
+          example: "https://example.com/media.jpg"
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          example: 1
+        limit:
+          type: integer
+          format: int32
+          example: 25
+        total:
+          type: integer
+          format: int32
+          example: 100
+        pages:
+          type: integer
+          format: int32
+          example: 4
+
+    SearchPaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestaurantSearchResult'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    CreateBookingRequest:
+      type: object
+      properties:
+        restaurant_id:
+          type: integer
+          example: 12345
+        quantity:
+          type: integer
+          example: 4
+        time_start:
+          type: string
+          format: date-time
+          example: "2024-12-31T19:00:00Z"
+
+    PaymentResponse:
+      type: object
+      properties:
+        receipt_id:
+          type: integer
+          example: 98765
+
+    CreateBookingResponse:
+      type: object
+      properties:
+        booking_id:
+          type: integer
+          format: int32
+          example: 12345
+        payment:
+          $ref: '#/components/schemas/PaymentResponse'
+
+    GetReceiptResponse:
+      type: object
+      properties: {}
+
+    SponsorshipResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 12345
+        tier:
+          type: integer
+          format: int32
+          example: 1
+        until:
+          type: string
+          format: date-time
+          example: "2024-12-31T23:59:59Z"
+        receipt_id:
+          type: integer
+          format: int32
+          example: 98765
+
+    CreateReviewRequest:
+      type: object
+      properties:
+        restaurant_id:
+          type: integer
+          example: 12345
+        comment:
+          type: string
+          example: "Amazing food and great service!"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+
+    UpdateReviewRequest:
+      type: object
+      properties:
+        review_id:
+          type: integer
+          example: 12345
+        comment:
+          type: string
+          example: "Amazing food and great service!"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+
+    Review:
+      type: object
+      properties:
+        review_id:
+          type: integer
+          format: int32
+          example: 12345
+        restaurant_id:
+          type: integer
+          format: int64
+          example: 12345
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        comment:
+          type: string
+          example: "Amazing food and great service!"
+        rating:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 5
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-12-31T19:00:00Z"
+
+    GetReviewsResponse:
+      type: object
+      properties:
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    CreateReviewResponse:
+      type: object
+      properties:
+        review:
+          $ref: '#/components/schemas/Review'
+
+    UpdateReviewResponse:
+      type: object
+      properties:
+        review:
+          $ref: '#/components/schemas/Review'
 
     Restaurant:
       type: object
       properties:
         id:
-          type: string
-          example: "12345"
+          type: integer
+          example: 12345
         name:
           type: string
           example: "Doce Sobral"
@@ -857,55 +1308,6 @@ components:
           example: false
         location:
           $ref: '#/components/schemas/Location'
-
-    Review:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "rev_12345"
-        rating:
-          type: integer
-          minimum: 1
-          maximum: 5
-          example: 5
-        comment:
-          type: string
-          example: "Amazing food and great service!"
-        categories:
-          type: string
-          example: "Food"
-        userId:
-          type: string
-          example: "user_12345"
-        restaurantId:
-          type: string
-          example: "12345"
-        createdAt:
-          type: string
-          format: date-time
-          example: "2024-12-31T19:00:00Z"
-
-    Reservation:
-      type: object
-      properties:
-        id:
-          type: string
-          example: "res_12345"
-        userId:
-          type: string
-          example: "user_12345"
-        restaurantId:
-          type: string
-          example: "12345"
-        dateTime:
-          type: string
-          example: "2024-12-31T19:00:00Z"
-          format: date-time
-        numberOfPeople:
-          type: integer
-          minimum: 1
-          example: 4
 
     Location:
       type: object

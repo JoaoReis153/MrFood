@@ -9,6 +9,7 @@ import (
 	pb "MrFood/services/payment/internal/api/grpc/pb"
 	models "MrFood/services/payment/pkg"
 
+	"github.com/stripe/stripe-go/v85"
 	"google.golang.org/grpc"
 )
 
@@ -28,6 +29,10 @@ func (m *mockRepo) CreateReceipt(ctx context.Context, r *models.Receipt, hash st
 	return 42, nil
 }
 
+func (m *mockRepo) UpdateReceiptStatus(ctx context.Context, paymentIntentID string, status string) error {
+	return nil
+}
+
 func (m *mockRepo) GetReceiptById(ctx context.Context, receiptID int32, userID int64) (*models.Receipt, error) {
 	if m.getErr != nil {
 		return nil, m.getErr
@@ -40,6 +45,23 @@ func (m *mockRepo) GetReceiptById(ctx context.Context, receiptID int32, userID i
 		PaymentDescription: "order-1",
 		PaymentStatus:      "success",
 		PaymentType:        "card",
+		CreatedAt:          time.Now(),
+	}, nil
+}
+
+func (m *mockRepo) GetReceiptByPaymentIntentID(ctx context.Context, paymentIntentID string) (*models.Receipt, error) {
+	if m.getErr != nil {
+		return nil, m.getErr
+	}
+
+	return &models.Receipt{
+		UserID:             1,
+		UserEmail:          "test@test.com",
+		Amount:             10,
+		PaymentDescription: "order-1",
+		PaymentStatus:      "success",
+		PaymentType:        "card",
+		PaymentIntentID:    paymentIntentID,
 		CreatedAt:          time.Now(),
 	}, nil
 }
@@ -88,6 +110,14 @@ func (m *mockNotificationClient) SendReceipts(
 // CreateReceipt Tests
 // -----------------------------
 func TestCreateReceipt_EdgeCases(t *testing.T) {
+	originalCreatePaymentIntent := createPaymentIntent
+	createPaymentIntent = func(params *stripe.PaymentIntentParams) (*stripe.PaymentIntent, error) {
+		return &stripe.PaymentIntent{ID: "pi_test", Status: stripe.PaymentIntentStatusSucceeded}, nil
+	}
+	defer func() {
+		createPaymentIntent = originalCreatePaymentIntent
+	}()
+
 	service := &Service{
 		repo:   &mockRepo{},
 		client: &mockNotificationClient{},
