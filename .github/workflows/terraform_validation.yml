@@ -28,7 +28,7 @@ jobs:
 
     - name: Load GCP config
       run: |
-        source gcp.env
+        source ../gcp.env
         echo "GCP_PROJECT_ID=${GCP_PROJECT_ID}" >> $GITHUB_ENV
         echo "TF_VAR_project_id=${GCP_PROJECT_ID}" >> $GITHUB_ENV
 
