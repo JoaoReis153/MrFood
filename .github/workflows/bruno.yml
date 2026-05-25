@@ -107,6 +107,19 @@ jobs:
             --env-file services/config.env --env-file services/.env \
             up -d --no-deps elasticsearch
 
+          echo "Waiting for Elasticsearch to be healthy..."
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:9200/_cluster/health 2>/dev/null; then
+              echo "Elasticsearch is ready"
+              exit 0
+            fi
+            echo "[$i/60] not yet..."
+            sleep 5
+          done
+          echo "Elasticsearch did not become ready in time"
+          docker compose -p mrfood -f services/docker-compose.yml logs --tail=60 elasticsearch || true
+          exit 1
+
       - name: Create ES index and start search service
         run: |
           make search-seed
