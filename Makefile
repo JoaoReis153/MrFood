@@ -162,8 +162,13 @@ search-bootstrap:
 
 search-seed:
 	@echo "Waiting for Elasticsearch..."
-	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
-	@echo "✔ Elasticsearch ready"
+	@for i in $$(seq 1 30); do \
+		if curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=10s" > /dev/null 2>&1; then \
+			echo "✔ Elasticsearch ready"; break; \
+		fi; \
+		echo "[$$i/30] not yet..."; sleep 5; \
+		if [ $$i -eq 30 ]; then echo "❌ Elasticsearch did not become ready"; exit 1; fi; \
+	done
 	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
 		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
 		-H 'Content-Type: application/json' \
