@@ -33,6 +33,11 @@ resource "google_sql_database" "db" {
   name     = each.value.db_name
   project  = var.project_id
   instance = google_sql_database_instance.this.name
+
+  # ABANDON skips the Cloud SQL API delete call and lets the instance
+  # deletion wipe the database. This avoids errors from active connections
+  # (cloud-sql-proxy) or logical replication slots left by Debezium CDC.
+  deletion_policy = "ABANDON"
 }
 
 resource "google_sql_user" "user" {
@@ -42,4 +47,7 @@ resource "google_sql_user" "user" {
   project  = var.project_id
   instance = google_sql_database_instance.this.name
   password = each.value.db_password
+
+  # Same reason: user deletion fails when the DB still has CDC-owned objects.
+  deletion_policy = "ABANDON"
 }

@@ -18,7 +18,7 @@ spec:
       serviceAccountName: {{ .Values.name }}
       containers:
       - name: {{ .Values.name }}
-        image: {{ .Values.image }}
+        image: europe-southwest1-docker.pkg.dev/{{ .Values.gcpProjectId }}/mrfood-repo/{{ .Values.image }}
         ports:
         - containerPort: {{ .Values.port }}
 
@@ -33,12 +33,12 @@ spec:
         livenessProbe:
           grpc:
             port: {{ .Values.port }}
-          initialDelaySeconds: 10
+          initialDelaySeconds: 120
 
         readinessProbe:
           grpc:
             port: {{ .Values.port }}
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
         
         envFrom:
           - configMapRef:
@@ -53,5 +53,5 @@ spec:
           - "--structured-logs"
           - "--port=5432"
           - "--private-ip"
-          - "{{ .Values.cloudsql.instance }}"
+          - "{{ .Values.gcpProjectId }}:{{ .Values.cloudsql.instance }}"
       {{- end }}

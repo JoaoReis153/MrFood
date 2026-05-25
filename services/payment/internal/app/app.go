@@ -46,7 +46,9 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 
 func (a *App) Close(ctx context.Context) error {
 	if a.NotificationConn != nil {
-		a.NotificationConn.Close()
+		if err := a.NotificationConn.Close(); err != nil {
+			return fmt.Errorf("failed to close notification connection: %w", err)
+		}
 	}
 	if a.DB != nil {
 		a.DB.Close()

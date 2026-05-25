@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGISTRY_REPO="europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../gcp.env"
+REGISTRY_REPO="europe-southwest1-docker.pkg.dev/${GCP_PROJECT_ID}/mrfood-repo"
 
 usage() {
   cat <<'EOF'
@@ -87,7 +89,7 @@ main() {
     if [[ -f "$values_file" ]]; then
       echo "[$service_name] update $values_file image -> $image"
       if [[ "$dry_run" != "true" ]]; then
-        perl -pi -e "s|^image:.*$|image: ${image}|" "$values_file"
+        perl -pi -e "s|^image:.*$|image: ${service_name}:${version}|" "$values_file"
       fi
     else
       echo "[$service_name] warning: values file not found at $values_file"

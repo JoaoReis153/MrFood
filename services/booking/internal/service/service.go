@@ -22,6 +22,7 @@ var (
 	ErrForbidden            = errors.New("booking does not belong to user")
 	ErrBookingNotFound      = errors.New("booking not found")
 	ErrFailedWHGet          = errors.New("failed to get working hours")
+	ErrPaymentFailed        = errors.New("payment service unavailable")
 )
 
 type BookingRepository interface {
@@ -79,7 +80,10 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 
 	amount := int64(booking.PeopleCount) * 500 // 5.00 EUR per person
 
-	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
+	payCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	receipt_id, err := s.makePayment(payCtx, &models.PaymentRequest{
 		UserID:         booking.UserID,
 		UserEmail:      booking.UserEmail,
 		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, (float32)(amount), booking_id, "B"),
@@ -114,7 +118,7 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 
 	if err != nil {
 		slog.ErrorContext(ctx, "payment failed", "error", err)
-		return 0, err
+		return 0, fmt.Errorf("%w: %v", ErrPaymentFailed, err)
 	}
 
 	return res.ReceiptId, nil

@@ -1,5 +1,5 @@
 name: booking
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/booking:v1.0.4
+image: booking:02e09f4
 port: 50053
 
 resources:
@@ -35,4 +35,4 @@ env:
     PAYMENT_GRPC_ADDR: "payment:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-pg
+  instance: europe-southwest1:mrfood-pg

@@ -16,13 +16,18 @@ http:
       value: "10"
       type: query
     - name: full_name
-      value: "Le 147"
+      value: Le 147
       type: query
   auth:
     type: bearer
     token: "{{token}}"
 
 runtime:
+  variables:
+    - name: baseUrl
+      value: http://34.175.101.121
+    - name: token
+      value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJtcmZvb2QtYXV0aCIsInN1YiI6ImVjMGJmYWYxLTAzZjQtNGQwMC04YTIzLWQ5MjdlNjNlY2Q5NCIsImV4cCI6MTc3ODYxOTMzOCwiaWF0IjoxNzc4NjE5MDM4LCJ1c2VyX2lkIjoiZWMwYmZhZjEtMDNmNC00ZDAwLThhMjMtZDkyN2U2M2VjZDk0IiwidXNlcm5hbWUiOiJtZW5pbm8ifQ.DM5sAFoGqmwXpptOozFtrdud9_13jYJt3-YFNHpYktI
   scripts:
     - type: tests
       code: |-

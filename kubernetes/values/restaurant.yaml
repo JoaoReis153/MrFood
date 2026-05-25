@@ -1,5 +1,5 @@
 name: restaurant
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/restaurant:v1.0.4
+image: restaurant:02e09f4
 port: 50052
 
 resources:
@@ -34,4 +34,4 @@ env:
     REVIEW_GRPC_ADDR: "review:80"
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-pg
+  instance: europe-southwest1:mrfood-pg

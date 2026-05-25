@@ -28,6 +28,10 @@ func main() {
 	}
 	defer application.DB.Close()
 
+	if err := telemetry.RegisterPoolMetrics(application.DB); err != nil {
+		log.Fatalf("pool metrics registration failed: %v", err)
+	}
+
 	application.InitDependencies()
 	app.RunServer(application.Service)
 }

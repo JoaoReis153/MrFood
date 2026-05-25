@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../gcp.env"
 NAMESPACE="mrfood"
 CHART_DIR="$SCRIPT_DIR/helm/mrfood-service"
 GATEWAY_CHART_DIR="$SCRIPT_DIR/helm/kong"
@@ -44,8 +45,8 @@ fi
 for values_file in "${value_files[@]}"; do
   service="$(basename "$values_file" .yaml)"
 
-  if [[ "$service" == "cdc" || "$service" == "search" ]]; then
-    echo "[${service}] Skipping service as requested."
+  if [[ "$service" == "cdc" ]]; then
+    echo "[${service}] Skipping — deployed via kafka-connect chart."
     continue
   fi
 
@@ -62,7 +63,9 @@ for values_file in "${value_files[@]}"; do
     helm install "$service" "$GATEWAY_CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]+"${extra_args[@]}"}"
   else
     echo "[${service}] Installing release with values/$(basename "$values_file")..."
-    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace "${extra_args[@]+"${extra_args[@]}"}"
+    helm install "$service" "$CHART_DIR" -f "$values_file" -n "$NAMESPACE" --create-namespace \
+      --set "gcpProjectId=${GCP_PROJECT_ID}" \
+      "${extra_args[@]+"${extra_args[@]}"}"
   fi
 
 done

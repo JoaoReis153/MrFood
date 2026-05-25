@@ -1,0 +1,40 @@
+info:
+  name: Create restaurant with invalid payload
+  type: http
+  seq: 6
+  tags:
+    - Restaurants
+
+http:
+  method: POST
+  url: "{{baseUrl}}/restaurants"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "",
+        "latitude": 38.716,
+        "longitude": -9.139,
+        "address": "",
+        "opening_time": "10:00:00",
+        "closing_time": "12:00:00",
+        "categories": [],
+        "max_slots": 0
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("invalid restaurant payload returns 400", () => {
+          expect(res.status).to.equal(400);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

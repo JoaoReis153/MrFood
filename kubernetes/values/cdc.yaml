@@ -1,5 +1,5 @@
 name: cdc
-image: europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo/cdc:v1.0.4
+image: cdc:02e09f4
 
 port: 8083
 
@@ -12,7 +12,7 @@ resources:
     memory: "1Gi"
   limits:
     cpu: "200m"
-    memory: "1536Mi"
+    memory: "2Gi"
 
 autoscaling:
   minReplicas: 1
@@ -49,4 +49,4 @@ env:
     ELASTICSEARCH_INDEX: restaurants
 
 cloudsql:
-  instance: mrfood-490623:europe-southwest1:mrfood-pg
+  instance: europe-southwest1:mrfood-pg

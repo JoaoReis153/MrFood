@@ -142,10 +142,12 @@ func buildReceiptsBody(receipts []*pb.Receipt) string {
 	sb.WriteString("<tr><th>Description</th><th>Amount</th><th>Status</th><th>Type</th><th>Date</th></tr>")
 
 	for _, r := range receipts {
+		displayAmount := float64(r.Amount) / 100.0
+
 		fmt.Fprintf(&sb,
 			"<tr><td>%s</td><td>%.2f</td><td>%s</td><td>%s</td><td>%s</td></tr>",
 			r.PaymentDescription,
-			r.Amount,
+			displayAmount,
 			r.CurrentPaymentStatus,
 			r.PaymentType,
 			r.CreatedAt.AsTime().Format("2006-01-02 15:04"),
