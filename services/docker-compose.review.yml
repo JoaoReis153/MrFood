@@ -19,6 +19,8 @@ services:
     depends_on:
       review_db:
         condition: service_healthy
+      restaurant:
+        condition: service_started
 
   review_db:
     image: postgres:16

@@ -58,7 +58,7 @@ type ReviewService interface {
 }
 
 func (c *RestaurantClient) GetRestaurant(ctx context.Context, restaurantID int64) (models.Restaurant, error) {
-	ctx, cancel := context.WithTimeout(ctx, 800*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	resp, err := c.client.GetRestaurantId(ctx, &pb.GetRestaurantRequest{RestaurantId: restaurantID})
