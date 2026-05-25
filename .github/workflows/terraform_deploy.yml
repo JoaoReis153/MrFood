@@ -1,21 +1,22 @@
-name: Terraform Apply
+name: Terraform Plan
 
 on:
   push:
     branches: [ main ]
     paths: [ 'terraform/**' ]
+  workflow_dispatch:
 
 permissions:
   contents: read
   id-token: write
 
 concurrency:
-  group: terraform-apply-${{ github.ref }}
-  cancel-in-progress: false
+  group: terraform-plan-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   terraform:
-    name: Terraform Apply
+    name: Terraform Plan
     runs-on: ubuntu-latest
 
     defaults:
@@ -43,7 +44,5 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
-    - name: Terraform Apply
-      env:
-        TF_VAR_project_id: ${{ secrets.GCP_PROJECT_ID }}
-      run: terraform apply -auto-approve -input=false
+    - name: Terraform Plan
+      run: terraform plan -input=false
