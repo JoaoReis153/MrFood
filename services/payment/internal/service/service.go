@@ -19,6 +19,19 @@ import (
 	"github.com/stripe/stripe-go/v85/paymentintent"
 )
 
+func mapRepoError(err error) error {
+	switch {
+	case errors.Is(err, repository.ErrReceiptNotFound):
+		return ErrReceiptNotFound
+	case errors.Is(err, repository.ErrUnauthorized):
+		return ErrUnauthorized
+	case errors.Is(err, repository.ErrDuplicatePaymentRequest):
+		return ErrDuplicatePaymentRequest
+	default:
+		return err
+	}
+}
+
 var createPaymentIntent = paymentintent.New
 
 var (
@@ -111,7 +124,7 @@ func (s *Service) ConfirmPayment(ctx context.Context, paymentIntentID string) er
 func (s *Service) GetReceiptById(ctx context.Context, receipt_id int32, user_id int64) error {
 	receipt, err := s.repo.GetReceiptById(ctx, receipt_id, user_id)
 	if err != nil {
-		return err
+		return mapRepoError(err)
 	}
 
 	var receipts []*models.Receipt

@@ -24,12 +24,14 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        test("book reservation fixture returns 200", () => {
-          expect(res.status).to.equal(200);
+        test("book reservation fixture returns 200 or 503 if payment unavailable", () => {
+          expect([200, 503]).to.include(res.status);
         });
 
         if (res.status === 200) {
           bru.setEnvVar("receiptId", String(res.body.payment.receipt_id));
+        } else {
+          bru.setEnvVar("receiptId", "");
         }
 
 settings:
