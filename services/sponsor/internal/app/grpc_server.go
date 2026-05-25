@@ -3,6 +3,7 @@ package app
 import (
 	"MrFood/services/sponsor/config"
 	pb "MrFood/services/sponsor/internal/api/grpc/pb"
+	"MrFood/services/sponsor/internal/service"
 	"context"
 	"errors"
 	"fmt"
@@ -87,7 +88,7 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 
 	response, receipt_id, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID, user.Email)
 	if err != nil {
-		return nil, err
+		return nil, mapToGRPCError(err)
 	}
 
 	slog.InfoContext(ctx, "sponsorship created", "id", response.ID, "tier", response.Tier, "until", response.Until)
@@ -98,6 +99,19 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		Until:     timestamppb.New(response.Until),
 		ReceiptId: receipt_id,
 	}, nil
+}
+
+func mapToGRPCError(err error) error {
+	switch {
+	case errors.Is(err, service.ErrUnauthorized):
+		return status.Error(codes.PermissionDenied, err.Error())
+	case errors.Is(err, service.ErrRestaurantNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, service.ErrPaymentUnavailable):
+		return status.Error(codes.Unavailable, err.Error())
+	default:
+		return status.Error(codes.Internal, "internal server error")
+	}
 }
 
 func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {

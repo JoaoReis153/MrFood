@@ -11,6 +11,15 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+var (
+	ErrUnauthorized        = errors.New("not the restaurant owner")
+	ErrPaymentUnavailable  = errors.New("payment service unavailable")
+	ErrRestaurantNotFound  = errors.New("restaurant not found")
 )
 
 type Service struct {
@@ -35,7 +44,7 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 	}
 
 	if restaurant.OwnerID != owner {
-		return nil, 0, errors.New("invalid restaurant owner")
+		return nil, 0, ErrUnauthorized
 	}
 
 	request.Categories = restaurant.Categories
@@ -75,6 +84,10 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 
 	if err != nil {
 		slog.ErrorContext(ctx, "payment failed", "error", err)
+		code := status.Code(err)
+		if code == codes.Internal || code == codes.Unavailable || code == codes.DeadlineExceeded {
+			return 0, ErrPaymentUnavailable
+		}
 		return 0, err
 	}
 
@@ -91,6 +104,9 @@ func (s *Service) getRestaurantDetails(ctx context.Context, restaurantID int64) 
 	})
 
 	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, ErrRestaurantNotFound
+		}
 		return nil, err
 	}
 
