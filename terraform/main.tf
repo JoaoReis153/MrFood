@@ -283,3 +283,66 @@ module "service_redis" {
 
   depends_on = [module.vpc, google_project_service.redis, module.cloudsql_foundation, terraform_data.force_delete_vpc_peering]
 }
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GitHub Actions — Workload Identity Federation
+# ──────────────────────────────────────────────────────────────────────────────
+
+resource "google_project_service" "iam_credentials" {
+  project            = var.project_id
+  service            = "iamcredentials.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_iam_workload_identity_pool" "github" {
+  project                   = var.project_id
+  workload_identity_pool_id = "github"
+  display_name              = "GitHub Actions"
+  description               = "WIF pool for GitHub Actions CI/CD"
+
+  depends_on = [google_project_service.iam_credentials]
+}
+
+resource "google_iam_workload_identity_pool_provider" "mrfood_repo" {
+  project                            = var.project_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
+  workload_identity_pool_provider_id = "mrfood-repo"
+  display_name                       = "MrFood GitHub repo"
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  attribute_condition = "attribute.repository == \"JoaoReis153/MrFood\""
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+resource "google_service_account" "github_actions" {
+  project      = var.project_id
+  account_id   = "github-actions"
+  display_name = "GitHub Actions CI/CD"
+  description  = "Used by GitHub Actions via Workload Identity Federation"
+}
+
+resource "google_service_account_iam_member" "github_actions_wif" {
+  service_account_id = google_service_account.github_actions.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/JoaoReis153/MrFood"
+}
+
+resource "google_project_iam_member" "github_actions_editor" {
+  project = var.project_id
+  role    = "roles/editor"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+resource "google_project_iam_member" "github_actions_iam_admin" {
+  project = var.project_id
+  role    = "roles/iam.securityAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
