@@ -12,6 +12,7 @@ import (
 
 	"MrFood/services/booking/config"
 	pb "MrFood/services/booking/internal/api/grpc/pb"
+	"MrFood/services/booking/internal/repository"
 	"MrFood/services/booking/internal/service"
 	models "MrFood/services/booking/pkg"
 
@@ -203,7 +204,7 @@ func mapServiceError(_ context.Context, err error) error {
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, service.ErrForbidden):
 		return status.Error(codes.PermissionDenied, err.Error())
-	case errors.Is(err, service.ErrBookingNotFound):
+	case errors.Is(err, service.ErrBookingNotFound), errors.Is(err, repository.ErrBookingNotFound):
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, service.ErrFailedWHGet):
 		return status.Error(codes.FailedPrecondition, err.Error())
