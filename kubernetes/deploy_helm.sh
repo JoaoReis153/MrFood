@@ -117,7 +117,8 @@ else
 fi
 
 echo "==> Patching Kong configmap and restarting gateway"
-run kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml" --dry-run=client -o yaml | kubectl apply -f -
+run kubectl delete configmap kong-config -n "$NAMESPACE" --ignore-not-found
+run kubectl create configmap kong-config -n "$NAMESPACE" --from-file=kong.yml="$ROOT_DIR/services/gateway/kong/kong.yml"
 run kubectl rollout restart deployment/gateway -n "$NAMESPACE"
 run kubectl rollout status deployment/gateway -n "$NAMESPACE"
 
