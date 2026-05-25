@@ -40,16 +40,6 @@ gcloud auth application-default login
 gcloud config set project "${GCP_PROJECT_ID}"
 ```
 
-Connect to the GKE cluster:
-
-```bash
-gcloud container clusters get-credentials mrfood-cluster \
-  --zone europe-southwest1-b \
-  --project "${GCP_PROJECT_ID}"
-```
-
----
-
 ## 1. Infrastructure — Terraform
 
 Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instance, Redis, and all Workload Identity service accounts.
