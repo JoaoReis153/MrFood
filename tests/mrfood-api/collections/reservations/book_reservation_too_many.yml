@@ -1,0 +1,35 @@
+info:
+  name: Book reservation exceeding max slots
+  type: http
+  seq: 4
+  tags:
+    - Reservations
+
+http:
+  method: POST
+  url: "{{baseUrl}}/reservations"
+  body:
+    type: json
+    data: |-
+      {
+        "restaurant_id": {{restaurantId}},
+        "time_start": "2026-12-31T11:00:00Z",
+        "quantity": 20
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("booking with quantity > 15 returns 400", () => {
+          expect(res.status).to.equal(400);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
