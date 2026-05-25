@@ -26,6 +26,8 @@ resource "google_sql_database" "db" {
   name     = var.db_name
   project  = var.project_id
   instance = google_sql_database_instance.this.name
+
+  deletion_policy = "ABANDON"
 }
 
 resource "google_sql_user" "user" {
@@ -33,4 +35,6 @@ resource "google_sql_user" "user" {
   project  = var.project_id
   instance = google_sql_database_instance.this.name
   password = var.db_password
+
+  deletion_policy = "ABANDON"
 }
