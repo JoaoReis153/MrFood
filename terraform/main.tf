@@ -305,6 +305,10 @@ resource "google_iam_workload_identity_pool" "github" {
   description               = "WIF pool for GitHub Actions CI/CD"
 
   depends_on = [google_project_service.iam_credentials]
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "google_iam_workload_identity_pool_provider" "mrfood_repo" {
@@ -323,6 +327,10 @@ resource "google_iam_workload_identity_pool_provider" "mrfood_repo" {
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
