@@ -306,9 +306,6 @@ resource "google_iam_workload_identity_pool" "github" {
 
   depends_on = [google_project_service.iam_credentials]
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "google_iam_workload_identity_pool_provider" "mrfood_repo" {
@@ -329,9 +326,6 @@ resource "google_iam_workload_identity_pool_provider" "mrfood_repo" {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "google_service_account" "github_actions" {
