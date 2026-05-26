@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	ErrUnauthorized        = errors.New("not the restaurant owner")
+	ErrUnauthorized        = errors.New("invalid restaurant owner")
 	ErrPaymentUnavailable  = errors.New("payment service unavailable")
 	ErrRestaurantNotFound  = errors.New("restaurant not found")
 )
