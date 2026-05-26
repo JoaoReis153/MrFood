@@ -2,32 +2,18 @@
 
 ## First Deploy
 
-Three commands, in order:
-
 ```bash
-# 1. Infrastructure + schemas
-cd terraform && terraform init && terraform apply
-
-# 2. All Kubernetes workloads
 ./scripts/deploy.sh
-
-# 3. Seed data (first deploy only)
-./scripts/bootstrap_cloud.sh
+./scripts/seed.sh   # seed data — run once on a fresh database
 ```
 
-That's it. Everything below is reference detail for each step.
+> **Subsequent deploys:** `./scripts/deploy.sh`
 
 ---
 
 ## Prerequisites
 
-> **Changing the GCP project?** Edit one line in **`gcp.env`** at the repo root:
->
-> ```
-> GCP_PROJECT_ID=mrfood-496807   ← change this
-> ```
->
-> All scripts, CI workflows, and Helm deploys read from that file automatically.
+Tools required:
 
 ```bash
 gcloud --version     # >= 400
@@ -37,25 +23,7 @@ helm version
 docker version
 ```
 
-Authenticate locally:
-
-```bash
-source gcp.env
-
-gcloud auth login
-gcloud auth application-default login
-gcloud config set project "${GCP_PROJECT_ID}"
-```
-
----
-
-## Step 1 — Infrastructure (`terraform apply`)
-
-Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instance + schemas, Redis, and all Workload Identity service accounts.
-
-### Secrets
-
-DB passwords live in `terraform/terraform.tfvars` (gitignored). Create it before the first apply:
+DB passwords must exist in `terraform/terraform.tfvars` (gitignored) before the first run:
 
 ```hcl
 # terraform/terraform.tfvars
@@ -70,37 +38,19 @@ service_databases = {
 
 > **Note:** `auth` has no Cloud SQL database — user storage is handled entirely by Keycloak.
 
-### Apply
-
-```bash
-source gcp.env
-cd terraform
-terraform init
-terraform plan    # review before applying
-terraform apply
-```
-
-Terraform also applies the DB schemas (`db_setup.sql` for each service) via a `local-exec` provisioner after Cloud SQL is ready.
-
-**CI:** pushes to `main` that touch `terraform/**` run `terraform plan` automatically via `.github/workflows/terraform_deploy.yml`. Apply remains manual.
+> **Changing the GCP project?** Edit one line in **`gcp.env`** at the repo root — all scripts, CI workflows, and Helm deploys read from it automatically.
 
 ---
 
-## Step 2 — Kubernetes (`./scripts/deploy.sh`)
+## What `deploy.sh` does
 
-`deploy.sh` does everything in the right order: builds and pushes images, connects to GKE, deploys the observability stack, Keycloak, Elasticsearch, Kafka, CDC, and all application services.
-
-```bash
-./scripts/deploy.sh
-```
-
-### What it deploys, in order
+`deploy.sh` handles everything in the right order — auth, infrastructure, images, and all Kubernetes workloads.
 
 | Step | What                           | Notes                                              |
 | ---- | ------------------------------ | -------------------------------------------------- |
 | 1    | Authenticate                   | `gcloud auth login` + ADC                          |
-| 2    | Terraform                      | Idempotent re-apply to catch any drift             |
-| 3    | Build & push images            | Tags from `git rev-parse --short HEAD`             |
+| 2    | Terraform                      | `init` + `plan` + `apply` — idempotent             |
+| 3    | Build & push images            | Tagged from `git rev-parse --short HEAD`           |
 | 4    | Connect to GKE                 | `get-credentials` for `mrfood-cluster`             |
 | 5    | Namespace                      | `kubectl apply -f kubernetes/namespace.yaml`       |
 | 6    | Observability                  | OTel Collector, Prometheus, Loki, Tempo, Grafana   |
@@ -108,6 +58,10 @@ Terraform also applies the DB schemas (`db_setup.sql` for each service) via a `l
 | 8    | Elasticsearch + Kafka          | Waits for all three (zookeeper, kafka, ES)         |
 | 9    | CDC (Kafka Connect)            | Registers source + sink connectors after readiness |
 | 10   | Application services + gateway | `kubernetes/restart.sh`                            |
+
+Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instance + schemas, Redis, and all Workload Identity service accounts. DB schemas (`db_setup.sql` per service) are applied via a `local-exec` provisioner after Cloud SQL is ready.
+
+**CI:** pushes to `main` that touch `terraform/**` run `terraform plan` automatically via `.github/workflows/terraform_deploy.yml`. Apply remains manual.
 
 ### Kong gateway config
 
@@ -122,15 +76,15 @@ kubectl rollout restart deployment/gateway -n mrfood
 
 ---
 
-## Step 3 — Seed Data (`./scripts/bootstrap_cloud.sh`)
+## Seed Data
 
-Imports the processed CSVs into Cloud SQL. Run once on a fresh database.
+Run once on a fresh database:
 
 ```bash
-./scripts/bootstrap_cloud.sh
+./scripts/seed.sh
 
 # Preview without executing
-./scripts/bootstrap_cloud.sh --dry-run
+./scripts/seed.sh --dry-run
 ```
 
 | CSV file                                              | Destination                                         |
