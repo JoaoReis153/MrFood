@@ -15,7 +15,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
 INSTANCE="mrfood-pg"
-BUCKET="kaggle_bucket_6194"
+BUCKET="mrfood-cloudsql-schema-bootstrap-${GCP_PROJECT_ID}"
 DRY_RUN=false
 
 if [[ "${1:-}" == "--dry-run" ]]; then

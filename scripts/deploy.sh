@@ -4,6 +4,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+BOOTSTRAP=false
+for arg in "$@"; do
+  [[ "${arg}" == "--bootstrap" ]] && BOOTSTRAP=true
+done
+
 cd "${REPO_ROOT}"
 source gcp.env
 
@@ -26,14 +31,22 @@ gcloud config set project "${GCP_PROJECT_ID}"
 )
 
 # ---------------------------------------------------------------------------
-# 3. Container images — build & push
+# 3. Bootstrap — schemas + seed data (first deploy only)
+# ---------------------------------------------------------------------------
+if $BOOTSTRAP; then
+  echo "▶ Bootstrapping Cloud SQL (schemas + seed CSVs)..."
+  bash "${SCRIPT_DIR}/bootstrap_cloud.sh"
+fi
+
+# ---------------------------------------------------------------------------
+# 4. Container images — build & push
 # ---------------------------------------------------------------------------
 gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 
 ./services/build_and_push_images.sh "$(git rev-parse --short HEAD)"
 
 # ---------------------------------------------------------------------------
-# 4. Connect to GKE
+# 5. Connect to GKE
 # ---------------------------------------------------------------------------
 gcloud container clusters get-credentials mrfood-cluster \
   --zone europe-southwest1-b \
@@ -42,7 +55,7 @@ gcloud container clusters get-credentials mrfood-cluster \
 kubectl apply -f kubernetes/namespace.yaml
 
 # ---------------------------------------------------------------------------
-# 5. Observability stack (must be up before app services)
+# 6. Observability stack (must be up before app services)
 # ---------------------------------------------------------------------------
 helm upgrade --install otel-collector kubernetes/helm/otel-collector \
   --set gcpProject="${GCP_PROJECT_ID}" \
@@ -52,7 +65,7 @@ helm upgrade --install observability kubernetes/helm/observability \
   --namespace mrfood
 
 # ---------------------------------------------------------------------------
-# 6. Keycloak (must be up before auth)
+# 7. Keycloak (must be up before auth)
 # ---------------------------------------------------------------------------
 helm upgrade --install keycloak kubernetes/helm/keycloak \
   --namespace mrfood
@@ -60,7 +73,7 @@ helm upgrade --install keycloak kubernetes/helm/keycloak \
 kubectl rollout status deployment/keycloak -n mrfood
 
 # ---------------------------------------------------------------------------
-# 7. Search stack — Elasticsearch + Kafka (must be up before CDC)
+# 8. Search stack — Elasticsearch + Kafka (must be up before CDC)
 # ---------------------------------------------------------------------------
 helm upgrade --install elasticsearch kubernetes/helm/elasticsearch \
   --namespace mrfood
@@ -73,7 +86,7 @@ kubectl rollout status deployment/kafka        -n mrfood
 kubectl rollout status deployment/elasticsearch -n mrfood
 
 # ---------------------------------------------------------------------------
-# 8. CDC (Kafka Connect)
+# 9. CDC (Kafka Connect)
 # ---------------------------------------------------------------------------
 helm upgrade --install cdc kubernetes/helm/kafka-connect \
   -f kubernetes/values/cdc.yaml \
@@ -95,7 +108,7 @@ kubectl exec -n mrfood deployment/cdc -- bash -c \
      -d @/connectors/restaurants-sink.json"
 
 # ---------------------------------------------------------------------------
-# 9. Application services + gateway
+# 10. Application services + gateway
 # ---------------------------------------------------------------------------
 bash kubernetes/restart.sh
 
