@@ -4,11 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-BOOTSTRAP=false
-for arg in "$@"; do
-  [[ "${arg}" == "--bootstrap" ]] && BOOTSTRAP=true
-done
-
 cd "${REPO_ROOT}"
 source gcp.env
 
@@ -31,15 +26,7 @@ gcloud config set project "${GCP_PROJECT_ID}"
 )
 
 # ---------------------------------------------------------------------------
-# 3. Bootstrap — schemas + seed data (first deploy only)
-# ---------------------------------------------------------------------------
-if $BOOTSTRAP; then
-  echo "▶ Bootstrapping Cloud SQL (schemas + seed CSVs)..."
-  bash "${SCRIPT_DIR}/bootstrap_cloud.sh"
-fi
-
-# ---------------------------------------------------------------------------
-# 4. Container images — build & push
+# 3. Container images — build & push
 # ---------------------------------------------------------------------------
 gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 
