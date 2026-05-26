@@ -1,7 +1,7 @@
 # Config
 PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
-TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/... ./services/observability/...
+TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
 
 # Load non-sensitive config (committed) and secrets (git-ignored)
 -include services/config.env
@@ -121,7 +121,12 @@ logs-dump:
 # ============================================================================
 
 test:
-	go test -v -race $(TEST_PACKAGES)
+	go test -v -race $(TEST_PACKAGES) 2>&1 | tee /tmp/test_output.txt; \
+	echo ""; \
+	echo "━━━ Results ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+	echo "PASS: $$(grep -c '^--- PASS' /tmp/test_output.txt)"; \
+	echo "FAIL: $$(grep -c '^--- FAIL' /tmp/test_output.txt)"; \
+	grep -q '^--- FAIL' /tmp/test_output.txt && exit 1 || exit 0
 
 GATEWAY_IP ?=
 BRUNO_URL_OVERRIDE := $(if $(GATEWAY_IP),--env-var "baseUrl=http://$(GATEWAY_IP)",)

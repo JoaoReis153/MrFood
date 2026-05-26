@@ -8,7 +8,7 @@ Requires Docker and Docker Compose.
 
 ### First-time setup
 
-**1. Create the env file and fill in secrets:**
+**1. Create the env file:**
 
 ```bash
 make create_env
@@ -29,14 +29,12 @@ Download the Kaggle datasets and place them in `data/`:
 - [places.csv + reviews.csv + users.csv](https://www.kaggle.com/datasets/danielkumlin/world-restaurants)
 - [tripadvisor_european_restaurants.csv](https://www.kaggle.com/datasets/stefanoleone992/tripadvisor-european-restaurants)
 
-Set up the Python environment and generate CSVs:
-
 ```bash
 python3 -m venv scripts/.venv
 source scripts/.venv/bin/activate
 pip install -r scripts/requirements.txt
 
-make generate-csv           # 200 rows (fast)
+make generate-csv             # 200 rows (fast)
 make generate-csv CSV_FULL=1  # full dataset
 ```
 
@@ -45,24 +43,27 @@ All generated users have the password `mrfood123`.
 **3. Start services:**
 
 ```bash
-make setup        # core services only
-make setup-full   # includes Elasticsearch + Kafka + CDC
+make setup       # core services only
+make setup-full  # includes Elasticsearch + Kafka + CDC
 ```
 
-### Common commands
+### Commands
 
-```bash
-make logs         # tail logs
-make stop         # stop services
-make down         # stop and remove containers
-make restart      # restart services
-make test         # run Go tests
-make test-bruno   # run Bruno API tests
-make clean        # remove containers, images, volumes
-```
+| Command           | What it does                             |
+| ----------------- | ---------------------------------------- |
+| `make setup`      | Build and start core services            |
+| `make setup-full` | Build and start with Elasticsearch + CDC |
+| `make load-local` | Seed local databases with CSV data       |
+| `make restart`    | Restart all services                     |
+| `make stop`       | Stop services (keep containers)          |
+| `make down`       | Stop and remove containers               |
+| `make logs`       | Tail all service logs                    |
+| `make test`       | Run Go unit tests                        |
+| `make test-bruno` | Run Bruno API tests                      |
+| `make clean`      | Remove containers, images, and volumes   |
 
-See `make help` for the full list.
+Run `make help` for the full list.
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for GKE deployment instructions.
+See [DEPLOYMENT.md](DEPLOYMENT.md).
