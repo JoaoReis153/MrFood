@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
-# bootstrap_cloud.sh — First-time Cloud SQL setup: apply schemas then import seed CSVs.
+# bootstrap_cloud.sh — Cloud SQL setup: apply schemas then import seed CSVs.
 #
-# Run once after `terraform apply` creates the Cloud SQL instance and databases.
-# Re-running is safe for schemas (CREATE IF NOT EXISTS) but will error on CSV
-# imports if data already exists — pass --force to skip CSV import on conflict.
+# Safe to re-run — seed tables are truncated before each import.
 #
 # Usage:
-#   ./scripts/bootstrap_cloud.sh [--dry-run] [--force]
+#   ./scripts/bootstrap_cloud.sh [--dry-run]
 #
 set -euo pipefail
 
@@ -17,12 +15,10 @@ source "${REPO_ROOT}/gcp.env"
 INSTANCE="mrfood-pg"
 BUCKET="mrfood-cloudsql-schema-bootstrap-${GCP_PROJECT_ID}"
 DRY_RUN=false
-FORCE=false
 
 for arg in "$@"; do
   case "${arg}" in
-    --dry-run) DRY_RUN=true  ;;
-    --force)   FORCE=true    ;;
+    --dry-run) DRY_RUN=true ;;
   esac
 done
 
@@ -74,51 +70,72 @@ for entry in "${SCHEMAS[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# 2. Seed CSVs — strip header, stage in GCS, import into Cloud SQL
+# 2. Truncate seed tables — FK-safe order so re-runs are always clean
 # ---------------------------------------------------------------------------
-# Format: "gcs_object|database|table|col1,col2,..."
+# Format: "database|SQL"
+TRUNCATES=(
+  "mrfood_restaurant|TRUNCATE restaurant_categories, restaurants RESTART IDENTITY CASCADE;"
+  "mrfood_review|TRUNCATE review RESTART IDENTITY CASCADE;"
+)
+
+echo "━━━ Truncating seed tables ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+for entry in "${TRUNCATES[@]}"; do
+  IFS='|' read -r db sql <<<"${entry}"
+  tmp_object="tmp/truncate_${db}.sql"
+
+  echo "── ${db}"
+
+  if $DRY_RUN; then
+    echo "  [dry-run] ${sql}"
+  else
+    echo "${sql}" | gsutil -q cp - "gs://${BUCKET}/${tmp_object}"
+    gcloud sql import sql "${INSTANCE}" \
+      "gs://${BUCKET}/${tmp_object}" \
+      --database="${db}" \
+      --project="${GCP_PROJECT_ID}" \
+      --quiet
+    gsutil -q rm "gs://${BUCKET}/${tmp_object}"
+    echo "  ✓ truncated"
+  fi
+  echo ""
+done
+
+# ---------------------------------------------------------------------------
+# 3. Seed CSVs — strip header, stage in GCS, import into Cloud SQL
+# ---------------------------------------------------------------------------
+# Format: "local_path|database|table|col1,col2,..."
 IMPORTS=(
-  "processed_data/restaurant/restaurants.csv|mrfood_restaurant|restaurants|id,name,latitude,longitude,address,opening_time,closing_time,media_url,max_slots,owner_id,owner_name,sponsor_tier"
-  "processed_data/restaurant/restaurant_categories.csv|mrfood_restaurant|restaurant_categories|restaurant_id,category"
-  "processed_data/review/review.csv|mrfood_review|review|review_id,restaurant_id,user_id,comment,rating,created_at"
+  "scripts/processed_data/restaurant/restaurants.csv|mrfood_restaurant|restaurants|id,name,latitude,longitude,address,opening_time,closing_time,media_url,max_slots,owner_id,owner_name,sponsor_tier"
+  "scripts/processed_data/restaurant/restaurant_categories.csv|mrfood_restaurant|restaurant_categories|restaurant_id,category"
+  "scripts/processed_data/review/review.csv|mrfood_review|review|review_id,restaurant_id,user_id,comment,rating,created_at"
 )
 
 echo "━━━ Importing seed CSVs ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 for entry in "${IMPORTS[@]}"; do
-  IFS='|' read -r gcs_object db table columns <<<"${entry}"
-  local_file="/tmp/$(basename "${gcs_object}")"
-  tmp_object="tmp/seed_$(basename "${gcs_object}")"
+  IFS='|' read -r local_path db table columns <<<"${entry}"
+  local_csv="${REPO_ROOT}/${local_path}"
+  tmp_object="tmp/seed_$(basename "${local_path}")"
+  tmp_file="/tmp/seed_$(basename "${local_path}").noheader"
 
-  echo "── ${gcs_object} → ${db}.${table}"
-
-  local_csv="${SCRIPT_DIR}/${gcs_object}"
+  echo "── ${local_path} → ${db}.${table}"
 
   if $DRY_RUN; then
     echo "  [dry-run] gcloud sql import csv ${INSTANCE} gs://${BUCKET}/${tmp_object} --database=${db} --table=${table} --columns=${columns}"
   else
-    tail -n +2 "${local_csv}" > "${local_file}.noheader"
-    gsutil -q cp "${local_file}.noheader" "gs://${BUCKET}/${tmp_object}"
-    rm "${local_file}.noheader"
+    tail -n +2 "${local_csv}" > "${tmp_file}"
+    gsutil -q cp "${tmp_file}" "gs://${BUCKET}/${tmp_object}"
+    rm "${tmp_file}"
 
-    if gcloud sql import csv "${INSTANCE}" \
-        "gs://${BUCKET}/${tmp_object}" \
-        --database="${db}" \
-        --table="${table}" \
-        --columns="${columns}" \
-        --project="${GCP_PROJECT_ID}" \
-        --quiet 2>&1; then
-      echo "  ✓ imported"
-    else
-      if $FORCE; then
-        echo "  ⚠ import failed (data may already exist) — skipping (--force)"
-      else
-        gsutil -q rm "gs://${BUCKET}/${tmp_object}" 2>/dev/null || true
-        echo "  ✗ import failed. Re-run with --force to skip on conflict."
-        exit 1
-      fi
-    fi
+    gcloud sql import csv "${INSTANCE}" \
+      "gs://${BUCKET}/${tmp_object}" \
+      --database="${db}" \
+      --table="${table}" \
+      --columns="${columns}" \
+      --project="${GCP_PROJECT_ID}" \
+      --quiet
 
-    gsutil -q rm "gs://${BUCKET}/${tmp_object}" 2>/dev/null || true
+    gsutil -q rm "gs://${BUCKET}/${tmp_object}"
+    echo "  ✓ imported"
   fi
   echo ""
 done

@@ -81,17 +81,15 @@ kubectl rollout restart deployment/gateway -n mrfood
 Run once on a fresh database:
 
 ```bash
-./scripts/seed.sh
-
-# Preview without executing
-./scripts/seed.sh --dry-run
+./scripts/seed.sh          # truncates seed tables then re-imports — safe to re-run
+./scripts/seed.sh --dry-run  # preview without executing
 ```
 
-| CSV file                                              | Destination                                         |
-| ----------------------------------------------------- | --------------------------------------------------- |
-| `processed_data/restaurant/restaurants.csv`           | Cloud SQL `mrfood_restaurant.restaurants`           |
-| `processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
-| `processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`                    |
+| CSV file                                                      | Destination                                         |
+| ------------------------------------------------------------- | --------------------------------------------------- |
+| `scripts/processed_data/restaurant/restaurants.csv`           | Cloud SQL `mrfood_restaurant.restaurants`           |
+| `scripts/processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
+| `scripts/processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`                    |
 
 > **Note:** The import uses PostgreSQL `COPY FROM` internally and will fail on duplicate primary keys. This is intentional — it prevents accidental re-seeding of a live database.
 
