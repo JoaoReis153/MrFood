@@ -1,22 +1,21 @@
 # MrFood Deployment Guide
 
-## Overview
+## First Deploy
 
-| Layer                | Tool                                           | Trigger                                          |
-| -------------------- | ---------------------------------------------- | ------------------------------------------------ |
-| Infrastructure       | Terraform                                      | Push to `main` → `terraform/**`                  |
-| Container images     | Docker + Artifact Registry                     | `services/build_and_push_images.sh` / CI         |
-| Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
-| Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
-| Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
+Three commands, in order:
 
-| Layer                | Tool                                           | Trigger                                          |
-| -------------------- | ---------------------------------------------- | ------------------------------------------------ |
-| Infrastructure       | Terraform                                      | Push to `main` → `terraform/**`                  |
-| Container images     | Docker + Artifact Registry                     | `services/build_and_push_images.sh` / CI         |
-| Kubernetes workloads | Helm                                           | `kubernetes/restart.sh` / CI                     |
-| Observability        | Self-hosted (Prometheus, Loki, Tempo, Grafana) | Helm                                             |
-| Search               | Elasticsearch + Kafka + Kafka Connect          | Helm (`elasticsearch`, `kafka`, `kafka-connect`) |
+```bash
+# 1. Infrastructure + schemas
+cd terraform && terraform init && terraform apply
+
+# 2. All Kubernetes workloads
+./scripts/deploy.sh
+
+# 3. Seed data (first deploy only)
+./scripts/bootstrap_cloud.sh
+```
+
+That's it. Everything below is reference detail for each step.
 
 ---
 
@@ -38,16 +37,6 @@ helm version
 docker version
 ```
 
-### Project ID
-
-The GCP project is controlled by a single env var: `TF_VAR_project_id`. Add it to your shell profile (`~/.zshrc` or `~/.bashrc`) so it's always set:
-
-```bash
-export TF_VAR_project_id="mrfood-496807"
-```
-
-To switch projects, change that line and reload your shell (`source ~/.zshrc`). Everything below (Terraform, scripts, gcloud commands) will pick it up automatically.
-
 Authenticate locally:
 
 ```bash
@@ -58,9 +47,11 @@ gcloud auth application-default login
 gcloud config set project "${GCP_PROJECT_ID}"
 ```
 
-## 1. Infrastructure — Terraform
+---
 
-Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instance, Redis, and all Workload Identity service accounts.
+## Step 1 — Infrastructure (`terraform apply`)
+
+Terraform manages: VPC, GKE cluster, Artifact Registry, Cloud SQL instance + schemas, Redis, and all Workload Identity service accounts.
 
 ### Secrets
 
@@ -82,150 +73,77 @@ service_databases = {
 ### Apply
 
 ```bash
-source gcp.env  # exports TF_VAR_project_id for Terraform
+source gcp.env
 cd terraform
 terraform init
 terraform plan    # review before applying
 terraform apply
 ```
 
-**CI:** any push to `main` that touches `terraform/**` triggers `terraform apply` automatically via `.github/workflows/terraform_deploy.yml`.
+Terraform also applies the DB schemas (`db_setup.sql` for each service) via a `local-exec` provisioner after Cloud SQL is ready.
+
+**CI:** pushes to `main` that touch `terraform/**` run `terraform plan` automatically via `.github/workflows/terraform_deploy.yml`. Apply remains manual.
 
 ---
 
-## 2. Container Images — Build & Push
+## Step 2 — Kubernetes (`./scripts/deploy.sh`)
 
-Configure Docker for Artifact Registry (one-time per machine):
+`deploy.sh` does everything in the right order: builds and pushes images, connects to GKE, deploys the observability stack, Keycloak, Elasticsearch, Kafka, CDC, and all application services.
 
 ```bash
-gcloud auth configure-docker europe-southwest1-docker.pkg.dev
+./scripts/deploy.sh
 ```
 
-Build and push all services. The script also updates the `image:` tag in each `kubernetes/values/<service>.yaml` automatically:
+### What it deploys, in order
+
+| Step | What                           | Notes                                              |
+| ---- | ------------------------------ | -------------------------------------------------- |
+| 1    | Authenticate                   | `gcloud auth login` + ADC                          |
+| 2    | Terraform                      | Idempotent re-apply to catch any drift             |
+| 3    | Build & push images            | Tags from `git rev-parse --short HEAD`             |
+| 4    | Connect to GKE                 | `get-credentials` for `mrfood-cluster`             |
+| 5    | Namespace                      | `kubectl apply -f kubernetes/namespace.yaml`       |
+| 6    | Observability                  | OTel Collector, Prometheus, Loki, Tempo, Grafana   |
+| 7    | Keycloak                       | Waits for rollout; realm imported automatically    |
+| 8    | Elasticsearch + Kafka          | Waits for all three (zookeeper, kafka, ES)         |
+| 9    | CDC (Kafka Connect)            | Registers source + sink connectors after readiness |
+| 10   | Application services + gateway | `kubernetes/restart.sh`                            |
+
+### Kong gateway config
+
+After updating `services/gateway/kong/kong.yml`, patch the live ConfigMap manually — Helm does not auto-update it:
 
 ```bash
-./services/build_and_push_images.sh $(git rev-parse HEAD)
-
-# Dry run to preview changes without building
-./services/build_and_push_images.sh $(git rev-parse HEAD) --dry-run
+kubectl delete configmap kong-config -n mrfood --ignore-not-found
+kubectl create configmap kong-config -n mrfood \
+  --from-file=kong.yml=services/gateway/kong/kong.yml
+kubectl rollout restart deployment/gateway -n mrfood
 ```
 
 ---
 
-## 3. Kubernetes — Helm
+## Step 3 — Seed Data (`./scripts/bootstrap_cloud.sh`)
 
-### Connect to the GKE cluster
-
-```bash
-gcloud container clusters get-credentials mrfood-cluster --zone europe-southwest1-b --project "${GCP_PROJECT_ID}"
-```
-
-### Namespace
+Imports the processed CSVs into Cloud SQL. Run once on a fresh database.
 
 ```bash
-kubectl apply -f kubernetes/namespace.yaml
+./scripts/bootstrap_cloud.sh
+
+# Preview without executing
+./scripts/bootstrap_cloud.sh --dry-run
 ```
 
-### Observability stack
+| CSV file                                              | Destination                                         |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| `processed_data/restaurant/restaurants.csv`           | Cloud SQL `mrfood_restaurant.restaurants`           |
+| `processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
+| `processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`                    |
 
-Deploy first — services depend on the OTel Collector being reachable at `otel-collector:4317`.
-
-```bash
-source gcp.env
-
-# OTel Collector (receives from services, forwards to Tempo/Loki/Prometheus)
-helm upgrade --install otel-collector kubernetes/helm/otel-collector \
-  --set gcpProject="${GCP_PROJECT_ID}" \
-  --namespace mrfood
-
-# Prometheus, Loki, Tempo, Grafana
-helm upgrade --install observability kubernetes/helm/observability \
-  --namespace mrfood
-```
-
-### Keycloak
-
-The auth service requires Keycloak. Deploy it before auth:
-
-```bash
-helm upgrade --install keycloak kubernetes/helm/keycloak \
-  --namespace mrfood
-
-kubectl rollout status deployment/keycloak -n mrfood
-# Keycloak takes ~60 s to start and import the mrfood realm
-```
-
-The `mrfood` realm and `mrfood-auth` client are imported automatically from `kubernetes/helm/keycloak/files/realm-import.json`.
-
-### Search stack (Elasticsearch + Kafka + CDC)
-
-Elasticsearch and Kafka must be running before deploying `search` or `cdc`.
-
-```bash
-helm upgrade --install elasticsearch kubernetes/helm/elasticsearch \
-  --namespace mrfood
-
-helm upgrade --install kafka kubernetes/helm/kafka \
-  --namespace mrfood
-
-# Wait for all three to be ready before deploying CDC
-kubectl rollout status deployment/zookeeper -n mrfood
-kubectl rollout status deployment/kafka -n mrfood
-kubectl rollout status deployment/elasticsearch -n mrfood
-```
-
-Deploy the CDC connector (Kafka Connect) using its dedicated chart:
-
-```bash
-# Fill in the restaurant DB password in kubernetes/values/cdc.yaml before deploying
-source gcp.env
-helm upgrade --install cdc kubernetes/helm/kafka-connect \
-  -f kubernetes/values/cdc.yaml \
-  --set "gcpProjectId=${GCP_PROJECT_ID}" \
-  --namespace mrfood
-
-# Wait for CDC to be ready (autoscaler may need to provision a new node — this can take 1-2 min)
-kubectl rollout status deployment/cdc -n mrfood --timeout 5m
-```
-
-After CDC is running, register the connectors (connector configs are baked into the image at `/connectors/`):
-
-```bash
-kubectl exec -n mrfood deployment/cdc -- bash -c \
-  "curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
-   curl -sf -X POST http://localhost:8083/connectors \
-     -H 'Content-Type: application/json' \
-     -d @/connectors/restaurant-source.json"
-
-kubectl exec -n mrfood deployment/cdc -- bash -c \
-  "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
-   curl -sf -X POST http://localhost:8083/connectors \
-     -H 'Content-Type: application/json' \
-     -d @/connectors/restaurants-sink.json"
-```
-
-### Application services
-
-Deploys all services and the gateway (skips `cdc` and `search` which have dedicated charts above):
-
-```bash
-bash kubernetes/restart.sh
-```
-
-### Kong gateway
-
-> **Note:** After updating `services/gateway/kong/kong.yml`, patch the live ConfigMap and restart — Helm does not auto-update it:
->
-> ```bash
-> kubectl delete configmap kong-config -n mrfood --ignore-not-found
-> kubectl create configmap kong-config -n mrfood \
->   --from-file=kong.yml=services/gateway/kong/kong.yml
-> kubectl rollout restart deployment/gateway -n mrfood
-> ```
+> **Note:** The import uses PostgreSQL `COPY FROM` internally and will fail on duplicate primary keys. This is intentional — it prevents accidental re-seeding of a live database.
 
 ---
 
-## 4. Verification
+## Verification
 
 ### Pods
 
@@ -246,19 +164,8 @@ All pods should reach `Running`. Common failure modes:
 | `search` pod CrashLoopBackOff      | Elasticsearch not reachable            | Deploy elasticsearch chart first, wait for readiness                 |
 | `cdc` pod not ready                | Kafka not up or ES not ready           | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
 | Connectors not registered          | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above         |
-| Symptom                            | Cause                                  | Fix                                                                  |
-| ---------------------------------- | -------------------------------------- | -------------------------------------------------------------------- |
-| `cloud-sql-proxy` CrashLoopBackOff | Workload Identity not propagated       | Wait 60 s, then `kubectl rollout restart deployment/<svc> -n mrfood` |
-| Service pod CrashLoopBackOff       | Missing env var or wrong DB password   | `kubectl logs -n mrfood deployment/<svc>`                            |
-| OTel Collector failing             | Loki/Tempo not ready yet               | Deploy observability first, then restart collector                   |
-| Loki/Prometheus/Tempo Pending      | PVCs not created                       | `helm upgrade observability kubernetes/helm/observability -n mrfood` |
-| Gateway request hanging            | Stale kong-config ConfigMap            | Patch ConfigMap manually (see Kong gateway note above)               |
-| Auth requests hanging              | Keycloak not running                   | Deploy Keycloak before auth; restart auth after Keycloak is ready    |
-| `search` pod CrashLoopBackOff      | Elasticsearch not reachable            | Deploy elasticsearch chart first, wait for readiness                 |
-| `cdc` pod not ready                | Kafka not up or ES not ready           | Deploy kafka chart first; CDC readiness probe waits on `/connectors` |
-| Connectors not registered          | CDC deployed but connectors not POSTed | Run the `kubectl exec` connector registration commands above         |
 
-### Kong external IP
+### Gateway
 
 ```bash
 kubectl get svc gateway -n mrfood
@@ -271,100 +178,25 @@ curl http://<EXTERNAL-IP>/restaurants
 
 ```bash
 kubectl get svc grafana -n mrfood
-# EXTERNAL-IP appears after ~2 min — open http://<EXTERNAL-IP>  (admin / admin)
+# open http://<EXTERNAL-IP>  (admin / admin)
 ```
 
 Dashboards provisioned automatically: **MrFood Overview** and **Traces**.
 
-### Observability
-
-```bash
-# OTel Collector receiving data
-kubectl logs -n mrfood deployment/otel-collector
-
-# Confirm traces appear in Grafana → Explore → Tempo
-# Confirm logs appear in Grafana → Explore → Loki
-# Confirm metrics appear in Grafana → Explore → Prometheus
-```
-
 ---
 
-## 5. Local Development
+## Local Development
 
 ```bash
-# Start all core services (Docker Compose)
-make setup
-
-# Start with search / CDC
-make setup-full
-
-# Generate seed data and load into local containers
-make generate-csv
-make load-local
-
-# Run tests
-make test
-
-# View logs
-make logs
+make setup        # start all core services (Docker Compose)
+make setup-full   # start with search / CDC
+make generate-csv # generate seed data
+make load-local   # seed local containers
+make test         # run tests
+make logs         # view logs
 ```
 
 See `Makefile` for the full list of commands.
-
----
-
-## 6. Seed Data
-
-Processed CSV files live under `scripts/processed_data/` and are generated by `make generate-csv`.
-
-### Local
-
-Loads Keycloak users via the Admin API and seeds Postgres containers directly via `psql COPY`. Tables are truncated before each load, making it idempotent.
-
-```bash
-source gcp.env
-
-# List all buckets in the project
-gcloud storage buckets list --project="${GCP_PROJECT_ID}"
-
-# Inspect the schema/seed bucket specifically
-gsutil ls -l gs://kaggle_bucket_6194
-gsutil ls gs://kaggle_bucket_6194/processed_data/
-```
-
-### How it works
-
-The script calls `gcloud sql import csv` for each file already present in the bucket, which runs a PostgreSQL `COPY FROM` under the hood. The bucket IAM is already wired by Terraform (`roles/storage.objectViewer` on the Cloud SQL service account).
-
-| CSV file                                              | Database            | Table                   |
-| ----------------------------------------------------- | ------------------- | ----------------------- |
-| `processed_data/auth/app_user.csv`                    | `mrfood_auth`       | `app_user`              |
-| `processed_data/restaurant/restaurants.csv`           | `mrfood_restaurant` | `restaurants`           |
-| `processed_data/restaurant/restaurant_categories.csv` | `mrfood_restaurant` | `restaurant_categories` |
-| `processed_data/review/review.csv`                    | `mrfood_review`     | `review`                |
-
-### Load all seed data
-
-```bash
-# List buckets
-gcloud storage buckets list --project=$TF_VAR_project_id
-gsutil ls gs://kaggle_bucket_6194/processed_data/
-
-# Preview without executing
-./scripts/load_seed_data_cloud.sh --dry-run
-
-# Run
-./scripts/load_seed_data_cloud.sh
-```
-
-| CSV file                                              | Destination                                         |
-| ----------------------------------------------------- | --------------------------------------------------- |
-| `processed_data/auth/users.csv`                       | Keycloak `mrfood` realm (Admin API)                 |
-| `processed_data/restaurant/restaurants.csv`           | Cloud SQL `mrfood_restaurant.restaurants`           |
-| `processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
-| `processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`                    |
-
-See `SEED_DATA_CREDENTIALS.md` for the default test password (`mrfood123`).
 
 ---
 
@@ -374,11 +206,5 @@ See `SEED_DATA_CREDENTIALS.md` for the default test password (`mrfood123`).
 | ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
 | Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
 | Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
-| Terraform Apply    | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform apply`                     |
-| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
-| Workflow           | File                       | Trigger                                    | What it does                          |
-| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
-| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
-| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
-| Terraform Apply    | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform apply`                     |
+| Terraform Plan     | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform plan` (apply is manual)    |
 | Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
