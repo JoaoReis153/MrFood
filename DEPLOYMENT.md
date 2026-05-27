@@ -3,11 +3,11 @@
 ## First Deploy
 
 ```bash
-./scripts/deploy.sh
-./scripts/seed.sh   # seed data — run once on a fresh database
+make deploy
+make seed   # seed data — run once on a fresh database
 ```
 
-> **Subsequent deploys:** `./scripts/deploy.sh`
+> **Subsequent deploys:** `make deploy`
 
 ---
 
@@ -81,8 +81,8 @@ kubectl rollout restart deployment/gateway -n mrfood
 Run once on a fresh database:
 
 ```bash
-./scripts/seed.sh          # truncates seed tables then re-imports — safe to re-run
-./scripts/seed.sh --dry-run  # preview without executing
+make seed                        # truncates seed tables then re-imports — safe to re-run
+./scripts/seed.sh --dry-run      # preview without executing
 ```
 
 | CSV file                                                      | Destination                                         |
