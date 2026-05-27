@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REGISTRY_REPO="europe-southwest1-docker.pkg.dev/mrfood-490623/mrfood-repo"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../gcp.env"
+REGISTRY_REPO="europe-southwest1-docker.pkg.dev/${GCP_PROJECT_ID}/mrfood-repo"
 
 usage() {
   cat <<'EOF'
@@ -56,7 +58,10 @@ main() {
   local values_dir
   values_dir="$(cd "$script_dir/../kubernetes/values" && pwd)"
 
-  mapfile -t dockerfiles < <(find "$script_dir" -mindepth 2 -maxdepth 2 -type f -name Dockerfile | sort)
+  dockerfiles=()
+  while IFS= read -r dockerfile; do
+    dockerfiles+=("$dockerfile")
+  done < <(find "$script_dir" -mindepth 2 -maxdepth 2 -type f -name Dockerfile | sort)
 
   if [[ ${#dockerfiles[@]} -eq 0 ]]; then
     echo "Error: no Dockerfiles found under $script_dir/*/." >&2
@@ -68,15 +73,15 @@ main() {
     service_dir="$(dirname "$dockerfile")"
     service_name="$(basename "$service_dir")"
     image="${REGISTRY_REPO}/${service_name}:${version}"
+    image_latest="${REGISTRY_REPO}/${service_name}:latest"
 
-    echo "[$service_name] docker build -t $image $service_dir"
+    echo "[$service_name] docker buildx build --platform linux/amd64 -t $image -t $image_latest $service_dir"
     if [[ "$dry_run" != "true" ]]; then
-      docker build -t "$image" "$service_dir"
-    fi
-
-    echo "[$service_name] docker push $image"
-    if [[ "$dry_run" != "true" ]]; then
-      docker push "$image"
+      docker buildx build --platform linux/amd64 \
+        -t "${image}" \
+        -t "${image_latest}" \
+        "$service_dir" \
+        --push
     fi
 
     local values_file
@@ -84,7 +89,7 @@ main() {
     if [[ -f "$values_file" ]]; then
       echo "[$service_name] update $values_file image -> $image"
       if [[ "$dry_run" != "true" ]]; then
-        sed -i "s|^image:.*$|image: ${image}|" "$values_file"
+        perl -pi -e "s|^image:.*$|image: ${service_name}:${version}|" "$values_file"
       fi
     else
       echo "[$service_name] warning: values file not found at $values_file"

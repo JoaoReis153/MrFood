@@ -27,3 +27,12 @@ schema_config:
 limits_config:
   allow_structured_metadata: true
   volume_enabled: true
+  otlp_config:
+    resource_attributes:
+      attributes_config:
+        - action: index_label
+          attributes:
+            - service.name
+    log_attributes:
+      - action: structured_metadata
+        regex: ".*"

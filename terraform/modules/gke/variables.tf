@@ -3,8 +3,8 @@ variable "project_id" {
   type        = string
 }
 
-variable "region" {
-  description = "GCP region"
+variable "zone" {
+  description = "GCP zone for the zonal cluster"
   type        = string
 }
 
@@ -93,3 +93,4 @@ variable "node_preemptible" {
   description = "Whether nodes are preemptible"
   type        = bool
 }
+

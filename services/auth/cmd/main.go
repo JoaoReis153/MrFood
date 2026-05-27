@@ -3,32 +3,25 @@ package main
 import (
 	"MrFood/services/auth/config"
 	"MrFood/services/auth/internal/app"
+	"MrFood/services/auth/internal/telemetry"
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
 func main() {
 	ctx := context.Background()
 	cfg := config.Get(ctx)
-	setupLogger(cfg.Log.Level)
 
-	shutdown, err := initTracer(ctx, "mrfood-auth")
+	shutdownTelemetry, err := telemetry.Setup(ctx, "mrfood-auth", telemetry.ParseLevel(cfg.Log.Level))
 	if err != nil {
-		slog.Error("tracer init failed", "error", err)
+		fmt.Fprintf(os.Stderr, "telemetry setup failed: %v\n", err)
 	}
-	defer shutdown()
+	defer shutdownTelemetry()
 
 	app, err := app.New(ctx, cfg)
 	if err != nil {
@@ -50,53 +43,4 @@ func main() {
 	if err := app.RunServer(shutdownCtx, cfg); err != nil {
 		slog.Error("server failed", "error", err)
 	}
-}
-
-func setupLogger(logLevel string) {
-	level := slog.LevelInfo // Default
-
-	switch strings.ToLower(logLevel) {
-	case "debug":
-		level = slog.LevelDebug
-	case "warn":
-		level = slog.LevelWarn
-	case "error":
-		level = slog.LevelError
-	case "info":
-		level = slog.LevelInfo
-	}
-
-	handler := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-		Level:     level,
-		AddSource: true,
-	})
-
-	slog.SetDefault(slog.New(handler))
-	slog.Info("logger initialized", "level", logLevel)
-}
-
-func initTracer(ctx context.Context, serviceName string) (func(), error) {
-	exporter, err := otlptracegrpc.New(ctx,
-		otlptracegrpc.WithEndpoint("otel-collector:4317"),
-		otlptracegrpc.WithInsecure(),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String(serviceName),
-		)),
-	)
-	otel.SetTracerProvider(tp)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
-
-	return func() {
-		if err := tp.Shutdown(ctx); err != nil {
-			slog.Error("failed to shutdown tracer provider", "error", err)
-		}
-	}, nil
 }

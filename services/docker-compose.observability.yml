@@ -13,6 +13,7 @@ services:
     ports:
       - "${OTEL_OTLP_GRPC_PORT:-4317}:4317"
       - "${OTEL_OTLP_HTTP_PORT:-4318}:4318"
+      - "8889:8889"
 
   prometheus:
     image: prom/prometheus:latest
@@ -24,6 +25,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
     ports:
       - "${PROMETHEUS_PORT:-9090}:9090"
     depends_on:
@@ -69,6 +71,7 @@ services:
       - tempo_data:/var/tempo
     depends_on:
       - otel-collector
+      - prometheus
 
 volumes:
   prometheus_data:

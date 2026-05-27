@@ -30,17 +30,17 @@ func New(repo ReviewRepository, restaurantClient RestaurantClient) *Service {
 
 func (s *Service) GetReviews(ctx context.Context, restaurantID int64, page, limit int) (models.ReviewsPage, error) {
 	if restaurantID <= 0 {
-		slog.Error("Restaurant ID is not valid: value must be a positive integer", "restaurantID", restaurantID)
+		slog.WarnContext(ctx, "invalid restaurant_id", "restaurant_id", restaurantID)
 		return models.ReviewsPage{}, models.ErrInvalidRestaurantID
 	}
 	if limit > 100 {
-		slog.Error("Pagination limit is not valid: value must be between 1 and 100", "limit", limit)
+		slog.WarnContext(ctx, "invalid pagination limit", "limit", limit)
 		return models.ReviewsPage{}, models.ErrLimitTooLarge
 	}
 
 	restaurant, err := s.restaurantClient.GetRestaurant(ctx, restaurantID)
 	if err != nil {
-		slog.Error("Failed to get restaurant details", "restaurantID", restaurantID, "error", err)
+		slog.ErrorContext(ctx, "failed to get restaurant details", "restaurant_id", restaurantID, "error", err)
 		return models.ReviewsPage{}, err
 	}
 
@@ -62,24 +62,24 @@ func (s *Service) GetReviews(ctx context.Context, restaurantID int64, page, limi
 
 func (s *Service) CreateReview(ctx context.Context, review models.Review) (models.Review, error) {
 	if review.Rating < 1 || review.Rating > 5 {
-		slog.Error("Rating is not valid: value must be between 1 and 5", "rating", review.Rating)
+		slog.WarnContext(ctx, "invalid rating", "rating", review.Rating)
 		return models.Review{}, models.ErrInvalidRating
 	}
 	if strings.TrimSpace(review.Comment) == "" || len(review.Comment) > 100 {
-		slog.Error("Comment is not valid: value must be a non-empty string with a maximum length of 100 characters", "comment", review.Comment)
+		slog.WarnContext(ctx, "invalid comment", "comment", review.Comment)
 		return models.Review{}, models.ErrInvalidComment
 	}
 	if review.RestaurantID <= 0 {
-		slog.Error("Restaurant ID is not valid: value must be a positive integer", "restaurantID", review.RestaurantID)
+		slog.WarnContext(ctx, "invalid restaurant_id", "restaurant_id", review.RestaurantID)
 		return models.Review{}, models.ErrInvalidRestaurantID
 	}
 	if review.UserID <= 0 {
-		slog.Error("User ID is not valid: value must be a positive integer", "userID", review.UserID)
+		slog.WarnContext(ctx, "invalid user_id", "user_id", review.UserID)
 		return models.Review{}, models.ErrInvalidUserID
 	}
 	restaurant, err := s.restaurantClient.GetRestaurant(ctx, review.RestaurantID)
 	if err != nil {
-		slog.Error("Failed to get restaurant details", "restaurantID", restaurant.RestaurantID, "error", err)
+		slog.ErrorContext(ctx, "failed to get restaurant details", "restaurant_id", restaurant.RestaurantID, "error", err)
 		return models.Review{}, err
 	}
 
@@ -88,15 +88,15 @@ func (s *Service) CreateReview(ctx context.Context, review models.Review) (model
 
 func (s *Service) UpdateReview(ctx context.Context, review models.UpdateReview) (models.Review, error) {
 	if review.Rating != nil && (*review.Rating < 1 || *review.Rating > 5) {
-		slog.Error("Rating is not valid: value must be between 1 and 5", "rating", *review.Rating)
+		slog.WarnContext(ctx, "invalid rating", "rating", *review.Rating)
 		return models.Review{}, models.ErrInvalidRating
 	}
 	if review.Comment != nil && (strings.TrimSpace(*review.Comment) == "" || len(*review.Comment) > 100) {
-		slog.Error("Comment is not valid: value must be a non-empty string with a maximum length of 100 characters", "comment", *review.Comment)
+		slog.WarnContext(ctx, "invalid comment", "comment", *review.Comment)
 		return models.Review{}, models.ErrInvalidComment
 	}
 	if review.ReviewID <= 0 {
-		slog.Error("Review ID is not valid: value must be a positive integer", "reviewID", review.ReviewID)
+		slog.WarnContext(ctx, "invalid review_id", "review_id", review.ReviewID)
 		return models.Review{}, models.ErrInvalidReviewID
 	}
 	return s.repo.UpdateReview(ctx, review)
@@ -104,11 +104,11 @@ func (s *Service) UpdateReview(ctx context.Context, review models.UpdateReview) 
 
 func (s *Service) DeleteReview(ctx context.Context, deleteReq models.DeleteReview) error {
 	if deleteReq.ReviewID <= 0 {
-		slog.Error("Review ID is not valid: value must be a positive integer", "reviewID", deleteReq.ReviewID)
+		slog.WarnContext(ctx, "invalid review_id", "review_id", deleteReq.ReviewID)
 		return models.ErrInvalidReviewID
 	}
 	if deleteReq.UserID <= 0 {
-		slog.Error("User ID is not valid: value must be a positive integer", "userID", deleteReq.UserID)
+		slog.WarnContext(ctx, "invalid user_id", "user_id", deleteReq.UserID)
 		return models.ErrInvalidUserID
 	}
 	return s.repo.DeleteReview(ctx, deleteReq.ReviewID, deleteReq.UserID)
@@ -116,7 +116,7 @@ func (s *Service) DeleteReview(ctx context.Context, deleteReq models.DeleteRevie
 
 func (s *Service) GetRestaurantStats(ctx context.Context, restaurantID int64) (models.RestaurantStats, error) {
 	if restaurantID <= 0 {
-		slog.Error("Restaurant ID is not valid: value must be a positive integer", "restaurantID", restaurantID)
+		slog.WarnContext(ctx, "invalid restaurant_id", "restaurant_id", restaurantID)
 		return models.RestaurantStats{}, models.ErrInvalidRestaurantID
 	}
 	return s.repo.GetRestaurantStats(ctx, restaurantID)

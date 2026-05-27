@@ -22,3 +22,8 @@ output "instance_name" {
   description = "Cloud SQL instance name"
   value       = google_sql_database_instance.this.name
 }
+
+output "service_account_email" {
+  description = "Service account email used by the Cloud SQL instance"
+  value       = google_sql_database_instance.this.service_account_email_address
+}

@@ -19,18 +19,23 @@ resource "google_project_iam_member" "gke_nodes_artifact_reader" {
   member  = "serviceAccount:${google_service_account.gke_nodes.email}"
 }
 
+resource "google_project_iam_member" "gke_nodes_metric_writer" {
+  project = var.project_id
+  role    = "roles/monitoring.metricWriter"
+  member  = "serviceAccount:${google_service_account.gke_nodes.email}"
+}
+
 # GKE Cluster (private, regional)
 resource "google_container_cluster" "primary" {
   name     = var.cluster_name
   project  = var.project_id
-  location = var.region
+  location = var.zone
 
   deletion_protection = false
 
   network    = var.network
   subnetwork = var.subnetwork
 
-  # We manage node pools separately
   remove_default_node_pool = true
   initial_node_count       = 1
 
@@ -97,7 +102,7 @@ resource "google_container_cluster" "primary" {
 resource "google_container_node_pool" "main" {
   name     = "main"
   project  = var.project_id
-  location = var.region
+  location = var.zone
   cluster  = google_container_cluster.primary.name
 
   autoscaling {
@@ -106,7 +111,8 @@ resource "google_container_node_pool" "main" {
   }
 
   management {
-    auto_repair = true
+    auto_repair  = true
+    auto_upgrade = true
   }
 
   node_config {

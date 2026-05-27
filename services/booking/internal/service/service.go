@@ -22,6 +22,7 @@ var (
 	ErrForbidden            = errors.New("booking does not belong to user")
 	ErrBookingNotFound      = errors.New("booking not found")
 	ErrFailedWHGet          = errors.New("failed to get working hours")
+	ErrPaymentFailed        = errors.New("payment service unavailable")
 )
 
 type BookingRepository interface {
@@ -42,7 +43,7 @@ func New(repo BookingRepository, restaurantClient pb.RestaurantToBookingServiceC
 func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (int32, int32, error) {
 	// check if people count is too high
 	if booking.PeopleCount > MAX_SLOTS {
-		slog.Error("Not enough slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
+		slog.ErrorContext(ctx, "Not enough slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
 		return 0, 0, ErrInvalidBooking
 	}
 
@@ -54,11 +55,13 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "working hours received", "start", working_hours.TimeStart, "end", working_hours.TimeEnd)
 
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {
-		slog.Error("Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
+		slog.ErrorContext(ctx, "Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
 		return 0, 0, ErrInvalidBooking
 	}
+	slog.InfoContext(ctx, "booking time valid, processing payment")
 
 	var time_end = booking.TimeStart.Add(time.Hour)
 
@@ -68,26 +71,30 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 
 	booking.TimeEnd = time_end
 
-	booking_id, err := s.repo.CreateBooking(ctx, booking)
+	amount := int64(booking.PeopleCount) * 500 // 5.00 EUR per person
 
-	if err != nil {
-		return 0, 0, err
-	}
+	payCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 
-	amount := float32(booking.PeopleCount) * 10
-
-	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
+	receipt_id, err := s.makePayment(payCtx, &models.PaymentRequest{
 		UserID:         booking.UserID,
 		UserEmail:      booking.UserEmail,
-		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, amount, booking_id, "B"),
-		Amount:         float32(amount),
-		PaymentDescription: fmt.Sprintf("BOOKING %d FOR USER %d IN RESTAURANT %d FROM %s TO %s",
-			booking_id, booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
+		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, booking.RestaurantID, booking.TimeStart.Unix(), "B"),
+		Amount:         amount,
+		PaymentDescription: fmt.Sprintf("BOOKING FOR USER %d IN RESTAURANT %d FROM %s TO %s",
+			booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
 		PaymentType: "B",
 	})
 	if err != nil {
 		return 0, 0, err
 	}
+	slog.InfoContext(ctx, "payment done, inserting booking", "receipt_id", receipt_id)
+
+	booking_id, err := s.repo.CreateBooking(ctx, booking)
+	if err != nil {
+		return 0, 0, err
+	}
+	slog.InfoContext(ctx, "booking inserted", "booking_id", booking_id)
 
 	return booking_id, receipt_id, nil
 }
@@ -109,11 +116,10 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 	})
 
 	if err != nil {
-		slog.Error("failed to get receipt", "error", err)
-		return 0, err
+		slog.ErrorContext(ctx, "payment failed", "error", err)
+		return 0, fmt.Errorf("%w: %v", ErrPaymentFailed, err)
 	}
 
-	slog.Info("receipt id", "receipt_id", res.ReceiptId)
 	return res.ReceiptId, nil
 }
 
@@ -133,8 +139,8 @@ func (s *Service) getWorkingHours(ctx context.Context, restaurantID int64, timeS
 	}, nil
 }
 
-func GenerateIdempotencyKey(userID int64, amount float32, bookingID int32, service string) string {
-	data := fmt.Sprintf("%d:%f:%d:%s", userID, amount, bookingID, service)
+func GenerateIdempotencyKey(userID int64, restaurantID int64, timeStart int64, service string) string {
+	data := fmt.Sprintf("%d:%d:%d:%s", userID, restaurantID, timeStart, service)
 
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])

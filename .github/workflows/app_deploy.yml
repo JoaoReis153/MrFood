@@ -1,0 +1,58 @@
+name: App Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: app-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Load GCP config
+      run: |
+        source gcp.env
+        echo "GCP_PROJECT_ID=${GCP_PROJECT_ID}" >> $GITHUB_ENV
+
+    - uses: google-github-actions/auth@v3
+      with:
+        project_id: ${{ env.GCP_PROJECT_ID }}
+        workload_identity_provider: 'projects/625819749356/locations/global/workloadIdentityPools/github/providers/mrfood-repo'
+        service_account: 'github-actions@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
+
+    - name: Configure Docker for Artifact Registry
+      run: gcloud auth configure-docker europe-southwest1-docker.pkg.dev
+
+    - name: Build and push images
+      run: ./services/build_and_push_images.sh "$(git rev-parse --short HEAD)"
+
+    - name: Commit updated image tags
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add kubernetes/values/*.yaml
+        git diff --cached --quiet || (git commit -m "chore: update image tags [skip ci]" && git push)
+
+    - uses: google-github-actions/get-gke-credentials@v2
+      with:
+        cluster_name: mrfood-cluster
+        location: europe-southwest1-b
+        project_id: ${{ env.GCP_PROJECT_ID }}
+
+    - name: Apply namespace
+      run: kubectl apply -f kubernetes/namespace.yaml
+
+    - name: Deploy services
+      env:
+        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      run: bash kubernetes/restart.sh

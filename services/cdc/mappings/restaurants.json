@@ -6,18 +6,22 @@
   },
   "mappings": {
     "properties": {
-      "id":          { "type": "long" },
+      "id":             { "type": "long" },
+      "sponsor_tier":   { "type": "integer" },
+      "max_slots":      { "type": "integer" },
+      "owner_id":       { "type": "long" },
+      "review_count":   { "type": "integer" },
+      "average_rating": { "type": "double" },
+      "latitude":       { "type": "double" },
+      "longitude":      { "type": "double" },
+      "location":       { "type": "geo_point" },
       "name":        { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
-      "address":     { "type": "text" },
-      "categories":  { "type": "keyword" },
-      "location":    { "type": "geo_point" },
-      "latitude":    { "type": "double" },
-      "longitude":   { "type": "double" },
-      "media_url":   { "type": "keyword" },
-      "max_slots":   { "type": "integer" },
-      "owner_id":    { "type": "long" },
-      "owner_name":  { "type": "text" },
-      "sponsor_tier":{ "type": "integer" }
+      "owner_name":   { "type": "text" },
+      "address":      { "type": "text" },
+      "media_url":    { "type": "keyword" },
+      "opening_time": { "type": "keyword" },
+      "closing_time": { "type": "keyword" },
+      "categories":   { "type": "keyword" }
     }
   }
 }

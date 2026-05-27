@@ -36,7 +36,7 @@ func (r *Repository) GetReviews(ctx context.Context, restaurantID int64, page, l
 		if err == pgx.ErrNoRows {
 			total = 0
 		} else {
-			slog.Error("Failed to get review count", "error", err)
+			slog.ErrorContext(ctx, "Failed to get review count", "error", err)
 			return nil, 0, err
 		}
 	}
@@ -53,7 +53,7 @@ func (r *Repository) GetReviews(ctx context.Context, restaurantID int64, page, l
 		restaurantID, limit, offset)
 
 	if err != nil {
-		slog.Error("Failed to get reviews", "error", err)
+		slog.ErrorContext(ctx, "Failed to get reviews", "error", err)
 		return nil, 0, err
 	}
 	defer rows.Close()
@@ -66,14 +66,14 @@ func (r *Repository) GetReviews(ctx context.Context, restaurantID int64, page, l
 			&rev.Comment, &rev.Rating, &rev.CreatedAt,
 		)
 		if err != nil {
-			slog.Error("Failed to scan review row", "error", err)
+			slog.ErrorContext(ctx, "Failed to scan review row", "error", err)
 			return nil, 0, err
 		}
 		reviews = append(reviews, rev)
 	}
 
 	if err := rows.Err(); err != nil {
-		slog.Error("Error iterating review rows", "error", err)
+		slog.ErrorContext(ctx, "Error iterating review rows", "error", err)
 		return nil, 0, err
 	}
 	return reviews, total, nil
@@ -112,7 +112,7 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 		if err == pgx.ErrNoRows {
 			return models.Review{}, models.ErrForbidden
 		}
-		slog.Error("Failed to update review", "error", err)
+		slog.ErrorContext(ctx, "Failed to update review", "error", err)
 		return models.Review{}, err
 	}
 	return updated, nil
@@ -121,7 +121,7 @@ func (r *Repository) UpdateReview(ctx context.Context, review models.UpdateRevie
 func (r *Repository) DeleteReview(ctx context.Context, reviewID int64, userID int64) error {
 	result, err := r.db.Exec(ctx, "DELETE FROM review WHERE review_id = $1 AND user_id = $2", reviewID, userID)
 	if err != nil {
-		slog.Error("Failed to delete review", "error", err)
+		slog.ErrorContext(ctx, "Failed to delete review", "error", err)
 		return err
 	}
 	rows := result.RowsAffected()
@@ -140,7 +140,7 @@ func (r *Repository) GetRestaurantStats(ctx context.Context, restaurantID int64)
 		if err == pgx.ErrNoRows {
 			return models.RestaurantStats{RestaurantID: restaurantID}, nil
 		}
-		slog.Error("Failed to get restaurant stats", "error", err)
+		slog.ErrorContext(ctx, "Failed to get restaurant stats", "error", err)
 		return models.RestaurantStats{}, err
 	}
 	return stats, nil

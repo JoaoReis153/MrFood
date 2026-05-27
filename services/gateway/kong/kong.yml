@@ -7,6 +7,7 @@ plugins:
       sampling_rate: 1.0
       resource_attributes:
         service.name: kong-gateway
+      header_type: w3c
 services:
 - name: auth
   host: auth
@@ -20,7 +21,6 @@ services:
     - https
     paths:
     - /auth
-    strip_path: true
 
   plugins:
   - name: grpc-gateway
@@ -155,10 +155,12 @@ services:
 
 consumers:
 - username: mrfood-auth
-  jwt_secrets:
-  # key must match the `iss` claim minted by the auth service (jwtIssuer const).
-  # algorithm is HS256 — Kong verifies with APP_JWT_ACCESS_TOKEN_SECRET.
-  # This is the dev/CI secret; replace for production.
-  - key: "mrfood-auth"
-    algorithm: HS256
-    secret: "CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE="
+
+# key must match the `iss` claim minted by the auth service (jwtIssuer const).
+# algorithm is HS256 — Kong verifies with APP_JWT_ACCESS_TOKEN_SECRET.
+# This is the dev/CI secret; replace for production.
+jwt_secrets:
+- consumer: mrfood-auth
+  key: mrfood-auth
+  algorithm: HS256
+  secret: "CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE="

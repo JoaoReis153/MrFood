@@ -22,3 +22,9 @@ CREATE TABLE IF NOT EXISTS restaurant_categories (
 
 CREATE INDEX IF NOT EXISTS idx_restaurant_categories_restaurant_id
     ON restaurant_categories (restaurant_id);
+
+DO $$ BEGIN
+  EXECUTE format('ALTER ROLE %I WITH REPLICATION', current_user);
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Skipping replication grant for %: %', current_user, SQLERRM;
+END $$;

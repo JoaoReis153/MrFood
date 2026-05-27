@@ -1,22 +1,26 @@
 terraform {
   backend "gcs" {
-    bucket = "tf-state-manager-493721"
+    bucket = "mr_food_terraform_state"
     prefix = "mrfood/prod"
   }
+}
+
+locals {
+  schema_bootstrap_bucket_name = coalesce(var.schema_bootstrap_bucket_name, "mrfood-cloudsql-schema-bootstrap-${var.project_id}")
 }
 
 # Grant Cloud SQL Admin role to terraform-sa service account for schema imports
 resource "google_project_iam_member" "terraform_sa_cloudsql_admin" {
   project = var.project_id
   role    = "roles/cloudsql.admin"
-  member  = "serviceAccount:terraform-sa@state-manager-493721.iam.gserviceaccount.com"
+  member  = "serviceAccount:terraform-state-sa@state-manager-496816.iam.gserviceaccount.com"
 }
 
 # Grant Storage Admin role to terraform-sa for bucket access
 resource "google_project_iam_member" "terraform_sa_storage_admin" {
   project = var.project_id
   role    = "roles/storage.admin"
-  member  = "serviceAccount:terraform-sa@state-manager-493721.iam.gserviceaccount.com"
+  member  = "serviceAccount:terraform-state-sa@state-manager-496816.iam.gserviceaccount.com"
 }
 
 module "vpc" {
@@ -38,7 +42,7 @@ module "gke" {
   source = "./modules/gke"
 
   project_id   = var.project_id
-  region       = var.region
+  zone         = var.cluster_zone
   cluster_name = var.cluster_name
 
   network    = module.vpc.network_name
@@ -74,25 +78,36 @@ module "cloudsql_foundation" {
   depends_on = [module.vpc]
 }
 
+resource "terraform_data" "force_delete_vpc_peering" {
+  input = {
+    network = module.vpc.network_name
+    project = var.project_id
+  }
 
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      gcloud services vpc-peerings delete \
+        --service=servicenetworking.googleapis.com \
+        --network=${self.input.network} \
+        --project=${self.input.project} \
+        --quiet || true
+    EOT
+  }
+}
 
-module "service_cloudsql" {
-  for_each = var.service_databases
-  source   = "./modules/cloudsql-postgres"
+module "cloudsql" {
+  source = "./modules/cloudsql"
 
-  project_id          = var.project_id
-  region              = coalesce(each.value.region, var.region)
-  instance_name       = "mrfood-${each.key}-pg"
-  db_name             = each.value.db_name
-  db_user             = each.value.db_user
-  db_password         = each.value.db_password
-  tier                = each.value.tier
-  disk_size           = each.value.disk_size
-  availability_type   = each.value.availability_type
-  deletion_protection = each.value.deletion_protection
-  private_network     = module.vpc.network_id
+  project_id      = var.project_id
+  region          = var.region
+  instance_name   = var.cloudsql_instance_name
+  tier            = var.cloudsql_tier
+  disk_size       = var.cloudsql_disk_size
+  private_network = module.vpc.network_id
+  databases       = var.service_databases
 
-  depends_on = [module.cloudsql_foundation]
+  depends_on = [module.cloudsql_foundation, terraform_data.force_delete_vpc_peering]
 }
 
 resource "google_project_service_identity" "cloudsql" {
@@ -103,7 +118,6 @@ resource "google_project_service_identity" "cloudsql" {
   depends_on = [module.cloudsql_foundation]
 }
 
-
 data "google_project" "current" {
   project_id = var.project_id
 }
@@ -112,15 +126,14 @@ locals {
   service_schema = {
     for svc, cfg in var.service_databases :
     svc => {
-      bootstrap_enabled = try(cfg.bootstrap_enabled, true)
-      schema_revision   = try(cfg.schema_revision, "v1")
-      schema_sql_path   = coalesce(try(cfg.schema_sql_path, null), "${path.root}/../services/${svc}/db_setup.sql")
+      schema_revision = "v1"
+      schema_sql_path = "${path.root}/../services/${svc}/db_setup.sql"
     }
   }
 }
 
 resource "google_storage_bucket" "schema_bootstrap" {
-  name                        = var.schema_bootstrap_bucket_name
+  name                        = local.schema_bootstrap_bucket_name
   project                     = var.project_id
   location                    = var.region
   uniform_bucket_level_access = true
@@ -134,12 +147,9 @@ resource "google_project_iam_member" "cloudsql_admin_cloudsql" {
   depends_on = [google_project_service_identity.cloudsql]
 }
 
-resource "google_project_iam_member" "cloudsql_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
-  member  = google_project_service_identity.cloudsql.member
-
-  depends_on = [google_project_service_identity.cloudsql]
+resource "time_sleep" "wait_for_cloudsql_service_identity" {
+  create_duration = "30s"
+  depends_on      = [google_project_service_identity.cloudsql]
 }
 
 resource "google_storage_bucket_iam_member" "cloudsql_schema_reader" {
@@ -152,18 +162,23 @@ resource "google_storage_bucket_iam_member" "cloudsql_schema_reader" {
 
 resource "google_storage_bucket_iam_member" "cloudsql_schema_bucket_reader" {
   bucket = google_storage_bucket.schema_bootstrap.name
-  role   = "roles/storage.admin"
+  role   = "roles/storage.legacyBucketReader"
   member = google_project_service_identity.cloudsql.member
 
   depends_on = [time_sleep.wait_for_cloudsql_service_identity]
 }
 
+resource "google_storage_bucket_iam_member" "instance_schema_reader" {
+  bucket = google_storage_bucket.schema_bootstrap.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${module.cloudsql.service_account_email}"
+}
 
 resource "google_storage_bucket_object" "service_schema_sql" {
   for_each = {
     for svc, cfg in local.service_schema :
     svc => cfg
-    if cfg.bootstrap_enabled && fileexists(cfg.schema_sql_path)
+    if fileexists(cfg.schema_sql_path)
   }
 
   bucket = google_storage_bucket.schema_bootstrap.name
@@ -172,55 +187,80 @@ resource "google_storage_bucket_object" "service_schema_sql" {
 }
 
 resource "time_sleep" "wait_for_iam_propagation" {
-  create_duration = "60s"
+  create_duration = "30s"
   depends_on = [
     google_project_iam_member.terraform_sa_cloudsql_admin,
     google_project_iam_member.terraform_sa_storage_admin,
-    google_project_iam_member.cloudsql_storage_admin,
     google_storage_bucket_iam_member.cloudsql_schema_reader,
-    google_storage_bucket_iam_member.cloudsql_schema_bucket_reader
+    google_storage_bucket_iam_member.cloudsql_schema_bucket_reader,
+    google_storage_bucket_iam_member.instance_schema_reader,
   ]
 }
 
 resource "terraform_data" "apply_service_schema" {
-  for_each = google_storage_bucket_object.service_schema_sql
-
   triggers_replace = [
-    module.service_cloudsql[each.key].instance_name,
-    module.service_cloudsql[each.key].private_ip_address,
-    local.service_schema[each.key].schema_revision,
-    google_storage_bucket_object.service_schema_sql[each.key].name,
+    module.cloudsql.instance_name,
+    module.cloudsql.private_ip_address,
+    jsonencode({ for svc, obj in google_storage_bucket_object.service_schema_sql : svc => obj.name }),
   ]
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
     command     = <<-EOT
       set -euo pipefail
-      gcloud sql import sql "${module.service_cloudsql[each.key].instance_name}" \
-        "gs://${google_storage_bucket.schema_bootstrap.name}/${google_storage_bucket_object.service_schema_sql[each.key].name}" \
-        --database="${var.service_databases[each.key].db_name}" \
+      %{~for svc, obj in google_storage_bucket_object.service_schema_sql}
+      echo "Importing schema for ${svc}..."
+      gcloud sql import sql "${module.cloudsql.instance_name}" \
+        "gs://${google_storage_bucket.schema_bootstrap.name}/${obj.name}" \
+        --database="${var.service_databases[svc].db_name}" \
         --project="${var.project_id}" \
         --quiet
+      %{~endfor}
     EOT
   }
 
   depends_on = [
-    module.service_cloudsql,
+    module.cloudsql,
     google_project_iam_member.terraform_sa_cloudsql_admin,
     google_project_iam_member.terraform_sa_storage_admin,
     google_storage_bucket_iam_member.cloudsql_schema_reader,
     google_storage_bucket_iam_member.cloudsql_schema_bucket_reader,
-    time_sleep.wait_for_iam_propagation
+    time_sleep.wait_for_iam_propagation,
   ]
 }
 
-resource "time_sleep" "wait_for_cloudsql_service_identity" {
-  create_duration = "90s"
-  depends_on      = [google_project_service_identity.cloudsql]
+# ──────────────────────────────────────────────────────────────────────────────
+# Workload Identity — one GCP service account per k8s service
+# ──────────────────────────────────────────────────────────────────────────────
+
+locals {
+  cloudsql_services = toset(["restaurant", "booking", "review", "payment", "sponsor", "cdc"])
+  all_services      = toset(["auth", "restaurant", "booking", "review", "payment", "sponsor", "notification", "search", "otel-collector", "cdc"])
 }
 
+resource "google_service_account" "service_sa" {
+  for_each = local.all_services
 
+  account_id   = "${each.key}-sa"
+  display_name = "Workload Identity SA for ${each.key}"
+  project      = var.project_id
+}
 
+resource "google_service_account_iam_member" "workload_identity" {
+  for_each = local.all_services
+
+  service_account_id = google_service_account.service_sa[each.key].name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[mrfood/${each.key}]"
+}
+
+resource "google_project_iam_member" "service_cloudsql_client" {
+  for_each = local.cloudsql_services
+
+  project = var.project_id
+  role    = "roles/cloudsql.client"
+  member  = "serviceAccount:${google_service_account.service_sa[each.key].email}"
+}
 
 resource "google_project_service" "redis" {
   project = var.project_id
@@ -245,7 +285,77 @@ module "service_redis" {
   transit_encryption_mode = each.value.transit_encryption_mode
   labels                  = each.value.labels
 
-  depends_on = [module.vpc, google_project_service.redis]
+  depends_on = [module.vpc, google_project_service.redis, module.cloudsql_foundation, terraform_data.force_delete_vpc_peering]
 }
 
+# ──────────────────────────────────────────────────────────────────────────────
+# GitHub Actions — Workload Identity Federation
+# ──────────────────────────────────────────────────────────────────────────────
 
+resource "google_project_service" "iam_credentials" {
+  project            = var.project_id
+  service            = "iamcredentials.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_iam_workload_identity_pool" "github" {
+  project                   = var.project_id
+  workload_identity_pool_id = "github"
+  display_name              = "GitHub Actions"
+  description               = "WIF pool for GitHub Actions CI/CD"
+
+  depends_on = [google_project_service.iam_credentials]
+
+}
+
+resource "google_iam_workload_identity_pool_provider" "mrfood_repo" {
+  project                            = var.project_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
+  workload_identity_pool_provider_id = "mrfood-repo"
+  display_name                       = "MrFood GitHub repo"
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  attribute_condition = "attribute.repository == \"JoaoReis153/MrFood\""
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+
+}
+
+resource "google_service_account" "github_actions" {
+  project      = var.project_id
+  account_id   = "github-actions"
+  display_name = "GitHub Actions CI/CD"
+  description  = "Used by GitHub Actions via Workload Identity Federation"
+}
+
+resource "google_service_account_iam_member" "github_actions_wif" {
+  service_account_id = google_service_account.github_actions.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/JoaoReis153/MrFood"
+}
+
+resource "google_project_iam_member" "github_actions_editor" {
+  project = var.project_id
+  role    = "roles/editor"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+resource "google_project_iam_member" "github_actions_iam_admin" {
+  project = var.project_id
+  role    = "roles/iam.securityAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# Grant github-actions SA access to the Terraform state bucket (in state-manager project)
+resource "google_storage_bucket_iam_member" "github_actions_state_bucket" {
+  bucket = "mr_food_terraform_state"
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.github_actions.email}"
+}

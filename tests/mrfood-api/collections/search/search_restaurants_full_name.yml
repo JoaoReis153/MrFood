@@ -16,7 +16,7 @@ http:
       value: "10"
       type: query
     - name: full_name
-      value: "Le 147"
+      value: Le 147
       type: query
   auth:
     type: bearer

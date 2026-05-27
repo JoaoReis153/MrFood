@@ -1,5 +1,13 @@
 _format_version: "3.0"
 
+plugins:
+  - name: opentelemetry
+    config:
+      endpoint: http://otel-collector:4318/v1/traces
+      sampling_rate: 1.0
+      resource_attributes:
+        service.name: kong-gateway
+      header_type: w3c
 services:
 - name: auth
   host: auth
@@ -147,8 +155,10 @@ services:
       - exp
 
 consumers:
-- username: my-client
-  jwt_secrets:
-  - key: generate-key
-    secret: CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
-    algorithm: HS256
+- username: mrfood-auth
+
+jwt_secrets:
+- consumer: mrfood-auth
+  key: mrfood-auth
+  algorithm: HS256
+  secret: "mrfood-jwt-secret"

@@ -1,0 +1,9 @@
+namespace: mrfood
+
+image: quay.io/keycloak/keycloak:26.0
+
+adminUser: admin
+adminPassword: admin
+
+storageClass: standard-rwo
+storageSize: 5Gi

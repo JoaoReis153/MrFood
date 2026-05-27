@@ -21,3 +21,7 @@ override.tf.json
 # CLI configuration files
 .terraformrc
 terraform.rc
+
+# State backups
+terraform.tfstate.backup
+terraform.tfstate

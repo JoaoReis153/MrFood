@@ -1,0 +1,5 @@
+namespace: mrfood
+image: cdc:latest
+env:
+  secrets: {}
+  config: {}

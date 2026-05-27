@@ -8,10 +8,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"net"
 	"os"
-	"hash/fnv"
 	"strings"
 	"time"
 
@@ -92,10 +92,10 @@ func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID
 	if err != nil {
 		code := status.Code(err)
 		if code == codes.DeadlineExceeded || code == codes.Unavailable {
-			slog.Debug("review stats unavailable", "restaurant_id", restaurantID, "code", code.String(), "error", err)
+			slog.DebugContext(ctx, "review stats unavailable", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 			return nil, nil
 		}
-		slog.Warn("review stats rpc failed", "restaurant_id", restaurantID, "code", code.String(), "error", err)
+		slog.WarnContext(ctx, "review stats rpc failed", "restaurant_id", restaurantID, "code", code.String(), "error", err)
 		return nil, nil
 	}
 
@@ -112,11 +112,11 @@ func (c *reviewStatsClient) GetRestaurantStats(ctx context.Context, restaurantID
 }
 
 func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurantDetailsRequest) (*pb.GetRestaurantDetailsResponse, error) {
-	slog.Info("fetching restaurant details", "restaurant_id", req.GetId())
+	slog.InfoContext(ctx, "fetching restaurant details", "restaurant_id", req.GetId())
 
 	restaurant, err := s.restaurantService.GetRestaurantByID(ctx, req.GetId())
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.GetRestaurantDetailsResponse{
@@ -125,11 +125,10 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 }
 
 func (s *server) GetRestaurantId(ctx context.Context, req *pb.GetRestaurantRequest) (*pb.GetRestaurantResponse, error) {
-	slog.Info("fetching restaurant id for review service", "restaurant_id", req.GetRestaurantId())
 	restaurantID, err := s.restaurantService.GetRestaurantID(ctx, req.GetRestaurantId())
 	if err != nil {
-		slog.Error("failed to get restaurant id", "error", err)
-		return nil, mapServiceError(err)
+		slog.ErrorContext(ctx, "failed to get restaurant id", "error", err)
+		return nil, mapServiceError(ctx, err)
 	}
 	return &pb.GetRestaurantResponse{
 		RestaurantId: restaurantID,
@@ -141,7 +140,7 @@ func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantR
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-	slog.Info("creating restaurant", "name", req.GetName(), "owner_id", requesterOwner.UserID)
+	slog.InfoContext(ctx, "creating restaurant", "name", req.GetName(), "owner_id", requesterOwner.UserID)
 
 	restaurant := &models.Restaurant{
 		OwnerID:     requesterOwner.UserID,
@@ -162,7 +161,7 @@ func (s *server) CreateRestaurant(ctx context.Context, req *pb.CreateRestaurantR
 
 	newRestaurantID, err := s.restaurantService.CreateRestaurant(ctx, restaurant)
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.CreateRestaurantResponse{
@@ -192,7 +191,7 @@ func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantR
 
 	updatedRestaurant, err := s.restaurantService.UpdateRestaurant(ctx, changes, requestOwner.UserID)
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.UpdateRestaurantResponse{Restaurant: modelToPB(updatedRestaurant)}, nil
@@ -201,7 +200,7 @@ func (s *server) UpdateRestaurant(ctx context.Context, req *pb.UpdateRestaurantR
 func (s *server) CompareRestaurantDetails(ctx context.Context, req *pb.CompareRestaurantDetailsRequest) (*pb.CompareRestaurantDetailsResponse, error) {
 	r1, r2, err := s.restaurantService.CompareRestaurants(ctx, req.GetRestaurantId_1(), req.GetRestaurantId_2())
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.CompareRestaurantDetailsResponse{
@@ -218,7 +217,7 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 
 	workingHours, err := s.restaurantService.GetWorkingHours(ctx, req.GetRestaurantId(), requestedAt)
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.WorkingHoursResponse{
@@ -230,11 +229,11 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 }
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.GetRestaurantSponsorshipResponse, error) {
-	slog.Info("fetching restaurant details", "restaurant_id", req.GetId())
+	slog.InfoContext(ctx, "fetching restaurant details", "restaurant_id", req.GetId())
 
 	restaurant, err := s.restaurantService.GetRestaurantByID(ctx, req.GetId())
 	if err != nil {
-		return nil, mapServiceError(err)
+		return nil, mapServiceError(ctx, err)
 	}
 
 	return &pb.GetRestaurantSponsorshipResponse{
@@ -307,11 +306,11 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 	if claims.UserID == "" {
-		slog.Error("missing user_id claim in token")
+		slog.ErrorContext(ctx, "missing user_id claim in token")
 		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
 	}
 	userID := uuidToInt64(claims.UserID)
@@ -320,14 +319,6 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		UserID:   userID,
 		Username: claims.Username,
 	}
-
-	slog.Info("USER INFO",
-		"user_id_claim", claims.UserID,
-		"user_id", userID,
-		"username", claims.Username,
-		"token_type", claims.TokenType,
-		"exp", claims.ExpiresAt,
-	)
 
 	return userInfo, nil
 }
@@ -375,7 +366,7 @@ func modelToPB(restaurant *models.Restaurant) *pb.RestaurantDetails {
 	return response
 }
 
-func mapServiceError(err error) error {
+func mapServiceError(_ context.Context, err error) error {
 	switch {
 	case errors.Is(err, service.ErrInvalidRestaurant), errors.Is(err, service.ErrInvalidCompareRequest):
 		return status.Error(codes.InvalidArgument, err.Error())

@@ -8,9 +8,10 @@ type Receipt struct {
 	UserEmail          string    `json:"user_email"`
 	IdempotencyKey     string    `json:"idempotency_key"`
 	RequestHash        string    `json:"request_hash"`
-	Amount             float32   `json:"amount"`
+	Amount             int64     `json:"amount"`
 	PaymentDescription string    `json:"payment_description"`
 	PaymentStatus      string    `json:"payment_status"`
 	PaymentType        string    `json:"payment_type"`
+	PaymentIntentID    string    `json:"payment_intent_id"`
 	CreatedAt          time.Time `json:"created_at"`
 }

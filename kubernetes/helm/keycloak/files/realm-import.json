@@ -1,0 +1,89 @@
+{
+  "realm": "mrfood",
+  "enabled": true,
+  "displayName": "MrFood",
+  "loginWithEmailAllowed": true,
+  "registrationEmailAsUsername": false,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "none",
+  "accessTokenLifespan": 300,
+  "ssoSessionMaxLifespan": 36000,
+  "requiredActions": [
+    { "alias": "VERIFY_EMAIL",         "name": "Verify Email",          "providerId": "VERIFY_EMAIL",         "enabled": true, "defaultAction": false, "priority": 50,  "config": {} },
+    { "alias": "UPDATE_PROFILE",       "name": "Update Profile",        "providerId": "UPDATE_PROFILE",       "enabled": true, "defaultAction": false, "priority": 40,  "config": {} },
+    { "alias": "CONFIGURE_TOTP",       "name": "Configure OTP",         "providerId": "CONFIGURE_TOTP",       "enabled": true, "defaultAction": false, "priority": 10,  "config": {} },
+    { "alias": "UPDATE_PASSWORD",      "name": "Update Password",       "providerId": "UPDATE_PASSWORD",      "enabled": true, "defaultAction": false, "priority": 30,  "config": {} },
+    { "alias": "TERMS_AND_CONDITIONS", "name": "Terms and Conditions",  "providerId": "TERMS_AND_CONDITIONS", "enabled": false,"defaultAction": false, "priority": 20,  "config": {} }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "user",  "description": "Regular app user"  },
+      { "name": "admin", "description": "Admin user" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "mrfood-auth",
+      "name": "MrFood Auth Service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "mrfood-auth-client-secret",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "attributes": {
+        "access.token.signed.response.alg": "RS256"
+      },
+      "protocolMappers": [
+        {
+          "name": "user_id mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "false",
+            "user.attribute": "int_id",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "claim.name": "user_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "username mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "false",
+            "user.attribute": "username",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "claim.name": "username",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "mrfood-rsa-key",
+        "providerId": "rsa",
+        "subComponents": {},
+        "config": {
+          "priority": ["200"],
+          "enabled": ["true"],
+          "active":  ["true"],
+          "algorithm": ["RS256"],
+          "privateKey": [
+            "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDBc8EFMRWRA3UrLdzmIL9w7PWNVXCV9sRjJW4O5RLn85XkKT6ik8b8yi/NSwpdkjix+h+I9viKimrnGUYWwdb8FXCBqlKMbDQlf5YlqtO6SxVSmwqilcD58oDFOLQ34kkO7KUZ1BePJYHwLNSRlOLq7g+Uaj83thWs0WTsfVTR4gC16YSpNAxOYlefGTzs6F8/qqUjgVi+h2xuGn1Z+q0ZMCqI20ztbukl9ZD/fJ/46lSVjVKsu69CSjuKTb+XeahaV+7LOgiFq8XICS90yH3mZ2Rl5mdXiKJwuVN/G6sUO+DK056G1TBgTO5Mf6sX0ZJQkvT15ElY0v662kDxZuvrAgMBAAECggEABOqNqbWdIDHPzPid6AVGCDclaGGW+mCqjgB6AwvkRpvEn+dCbbxGrs7ulw+EpGseYLuECKWKHG83F0dnphVoAsECunDbJzFqw9cxuCRWvCHDWXWSOB6JKHD2v8xYnCD2jVgLPBRNQviHjFR/VHHNsH27TKDEmYRZmao6n93xhWHnHeoIxAKyFVix7w4ru5vYu9eGYcWr/oWrF1oWS+e+8Uezd60vwg7znklnXTMA0knVXzxi0GGBh48WaxQNeqDZaFOcP+NrjoIRgvj+oG7TDqy39dhNT7a2SAM2wtotHO1lmxE6Ko/s8gnEjXr188yZEuV+WjVZLzOXHc+4jYPf0QKBgQDObB30AUJ+dWnZ9Wi7r4/ZG4mMKAwxHvv+uZ8V99xb1wjwCBezFOZ/kcR0kBYUQJ+ZPGCL5g2l0Mof8+4l89Y3tEcLfXEBcLf0qeKNLzn01iiDH1g4SakAtYiIz8BOHT0T0czApzhsFwMr57hYFswKQcfGRStZsEI5E3G+Bg9GWwKBgQDv6ipzrN4/1Z+HJ3upd9G/Iz5/iVJMj2FfQN3Uq6k3M3O8oqIGohaQlX610cs4mJq2Q+xxMmEyZX5ES15clug3+vyWOD14OL8+73/sN1ipkp/FmTWzeIsEOSeapCVXG6cuqNEv1P4P/itPsI3sv5x96fhpOMy0PihbEqTwef6FsQKBgEZQZdOcKj5RWIE6KzbjkqhtzOjFK4H//+7A5APjrlhKY20AFLKXx/xkdvsNqbe0W6ki+/ArqTJ2cKN5wAGFkc7fxeOQE1JeRws8Y0Ocdq2D1cD0iGSEEuF+9MdFnUf+hbOen5RwYbPQEvB9ujmnalGEHrzXCvE+LRCsIu6LueBJAoGAHSlba6ARi7TNpUH5WAoGZrND/4CTjlbHQSrDS/xpnxoT8VPbWe8NyxlAw5zylLiH5auv67px8gxAItD+cUauh09ssF25qwlKxb2a0P2RO1tlLEGJM31teF/yHmvhVgs4cQV4F9ZN42fDn/YX6jUIMo3j8fZDe40qnpdPkSNi+qECgYAC3th6Jwa8RVBgHhiRuZKTp74rfiMHKajTl1JXRYekbrDsrT1UtFoA3klErYaSHLQFN8L993Ub48I9dDVltbntiZKD4O3Z4xvyqQOGGKteh8DnkZuhXS8BG2cBqCgOIjrdU4CogaJHRGXC8MegongjmF7Zpl3CAYPtoVOWTQutxA=="
+          ]
+        }
+      }
+    ]
+  }
+}

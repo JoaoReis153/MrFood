@@ -214,7 +214,7 @@ func TestMapServiceError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mapped := mapServiceError(tt.err)
+			mapped := mapServiceError(t.Context(), tt.err)
 			if status.Code(mapped) != tt.code {
 				t.Fatalf("expected %s, got %s", tt.code, status.Code(mapped))
 			}
@@ -454,7 +454,7 @@ func TestCompareRestaurantDetailsAndMapInternal(t *testing.T) {
 		t.Fatalf("unexpected compare response: %+v", resp)
 	}
 
-	if status.Code(mapServiceError(errors.New("boom"))) != codes.Internal {
+	if status.Code(mapServiceError(t.Context(), errors.New("boom"))) != codes.Internal {
 		t.Fatal("expected internal mapping")
 	}
 }

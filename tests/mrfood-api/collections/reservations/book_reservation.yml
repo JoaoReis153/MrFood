@@ -28,14 +28,12 @@ runtime:
           expect(res.status).to.equal(200);
         });
 
-        if (res.status === 200) {
-          test("response has booking_id", () => {
-            expect(res.body).to.have.property("booking_id");
-            expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
-          });
+        test("response has booking_id", () => {
+          expect(res.body).to.have.property("booking_id");
+          expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
+        });
 
-          bru.setEnvVar("bookingId", String(res.body.booking_id));
-        }
+        bru.setEnvVar("bookingId", String(res.body.booking_id));
 
 settings:
   encodeUrl: true

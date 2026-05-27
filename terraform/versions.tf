@@ -16,13 +16,6 @@ terraform {
     }
 
   }
-
-
-  # Uncomment and configure for remote state
-  # backend "gcs" {
-  #   bucket = "your-terraform-state-bucket"
-  #   prefix = "terraform/gke-madrid"
-  # }
 }
 
 provider "google" {

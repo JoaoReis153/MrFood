@@ -50,7 +50,7 @@ variable "availability_type" {
 variable "deletion_protection" {
   description = "Protect instance from accidental deletion"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "private_network" {

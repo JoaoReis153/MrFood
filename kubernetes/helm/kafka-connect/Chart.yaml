@@ -1,0 +1,4 @@
+apiVersion: v2
+name: kafka-connect
+description: Confluent Kafka Connect for MrFood CDC pipeline
+version: 0.1.0

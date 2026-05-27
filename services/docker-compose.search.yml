@@ -6,6 +6,7 @@ x-common: &common
 services:
   search:
     build: ./search/
+    profiles: [search]
     <<: *common
     ports:
       - "50056:50056"

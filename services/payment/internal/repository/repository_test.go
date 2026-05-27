@@ -45,6 +45,7 @@ func TestCreateReceipt(t *testing.T) {
 				baseReceipt.PaymentDescription,
 				baseReceipt.PaymentStatus,
 				baseReceipt.PaymentType,
+				baseReceipt.PaymentIntentID,
 				baseReceipt.CreatedAt,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(int32(42)))
@@ -74,6 +75,7 @@ func TestCreateReceipt(t *testing.T) {
 				baseReceipt.PaymentDescription,
 				baseReceipt.PaymentStatus,
 				baseReceipt.PaymentType,
+				baseReceipt.PaymentIntentID,
 				baseReceipt.CreatedAt,
 			).
 			WillReturnError(pgx.ErrNoRows)
@@ -110,6 +112,7 @@ func TestCreateReceipt(t *testing.T) {
 				baseReceipt.PaymentDescription,
 				baseReceipt.PaymentStatus,
 				baseReceipt.PaymentType,
+				baseReceipt.PaymentIntentID,
 				baseReceipt.CreatedAt,
 			).
 			WillReturnError(pgx.ErrNoRows)
@@ -134,9 +137,22 @@ func TestCreateReceipt(t *testing.T) {
 		repo, _ := New(ctx, nil, mock)
 
 		mock.ExpectQuery(`INSERT INTO receipts`).
+			WithArgs(
+				baseReceipt.IdempotencyKey,
+				"hash",
+				baseReceipt.UserID,
+				baseReceipt.UserEmail,
+				baseReceipt.Amount,
+				baseReceipt.PaymentDescription,
+				baseReceipt.PaymentStatus,
+				baseReceipt.PaymentType,
+				baseReceipt.PaymentIntentID,
+				baseReceipt.CreatedAt,
+			).
 			WillReturnError(pgx.ErrNoRows)
 
 		mock.ExpectQuery(`SELECT id, request_hash FROM receipts`).
+			WithArgs(baseReceipt.IdempotencyKey).
 			WillReturnError(errors.New("db error"))
 
 		_, err := repo.CreateReceipt(ctx, baseReceipt, "hash")
@@ -152,6 +168,18 @@ func TestCreateReceipt(t *testing.T) {
 		repo, _ := New(ctx, nil, mock)
 
 		mock.ExpectQuery(`INSERT INTO receipts`).
+			WithArgs(
+				baseReceipt.IdempotencyKey,
+				"hash",
+				baseReceipt.UserID,
+				baseReceipt.UserEmail,
+				baseReceipt.Amount,
+				baseReceipt.PaymentDescription,
+				baseReceipt.PaymentStatus,
+				baseReceipt.PaymentType,
+				baseReceipt.PaymentIntentID,
+				baseReceipt.CreatedAt,
+			).
 			WillReturnError(errors.New("insert failed"))
 
 		_, err := repo.CreateReceipt(ctx, baseReceipt, "hash")
@@ -220,11 +248,11 @@ func TestGetReceiptById(t *testing.T) {
 					"id", "idempotency_key", "request_hash",
 					"user_id", "user_email", "amount",
 					"payment_description", "current_payment_status",
-					"payment_type", "created_at",
+					"payment_type", "payment_intent_id", "created_at",
 				}).AddRow(
 					int32(1), "key", "hash", int64(1),
-					"test@test.com", float32(10),
-					"order", "success", "card", time.Now(),
+					"test@test.com", int64(10),
+					"order", "success", "card", "pi_123", time.Now(),
 				),
 			)
 
@@ -300,11 +328,11 @@ func TestGetReceiptsByUser(t *testing.T) {
 					"id", "idempotency_key", "request_hash",
 					"user_id", "user_email", "amount",
 					"payment_description", "current_payment_status",
-					"payment_type", "created_at",
+					"payment_type", "payment_intent_id", "created_at",
 				}).AddRow(
 					int32(1), "key", "hash", int64(1),
-					"test@test.com", float32(10),
-					"order", "success", "card", time.Now(),
+					"test@test.com", int64(10),
+					"order", "success", "card", "pi_123", time.Now(),
 				),
 			)
 

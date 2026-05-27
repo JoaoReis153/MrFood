@@ -11,6 +11,15 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+var (
+	ErrUnauthorized        = errors.New("invalid restaurant owner")
+	ErrPaymentUnavailable  = errors.New("payment service unavailable")
+	ErrRestaurantNotFound  = errors.New("restaurant not found")
 )
 
 type Service struct {
@@ -34,10 +43,8 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, 0, err
 	}
 
-	slog.Info("RESTAURANT", "data", restaurant)
-
 	if restaurant.OwnerID != owner {
-		return nil, 0, errors.New("invalid restaurant owner")
+		return nil, 0, ErrUnauthorized
 	}
 
 	request.Categories = restaurant.Categories
@@ -47,12 +54,12 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, 0, err
 	}
 
-	amount := float32(res.Tier * 20)
+	amount := int64(res.Tier * 20)
 
 	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
 		UserID:         owner,
 		UserEmail:      email,
-		IdempotencyKey: GenerateIdempotencyKey(owner, amount, int32(res.ID), "S"),
+		IdempotencyKey: GenerateIdempotencyKey(owner, (float32)(amount), int32(res.ID), "S"),
 		Amount:         amount,
 		PaymentDescription: fmt.Sprintf("SPONSOR %d FOR RESTAURANT %d WITH TIER %d UNTIL %s",
 			res.ID, request.ID, res.Tier, FormatTime(res.Until)),
@@ -76,11 +83,14 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 	})
 
 	if err != nil {
-		slog.Error("failed to get receipt", "error", err)
+		slog.ErrorContext(ctx, "payment failed", "error", err)
+		code := status.Code(err)
+		if code == codes.Internal || code == codes.Unavailable || code == codes.DeadlineExceeded {
+			return 0, ErrPaymentUnavailable
+		}
 		return 0, err
 	}
 
-	slog.Info("receipt id", "receipt_id", res.ReceiptId)
 	return res.ReceiptId, nil
 }
 
@@ -94,6 +104,9 @@ func (s *Service) getRestaurantDetails(ctx context.Context, restaurantID int64) 
 	})
 
 	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, ErrRestaurantNotFound
+		}
 		return nil, err
 	}
 

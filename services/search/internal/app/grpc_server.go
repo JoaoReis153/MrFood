@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -30,24 +31,42 @@ func newServer(svc *service.Service) *Server {
 }
 
 func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedRequest) (*pb.SearchPaginatedResponse, error) {
-	query := models.SearchQuery{
-		Page:  req.GetPage(),
-		Limit: req.GetLimit(),
+	slog.Info("received request", "req", req)
+
+	// 1. Handle Pagination Defaults
+	// If Kong sends 0 (empty params), your service layer likely throws ErrInvalidPagination.
+	page := req.GetPage()
+	if page <= 0 {
+		page = 1
+	}
+	limit := req.GetLimit()
+	if limit <= 0 {
+		limit = 10
 	}
 
-	if req.Category != nil {
-		query.Filter.Category = req.Category
+	query := models.SearchQuery{
+		Page:  page,
+		Limit: limit,
 	}
-	if req.NameSuffix != nil {
-		query.Filter.NameSuffix = req.NameSuffix
+
+	// 2. Safe String Filter Mapping
+	// Only pass the filter to the service layer if the string is NOT empty.
+	if req.GetCategory() != "" {
+		cat := req.GetCategory()
+		query.Filter.Category = &cat
 	}
-	if req.FullName != nil {
-		query.Filter.FullName = req.FullName
+	if req.GetNameSuffix() != "" {
+		suffix := req.GetNameSuffix()
+		query.Filter.NameSuffix = &suffix
 	}
-	if req.Latitude != nil || req.Longitude != nil || req.RadiusMeters != nil {
-		if req.Latitude == nil || req.Longitude == nil || req.RadiusMeters == nil {
-			return nil, status.Error(codes.InvalidArgument, "latitude, longitude and radius_meters must be provided together")
-		}
+	if req.GetFullName() != "" {
+		full := req.GetFullName()
+		query.Filter.FullName = &full
+	}
+
+	// 3. Safe Location Mapping
+	// Only initialize Location if at least one coordinate is non-zero.
+	if req.GetLatitude() != 0 || req.GetLongitude() != 0 {
 		query.Filter.Location = &models.LocationRadius{
 			Latitude:     req.GetLatitude(),
 			Longitude:    req.GetLongitude(),
@@ -55,8 +74,10 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 		}
 	}
 
+	// 4. Call Service Layer
 	result, err := s.service.SearchPaginated(ctx, query)
 	if err != nil {
+		slog.Error("search service error", "error", err)
 		switch err {
 		case service.ErrInvalidPagination, service.ErrInvalidGeoFilter, service.ErrInvalidTextFilter:
 			return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -65,6 +86,7 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 		}
 	}
 
+	// 5. Build Response
 	resp := &pb.SearchPaginatedResponse{
 		Pagination: &pb.Pagination{
 			Page:  result.Pagination.Page,
@@ -72,9 +94,16 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 			Total: result.Pagination.Total,
 			Pages: result.Pagination.Pages,
 		},
+		Data: make([]*pb.RestaurantSearchResult, 0, len(result.Data)),
 	}
 
 	for _, r := range result.Data {
+		// Handle the optional media_url safely
+		var mediaURL string
+		if r.MediaURL != nil {
+			mediaURL = *r.MediaURL
+		}
+
 		resp.Data = append(resp.Data, &pb.RestaurantSearchResult{
 			Id:         r.ID,
 			Name:       r.Name,
@@ -82,7 +111,7 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 			Longitude:  r.Longitude,
 			Address:    r.Address,
 			Categories: r.Categories,
-			MediaUrl:   r.MediaURL,
+			MediaUrl:   mediaURL,
 		})
 	}
 
@@ -96,7 +125,9 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 	pb.RegisterSearchServiceServer(s, newServer(app.Service))
 
 	healthServer := health.NewServer()

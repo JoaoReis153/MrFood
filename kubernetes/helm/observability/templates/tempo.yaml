@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-config
+  namespace: {{ .Values.namespace }}
+data:
+  tempo.yaml: |
+    auth_enabled: false
+    stream_over_http_enabled: true
+
+    server:
+      http_listen_port: 3200
+      grpc_listen_port: 9095
+
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: "0.0.0.0:4317"
+            http:
+              endpoint: "0.0.0.0:4318"
+
+    ingester:
+      trace_idle_period: 10s
+      max_block_bytes: 1_000_000
+      max_block_duration: 5m
+
+    compactor:
+      compaction:
+        compaction_window: 1h
+        max_block_bytes: 100_000_000
+        block_retention: 24h
+        compacted_block_retention: 10m
+
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /var/tempo/blocks
+        wal:
+          path: /var/tempo/wal
+        pool:
+          max_workers: 100
+          queue_depth: 10000
+
+    query_frontend:
+      search:
+        duration_slo: 5s
+        throughput_bytes_slo: 1.073741824e+09
+      trace_by_id:
+        duration_slo: 5s
+
+    metrics_generator:
+      registry:
+        collection_interval: 15s
+        external_labels:
+          source: tempo
+      processor:
+        service_graphs:
+          wait: 10s
+          max_items: 10000
+          enable_client_server_prefix: false
+          enable_virtual_node_label: false
+          dimensions:
+            - http.method
+            - http.status_code
+        span_metrics:
+          dimensions:
+            - http.method
+            - http.status_code
+            - http.route
+        local_blocks:
+          max_live_traces: 50000
+          max_block_duration: 30m
+          max_block_bytes: 300_000_000
+          flush_check_period: 10s
+          trace_idle_period: 10s
+      storage:
+        path: /var/tempo/generator/wal
+        remote_write:
+          - url: http://prometheus:9090/api/v1/write
+            send_exemplars: true
+            send_native_histograms: true
+      traces_storage:
+        path: /var/tempo/generator/traces
+
+    overrides:
+      defaults:
+        metrics_generator:
+          processors: [service-graphs, span-metrics, local-blocks]
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tempo-data
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: {{ .Values.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.tempo.storageSize }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempo
+  template:
+    metadata:
+      labels:
+        app: tempo
+    spec:
+      securityContext:
+        fsGroup: 10001
+        runAsUser: 10001
+      containers:
+        - name: tempo
+          image: {{ .Values.tempo.image }}
+          args:
+            - "-config.file=/etc/tempo.yaml"
+          ports:
+            - containerPort: 3200
+            - containerPort: 9095
+            - containerPort: 4317
+            - containerPort: 4318
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tempo.yaml
+              subPath: tempo.yaml
+            - name: data
+              mountPath: /var/tempo
+      volumes:
+        - name: config
+          configMap:
+            name: tempo-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: tempo-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: tempo
+  ports:
+    - name: http
+      port: 3200
+      targetPort: 3200
+    - name: grpc
+      port: 9095
+      targetPort: 9095
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+  type: ClusterIP

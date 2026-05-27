@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from .service_seed_common import (
-    DEFAULT_PASSWORD_HASH,
+    DEFAULT_PASSWORD,
     clean_id,
     clean_text,
     hash_to_bigint,
@@ -35,7 +35,7 @@ def build_user_id(raw_user_id: object, index: int) -> str:
     return str(index)
 
 def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int] = None) -> int:
-    """Generate auth CSV directly from source users CSV using constant memory."""
+    """Generate auth seed CSV (username, email, password) from source users CSV."""
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     total_rows = 0
@@ -54,7 +54,7 @@ def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int
         output_file.open("w", newline="", encoding="utf-8") as output_fp,
     ):
         reader = csv.DictReader(input_fp)
-        writer = csv.DictWriter(output_fp, fieldnames=["user_id", "username", "password", "email"])
+        writer = csv.DictWriter(output_fp, fieldnames=["username", "email", "password"])
         writer.writeheader()
 
         for idx, row in enumerate(reader, start=1):
@@ -67,17 +67,8 @@ def stream_auth_csv(users_csv_path: Path, output_file: Path, nrows: Optional[int
             username = f"{username_base[:base_max_len]}{suffix}"[:50]
             email = f"{username.lower()}@mrfood.local"[:100]
 
-            user_id = build_user_id(row.get("gPlusUserId"), idx)
+            writer.writerow({"username": username, "email": email, "password": DEFAULT_PASSWORD})
             written += 1
-            writer.writerow(
-                {
-                    "user_id": user_id,
-                    "username": username,
-                    "password": DEFAULT_PASSWORD_HASH,
-                    "email": email,
-                }
-            )
-
             last_pct = print_progress_step("Writing auth CSV", written, total_rows, last_pct)
 
     if last_pct < 100:

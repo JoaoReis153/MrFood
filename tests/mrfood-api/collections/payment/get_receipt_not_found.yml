@@ -1,0 +1,27 @@
+info:
+  name: Get non-existent receipt
+  type: http
+  seq: 6
+  tags:
+    - Payment
+
+http:
+  method: GET
+  url: "{{baseUrl}}/payment/999999999"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("non-existent receipt returns 404", () => {
+          expect(res.status).to.equal(404);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

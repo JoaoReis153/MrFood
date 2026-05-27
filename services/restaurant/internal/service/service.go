@@ -107,7 +107,6 @@ func (s *Service) GetRestaurantByID(ctx context.Context, id int64) (*models.Rest
 		}
 		return nil, err
 	}
-	slog.Info("got restaurant by id", "restaurant_id", id, "restaurant", restaurant)
 	return s.enrichWithReviewStats(ctx, restaurant)
 }
 
@@ -167,13 +166,12 @@ func (s *Service) enrichWithReviewStats(ctx context.Context, restaurant *models.
 	if restaurant == nil {
 		return nil, ErrNotFound
 	}
-	slog.Info("enriching restaurant with review stats", "restaurant_id", restaurant.ID, "review_stats_client_nil", s.reviewStats == nil)
 	if s.reviewStats == nil {
 		return restaurant, nil
 	}
-	slog.Debug("enriching restaurant with review stats not null", "restaurant_id", restaurant.ID)
+	slog.DebugContext(ctx, "enriching restaurant with review stats not null", "restaurant_id", restaurant.ID)
 	stats, err := s.reviewStats.GetRestaurantStats(ctx, restaurant.ID)
-	slog.Debug("got review stats", "restaurant_id", restaurant.ID, "stats", stats, "error", err)
+	slog.DebugContext(ctx, "got review stats", "restaurant_id", restaurant.ID, "stats", stats, "error", err)
 	if err != nil {
 		return restaurant, nil
 	}
@@ -183,6 +181,6 @@ func (s *Service) enrichWithReviewStats(ctx context.Context, restaurant *models.
 
 	restaurant.AverageRating = &stats.AverageRating
 	restaurant.ReviewCount = &stats.ReviewCount
-	slog.Debug("enriched restaurant with review stats", "restaurant_id", restaurant.ID, "average_rating", restaurant.AverageRating, "review_count", restaurant.ReviewCount)
+	slog.DebugContext(ctx, "enriched restaurant with review stats", "restaurant_id", restaurant.ID, "average_rating", restaurant.AverageRating, "review_count", restaurant.ReviewCount)
 	return restaurant, nil
 }

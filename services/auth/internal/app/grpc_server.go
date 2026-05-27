@@ -48,9 +48,10 @@ type appClaims struct {
 	jwtlib.RegisteredClaims
 	UserID   string `json:"user_id"`
 	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
-func (s *Server) mintAccessToken(sub, username string) (string, error) {
+func (s *Server) mintAccessToken(sub, username, email string) (string, error) {
 	now := time.Now()
 	claims := appClaims{
 		RegisteredClaims: jwtlib.RegisteredClaims{
@@ -61,6 +62,7 @@ func (s *Server) mintAccessToken(sub, username string) (string, error) {
 		},
 		UserID:   sub,
 		Username: username,
+		Email:    email,
 	}
 	token := jwtlib.NewWithClaims(jwtlib.SigningMethodHS256, claims)
 	return token.SignedString(s.jwtSecret)
@@ -104,22 +106,22 @@ func (s *Server) PingPong(_ context.Context, _ *pb.Ping) (*pb.Pong, error) {
 
 // RegisterProcess creates a new user in Keycloak.
 func (s *Server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.RegisterResponse, error) {
-	slog.Info("registering user", "username", req.Username)
+	slog.InfoContext(ctx, "registering user", "username", req.Username)
 
 	kcUserID, err := s.kc.CreateUser(ctx, req.Username, req.Email, req.Password)
 	if err != nil {
-		slog.Error("failed to create keycloak user", "error", err)
+		slog.ErrorContext(ctx, "failed to create keycloak user", "error", err)
 		if errors.Is(err, keycloak.ErrUserAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	slog.Info("user created in keycloak", "kc_id", kcUserID)
+	slog.InfoContext(ctx, "user created in keycloak", "kc_id", kcUserID)
 
 	if s.notificationService != nil {
 		if err := s.notificationService.SendRegistrationEmail(ctx, req.Email, req.Username); err != nil {
-			slog.Warn("failed to send registration email", "email", req.Email, "error", err)
+			slog.WarnContext(ctx, "failed to send registration email", "email", req.Email, "error", err)
 		}
 	}
 
@@ -130,11 +132,11 @@ func (s *Server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 }
 
 func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResponse, error) {
-	slog.Info("login attempt", "email", req.Email)
+	slog.InfoContext(ctx, "login attempt", "email", req.Email)
 
 	tokenResp, err := s.kc.Login(ctx, req.Email, req.Password)
 	if err != nil {
-		slog.Error("keycloak login failed", "error", err)
+		slog.ErrorContext(ctx, "keycloak login failed", "error", err)
 		if errors.Is(err, keycloak.ErrInvalidCredentials) {
 			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
 		}
@@ -143,16 +145,17 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 
 	kcClaims, err := parseJWTPayload(tokenResp.AccessToken)
 	if err != nil {
-		slog.Error("failed to parse keycloak access token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse keycloak access token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to parse token claims")
 	}
 
 	sub, _ := kcClaims["sub"].(string)
 	username, _ := kcClaims["preferred_username"].(string)
+	email, _ := kcClaims["email"].(string)
 
-	accessToken, err := s.mintAccessToken(sub, username)
+	accessToken, err := s.mintAccessToken(sub, username, email)
 	if err != nil {
-		slog.Error("failed to mint access token", "error", err)
+		slog.ErrorContext(ctx, "failed to mint access token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to mint token")
 	}
 
@@ -169,7 +172,7 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest) (*pb.RefreshResponse, error) {
 	tokenResp, err := s.kc.RefreshToken(ctx, req.RefreshToken)
 	if err != nil {
-		slog.Error("keycloak refresh failed", "error", err)
+		slog.ErrorContext(ctx, "keycloak refresh failed", "error", err)
 		if errors.Is(err, keycloak.ErrInvalidCredentials) {
 			return nil, status.Error(codes.Unauthenticated, "refresh token invalid or expired")
 		}
@@ -178,16 +181,17 @@ func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest
 
 	kcClaims, err := parseJWTPayload(tokenResp.AccessToken)
 	if err != nil {
-		slog.Error("failed to parse refreshed keycloak token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse refreshed keycloak token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to parse refreshed token")
 	}
 
 	sub, _ := kcClaims["sub"].(string)
 	username, _ := kcClaims["preferred_username"].(string)
+	email, _ := kcClaims["email"].(string)
 
-	accessToken, err := s.mintAccessToken(sub, username)
+	accessToken, err := s.mintAccessToken(sub, username, email)
 	if err != nil {
-		slog.Error("failed to mint refreshed access token", "error", err)
+		slog.ErrorContext(ctx, "failed to mint refreshed access token", "error", err)
 		return nil, status.Error(codes.Internal, "failed to mint token")
 	}
 
@@ -200,7 +204,7 @@ func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest
 func (s *Server) LogoutProcess(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
 	claims, err := parseJWTPayload(req.Token)
 	if err != nil {
-		slog.Error("logout: failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "logout: failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
@@ -210,11 +214,11 @@ func (s *Server) LogoutProcess(ctx context.Context, req *pb.LogoutRequest) (*pb.
 	}
 
 	if err := s.kc.RevokeAllUserSessions(ctx, sub); err != nil {
-		slog.Error("failed to revoke keycloak sessions", "sub", sub, "error", err)
+		slog.ErrorContext(ctx, "failed to revoke keycloak sessions", "sub", sub, "error", err)
 		return nil, status.Error(codes.Internal, "failed to revoke sessions")
 	}
 
-	slog.Info("user logged out", "sub", sub)
+	slog.InfoContext(ctx, "user logged out", "sub", sub)
 	return &pb.LogoutResponse{}, nil
 }
 

@@ -3,19 +3,21 @@ package app
 import (
 	"MrFood/services/sponsor/config"
 	pb "MrFood/services/sponsor/internal/api/grpc/pb"
+	"MrFood/services/sponsor/internal/service"
 	"context"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"log/slog"
 	"net"
 	"os"
-	"hash/fnv"
 	"strings"
 	"time"
 
 	models "MrFood/services/sponsor/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -53,7 +55,7 @@ type SponsorService interface {
 
 func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestaurantSponsorshipRequest) (*pb.SponsorshipResponse, error) {
 
-	slog.Info("get restaurant sponsorship", "request", req)
+	slog.InfoContext(ctx, "get restaurant sponsorship", "restaurant_id", req.Id)
 
 	response, err := s.sponsorService.GetRestaurantSponsorship(ctx, req.Id)
 	if err != nil {
@@ -77,8 +79,6 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	slog.Info("USER", "username", user.Username, "userID", user.UserID)
-
 	sponsorship := &models.Sponsorship{
 		ID:         req.Id,
 		Tier:       int(req.Tier),
@@ -88,14 +88,10 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 
 	response, receipt_id, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID, user.Email)
 	if err != nil {
-		return nil, err
+		return nil, mapToGRPCError(err)
 	}
 
-	slog.Info("ADDED TO DATABASE",
-		"id", response.ID,
-		"tier", response.Tier,
-		"until", response.Until,
-	)
+	slog.InfoContext(ctx, "sponsorship created", "id", response.ID, "tier", response.Tier, "until", response.Until)
 
 	return &pb.SponsorshipResponse{
 		Id:        response.ID,
@@ -103,6 +99,19 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 		Until:     timestamppb.New(response.Until),
 		ReceiptId: receipt_id,
 	}, nil
+}
+
+func mapToGRPCError(err error) error {
+	switch {
+	case errors.Is(err, service.ErrUnauthorized):
+		return status.Error(codes.PermissionDenied, err.Error())
+	case errors.Is(err, service.ErrRestaurantNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	case errors.Is(err, service.ErrPaymentUnavailable):
+		return status.Error(codes.Unavailable, err.Error())
+	default:
+		return status.Error(codes.Internal, "internal server error")
+	}
 }
 
 func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
@@ -122,7 +131,7 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.ErrorContext(ctx, "failed to parse token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 	userID := uuidToInt64(claims.UserID)
@@ -132,15 +141,6 @@ func ExtractUserFromContext(ctx context.Context) (*UserInfo, error) {
 		Email:    claims.Email,
 		Username: claims.Username,
 	}
-
-	slog.Info("USER INFO",
-		"user_id_claim", claims.UserID,
-		"user_id", userID,
-		"username", claims.Username,
-		"email", claims.Email,
-		"token_type", claims.TokenType,
-		"exp", claims.ExpiresAt,
-	)
 
 	return userInfo, nil
 }
@@ -163,7 +163,9 @@ func (app *App) RunServer() {
 		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 	srv := &server{
 		sponsorService: app.Service,
 	}
