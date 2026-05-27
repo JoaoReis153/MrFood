@@ -31,8 +31,10 @@ jobs:
           node-version: '20'
 
       - name: Create environment files
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
         run: |
-          cat > services/.env <<'EOF'
+          cat > services/.env <<EOF
           APP_JWT_ACCESS_TOKEN_SECRET=CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
           AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
           AUTH_REDIS_PASS=
@@ -48,6 +50,7 @@ jobs:
           ELASTICSEARCH_USERNAME=
           ELASTICSEARCH_PASSWORD=
           SPONSOR_POSTGRES_PASSWORD=sponsorsecret
+          STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
           EOF
 
       - name: Go mod tidy (all services)
