@@ -179,9 +179,12 @@ See `Makefile` for the full list of commands.
 
 ## CI / CD Summary
 
-| Workflow           | File                       | Trigger                                    | What it does                          |
-| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------- |
-| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only |
-| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt, validate, plan                   |
-| Terraform Plan     | `terraform_deploy.yml`     | Push to `main` → `terraform/**`            | `terraform plan` (apply is manual)    |
-| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests            |
+| Workflow           | File                       | Trigger                                    | What it does                                     |
+| ------------------ | -------------------------- | ------------------------------------------ | ------------------------------------------------ |
+| Lint & Test        | `ci.yml`                   | PR → `services/**`                         | Lints and tests changed services only            |
+| Terraform Validate | `terraform_validation.yml` | PR → `terraform/**`                        | fmt + validate                                   |
+| Terraform Deploy   | `terraform_deploy.yml`     | PR → `terraform/**` / manual               | Plan on PR; apply on manual trigger              |
+| App Deploy         | `app_deploy.yml`           | Manual                                     | Builds images, pushes to registry, redeploys k8s |
+| Bruno API Tests    | `bruno.yml`                | PR → `tests/**`, `services/**`, `Makefile` | End-to-end API smoke tests                       |
+
+To deploy, go to **GitHub → Actions → Terraform Deploy** or **App Deploy → Run workflow**.

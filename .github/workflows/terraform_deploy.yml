@@ -1,7 +1,7 @@
-name: Terraform Plan
+name: Terraform Deploy
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
     paths: [ 'terraform/**' ]
   workflow_dispatch:
@@ -11,12 +11,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: terraform-plan-${{ github.ref }}
+  group: terraform-deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   terraform:
-    name: Terraform Plan
+    name: ${{ github.event_name == 'workflow_dispatch' && 'Terraform Apply' || 'Terraform Plan' }}
     runs-on: ubuntu-latest
 
     defaults:
@@ -45,4 +45,8 @@ jobs:
       run: terraform init
 
     - name: Terraform Plan
-      run: terraform plan -input=false
+      run: terraform plan -input=false -out=tfplan
+
+    - name: Terraform Apply
+      if: github.event_name == 'workflow_dispatch'
+      run: terraform apply -input=false tfplan
