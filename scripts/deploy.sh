@@ -19,17 +19,35 @@ gcloud config set project "${GCP_PROJECT_ID}"
 # 2. Infrastructure — Terraform
 # ---------------------------------------------------------------------------
 
-# WIF pool and provider are soft-deleted for 30 days after destruction.
-# Undelete them silently so Terraform can re-use the same IDs.
-gcloud iam workload-identity-pools undelete github \
-  --location=global --project="${GCP_PROJECT_ID}" --quiet 2>/dev/null || true
-gcloud iam workload-identity-pools providers undelete mrfood-repo \
-  --workload-identity-pool=github \
-  --location=global --project="${GCP_PROJECT_ID}" --quiet 2>/dev/null || true
+# WIF pool and provider survive terraform destroy (GCP soft-deletes them for
+# 30 days, or leaves them active if the provider blocked pool deletion).
+# Reconcile state before applying: undelete if soft-deleted, import if active.
+wif_reconcile() {
+  local resource="$1"   # terraform resource address
+  local gcp_id="$2"     # full GCP resource ID for import
+  local undelete_cmd="$3"  # gcloud undelete command (or empty string)
+
+  (cd terraform && terraform state show "${resource}" &>/dev/null) && return 0
+
+  echo "▶ ${resource} missing from state — reconciling..."
+  [[ -n "${undelete_cmd}" ]] && eval "${undelete_cmd}" 2>/dev/null || true
+  (cd terraform && terraform import "${resource}" "${gcp_id}") 2>/dev/null || true
+}
+
+(cd terraform && terraform init -reconfigure)
+
+wif_reconcile \
+  "google_iam_workload_identity_pool.github" \
+  "projects/${GCP_PROJECT_ID}/locations/global/workloadIdentityPools/github" \
+  "gcloud iam workload-identity-pools undelete github --location=global --project=${GCP_PROJECT_ID} --quiet"
+
+wif_reconcile \
+  "google_iam_workload_identity_pool_provider.mrfood_repo" \
+  "projects/${GCP_PROJECT_ID}/locations/global/workloadIdentityPools/github/providers/mrfood-repo" \
+  "gcloud iam workload-identity-pools providers undelete mrfood-repo --workload-identity-pool=github --location=global --project=${GCP_PROJECT_ID} --quiet"
 
 (
   cd terraform
-  terraform init
   terraform plan -out=tfplan
   terraform apply tfplan
   rm tfplan
