@@ -91,6 +91,16 @@ kubectl rollout restart deployment/gateway -n mrfood
 
 ---
 
+## Destroy
+
+Tears down all GCP infrastructure. Prompts for the project ID before proceeding.
+
+```bash
+make destroy
+```
+
+---
+
 ## Seed Data
 
 Run once on a fresh database:
