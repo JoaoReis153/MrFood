@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${REPO_ROOT}"
 source gcp.env
+source secrets.env
 
 # ---------------------------------------------------------------------------
 # 1. Authenticate
@@ -17,6 +18,15 @@ gcloud config set project "${GCP_PROJECT_ID}"
 # ---------------------------------------------------------------------------
 # 2. Infrastructure — Terraform
 # ---------------------------------------------------------------------------
+
+# WIF pool and provider are soft-deleted for 30 days after destruction.
+# Undelete them silently so Terraform can re-use the same IDs.
+gcloud iam workload-identity-pools undelete github \
+  --location=global --project="${GCP_PROJECT_ID}" --quiet 2>/dev/null || true
+gcloud iam workload-identity-pools providers undelete mrfood-repo \
+  --workload-identity-pool=github \
+  --location=global --project="${GCP_PROJECT_ID}" --quiet 2>/dev/null || true
+
 (
   cd terraform
   terraform init
