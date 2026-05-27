@@ -27,7 +27,7 @@ jobs:
     - uses: google-github-actions/auth@v3
       with:
         project_id: ${{ env.GCP_PROJECT_ID }}
-        workload_identity_provider: 'projects/685340956759/locations/global/workloadIdentityPools/github/providers/mrfood-repo'
+        workload_identity_provider: 'projects/625819749356/locations/global/workloadIdentityPools/github/providers/mrfood-repo'
         service_account: 'github-actions@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
 
     - name: Configure Docker for Artifact Registry
