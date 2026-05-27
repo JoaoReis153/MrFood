@@ -91,7 +91,7 @@ resource "terraform_data" "force_delete_vpc_peering" {
         --service=servicenetworking.googleapis.com \
         --network=${self.input.network} \
         --project=${self.input.project} \
-        --force --quiet || true
+        --quiet || true
     EOT
   }
 }
