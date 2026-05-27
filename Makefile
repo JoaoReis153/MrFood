@@ -25,12 +25,14 @@ ifeq ($(IS_PODMAN),)
 	BUILD_FLAG := --parallel
 endif
 
-.PHONY: help create_env generate-csv setup setup-full build run run-full stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean
+.PHONY: help create_env generate-csv setup setup-full build run run-full stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean deploy seed
 
 
 help:
 	@echo "MrFood — available commands"
 	@echo ""
+	@echo "  make deploy          Deploy infrastructure + all Kubernetes workloads to GCP"
+	@echo "  make seed            Truncate and re-seed Cloud SQL with processed CSV data"
 	@echo "  make create_env      Create services/.env from env.tmpl"
 	@echo "  make generate-csv    Generate CSV seed data (CSV_ROWS=200, CSV_FULL=1)"
 	@echo "  make load-local      Load seed data into local Docker containers"
@@ -53,6 +55,16 @@ help:
 	@echo "  make search-seed     Create ES index and seed data (no Kafka connectors)"
 	@echo "  make search-logs     Tail search service logs"
 	@echo "  make search-clean    Remove search containers and volumes"
+
+# ============================================================================
+# CLOUD DEPLOYMENT
+# ============================================================================
+
+deploy:
+	@bash scripts/deploy.sh
+
+seed:
+	@bash scripts/seed.sh
 
 # ============================================================================
 # ENVIRONMENT
