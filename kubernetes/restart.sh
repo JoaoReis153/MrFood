@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
+source "${SCRIPT_DIR}/../secrets.env"
 NAMESPACE="mrfood"
 CHART_DIR="$SCRIPT_DIR/helm/mrfood-service"
 GATEWAY_CHART_DIR="$SCRIPT_DIR/helm/kong"
@@ -56,6 +57,13 @@ for values_file in "${value_files[@]}"; do
   extra_args=()
   if [[ "$service" == "notification" && -n "${REDIS_HOST_NOTIFICATION:-}" ]]; then
     extra_args+=(--set "env.config.NOTIFICATION_REDIS_HOST=${REDIS_HOST_NOTIFICATION}")
+  fi
+  if [[ "$service" == "payment" ]]; then
+    if [[ -z "${STRIPE_SECRET_KEY:-}" ]]; then
+      echo "Error: STRIPE_SECRET_KEY is not set. Add it to gcp.env before deploying."
+      exit 1
+    fi
+    extra_args+=(--set "env.secrets.STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}")
   fi
 
   if [[ "$service" == "gateway" ]]; then
