@@ -24,24 +24,16 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        test("book reservation returns 200 or 503 if payment unavailable", () => {
-          expect(res.status).to.be.oneOf([200, 503]);
+        test("book reservation returns 200", () => {
+          expect(res.status).to.equal(200);
         });
 
-        if (res.status === 200) {
-          test("response has booking_id", () => {
-            expect(res.body).to.have.property("booking_id");
-            expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
-          });
+        test("response has booking_id", () => {
+          expect(res.body).to.have.property("booking_id");
+          expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
+        });
 
-          bru.setEnvVar("bookingId", String(res.body.booking_id));
-        }
-
-        if (res.status === 503) {
-          bru.setEnvVar("bookingId", "0");
-          // Kong's grpc-gateway does not serialize a body for gRPC error
-          // responses — only the HTTP status code is forwarded.
-        }
+        bru.setEnvVar("bookingId", String(res.body.booking_id));
 
 settings:
   encodeUrl: true
