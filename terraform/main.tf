@@ -352,3 +352,10 @@ resource "google_project_iam_member" "github_actions_iam_admin" {
   role    = "roles/iam.securityAdmin"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
+
+# Grant github-actions SA access to the Terraform state bucket (in state-manager project)
+resource "google_storage_bucket_iam_member" "github_actions_state_bucket" {
+  bucket = "mr_food_terraform_state"
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.github_actions.email}"
+}
