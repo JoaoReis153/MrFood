@@ -61,7 +61,7 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 		slog.ErrorContext(ctx, "Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
 		return 0, 0, ErrInvalidBooking
 	}
-	slog.InfoContext(ctx, "booking time valid, inserting")
+	slog.InfoContext(ctx, "booking time valid, processing payment")
 
 	var time_end = booking.TimeStart.Add(time.Hour)
 
@@ -71,13 +71,6 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 
 	booking.TimeEnd = time_end
 
-	booking_id, err := s.repo.CreateBooking(ctx, booking)
-
-	if err != nil {
-		return 0, 0, err
-	}
-	slog.InfoContext(ctx, "booking inserted", "booking_id", booking_id)
-
 	amount := int64(booking.PeopleCount) * 500 // 5.00 EUR per person
 
 	payCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
@@ -86,16 +79,22 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	receipt_id, err := s.makePayment(payCtx, &models.PaymentRequest{
 		UserID:         booking.UserID,
 		UserEmail:      booking.UserEmail,
-		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, (float32)(amount), booking_id, "B"),
+		IdempotencyKey: GenerateIdempotencyKey(booking.UserID, booking.RestaurantID, booking.TimeStart.Unix(), "B"),
 		Amount:         amount,
-		PaymentDescription: fmt.Sprintf("BOOKING %d FOR USER %d IN RESTAURANT %d FROM %s TO %s",
-			booking_id, booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
+		PaymentDescription: fmt.Sprintf("BOOKING FOR USER %d IN RESTAURANT %d FROM %s TO %s",
+			booking.UserID, booking.RestaurantID, FormatTime(booking.TimeStart), FormatTime(booking.TimeEnd)),
 		PaymentType: "B",
 	})
 	if err != nil {
 		return 0, 0, err
 	}
-	slog.InfoContext(ctx, "payment done", "receipt_id", receipt_id)
+	slog.InfoContext(ctx, "payment done, inserting booking", "receipt_id", receipt_id)
+
+	booking_id, err := s.repo.CreateBooking(ctx, booking)
+	if err != nil {
+		return 0, 0, err
+	}
+	slog.InfoContext(ctx, "booking inserted", "booking_id", booking_id)
 
 	return booking_id, receipt_id, nil
 }
@@ -140,8 +139,8 @@ func (s *Service) getWorkingHours(ctx context.Context, restaurantID int64, timeS
 	}, nil
 }
 
-func GenerateIdempotencyKey(userID int64, amount float32, bookingID int32, service string) string {
-	data := fmt.Sprintf("%d:%f:%d:%s", userID, amount, bookingID, service)
+func GenerateIdempotencyKey(userID int64, restaurantID int64, timeStart int64, service string) string {
+	data := fmt.Sprintf("%d:%d:%d:%s", userID, restaurantID, timeStart, service)
 
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
