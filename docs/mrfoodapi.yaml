@@ -132,8 +132,18 @@ paths:
       tags:
       - Users
       summary: Refresh token
-      security:
-      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  example: "jwt-refresh-token"
       responses:
         '200':
           description: Token refreshed
@@ -344,7 +354,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /reviews/{restaurantId}:
+  /reviews/{restaurant_id}:
     get:
       tags:
       - Reviews
@@ -353,10 +363,23 @@ paths:
       - bearerAuth: []
       parameters:
       - in: path
-        name: restaurantId
+        name: restaurant_id
         required: true
         schema:
           type: integer
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 25
       responses:
         '200':
           description: Reviews retrieved
@@ -397,7 +420,7 @@ paths:
       - bearerAuth: []
       parameters:
       - in: path
-        name: restaurantId
+        name: restaurant_id
         required: true
         schema:
           type: integer
