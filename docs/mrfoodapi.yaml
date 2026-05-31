@@ -112,8 +112,18 @@ paths:
       tags:
       - Users
       summary: User logout
-      security:
-      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              properties:
+                token:
+                  type: string
+                  example: "jwt-access-token"
       responses:
         '200':
           description: User logged out
@@ -462,7 +472,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /reviews/{reviewId}:
+  /reviews/{review_id}:
     put:
       tags:
       - Reviews
@@ -471,7 +481,7 @@ paths:
       - bearerAuth: []
       parameters:
       - in: path
-        name: reviewId
+        name: review_id
         required: true
         schema:
           type: integer
@@ -521,7 +531,7 @@ paths:
       summary: Delete review
       parameters:
       - in: path
-        name: reviewId
+        name: review_id
         required: true
         schema:
           type: integer
@@ -1005,9 +1015,6 @@ components:
     UpdateRestaurantRequest:
       type: object
       properties:
-        id:
-          type: integer
-          example: 12345
         name:
           type: string
           example: "Doce Sobral"
@@ -1218,9 +1225,6 @@ components:
     CreateReviewRequest:
       type: object
       properties:
-        restaurant_id:
-          type: integer
-          example: 12345
         comment:
           type: string
           example: "Amazing food and great service!"
@@ -1233,9 +1237,6 @@ components:
     UpdateReviewRequest:
       type: object
       properties:
-        review_id:
-          type: integer
-          example: 12345
         comment:
           type: string
           example: "Amazing food and great service!"
