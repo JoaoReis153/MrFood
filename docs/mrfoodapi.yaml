@@ -112,6 +112,8 @@ paths:
       tags:
       - Users
       summary: User logout
+      security:
+      - bearerAuth: []
       requestBody:
         required: true
         content:
