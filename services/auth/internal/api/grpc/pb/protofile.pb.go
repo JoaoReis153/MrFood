@@ -431,7 +431,6 @@ func (x *RefreshResponse) GetRefreshToken() string {
 
 type LogoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -466,12 +465,6 @@ func (*LogoutRequest) Descriptor() ([]byte, []int) {
 	return file_internal_api_grpc_proto_protofile_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *LogoutRequest) GetToken() string {
-	if x != nil {
-		return x.Token
-	}
-	return ""
-}
 
 type LogoutResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`

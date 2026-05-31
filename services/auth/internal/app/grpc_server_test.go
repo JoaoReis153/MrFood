@@ -12,6 +12,7 @@ import (
 
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -219,9 +220,22 @@ func TestServer_RefreshTokenProcess(t *testing.T) {
 func TestServer_LogoutProcess(t *testing.T) {
 	const sub = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
+	ctxWithToken := func(token string) context.Context {
+		md := metadata.Pairs("authorization", "Bearer "+token)
+		return metadata.NewIncomingContext(context.Background(), md)
+	}
+
+	t.Run("missing metadata maps to Unauthenticated", func(t *testing.T) {
+		s := &Server{kc: &kcMock{}, jwtSecret: []byte("test-secret")}
+		_, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{})
+		if status.Code(err) != codes.Unauthenticated {
+			t.Fatalf("expected Unauthenticated, got %v", status.Code(err))
+		}
+	})
+
 	t.Run("malformed token maps to Unauthenticated", func(t *testing.T) {
 		s := &Server{kc: &kcMock{}, jwtSecret: []byte("test-secret")}
-		_, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: "not-a-jwt"})
+		_, err := s.LogoutProcess(ctxWithToken("not-a-jwt"), &pb.LogoutRequest{})
 		if status.Code(err) != codes.Unauthenticated {
 			t.Fatalf("expected Unauthenticated, got %v", status.Code(err))
 		}
@@ -232,7 +246,7 @@ func TestServer_LogoutProcess(t *testing.T) {
 		s := &Server{kc: &kcMock{revokeSess: func(context.Context, string) error {
 			return errors.New("admin api down")
 		}}, jwtSecret: []byte("test-secret")}
-		_, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: token})
+		_, err := s.LogoutProcess(ctxWithToken(token), &pb.LogoutRequest{})
 		if status.Code(err) != codes.Internal {
 			t.Fatalf("expected Internal, got %v", status.Code(err))
 		}
@@ -245,7 +259,7 @@ func TestServer_LogoutProcess(t *testing.T) {
 			capturedSub = id
 			return nil
 		}}, jwtSecret: []byte("test-secret")}
-		resp, err := s.LogoutProcess(context.Background(), &pb.LogoutRequest{Token: token})
+		resp, err := s.LogoutProcess(ctxWithToken(token), &pb.LogoutRequest{})
 		if err != nil || resp == nil {
 			t.Fatalf("unexpected logout result: resp=%+v err=%v", resp, err)
 		}
