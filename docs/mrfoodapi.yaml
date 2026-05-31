@@ -563,7 +563,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /reservations:
+  /reservations/{restaurant_id}:
     post:
       tags:
       - Reservations
@@ -1177,9 +1177,6 @@ components:
     CreateBookingRequest:
       type: object
       properties:
-        restaurant_id:
-          type: integer
-          example: 12345
         quantity:
           type: integer
           example: 4
