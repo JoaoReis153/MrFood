@@ -1182,9 +1182,6 @@ components:
           type: integer
           format: int32
           example: 12345
-        payment:
-          $ref: '#/components/schemas/PaymentResponse'
-
     GetReceiptResponse:
       type: object
       properties: {}
