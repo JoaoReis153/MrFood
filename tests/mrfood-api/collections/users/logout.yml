@@ -8,12 +8,6 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/auth/logout"
-  body:
-    type: json
-    data: |-
-      {
-        "token": "{{token}}"
-      }
   auth:
     type: bearer
     token: "{{token}}"
