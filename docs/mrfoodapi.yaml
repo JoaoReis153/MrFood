@@ -560,6 +560,12 @@ paths:
       security:
       - bearerAuth: []
       summary: Create reservation
+      parameters:
+      - in: path
+        name: restaurant_id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
