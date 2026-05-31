@@ -9,7 +9,7 @@ option go_package = "/pb;pb";
 service BookingService {
   rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse) {
     option (google.api.http) = {
-      post: "/reservations"
+      post: "/reservations/{restaurant_id}"
       body: "*"
     };
   };
