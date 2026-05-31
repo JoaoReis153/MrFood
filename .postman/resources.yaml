@@ -1,9 +1,0 @@
-# Use this workspace to collaborate
-workspace:
-  id: e268b50b-f365-4cbf-84c8-33af7f8d8cdc
-
-localResources:
-  specs:
-    - ..\docs\mrfoodapi.yaml
-    - ..\services\review\internal\api\grpc\proto\protofile.proto
-    - ..\services\test_grpc\internal\api\grpc\proto\protofile.proto
