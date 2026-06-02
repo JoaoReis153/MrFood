@@ -23,21 +23,24 @@ is_valid_tag() {
 }
 
 main() {
-  if [[ $# -lt 1 || $# -gt 2 ]]; then
+  if [[ $# -lt 1 || $# -gt 3 ]]; then
     usage
     exit 1
   fi
 
   local version="$1"
   local dry_run="false"
+  local since=""
 
-  if [[ $# -eq 2 ]]; then
-    if [[ "$2" != "--dry-run" ]]; then
-      usage
-      exit 1
-    fi
-    dry_run="true"
-  fi
+  shift
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run) dry_run="true" ;;
+      --since=*) since="${1#--since=}" ;;
+      *) usage; exit 1 ;;
+    esac
+    shift
+  done
 
   if ! is_valid_tag "$version"; then
     echo "Error: invalid Docker tag '$version'." >&2
@@ -74,6 +77,13 @@ main() {
     service_name="$(basename "$service_dir")"
     image="${REGISTRY_REPO}/${service_name}:${version}"
     image_latest="${REGISTRY_REPO}/${service_name}:latest"
+
+    if [[ -n "$since" ]]; then
+      if git diff --quiet "${since}" HEAD -- "services/${service_name}"; then
+        echo "[$service_name] skipping — no changes since ${since}"
+        continue
+      fi
+    fi
 
     echo "[$service_name] docker buildx build --platform linux/amd64 -t $image -t $image_latest $service_dir"
     if [[ "$dry_run" != "true" ]]; then

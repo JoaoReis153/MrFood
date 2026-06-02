@@ -70,7 +70,7 @@ echo "Waiting for Keycloak to be ready (deployment/keycloak)"
 run kubectl rollout status deployment/keycloak -n "$NAMESPACE" --timeout "$TIMEOUT"
 
 echo "==> Deploying search stack (Elasticsearch, Kafka)"
-run helm upgrade --install elasticsearch "$ROOT_DIR/kubernetes/helm/elasticsearch" --namespace "$NAMESPACE"
+run helm upgrade --install elasticsearch "$ROOT_DIR/kubernetes/helm/elasticsearch" --namespace "$NAMESPACE" --timeout 10m --wait
 run helm upgrade --install kafka "$ROOT_DIR/kubernetes/helm/kafka" --namespace "$NAMESPACE"
 
 echo "Waiting for Zookeeper, Kafka and Elasticsearch to become ready"

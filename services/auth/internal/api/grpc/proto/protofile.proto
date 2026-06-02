@@ -60,7 +60,6 @@ message RefreshResponse {
 }
 
 message LogoutRequest {
-  string token = 1;
 }
 
 message LogoutResponse {

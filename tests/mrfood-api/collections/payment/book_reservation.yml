@@ -7,12 +7,11 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/reservations"
+  url: "{{baseUrl}}/reservations/{{restaurantId}}"
   body:
     type: json
     data: |-
       {
-        "restaurant_id": {{restaurantId}},
         "time_start": "2026-12-31T11:00:00Z",
         "quantity": 2
       }

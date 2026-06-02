@@ -462,7 +462,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /reviews/{reviewId}:
+  /reviews/{review_id}:
     put:
       tags:
       - Reviews
@@ -471,7 +471,7 @@ paths:
       - bearerAuth: []
       parameters:
       - in: path
-        name: reviewId
+        name: review_id
         required: true
         schema:
           type: integer
@@ -521,7 +521,7 @@ paths:
       summary: Delete review
       parameters:
       - in: path
-        name: reviewId
+        name: review_id
         required: true
         schema:
           type: integer
@@ -553,13 +553,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /reservations:
+  /reservations/{restaurant_id}:
     post:
       tags:
       - Reservations
       security:
       - bearerAuth: []
       summary: Create reservation
+      parameters:
+      - in: path
+        name: restaurant_id
+        required: true
+        schema:
+          type: integer
       requestBody:
         required: true
         content:
@@ -1005,9 +1011,6 @@ components:
     UpdateRestaurantRequest:
       type: object
       properties:
-        id:
-          type: integer
-          example: 12345
         name:
           type: string
           example: "Doce Sobral"
@@ -1170,9 +1173,6 @@ components:
     CreateBookingRequest:
       type: object
       properties:
-        restaurant_id:
-          type: integer
-          example: 12345
         quantity:
           type: integer
           example: 4
@@ -1181,13 +1181,6 @@ components:
           format: date-time
           example: "2024-12-31T19:00:00Z"
 
-    PaymentResponse:
-      type: object
-      properties:
-        receipt_id:
-          type: integer
-          example: 98765
-
     CreateBookingResponse:
       type: object
       properties:
@@ -1195,9 +1188,6 @@ components:
           type: integer
           format: int32
           example: 12345
-        payment:
-          $ref: '#/components/schemas/PaymentResponse'
-
     GetReceiptResponse:
       type: object
       properties: {}
@@ -1225,9 +1215,6 @@ components:
     CreateReviewRequest:
       type: object
       properties:
-        restaurant_id:
-          type: integer
-          example: 12345
         comment:
           type: string
           example: "Amazing food and great service!"
@@ -1240,9 +1227,6 @@ components:
     UpdateReviewRequest:
       type: object
       properties:
-        review_id:
-          type: integer
-          example: 12345
         comment:
           type: string
           example: "Amazing food and great service!"

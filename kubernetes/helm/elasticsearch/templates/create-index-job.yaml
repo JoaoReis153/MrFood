@@ -8,6 +8,7 @@ metadata:
     helm.sh/hook-weight: "0"
     helm.sh/hook-delete-policy: before-hook-creation
 spec:
+  activeDeadlineSeconds: 300
   template:
     spec:
       restartPolicy: OnFailure
@@ -21,7 +22,7 @@ spec:
               set -e
               INDEX_NAME="{{ .Values.indexName }}"
               ES_URL="http://elasticsearch:9200"
-              MAX_RETRIES=30
+              MAX_RETRIES=90
               RETRY_COUNT=0
 
               echo "Waiting for Elasticsearch to be ready at $ES_URL..."

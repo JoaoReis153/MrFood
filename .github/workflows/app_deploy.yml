@@ -33,8 +33,18 @@ jobs:
     - name: Configure Docker for Artifact Registry
       run: gcloud auth configure-docker europe-southwest1-docker.pkg.dev
 
+    - name: Get last deployed SHA
+      id: last_sha
+      run: |
+        LAST=$(git log --oneline --grep="chore: update image tags" -1 --format="%H" || echo "")
+        echo "sha=${LAST}" >> $GITHUB_OUTPUT
+
     - name: Build and push images
-      run: ./services/build_and_push_images.sh "$(git rev-parse --short HEAD)"
+      run: |
+        SHA="${{ steps.last_sha.outputs.sha }}"
+        SINCE_ARG=""
+        [[ -n "$SHA" ]] && SINCE_ARG="--since=${SHA}"
+        ./services/build_and_push_images.sh "$(git rev-parse --short HEAD)" $SINCE_ARG
 
     - name: Commit updated image tags
       run: |
