@@ -119,12 +119,15 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 		return nil, fmt.Errorf("encode elastic query: %w", err)
 	}
 
+	slog.InfoContext(ctx, "executing elasticsearch query", "index", r.index, "page", query.Page, "limit", query.Limit)
+
 	searchRes, err := r.es.Search(
 		r.es.Search.WithContext(ctx),
 		r.es.Search.WithIndex(r.index),
 		r.es.Search.WithBody(&buf),
 	)
 	if err != nil {
+		slog.ErrorContext(ctx, "elasticsearch query failed", "index", r.index, "error", err)
 		return nil, fmt.Errorf("elastic search: %w", err)
 	}
 	defer func() {
@@ -135,6 +138,7 @@ func (r *Repository) SearchPaginated(ctx context.Context, query models.SearchQue
 
 	if searchRes.IsError() {
 		body, _ := io.ReadAll(searchRes.Body)
+		slog.ErrorContext(ctx, "elasticsearch returned error response", "index", r.index, "status", searchRes.StatusCode, "body", string(body))
 		return nil, fmt.Errorf("elastic search status=%d body=%s", searchRes.StatusCode, string(body))
 	}
 

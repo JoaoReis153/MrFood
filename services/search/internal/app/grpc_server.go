@@ -31,10 +31,6 @@ func newServer(svc *service.Service) *Server {
 }
 
 func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedRequest) (*pb.SearchPaginatedResponse, error) {
-	slog.Info("received request", "req", req)
-
-	// 1. Handle Pagination Defaults
-	// If Kong sends 0 (empty params), your service layer likely throws ErrInvalidPagination.
 	page := req.GetPage()
 	if page <= 0 {
 		page = 1
@@ -44,13 +40,13 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 		limit = 10
 	}
 
+	slog.InfoContext(ctx, "search request", "page", page, "limit", limit, "category", req.GetCategory(), "name_suffix", req.GetNameSuffix(), "full_name", req.GetFullName(), "lat", req.GetLatitude(), "lon", req.GetLongitude(), "radius_meters", req.GetRadiusMeters())
+
 	query := models.SearchQuery{
 		Page:  page,
 		Limit: limit,
 	}
 
-	// 2. Safe String Filter Mapping
-	// Only pass the filter to the service layer if the string is NOT empty.
 	if req.GetCategory() != "" {
 		cat := req.GetCategory()
 		query.Filter.Category = &cat
@@ -64,8 +60,6 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 		query.Filter.FullName = &full
 	}
 
-	// 3. Safe Location Mapping
-	// Only initialize Location if at least one coordinate is non-zero.
 	if req.GetLatitude() != 0 || req.GetLongitude() != 0 {
 		query.Filter.Location = &models.LocationRadius{
 			Latitude:     req.GetLatitude(),
@@ -74,19 +68,20 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 		}
 	}
 
-	// 4. Call Service Layer
 	result, err := s.service.SearchPaginated(ctx, query)
 	if err != nil {
-		slog.Error("search service error", "error", err)
 		switch err {
 		case service.ErrInvalidPagination, service.ErrInvalidGeoFilter, service.ErrInvalidTextFilter:
+			slog.WarnContext(ctx, "search rejected: invalid params", "error", err)
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
+			slog.ErrorContext(ctx, "search failed", "error", err)
 			return nil, status.Error(codes.Internal, "failed to search restaurants")
 		}
 	}
 
-	// 5. Build Response
+	slog.InfoContext(ctx, "search completed", "page", result.Pagination.Page, "limit", result.Pagination.Limit, "total", result.Pagination.Total, "results", len(result.Data))
+
 	resp := &pb.SearchPaginatedResponse{
 		Pagination: &pb.Pagination{
 			Page:  result.Pagination.Page,
@@ -121,7 +116,7 @@ func (s *Server) SearchPaginated(ctx context.Context, req *pb.SearchPaginatedReq
 func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Server.Port))
 	if err != nil {
-		slog.Error("failed", "error", err)
+		slog.Error("failed to listen", "port", cfg.Server.Port, "error", err)
 		os.Exit(1)
 	}
 
