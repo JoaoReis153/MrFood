@@ -32,7 +32,7 @@ type Server struct {
 func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Server.Port))
 	if err != nil {
-		slog.Error("failed", "error", err)
+		slog.Error("failed to listen", "port", cfg.Server.Port, "error", err)
 		os.Exit(1)
 	}
 

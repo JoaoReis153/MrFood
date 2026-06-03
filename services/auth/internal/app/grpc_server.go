@@ -111,10 +111,11 @@ func (s *Server) RegisterProcess(ctx context.Context, req *pb.Register) (*pb.Reg
 
 	kcUserID, err := s.kc.CreateUser(ctx, req.Username, req.Email, req.Password)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to create keycloak user", "error", err)
 		if errors.Is(err, keycloak.ErrUserAlreadyExists) {
+			slog.WarnContext(ctx, "registration rejected: user already exists", "username", req.Username, "email", req.Email)
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
 		}
+		slog.ErrorContext(ctx, "failed to create keycloak user", "username", req.Username, "error", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -137,10 +138,11 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 
 	tokenResp, err := s.kc.Login(ctx, req.Email, req.Password)
 	if err != nil {
-		slog.ErrorContext(ctx, "keycloak login failed", "error", err)
 		if errors.Is(err, keycloak.ErrInvalidCredentials) {
+			slog.WarnContext(ctx, "login failed: invalid credentials", "email", req.Email)
 			return nil, status.Error(codes.Unauthenticated, "invalid credentials")
 		}
+		slog.ErrorContext(ctx, "keycloak login failed", "email", req.Email, "error", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -173,10 +175,11 @@ func (s *Server) LoginProcess(ctx context.Context, req *pb.Login) (*pb.LoginResp
 func (s *Server) RefreshTokenProcess(ctx context.Context, req *pb.RefreshRequest) (*pb.RefreshResponse, error) {
 	tokenResp, err := s.kc.RefreshToken(ctx, req.RefreshToken)
 	if err != nil {
-		slog.ErrorContext(ctx, "keycloak refresh failed", "error", err)
 		if errors.Is(err, keycloak.ErrInvalidCredentials) {
+			slog.WarnContext(ctx, "token refresh failed: token invalid or expired")
 			return nil, status.Error(codes.Unauthenticated, "refresh token invalid or expired")
 		}
+		slog.ErrorContext(ctx, "keycloak refresh failed", "error", err)
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
@@ -215,7 +218,7 @@ func (s *Server) LogoutProcess(ctx context.Context, req *pb.LogoutRequest) (*pb.
 
 	claims, err := parseJWTPayload(tokenString)
 	if err != nil {
-		slog.ErrorContext(ctx, "logout: failed to parse token", "error", err)
+		slog.WarnContext(ctx, "logout: invalid token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 

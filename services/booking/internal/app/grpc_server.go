@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"log"
 	"log/slog"
 	"net"
+	"os"
 	"strings"
 
 	"MrFood/services/booking/config"
@@ -52,7 +52,8 @@ func RunServer(service bookingService) {
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to listen", "addr", addr, "error", err)
+		os.Exit(1)
 	}
 
 	s := grpc.NewServer(
@@ -66,9 +67,10 @@ func RunServer(service bookingService) {
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	slog.Info("health check registered for service", "service", "booking")
 
-	fmt.Println("Server running on", addr)
+	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
-		log.Fatal(err)
+		slog.Error("failed to serve", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -121,6 +123,13 @@ func (s *server) CreateBooking(ctx context.Context, req *pb.CreateBookingRequest
 	booking_id, receipt_id, err := s.bookingService.CreateBooking(ctx, booking)
 
 	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidBooking), errors.Is(err, service.ErrBookingAlreadyExists),
+			errors.Is(err, service.ErrForbidden), errors.Is(err, service.ErrFailedWHGet):
+			slog.WarnContext(ctx, "booking rejected", "user_id", user_id, "restaurant_id", req.RestaurantId, "reason", err)
+		default:
+			slog.ErrorContext(ctx, "failed to create booking", "user_id", user_id, "restaurant_id", req.RestaurantId, "error", err)
+		}
 		return nil, mapServiceError(ctx, err)
 	}
 
@@ -143,6 +152,8 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 
 	user_id := uuidToInt64(claims.UserID)
 
+	slog.InfoContext(ctx, "deleting booking", "booking_id", req.BookingId, "user_id", user_id)
+
 	delete_request := &models.DeleteBooking{
 		BookingID: req.BookingId,
 		UserID:    user_id,
@@ -151,6 +162,11 @@ func (s *server) DeleteBooking(ctx context.Context, req *pb.DeleteBookingRequest
 	err = s.bookingService.DeleteBooking(ctx, delete_request)
 
 	if err != nil {
+		if errors.Is(err, service.ErrBookingNotFound) || errors.Is(err, repository.ErrBookingNotFound) {
+			slog.InfoContext(ctx, "booking not found", "booking_id", delete_request.BookingID)
+		} else {
+			slog.ErrorContext(ctx, "failed to delete booking", "booking_id", delete_request.BookingID, "error", err)
+		}
 		return nil, mapServiceError(ctx, err)
 	}
 
@@ -176,12 +192,12 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	_, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to parse token", "error", err)
+		slog.WarnContext(ctx, "invalid token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
 	if claims.UserID == "" {
-		slog.ErrorContext(ctx, "missing user_id claim in token")
+		slog.WarnContext(ctx, "missing user_id claim in token")
 		return nil, status.Error(codes.Unauthenticated, "missing user_id claim")
 	}
 
@@ -211,6 +227,7 @@ func mapServiceError(_ context.Context, err error) error {
 	case errors.Is(err, service.ErrPaymentFailed):
 		return status.Error(codes.Unavailable, err.Error())
 	default:
+		slog.Error("booking rpc failed", "error", err)
 		return status.Error(codes.Internal, "internal server error")
 	}
 }

@@ -5,6 +5,7 @@ import (
 	models "MrFood/services/search/pkg"
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 )
 
@@ -40,16 +41,19 @@ func (s *Service) SearchPaginated(ctx context.Context, query models.SearchQuery)
 	}
 
 	if query.Page < 1 || query.Limit < 1 {
+		slog.WarnContext(ctx, "search rejected: invalid pagination", "page", query.Page, "limit", query.Limit)
 		return nil, ErrInvalidPagination
 	}
 
 	if query.Filter.NameSuffix != nil && query.Filter.FullName != nil {
+		slog.WarnContext(ctx, "search rejected: name_suffix and full_name are mutually exclusive")
 		return nil, ErrInvalidTextFilter
 	}
 
 	if query.Filter.Location != nil {
 		loc := query.Filter.Location
 		if loc.RadiusMeters <= 0 || loc.Latitude < -90 || loc.Latitude > 90 || loc.Longitude < -180 || loc.Longitude > 180 {
+			slog.WarnContext(ctx, "search rejected: invalid geo filter", "lat", loc.Latitude, "lon", loc.Longitude, "radius_meters", loc.RadiusMeters)
 			return nil, ErrInvalidGeoFilter
 		}
 	}
