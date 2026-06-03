@@ -127,7 +127,11 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 func (s *server) GetRestaurantId(ctx context.Context, req *pb.GetRestaurantRequest) (*pb.GetRestaurantResponse, error) {
 	restaurantID, err := s.restaurantService.GetRestaurantID(ctx, req.GetRestaurantId())
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get restaurant id", "error", err)
+		if errors.Is(err, service.ErrNotFound) {
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", req.GetRestaurantId())
+		} else {
+			slog.ErrorContext(ctx, "failed to get restaurant id", "restaurant_id", req.GetRestaurantId(), "error", err)
+		}
 		return nil, mapServiceError(ctx, err)
 	}
 	return &pb.GetRestaurantResponse{

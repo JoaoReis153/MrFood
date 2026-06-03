@@ -70,7 +70,10 @@ func (r *Repository) GetRestaurantByID(ctx context.Context, id int64) (*models.R
 		&restaurant.SponsorTier,
 	)
 	if err != nil {
-		return nil, ErrRestaurantNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrRestaurantNotFound
+		}
+		return nil, fmt.Errorf("query restaurant: %w", err)
 	}
 
 	if mediaURL != nil {
