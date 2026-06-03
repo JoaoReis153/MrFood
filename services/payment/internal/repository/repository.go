@@ -84,7 +84,7 @@ func (r *Repository) CreateReceipt(ctx context.Context, receipt *models.Receipt,
 		}
 
 		if existingHash != requestHash {
-			slog.ErrorContext(ctx, "duplicate payment")
+			slog.WarnContext(ctx, "duplicate payment request", "idempotency_key", receipt_request.IdempotencyKey)
 			return 0, ErrDuplicatePaymentRequest
 		}
 

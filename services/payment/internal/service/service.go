@@ -93,7 +93,7 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 	receipt_request.PaymentIntentID = pi.ID
 	receipt_request.PaymentStatus = string(pi.Status)
 
-	slog.Info(receipt_request.PaymentStatus)
+	slog.InfoContext(ctx, "payment intent created", "payment_intent_id", pi.ID, "status", receipt_request.PaymentStatus)
 	receipt_request.CreatedAt = time.Now().UTC()
 
 	hash, err := generateRequestHash(receipt_request)

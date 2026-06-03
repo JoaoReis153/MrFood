@@ -59,7 +59,12 @@ func (s *server) GetRestaurantSponsorship(ctx context.Context, req *pb.GetRestau
 
 	response, err := s.sponsorService.GetRestaurantSponsorship(ctx, req.Id)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, service.ErrRestaurantNotFound) {
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", req.Id)
+		} else {
+			slog.ErrorContext(ctx, "failed to get restaurant sponsorship", "restaurant_id", req.Id, "error", err)
+		}
+		return nil, mapToGRPCError(err)
 	}
 
 	return &pb.SponsorshipResponse{
@@ -88,6 +93,11 @@ func (s *server) Sponsor(ctx context.Context, req *pb.SponsorshipRequest) (*pb.S
 
 	response, receipt_id, err := s.sponsorService.Sponsor(ctx, sponsorship, user.UserID, user.Email)
 	if err != nil {
+		if errors.Is(err, service.ErrRestaurantNotFound) {
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", req.Id)
+		} else {
+			slog.ErrorContext(ctx, "failed to create sponsorship", "restaurant_id", req.Id, "error", err)
+		}
 		return nil, mapToGRPCError(err)
 	}
 
@@ -110,6 +120,7 @@ func mapToGRPCError(err error) error {
 	case errors.Is(err, service.ErrPaymentUnavailable):
 		return status.Error(codes.Unavailable, err.Error())
 	default:
+		slog.Error("sponsor rpc failed", "error", err)
 		return status.Error(codes.Internal, "internal server error")
 	}
 }
@@ -159,7 +170,7 @@ func (app *App) RunServer() {
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		slog.Error("failed", "error", err)
+		slog.Error("failed to listen", "addr", addr, "error", err)
 		os.Exit(1)
 	}
 
@@ -179,7 +190,7 @@ func (app *App) RunServer() {
 
 	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
-		slog.Error("failed", "error", err)
+		slog.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
 }
