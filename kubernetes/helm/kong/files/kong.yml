@@ -30,8 +30,7 @@ services:
   
   - name: rate-limiting
     config:
-      minute: 30
-      hour: 500
+      second: 10
       policy: local
 
 
@@ -57,8 +56,7 @@ services:
       - exp
   - name: rate-limiting
     config:
-      minute: 60
-      hour: 1500
+      second: 15
       policy: local
 
 
@@ -84,8 +82,7 @@ services:
       - exp
   - name: rate-limiting
     config:
-      minute: 45
-      hour: 750
+      second: 9
       policy: local
 
 
@@ -111,8 +108,7 @@ services:
       - exp
   - name: rate-limiting
     config:
-      minute: 45
-      hour: 750
+      second: 30
       policy: local
 
 - name: sponsor
@@ -137,8 +133,7 @@ services:
       - exp
   - name: rate-limiting
     config:
-      minute: 30
-      hour: 500
+      second: 5
       policy: local
 
 - name: payment
@@ -164,8 +159,7 @@ services:
 
   - name: rate-limiting
     config:
-      minute: 30
-      hour: 500
+      seconds: 7
       policy: local
   
 - name: search
@@ -190,8 +184,7 @@ services:
       - exp
   - name: rate-limiting
     config:
-      minute: 45
-      hour: 750
+      seconds: 10
       policy: local
 
 consumers:
