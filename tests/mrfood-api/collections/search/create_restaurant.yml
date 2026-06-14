@@ -1,0 +1,43 @@
+info:
+  name: Create restaurant (fixture)
+  type: http
+  seq: 2
+  tags:
+    - Search
+
+http:
+  method: POST
+  url: "{{baseUrl}}/restaurants"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "mrfood-test-cafe",
+        "latitude": 38.716,
+        "longitude": -9.139,
+        "address": "Lisbon",
+        "opening_time": "10:00:00",
+        "closing_time": "22:00:00",
+        "categories": [
+          "Italian"
+        ],
+        "max_slots": 15,
+        "has_media": false
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("create restaurant fixture returns 200 or 409", () => {
+          expect(res.status).to.be.oneOf([200, 409]);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

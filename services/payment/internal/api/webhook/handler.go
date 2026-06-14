@@ -26,9 +26,11 @@ func New(webhookSecret string, confirmPayment confirmPaymentFunc) *Handler {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	body, err := io.ReadAll(io.LimitReader(r.Body, 512*1024)) // 512KB limit
 	if err != nil {
-		slog.Error("webhook: failed to read body", "error", err)
+		slog.ErrorContext(ctx, "failed to read webhook body", "error", err)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
@@ -37,35 +39,37 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	event, err := webhook.ConstructEvent(body, sig, h.webhookSecret)
 	if err != nil {
-		slog.Warn("webhook: signature verification failed", "error", err)
+		slog.WarnContext(ctx, "webhook signature verification failed", "error", err)
 		http.Error(w, "invalid signature", http.StatusBadRequest)
 		return
 	}
 
-	slog.Info("webhook: received event", "type", event.Type)
+	slog.InfoContext(ctx, "webhook event received", "type", event.Type)
 
 	switch event.Type {
 	case "payment_intent.succeeded":
 		h.handlePaymentSucceeded(w, r, event)
 	default:
-		slog.Debug("webhook: unhandled event type", "type", event.Type)
+		slog.DebugContext(ctx, "unhandled webhook event type", "type", event.Type)
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func (h *Handler) handlePaymentSucceeded(w http.ResponseWriter, r *http.Request, event stripe.Event) {
+	ctx := r.Context()
+
 	var pi stripe.PaymentIntent
 
 	if err := json.Unmarshal(event.Data.Raw, &pi); err != nil {
-		slog.Error("webhook: failed to parse payment_intent", "error", err)
+		slog.ErrorContext(ctx, "failed to parse payment_intent payload", "error", err)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	slog.Info("webhook: payment succeeded", "payment_intent_id", pi.ID)
+	slog.InfoContext(ctx, "payment succeeded", "payment_intent_id", pi.ID)
 
-	if err := h.confirmPayment(r.Context(), pi.ID); err != nil {
-		slog.Error("webhook: confirmPayment failed", "payment_intent_id", pi.ID, "error", err)
+	if err := h.confirmPayment(ctx, pi.ID); err != nil {
+		slog.ErrorContext(ctx, "failed to confirm payment", "payment_intent_id", pi.ID, "error", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

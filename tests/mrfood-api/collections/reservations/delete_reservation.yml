@@ -24,9 +24,9 @@ runtime:
       code: |-
         if (bru.getEnvVar("bookingId") === "0") {
           // Booking was never created (payment was unavailable).
-          // Expect 404 from the booking service — not a test failure.
+          // Expect 400 from the booking service — not a test failure.
           test("delete skipped - booking not created (payment unavailable)", () => {
-            expect(res.status).to.equal(404);
+            expect(res.status).to.equal(400);
           });
         } else {
           test("delete reservation returns 200", () => {

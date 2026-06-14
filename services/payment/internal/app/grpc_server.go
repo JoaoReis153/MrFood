@@ -66,7 +66,7 @@ func (app *App) RunServer(ctx context.Context, cfg *config.Config) error {
 func (app *App) runGRPC(ctx context.Context, cfg *config.Config) error {
 	lis, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.Server.Port))
 	if err != nil {
-		slog.Error("grpc: failed to listen", "error", err)
+		slog.Error("failed to listen", "port", cfg.Server.Port, "error", err)
 		os.Exit(1)
 	}
 
@@ -90,7 +90,7 @@ func (app *App) runGRPC(ctx context.Context, cfg *config.Config) error {
 
 	g.Go(func() error {
 		<-ctx.Done()
-		slog.Info("grpc: shutting down...")
+		slog.Info("shutting down gRPC server")
 		healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 		s.GracefulStop()
 		healthServer.Shutdown()
@@ -123,7 +123,7 @@ func (app *App) runWebhook(ctx context.Context, cfg *config.Config) error {
 
 	g.Go(func() error {
 		<-ctx.Done()
-		slog.Info("webhook: shutting down...")
+		slog.Info("shutting down webhook server")
 		return srv.Shutdown(context.Background())
 	})
 
@@ -144,7 +144,7 @@ func NewClient(address string) (pb.PaymentToNotificationServiceClient, *grpc.Cli
 
 // gRPC handlers
 func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest) (*pb.PaymentResponse, error) {
-	slog.Info("MakePayment: received request")
+	slog.InfoContext(ctx, "creating payment", "user_id", req.UserId, "amount", req.Amount, "type", req.Type)
 
 	receipt := &models.Receipt{
 		IdempotencyKey:     req.IdempotencyKey,
@@ -157,6 +157,11 @@ func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest)
 
 	receiptID, err := s.paymentService.CreateReceipt(ctx, receipt)
 	if err != nil {
+		if errors.Is(err, service.ErrDuplicatePaymentRequest) {
+			slog.WarnContext(ctx, "duplicate payment request", "idempotency_key", req.IdempotencyKey)
+		} else {
+			slog.ErrorContext(ctx, "failed to create receipt", "error", err)
+		}
 		return nil, mapServiceError(err)
 	}
 
@@ -164,7 +169,6 @@ func (s *commandServer) MakePayment(ctx context.Context, req *pb.PaymentRequest)
 }
 
 func (s *queryServer) GetReceiptsByUser(ctx context.Context, _ *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
-	slog.Info("GetReceiptsByUser: received request")
 
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
@@ -172,6 +176,11 @@ func (s *queryServer) GetReceiptsByUser(ctx context.Context, _ *pb.ReceiptReques
 	}
 
 	if err = s.paymentService.GetReceiptsByUser(ctx, uuidToInt64(claims.UserID)); err != nil {
+		if errors.Is(err, service.ErrReceiptNotFound) {
+			slog.InfoContext(ctx, "no receipts found for user", "user_id", claims.UserID)
+		} else {
+			slog.ErrorContext(ctx, "failed to get receipts by user", "user_id", claims.UserID, "error", err)
+		}
 		return nil, mapServiceError(err)
 	}
 
@@ -179,7 +188,6 @@ func (s *queryServer) GetReceiptsByUser(ctx context.Context, _ *pb.ReceiptReques
 }
 
 func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest) (*pb.GetReceiptResponse, error) {
-	slog.Info("GetReceiptById: received request")
 
 	claims, err := ExtractUserFromContext(ctx)
 	if err != nil {
@@ -187,6 +195,11 @@ func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest
 	}
 
 	if err = s.paymentService.GetReceiptById(ctx, req.ReceiptId, uuidToInt64(claims.UserID)); err != nil {
+		if errors.Is(err, service.ErrReceiptNotFound) {
+			slog.InfoContext(ctx, "receipt not found", "receipt_id", req.ReceiptId)
+		} else {
+			slog.ErrorContext(ctx, "failed to get receipt", "receipt_id", req.ReceiptId, "error", err)
+		}
 		return nil, mapServiceError(err)
 	}
 
@@ -239,7 +252,7 @@ func ExtractUserFromContext(ctx context.Context) (*Claims, error) {
 	claims := &Claims{}
 
 	if _, _, err := new(jwt.Parser).ParseUnverified(tokenStr, claims); err != nil {
-		slog.Error("failed to parse token", "error", err)
+		slog.WarnContext(ctx, "invalid token", "error", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 

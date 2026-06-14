@@ -1,5 +1,5 @@
 name: search
-image: search:1258273
+image: search:v2.0.1
 port: 50056
 
 resources:

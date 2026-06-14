@@ -1,5 +1,5 @@
 name: notification
-image: notification:1258273
+image: notification:v2.0.1
 port: 50058
 
 resources:

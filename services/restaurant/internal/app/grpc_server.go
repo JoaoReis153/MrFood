@@ -116,6 +116,11 @@ func (s *server) GetRestaurantDetails(ctx context.Context, req *pb.GetRestaurant
 
 	restaurant, err := s.restaurantService.GetRestaurantByID(ctx, req.GetId())
 	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", req.GetId())
+		} else {
+			slog.ErrorContext(ctx, "failed to get restaurant details", "restaurant_id", req.GetId(), "error", err)
+		}
 		return nil, mapServiceError(ctx, err)
 	}
 
@@ -221,6 +226,11 @@ func (s *server) GetWorkingHours(ctx context.Context, req *pb.WorkingHoursReques
 
 	workingHours, err := s.restaurantService.GetWorkingHours(ctx, req.GetRestaurantId(), requestedAt)
 	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", req.GetRestaurantId())
+		} else {
+			slog.ErrorContext(ctx, "failed to get working hours", "restaurant_id", req.GetRestaurantId(), "error", err)
+		}
 		return nil, mapServiceError(ctx, err)
 	}
 
@@ -253,7 +263,7 @@ func (app *App) RunServer() {
 
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		slog.Error("failed", "error", err)
+		slog.Error("failed to listen", "addr", addr, "error", err)
 		os.Exit(1)
 	}
 
@@ -275,7 +285,7 @@ func (app *App) RunServer() {
 
 	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
-		slog.Error("failed", "error", err)
+		slog.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
 }

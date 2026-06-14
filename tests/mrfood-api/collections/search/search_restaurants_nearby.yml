@@ -45,6 +45,10 @@ runtime:
           test("response has pagination", () => {
             expect(res.body).to.have.property("pagination");
           });
+
+          test("response has results", () => {
+            expect(res.body.data.length).to.be.greaterThan(0);
+          });
         }
 
 settings:

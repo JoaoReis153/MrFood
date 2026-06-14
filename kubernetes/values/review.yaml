@@ -1,5 +1,5 @@
 name: review
-image: review:1258273
+image: review:v2.0.1
 port: 50055
 
 resources:

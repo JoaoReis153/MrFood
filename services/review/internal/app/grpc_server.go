@@ -141,6 +141,11 @@ func (s *server) CreateReview(ctx context.Context, req *pb.CreateReviewRequest) 
 
 	reviewResponse, err := s.svc.CreateReview(ctx, review)
 	if err != nil {
+		if errors.Is(err, models.ErrRestaurantNotFound) {
+			slog.InfoContext(ctx, "restaurant not found", "restaurant_id", req.GetRestaurantId())
+		} else {
+			slog.ErrorContext(ctx, "failed to create review", "restaurant_id", req.GetRestaurantId(), "user_id", user_id, "error", err)
+		}
 		return nil, mapToGRPCError(ctx, err)
 	}
 
@@ -178,6 +183,11 @@ func (s *server) UpdateReview(ctx context.Context, req *pb.UpdateReviewRequest) 
 	}
 	updated, err := s.svc.UpdateReview(ctx, review)
 	if err != nil {
+		if errors.Is(err, models.ErrReviewNotFound) {
+			slog.InfoContext(ctx, "review not found", "review_id", req.GetReviewId())
+		} else {
+			slog.ErrorContext(ctx, "failed to update review", "review_id", req.GetReviewId(), "user_id", user_id, "error", err)
+		}
 		return nil, mapToGRPCError(ctx, err)
 	}
 
@@ -208,6 +218,11 @@ func (s *server) DeleteReview(ctx context.Context, req *pb.DeleteReviewRequest) 
 		UserID:   userID,
 	})
 	if err != nil {
+		if errors.Is(err, models.ErrReviewNotFound) {
+			slog.InfoContext(ctx, "review not found", "review_id", req.GetReviewId())
+		} else {
+			slog.ErrorContext(ctx, "failed to delete review", "review_id", req.GetReviewId(), "user_id", userID, "error", err)
+		}
 		return nil, mapToGRPCError(ctx, err)
 	}
 
@@ -236,7 +251,7 @@ func (app *App) RunServer() {
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		slog.Error("Failed to listen", "error", err)
+		slog.Error("failed to listen", "error", err)
 		os.Exit(1)
 	}
 
@@ -255,9 +270,9 @@ func (app *App) RunServer() {
 	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 	slog.Info("health check registered for service", "service", "review")
 
-	slog.Info("Server running on", "address", addr)
+	slog.Info("server running", "addr", addr)
 	if err := s.Serve(lis); err != nil {
-		slog.Error("Failed to serve", "error", err)
+		slog.Error("failed to serve", "error", err)
 		os.Exit(1)
 	}
 }
@@ -310,6 +325,7 @@ func mapToGRPCError(ctx context.Context, err error) error {
 	case errors.Is(err, models.ErrRestaurantServiceUnavailable):
 		return status.Error(codes.Unavailable, err.Error())
 	default:
-		return status.Error(codes.Internal, "Internal server error")
+		slog.ErrorContext(ctx, "review rpc failed", "error", err)
+		return status.Error(codes.Internal, "internal server error")
 	}
 }

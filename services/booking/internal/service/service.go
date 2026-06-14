@@ -43,7 +43,7 @@ func New(repo BookingRepository, restaurantClient pb.RestaurantToBookingServiceC
 func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (int32, int32, error) {
 	// check if people count is too high
 	if booking.PeopleCount > MAX_SLOTS {
-		slog.ErrorContext(ctx, "Not enough slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
+		slog.WarnContext(ctx, "booking rejected: people count exceeds max slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
 		return 0, 0, ErrInvalidBooking
 	}
 
@@ -53,12 +53,13 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	working_hours, err := s.getWorkingHours(ctx, booking.RestaurantID, booking.TimeStart)
 
 	if err != nil {
-		return 0, 0, err
+		slog.ErrorContext(ctx, "failed to get working hours", "restaurant_id", booking.RestaurantID, "error", err)
+		return 0, 0, fmt.Errorf("%w: %v", ErrFailedWHGet, err)
 	}
 	slog.InfoContext(ctx, "working hours received", "start", working_hours.TimeStart, "end", working_hours.TimeEnd)
 
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {
-		slog.ErrorContext(ctx, "Invalid booking time", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
+		slog.WarnContext(ctx, "booking rejected: time outside working hours", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
 		return 0, 0, ErrInvalidBooking
 	}
 	slog.InfoContext(ctx, "booking time valid, processing payment")
