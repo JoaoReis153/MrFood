@@ -25,7 +25,7 @@ ifeq ($(IS_PODMAN),)
 	BUILD_FLAG := --parallel
 endif
 
-.PHONY: help create_env generate-csv setup setup-full build run run-full stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean deploy seed destroy undeploy
+.PHONY: help create_env generate-csv setup setup-full build run run-full run-observability stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean deploy seed destroy undeploy stress-smoke stress-auth stress-restaurants stress-reviews stress-reservations stress-search stress-payments stress-sponsor stress
 
 
 help:
@@ -41,6 +41,7 @@ help:
 	@echo "  make load-cloud      Load seed data into Cloud SQL via GCS"
 	@echo "  make setup           Start core services"
 	@echo "  make setup-full      Start all services including search/CDC"
+	@echo "  make run-observability  Start only the observability stack (Grafana, Prometheus, Loki, Tempo, OTEL)"
 	@echo "  make run             Start core services (detached)"
 	@echo "  make run-full        Start all services including search/CDC (detached)"
 	@echo "  make stop            Stop services"
@@ -57,6 +58,15 @@ help:
 	@echo "  make search-seed     Create ES index and seed data (no Kafka connectors)"
 	@echo "  make search-logs     Tail search service logs"
 	@echo "  make search-clean    Remove search containers and volumes"
+	@echo "  make stress-smoke    Quick smoke test (1 VU, 1 iteration) against BASE_URL"
+	@echo "  make stress          Full concurrent stress test (BASE_URL, VUS, DURATION)"
+	@echo "  make stress-auth     Auth endpoints only"
+	@echo "  make stress-restaurants  Restaurant endpoints only"
+	@echo "  make stress-reviews  Review endpoints only"
+	@echo "  make stress-reservations  Reservation endpoints only"
+	@echo "  make stress-search   Search endpoint only"
+	@echo "  make stress-payments Payment endpoints only"
+	@echo "  make stress-sponsor  Sponsor endpoints only"
 
 # ============================================================================
 # CLOUD DEPLOYMENT
@@ -112,6 +122,9 @@ run:
 
 run-full:
 	$(DC) --profile search up -d $(PULL_FLAG)
+
+run-observability:
+	$(DC) up -d $(PULL_FLAG) otel-collector prometheus loki grafana tempo
 
 setup: run
 	@echo "✓ Core services running"
@@ -224,3 +237,48 @@ search-logs:
 search-clean:
 	$(DC) --profile search rm -sf elasticsearch zookeeper kafka connect search
 	docker volume rm -f $(PROJECT_NAME)_elastic_data
+
+# ============================================================================
+# STRESS TESTS (k6)
+# ============================================================================
+# Usage:
+#   make stress-smoke BASE_URL=http://localhost:8080/api
+#   make stress BASE_URL=http://34.x.x.x/api VUS=50 DURATION=5m
+#   make stress-search BASE_URL=http://localhost:8080/api
+
+BASE_URL  ?= http://localhost:8080/api
+VUS       ?= 20
+DURATION  ?= 2m
+
+K6_ENV := -e BASE_URL=$(BASE_URL) \
+           -e STRESS_EMAIL=$(STRESS_EMAIL) \
+           -e STRESS_PASSWORD=$(STRESS_PASSWORD)
+
+STRESS_DIR := tests/stress
+
+stress-smoke:
+	k6 run $(K6_ENV) $(STRESS_DIR)/smoke.js
+
+stress:
+	k6 run $(K6_ENV) -e VUS=$(VUS) -e DURATION=$(DURATION) $(STRESS_DIR)/full.js
+
+stress-auth:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/auth.js
+
+stress-restaurants:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/restaurants.js
+
+stress-reviews:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/reviews.js
+
+stress-reservations:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/reservations.js
+
+stress-search:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/search.js
+
+stress-payments:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/payments.js
+
+stress-sponsor:
+	k6 run $(K6_ENV) $(STRESS_DIR)/scenarios/sponsor.js
