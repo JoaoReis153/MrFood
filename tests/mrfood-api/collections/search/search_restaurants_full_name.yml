@@ -16,7 +16,7 @@ http:
       value: "10"
       type: query
     - name: full_name
-      value: Le 147
+      value: mrfood-test-cafe
       type: query
   auth:
     type: bearer
@@ -38,6 +38,10 @@ runtime:
 
           test("response has pagination", () => {
             expect(res.body).to.have.property("pagination");
+          });
+
+          test("response has results", () => {
+            expect(res.body.data.length).to.be.greaterThan(0);
           });
         }
 

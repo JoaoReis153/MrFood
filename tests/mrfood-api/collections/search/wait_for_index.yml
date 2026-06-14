@@ -1,0 +1,49 @@
+info:
+  name: Wait for CDC index
+  type: http
+  seq: 3
+  tags:
+    - Search
+
+http:
+  method: GET
+  url: "{{baseUrl}}/search"
+  params:
+    - name: page
+      value: "1"
+      type: query
+    - name: limit
+      value: "1"
+      type: query
+    - name: full_name
+      value: mrfood-test-cafe
+      type: query
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        // Poll until the restaurant created in seq 2 appears in Elasticsearch.
+        // Retries up to 10 times (~10 seconds) before giving up.
+        var attempts = parseInt(bru.getEnvVar("indexAttempts") || "0");
+
+        if (res.status === 200 && res.body.data && res.body.data.length > 0) {
+          bru.setEnvVar("indexAttempts", "0");
+        } else if (attempts < 10) {
+          bru.setEnvVar("indexAttempts", String(attempts + 1));
+          bru.setNextRequest("Wait for CDC index");
+        } else {
+          bru.setEnvVar("indexAttempts", "0");
+          test("restaurant indexed within timeout", () => {
+            expect(res.body.data.length).to.be.greaterThan(0);
+          });
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
