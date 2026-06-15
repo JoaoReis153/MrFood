@@ -120,6 +120,9 @@ func mapToGRPCError(err error) error {
 	case errors.Is(err, service.ErrPaymentUnavailable):
 		return status.Error(codes.Unavailable, "payment is unavailable, please try again later")
 	default:
+		if _, ok := status.FromError(err); ok {
+			return err
+		}
 		slog.Error("sponsor rpc failed", "error", err)
 		return status.Error(codes.Internal, "internal server error")
 	}

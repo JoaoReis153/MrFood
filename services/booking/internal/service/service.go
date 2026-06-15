@@ -12,6 +12,8 @@ import (
 	"log/slog"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -122,7 +124,11 @@ func (s *Service) makePayment(ctx context.Context, req *models.PaymentRequest) (
 
 	if err != nil {
 		slog.ErrorContext(ctx, "payment failed", "error", err)
-		return 0, fmt.Errorf("%w: %v", ErrPaymentFailed, err)
+		code := status.Code(err)
+		if code == codes.Internal || code == codes.Unavailable || code == codes.DeadlineExceeded {
+			return 0, fmt.Errorf("%w: %v", ErrPaymentFailed, err)
+		}
+		return 0, err
 	}
 
 	return res.ReceiptId, nil

@@ -19,6 +19,7 @@ import (
 	models "MrFood/services/payment/pkg"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/stripe/stripe-go/v85"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -207,6 +208,22 @@ func (s *queryServer) GetReceiptById(ctx context.Context, req *pb.ReceiptRequest
 }
 
 func mapServiceError(err error) error {
+	// Context errors
+	if errors.Is(err, context.Canceled) {
+		return status.Error(codes.Canceled, "request canceled")
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return status.Error(codes.DeadlineExceeded, "request timed out")
+	}
+	// Stripe errors
+	var stripeErr *stripe.Error
+	if errors.As(err, &stripeErr) {
+		if stripeErr.HTTPStatusCode >= 400 && stripeErr.HTTPStatusCode < 500 {
+			return status.Error(codes.InvalidArgument, stripeErr.Msg)
+		}
+		return status.Error(codes.Unavailable, "payment provider unavailable")
+	}
+	// Service errors
 	switch {
 	case errors.Is(err, service.ErrInvalidAmmount), errors.Is(err, service.ErrNullIdempotencyKey):
 		return status.Error(codes.InvalidArgument, err.Error())
