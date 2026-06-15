@@ -1,7 +1,7 @@
 info:
   name: Delete a reservation
   type: http
-  seq: 6
+  seq: 5
   tags:
     - Reservations
 
