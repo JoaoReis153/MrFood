@@ -1,19 +1,13 @@
 info:
   name: Delete a reservation
   type: http
-  seq: 5
+  seq: 6
   tags:
     - Reservations
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/reservations/delete"
-  body:
-    type: json
-    data: |-
-      {
-        "booking_id": {{bookingId}}
-      }
+  url: "{{baseUrl}}/reservations/{{bookingId}}"
   auth:
     type: bearer
     token: "{{token}}"
@@ -22,11 +16,11 @@ runtime:
   scripts:
     - type: tests
       code: |-
-        if (bru.getEnvVar("bookingId") === "0") {
-          // Booking was never created (payment was unavailable).
-          // Expect 400 from the booking service — not a test failure.
-          test("delete skipped - booking not created (payment unavailable)", () => {
-            expect(res.status).to.equal(400);
+        const bookingId = bru.getEnvVar("bookingId");
+        if (!bookingId || bookingId === "0") {
+          // Booking was never created (payment was unavailable or prior step failed).
+          test("delete skipped - no booking to delete", () => {
+            expect([400, 404]).to.include(res.status);
           });
         } else {
           test("delete reservation returns 200", () => {

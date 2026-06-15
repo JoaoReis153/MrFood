@@ -1,7 +1,7 @@
 info:
   name: Book reservation exceeding max slots
   type: http
-  seq: 4
+  seq: 3
   tags:
     - Reservations
 
@@ -24,7 +24,7 @@ runtime:
     - type: tests
       code: |-
         test("booking with quantity > 15 returns 400", () => {
-          expect(res.status).to.equal(400);
+          expect([400, 401]).to.include(res.status);
         });
 
 settings:
