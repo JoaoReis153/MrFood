@@ -54,7 +54,7 @@ func (s *Service) Sponsor(ctx context.Context, request *models.Sponsorship, owne
 		return nil, 0, err
 	}
 
-	amount := int64(res.Tier * 20)
+	amount := int64(res.Tier) * 500
 
 	receipt_id, err := s.makePayment(ctx, &models.PaymentRequest{
 		UserID:         owner,
