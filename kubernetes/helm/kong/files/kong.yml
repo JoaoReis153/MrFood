@@ -27,6 +27,12 @@ services:
   - name: grpc-gateway
     config:
       proto: /etc/kong/proto/auth.proto
+  
+  - name: rate-limiting
+    config:
+      second: 10
+      policy: local
+
 
 - name: restaurant
   host: restaurant
@@ -48,6 +54,11 @@ services:
     config:
       claims_to_verify:
       - exp
+  - name: rate-limiting
+    config:
+      second: 15
+      policy: local
+
 
 - name: booking
   host: booking
@@ -69,6 +80,11 @@ services:
     config:
       claims_to_verify:
       - exp
+  - name: rate-limiting
+    config:
+      second: 9
+      policy: local
+
 
 - name: review
   host: review
@@ -90,6 +106,10 @@ services:
     config:
       claims_to_verify:
       - exp
+  - name: rate-limiting
+    config:
+      second: 30
+      policy: local
 
 - name: sponsor
   host: sponsor
@@ -111,6 +131,10 @@ services:
     config:
       claims_to_verify:
       - exp
+  - name: rate-limiting
+    config:
+      second: 5
+      policy: local
 
 - name: payment
   host: payment
@@ -132,6 +156,11 @@ services:
     config:
       claims_to_verify:
       - exp
+
+  - name: rate-limiting
+    config:
+      seconds: 7
+      policy: local
   
 - name: search
   host: search
@@ -153,6 +182,10 @@ services:
     config:
       claims_to_verify:
       - exp
+  - name: rate-limiting
+    config:
+      seconds: 10
+      policy: local
 
 consumers:
 - username: mrfood-auth
