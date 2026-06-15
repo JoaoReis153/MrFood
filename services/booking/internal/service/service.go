@@ -29,6 +29,7 @@ var (
 )
 
 type BookingRepository interface {
+	BookingExists(ctx context.Context, userID int64, restaurantID int64, timeStart interface{}) (bool, error)
 	CreateBooking(ctx context.Context, booking *models.Booking) (int32, error)
 	DeleteBooking(ctx context.Context, delete_request *models.DeleteBooking) error
 }
@@ -47,7 +48,7 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 	// check if people count is too high
 	if booking.PeopleCount > MAX_SLOTS {
 		slog.WarnContext(ctx, "booking rejected: people count exceeds max slots", "people_count", booking.PeopleCount, "max_slots", MAX_SLOTS)
-		return 0, 0, ErrInvalidBooking
+		return 0, 0, fmt.Errorf("%w: maximum allowed is %d", ErrInvalidBooking, MAX_SLOTS)
 	}
 
 	// truncate start hour to minute 00 or 30
@@ -63,8 +64,17 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 
 	if booking.TimeStart.Before(working_hours.TimeStart) || booking.TimeStart.After(working_hours.TimeEnd) {
 		slog.WarnContext(ctx, "booking rejected: time outside working hours", "time_start", booking.TimeStart, "working_time_start", working_hours.TimeStart, "working_time_end", working_hours.TimeEnd)
-		return 0, 0, ErrInvalidBooking
+		return 0, 0, fmt.Errorf("%w: requested time is outside restaurant working hours", ErrInvalidBooking)
 	}
+
+	exists, err := s.repo.BookingExists(ctx, booking.UserID, booking.RestaurantID, booking.TimeStart)
+	if err != nil {
+		return 0, 0, err
+	}
+	if exists {
+		return 0, 0, ErrBookingAlreadyExists
+	}
+
 	slog.InfoContext(ctx, "booking time valid, processing payment")
 
 	var time_end = booking.TimeStart.Add(time.Hour)

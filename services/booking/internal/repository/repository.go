@@ -34,6 +34,19 @@ func New(db DB) *Repository {
 	return &Repository{DB: db}
 }
 
+func (r *Repository) BookingExists(ctx context.Context, userID int64, restaurantID int64, timeStart interface{}) (bool, error) {
+	var exists int32
+	err := r.DB.QueryRow(ctx, `
+		SELECT 1 FROM booking
+		WHERE restaurant_id = $1 AND time_start = $2 AND user_id = $3
+		LIMIT 1
+	`, restaurantID, timeStart, userID).Scan(&exists)
+	if err != nil && err != pgx.ErrNoRows {
+		return false, err
+	}
+	return exists > 0, nil
+}
+
 func (r *Repository) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
 	slog.InfoContext(ctx, "repository: CreateBooking called")
 	tx, err := r.DB.Begin(ctx)
