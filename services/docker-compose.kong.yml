@@ -1,6 +1,6 @@
 services:
   kong:
-    image: 'kong/kong-gateway:3.13.0.2'
+    image: 'kong:3.9'
     container_name: kong
     restart: on-failure
     networks:

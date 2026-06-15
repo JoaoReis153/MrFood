@@ -8,6 +8,31 @@ plugins:
       resource_attributes:
         service.name: kong-gateway
       header_type: w3c
+  - name: pre-function
+    config:
+      access:
+        - "local p = kong.request.get_path(); if not p:match('^/auth') then local h = kong.request.get_header('Authorization'); if not h or not h:match('^Bearer .+') then return kong.response.exit(401, {message='Unauthorized'}) end end"
+  - name: post-function
+    config:
+      header_filter:
+        - |
+          local status = kong.response.get_status()
+          if status >= 400 then
+            local msg = kong.response.get_header("grpc-message")
+            if msg then
+              msg = ngx.unescape_uri(msg)
+              msg = msg:gsub('\\', '\\\\'):gsub('"', '\\"')
+              kong.response.set_header("Content-Type", "application/json")
+              kong.response.set_header("Content-Length", nil)
+              kong.ctx.shared.grpc_err_msg = msg
+            end
+          end
+      body_filter:
+        - |
+          local msg = kong.ctx.shared.grpc_err_msg
+          if msg then
+            kong.response.set_raw_body('{"message":"' .. msg .. '"}')
+          end
 services:
 - name: auth
   host: auth
