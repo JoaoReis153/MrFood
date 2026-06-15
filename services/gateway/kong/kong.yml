@@ -23,7 +23,7 @@ plugins:
               msg = ngx.unescape_uri(msg)
               msg = msg:gsub('\\', '\\\\'):gsub('"', '\\"')
               kong.response.set_header("Content-Type", "application/json")
-              kong.response.set_header("Content-Length", nil)
+              kong.response.clear_header("Content-Length")
               kong.ctx.shared.grpc_err_msg = msg
             end
           end
@@ -31,7 +31,8 @@ plugins:
         - |
           local msg = kong.ctx.shared.grpc_err_msg
           if msg then
-            kong.response.set_raw_body('{"message":"' .. msg .. '"}')
+            ngx.arg[1] = '{"message":"' .. msg .. '"}'
+            ngx.arg[2] = true
           end
 services:
 - name: auth
