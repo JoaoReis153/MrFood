@@ -17,7 +17,7 @@ runtime:
     - type: tests
       code: |-
         const bookingId = bru.getEnvVar("bookingId");
-        if (!bookingId || bookingId === "0") {
+        if (!bookingId || bookingId === "0" || bookingId === "undefined") {
           // Booking was never created (payment was unavailable or prior step failed).
           test("delete skipped - no booking to delete", () => {
             expect([400, 404]).to.include(res.status);

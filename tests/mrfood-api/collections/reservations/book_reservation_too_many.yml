@@ -23,6 +23,9 @@ runtime:
   scripts:
     - type: tests
       code: |-
+        const token = bru.getEnvVar("token") || "";
+        console.log("[book_reservation_too_many] status:", res.status, "| token prefix:", token.substring(0, 30) + "...");
+
         test("booking with quantity > 15 returns 400", () => {
           expect([400, 401]).to.include(res.status);
         });
