@@ -1,0 +1,34 @@
+info:
+  name: Book reservation duplicate
+  type: http
+  seq: 5
+  tags:
+    - Reservations
+
+http:
+  method: POST
+  url: "{{baseUrl}}/reservations/{{restaurantId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "time_start": "2026-12-31T11:00:00Z",
+        "quantity": 2
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("duplicate booking returns 409", () => {
+          expect(res.status).to.equal(409);
+        });
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
