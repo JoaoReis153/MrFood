@@ -2,6 +2,7 @@ package service
 
 import (
 	"MrFood/services/booking/internal/api/grpc/pb"
+	"MrFood/services/booking/internal/repository"
 	models "MrFood/services/booking/pkg"
 	"context"
 	"crypto/sha256"
@@ -93,6 +94,9 @@ func (s *Service) CreateBooking(ctx context.Context, booking *models.Booking) (i
 
 	booking_id, err := s.repo.CreateBooking(ctx, booking)
 	if err != nil {
+		if errors.Is(err, repository.ErrBookingAlreadyExists) {
+			return 0, 0, ErrBookingAlreadyExists
+		}
 		return 0, 0, err
 	}
 	slog.InfoContext(ctx, "booking inserted", "booking_id", booking_id)
