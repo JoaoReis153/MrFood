@@ -43,7 +43,7 @@ type Server struct {
 
 const jwtIssuer = "mrfood-auth"
 
-const accessTokenTTL = 300 * time.Second
+const accessTokenTTL = 3600 * time.Second
 
 type appClaims struct {
 	jwtlib.RegisteredClaims

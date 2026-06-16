@@ -44,6 +44,10 @@ type mockRepo struct {
 	bookings map[int32]int64
 }
 
+func (m *mockRepo) BookingExists(ctx context.Context, userID int64, restaurantID int64, timeStart interface{}) (bool, error) {
+	return false, nil
+}
+
 func (m *mockRepo) CreateBooking(ctx context.Context, booking *models.Booking) (int32, error) {
 	if booking.PeopleCount > MAX_SLOTS {
 		return 0, ErrInvalidBooking

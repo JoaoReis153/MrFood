@@ -1,7 +1,7 @@
 info:
   name: Book a reservation
   type: http
-  seq: 3
+  seq: 4
   tags:
     - Reservations
 
@@ -23,16 +23,21 @@ runtime:
   scripts:
     - type: tests
       code: |-
+        const token = bru.getEnvVar("token") || "";
+        console.log("[book_reservation] status:", res.status, "| token prefix:", token.substring(0, 30) + "...");
+
         test("book reservation returns 200", () => {
           expect(res.status).to.equal(200);
         });
 
-        test("response has booking_id", () => {
-          expect(res.body).to.have.property("booking_id");
-          expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
-        });
+        if (res.status === 200) {
+          test("response has booking_id", () => {
+            expect(res.body).to.have.property("booking_id");
+            expect(res.body.booking_id).to.be.a("number").and.be.greaterThan(0);
+          });
 
-        bru.setEnvVar("bookingId", String(res.body.booking_id));
+          bru.setEnvVar("bookingId", String(res.body.booking_id));
+        }
 
 settings:
   encodeUrl: true

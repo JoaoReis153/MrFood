@@ -1,7 +1,7 @@
 name: production
 variables:
   - name: baseUrl
-    value: http://34.175.60.218
+    value: http://34.175.11.198
   - secret: true
     name: token
   - secret: true

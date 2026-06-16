@@ -101,7 +101,11 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 		return 0, err
 	}
 
-	return s.repo.CreateReceipt(ctx, receipt_request, hash)
+	receiptID, err := s.repo.CreateReceipt(ctx, receipt_request, hash)
+	if err != nil {
+		return 0, mapRepoError(err)
+	}
+	return receiptID, nil
 }
 
 func (s *Service) ConfirmPayment(ctx context.Context, paymentIntentID string) error {
