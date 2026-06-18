@@ -56,15 +56,15 @@ wif_reconcile \
 # ---------------------------------------------------------------------------
 # 3. Container images — build & push
 # ---------------------------------------------------------------------------
-gcloud auth configure-docker europe-southwest1-docker.pkg.dev
+gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev"
 
 ./services/build_and_push_images.sh "$(git rev-parse --short HEAD)"
 
 # ---------------------------------------------------------------------------
 # 5. Connect to GKE
 # ---------------------------------------------------------------------------
-gcloud container clusters get-credentials mrfood-cluster \
-  --zone europe-southwest1-b \
+gcloud container clusters get-credentials "${GKE_CLUSTER}" \
+  --zone "${GCP_ZONE}" \
   --project "${GCP_PROJECT_ID}"
 
 kubectl apply -f kubernetes/namespace.yaml
@@ -74,31 +74,31 @@ kubectl apply -f kubernetes/namespace.yaml
 # ---------------------------------------------------------------------------
 helm upgrade --install otel-collector kubernetes/helm/otel-collector \
   --set gcpProject="${GCP_PROJECT_ID}" \
-  --namespace mrfood
+  --namespace "${K8S_NAMESPACE}"
 
 helm upgrade --install observability kubernetes/helm/observability \
-  --namespace mrfood
+  --namespace "${K8S_NAMESPACE}"
 
 # ---------------------------------------------------------------------------
 # 7. Keycloak (must be up before auth)
 # ---------------------------------------------------------------------------
 helm upgrade --install keycloak kubernetes/helm/keycloak \
-  --namespace mrfood
+  --namespace "${K8S_NAMESPACE}"
 
-kubectl rollout status deployment/keycloak -n mrfood
+kubectl rollout status deployment/keycloak -n "${K8S_NAMESPACE}"
 
 # ---------------------------------------------------------------------------
 # 8. Search stack — Elasticsearch + Kafka (must be up before CDC)
 # ---------------------------------------------------------------------------
 helm upgrade --install elasticsearch kubernetes/helm/elasticsearch \
-  --namespace mrfood
+  --namespace "${K8S_NAMESPACE}"
 
 helm upgrade --install kafka kubernetes/helm/kafka \
-  --namespace mrfood
+  --namespace "${K8S_NAMESPACE}"
 
-kubectl rollout status deployment/zookeeper    -n mrfood
-kubectl rollout status deployment/kafka        -n mrfood
-kubectl rollout status deployment/elasticsearch -n mrfood
+kubectl rollout status deployment/zookeeper     -n "${K8S_NAMESPACE}"
+kubectl rollout status deployment/kafka         -n "${K8S_NAMESPACE}"
+kubectl rollout status deployment/elasticsearch -n "${K8S_NAMESPACE}"
 
 # ---------------------------------------------------------------------------
 # 9. CDC (Kafka Connect)
@@ -106,17 +106,17 @@ kubectl rollout status deployment/elasticsearch -n mrfood
 helm upgrade --install cdc kubernetes/helm/kafka-connect \
   -f kubernetes/values/cdc.yaml \
   --set "gcpProjectId=${GCP_PROJECT_ID}" \
-  --namespace mrfood
+  --namespace "${K8S_NAMESPACE}"
 
-kubectl rollout status deployment/cdc -n mrfood --timeout 5m
+kubectl rollout status deployment/cdc -n "${K8S_NAMESPACE}" --timeout 5m
 
-kubectl exec -n mrfood deployment/cdc -- bash -c \
+kubectl exec -n "${K8S_NAMESPACE}" deployment/cdc -- bash -c \
   "curl -sf http://localhost:8083/connectors | grep -q restaurant-postgres-source || \
    curl -sf -X POST http://localhost:8083/connectors \
      -H 'Content-Type: application/json' \
      -d @/connectors/restaurant-source.json"
 
-kubectl exec -n mrfood deployment/cdc -- bash -c \
+kubectl exec -n "${K8S_NAMESPACE}" deployment/cdc -- bash -c \
   "curl -sf http://localhost:8083/connectors | grep -q restaurants-elasticsearch-sink || \
    curl -sf -X POST http://localhost:8083/connectors \
      -H 'Content-Type: application/json' \
@@ -127,4 +127,4 @@ kubectl exec -n mrfood deployment/cdc -- bash -c \
 # ---------------------------------------------------------------------------
 bash kubernetes/restart.sh
 
-kubectl get svc gateway -n mrfood --watch
+kubectl get svc gateway -n "${K8S_NAMESPACE}" --watch

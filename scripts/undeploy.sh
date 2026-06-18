@@ -7,18 +7,16 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 source gcp.env
 
-NAMESPACE="mrfood"
-
 gcloud config set project "${GCP_PROJECT_ID}"
-gcloud container clusters get-credentials mrfood-cluster \
-  --zone europe-southwest1-b \
+gcloud container clusters get-credentials "${GKE_CLUSTER}" \
+  --zone "${GCP_ZONE}" \
   --project "${GCP_PROJECT_ID}"
 
 # Uninstall all Helm releases in the namespace
-for release in $(helm list -n "${NAMESPACE}" -q); do
+for release in $(helm list -n "${K8S_NAMESPACE}" -q); do
   echo "Uninstalling ${release}..."
-  helm uninstall "${release}" -n "${NAMESPACE}"
+  helm uninstall "${release}" -n "${K8S_NAMESPACE}"
 done
 
 # Delete the namespace (removes any remaining resources)
-kubectl delete namespace "${NAMESPACE}" --ignore-not-found
+kubectl delete namespace "${K8S_NAMESPACE}" --ignore-not-found

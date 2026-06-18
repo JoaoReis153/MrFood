@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
-REGISTRY_REPO="europe-southwest1-docker.pkg.dev/${GCP_PROJECT_ID}/mrfood-repo"
+REGISTRY_REPO="${ARTIFACT_REGISTRY}"
 
 usage() {
   cat <<'EOF'

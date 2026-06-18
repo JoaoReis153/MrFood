@@ -14,8 +14,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
-INSTANCE="mrfood-pg"
-BUCKET="mrfood-cloudsql-schema-bootstrap-${GCP_PROJECT_ID}"
+INSTANCE="${CLOUDSQL_INSTANCE}"
+BUCKET="${GCS_SEED_BUCKET}"
 DRY_RUN=false
 
 if [[ "${1:-}" == "--dry-run" ]]; then
@@ -26,24 +26,24 @@ fi
 # ── CSV → (gcs_object, database, table, columns) mapping ─────────────────────
 # Format: "gcs_object|db_name|table_name|col1,col2,..."
 IMPORTS=(
-  "processed_data/restaurant/restaurants.csv|mrfood-pg|mrfood_restaurant|restaurants|id,name,latitude,longitude,address,opening_time,closing_time,media_url,max_slots,owner_id,owner_name,sponsor_tier"
-  "processed_data/restaurant/restaurant_categories.csv|mrfood-pg|mrfood_restaurant|restaurant_categories|restaurant_id,category"
-  "processed_data/review/review.csv|mrfood-pg|mrfood_review|review|review_id,restaurant_id,user_id,comment,rating,created_at"
+  "processed_data/restaurant/restaurants.csv|mrfood_restaurant|restaurants|id,name,latitude,longitude,address,opening_time,closing_time,media_url,max_slots,owner_id,owner_name,sponsor_tier"
+  "processed_data/restaurant/restaurant_categories.csv|mrfood_restaurant|restaurant_categories|restaurant_id,category"
+  "processed_data/review/review.csv|mrfood_review|review|review_id,restaurant_id,user_id,comment,rating,created_at"
 )
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 for entry in "${IMPORTS[@]}"; do
-  IFS='|' read -r gcs_object instance db table columns <<<"${entry}"
+  IFS='|' read -r gcs_object db table columns <<<"${entry}"
 
   echo "── ${gcs_object} ──────────────────────────────────────────────────"
-  echo "   instance=${instance}  db=${db}  table=${table}"
+  echo "   instance=${INSTANCE}  db=${db}  table=${table}"
 
   local_file="/tmp/$(basename "${gcs_object}")"
   tmp_object="tmp/$(basename "${gcs_object}")"
 
   if $DRY_RUN; then
     echo "  [dry-run] strip header → gs://${BUCKET}/${tmp_object}"
-    echo "  [dry-run] gcloud sql import csv ${instance} gs://${BUCKET}/${tmp_object} --database=${db} --table=${table} --columns=${columns} --project=${GCP_PROJECT_ID} --quiet"
+    echo "  [dry-run] gcloud sql import csv ${INSTANCE} gs://${BUCKET}/${tmp_object} --database=${db} --table=${table} --columns=${columns} --project=${GCP_PROJECT_ID} --quiet"
   else
     echo "   downloading → ${local_file}"
     gsutil -q cp "gs://${BUCKET}/${gcs_object}" "${local_file}"
@@ -53,7 +53,7 @@ for entry in "${IMPORTS[@]}"; do
     gsutil -q cp "${local_file}.noheader" "gs://${BUCKET}/${tmp_object}"
     rm "${local_file}" "${local_file}.noheader"
 
-    gcloud sql import csv "${instance}" \
+    gcloud sql import csv "${INSTANCE}" \
       "gs://${BUCKET}/${tmp_object}" \
       --database="${db}" \
       --table="${table}" \

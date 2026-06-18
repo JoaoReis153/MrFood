@@ -1,9 +1,10 @@
 # Config
 PROJECT_NAME := mrfood
 COMPOSE_FILE := services/docker-compose.yml
-TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
+TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/notification/... ./services/payment/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
 
-# Load non-sensitive config (committed) and secrets (git-ignored)
+# Load non-sensitive config (committed), secrets (git-ignored), and GCP infra vars
+-include gcp.env
 -include services/config.env
 -include services/.env
 
