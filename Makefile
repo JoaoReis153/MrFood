@@ -1,9 +1,16 @@
-# Config
-PROJECT_NAME := mrfood
-COMPOSE_FILE := services/docker-compose.yml
-TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/notification/... ./services/payment/... ./services/restaurant/... ./services/review/... ./services/sponsor/...
+# ── Project ───────────────────────────────────────────────────────────────────
+PROJECT_NAME  := mrfood
+COMPOSE_FILE  := services/docker-compose.yml
+TEST_PACKAGES := \
+    ./services/auth/...         \
+    ./services/booking/...      \
+    ./services/notification/... \
+    ./services/payment/...      \
+    ./services/restaurant/...   \
+    ./services/review/...       \
+    ./services/sponsor/...
 
-# Load non-sensitive config (committed), secrets (git-ignored), and GCP infra vars
+# ── Environment (committed config, git-ignored secrets, GCP infra vars) ───────
 -include gcp.env
 -include services/config.env
 -include services/.env
@@ -11,63 +18,102 @@ TEST_PACKAGES := ./services/auth/... ./services/booking/... ./services/notificat
 ENV_FILES := --env-file services/config.env
 ENV_FILES += $(if $(wildcard services/.env),--env-file services/.env,)
 
-DC := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) $(ENV_FILES)
+# ── Tools ─────────────────────────────────────────────────────────────────────
+DC     := docker compose -p $(PROJECT_NAME) -f $(COMPOSE_FILE) $(ENV_FILES)
 PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,python3)
-CSV_SERVICES ?= all
-CSV_ROWS ?= 200
-CSV_FULL ?=
 
-IS_PODMAN := $(shell docker --version 2>/dev/null | grep -i podman)
-PULL_FLAG :=
+IS_PODMAN  := $(shell docker --version 2>/dev/null | grep -i podman)
+PULL_FLAG  :=
 BUILD_FLAG :=
-
 ifeq ($(IS_PODMAN),)
-	PULL_FLAG := --pull=missing
-	BUILD_FLAG := --parallel
+    PULL_FLAG  := --pull=missing
+    BUILD_FLAG := --parallel
 endif
 
-.PHONY: help create_env generate-csv setup setup-full build run run-full run-observability stop down down-volumes restart logs logs-dump test test-bruno clean clean-all search-bootstrap search-seed search-logs search-clean deploy seed destroy undeploy stress-smoke stress-auth stress-restaurants stress-reviews stress-reservations stress-search stress-payments stress-sponsor stress
+# ── Defaults ──────────────────────────────────────────────────────────────────
+CSV_SERVICES ?= all
+CSV_ROWS     ?= 200
+CSV_FULL     ?=
+LOAD_ARGS    ?=
 
+GATEWAY_IP ?=
+BASE_URL   ?= http://localhost:8080/api
+VUS        ?= 20
+DURATION   ?= 2m
+
+STRESS_DIR         := tests/stress
+BRUNO_URL_OVERRIDE := $(if $(GATEWAY_IP),--env-var "baseUrl=http://$(GATEWAY_IP)",)
+K6_ENV             := -e BASE_URL=$(BASE_URL) \
+                      -e STRESS_EMAIL=$(STRESS_EMAIL) \
+                      -e STRESS_PASSWORD=$(STRESS_PASSWORD)
+
+# ── Phony targets ─────────────────────────────────────────────────────────────
+.PHONY: help \
+    deploy seed destroy undeploy \
+    create-env generate-csv load-local load-cloud \
+    build setup setup-full setup-observability \
+    stop down down-volumes restart logs \
+    test test-bruno \
+    clean clean-all \
+    search-bootstrap search-seed search-logs search-clean \
+    stress stress-smoke \
+    stress-auth stress-restaurants stress-reviews stress-reservations \
+    stress-search stress-payments stress-sponsor
+
+# ============================================================================
+# HELP
+# ============================================================================
 
 help:
 	@echo "MrFood — available commands"
 	@echo ""
-	@echo "  make deploy          Deploy infrastructure + all Kubernetes workloads to GCP"
-	@echo "  make destroy         Destroy all GCP infrastructure (requires project ID confirmation)"
-	@echo "  make undeploy        Uninstall all Helm releases and delete the mrfood namespace from GKE"
-	@echo "  make seed            Truncate and re-seed Cloud SQL with processed CSV data"
-	@echo "  make create_env      Create services/.env from env.tmpl"
-	@echo "  make generate-csv    Generate CSV seed data (CSV_ROWS=200, CSV_FULL=1)"
-	@echo "  make load-local      Load seed data into local Docker containers"
-	@echo "  make load-cloud      Load seed data into Cloud SQL via GCS"
-	@echo "  make setup           Start core services"
-	@echo "  make setup-full      Start all services including search/CDC"
-	@echo "  make run-observability  Start only the observability stack (Grafana, Prometheus, Loki, Tempo, OTEL)"
-	@echo "  make run             Start core services (detached)"
-	@echo "  make run-full        Start all services including search/CDC (detached)"
-	@echo "  make stop            Stop services"
-	@echo "  make down            Stop and remove containers"
-	@echo "  make restart         Restart services"
-	@echo "  make logs            Tail logs"
-	@echo "  make build           Build service images"
-	@echo "  make test            Run Go tests"
-	@echo "  make test-bruno      Run Bruno API tests (GATEWAY_IP=x.x.x.x to test against cloud)"
-	@echo "  make down-volumes    Stop and remove containers and volumes"
-	@echo "  make clean           Remove containers, images, volumes"
-	@echo "  make clean-all       Full reset (all images included)"
-	@echo "  make search-bootstrap  Create ES index, register CDC connectors, and seed"
-	@echo "  make search-seed     Create ES index and seed data (no Kafka connectors)"
-	@echo "  make search-logs     Tail search service logs"
-	@echo "  make search-clean    Remove search containers and volumes"
-	@echo "  make stress-smoke    Quick smoke test (1 VU, 1 iteration) against BASE_URL"
-	@echo "  make stress          Full concurrent stress test (BASE_URL, VUS, DURATION)"
-	@echo "  make stress-auth     Auth endpoints only"
-	@echo "  make stress-restaurants  Restaurant endpoints only"
-	@echo "  make stress-reviews  Review endpoints only"
-	@echo "  make stress-reservations  Reservation endpoints only"
-	@echo "  make stress-search   Search endpoint only"
-	@echo "  make stress-payments Payment endpoints only"
-	@echo "  make stress-sponsor  Sponsor endpoints only"
+	@echo "Cloud"
+	@echo "  deploy                  Deploy infrastructure + Kubernetes workloads to GCP"
+	@echo "  destroy                 Destroy all GCP infrastructure"
+	@echo "  undeploy                Uninstall Helm releases and delete GKE namespace"
+	@echo "  seed                    Re-seed Cloud SQL (truncate + reimport CSV data)"
+	@echo ""
+	@echo "Local"
+	@echo "  create-env              Create services/.env from env.tmpl"
+	@echo "  setup                   Start core services"
+	@echo "  setup-full              Start all services including search + CDC"
+	@echo "  setup-observability     Start observability stack only"
+	@echo "  build                   Build service images"
+	@echo "  stop                    Stop services (keep containers)"
+	@echo "  down                    Stop and remove containers"
+	@echo "  down-volumes            Stop and remove containers and volumes"
+	@echo "  restart                 Restart all services"
+	@echo "  logs                    Tail all service logs"
+	@echo ""
+	@echo "Data"
+	@echo "  generate-csv            Generate CSV seed data  [CSV_ROWS=200] [CSV_FULL=1]"
+	@echo "  load-local              Load CSV into local Docker containers  [LOAD_ARGS=--dry-run]"
+	@echo "  load-cloud              Load CSV into Cloud SQL via GCS  [LOAD_ARGS=--dry-run]"
+	@echo ""
+	@echo "Testing"
+	@echo "  test                    Run Go unit tests"
+	@echo "  test-bruno              Run Bruno API tests  [GATEWAY_IP=x.x.x.x for cloud]"
+	@echo ""
+	@echo "Search"
+	@echo "  search-bootstrap        Register CDC connectors and seed Elasticsearch"
+	@echo "  search-seed             Seed Elasticsearch only (no connectors)"
+	@echo "  search-logs             Tail search service logs"
+	@echo "  search-clean            Remove search containers and volumes"
+	@echo ""
+	@echo "Cleanup"
+	@echo "  clean                   Remove containers, local images, volumes"
+	@echo "  clean-all               Remove containers, all images, volumes"
+	@echo ""
+	@echo "Stress  [BASE_URL=...] [VUS=20] [DURATION=2m]"
+	@echo "  stress                  Full concurrent stress test"
+	@echo "  stress-smoke            Quick smoke test (1 VU, 1 iteration)"
+	@echo "  stress-auth             Auth endpoints"
+	@echo "  stress-restaurants      Restaurant endpoints"
+	@echo "  stress-reviews          Review endpoints"
+	@echo "  stress-reservations     Reservation endpoints"
+	@echo "  stress-search           Search endpoint"
+	@echo "  stress-payments         Payment endpoints"
+	@echo "  stress-sponsor          Sponsor endpoints"
 
 # ============================================================================
 # CLOUD DEPLOYMENT
@@ -89,21 +135,23 @@ undeploy:
 # ENVIRONMENT
 # ============================================================================
 
-create_env:
+create-env:
 	@if [ -f services/.env ]; then \
 		echo "services/.env already exists."; \
 	else \
 		cp services/env.tmpl services/.env; \
 		echo "Created services/.env — fill in secret values before running."; \
 	fi
-	@echo "Fill in secret values in services/.env before running docker compose."
 
 # ============================================================================
 # DATA GENERATION
 # ============================================================================
 
 generate-csv:
-	$(PYTHON) scripts/process_data.py --services $(CSV_SERVICES) $(if $(CSV_ROWS),--rows $(CSV_ROWS),) $(if $(CSV_FULL),--full,)
+	$(PYTHON) scripts/process_data.py \
+		--services $(CSV_SERVICES) \
+		$(if $(CSV_ROWS),--rows $(CSV_ROWS),) \
+		$(if $(CSV_FULL),--full,)
 
 load-local:
 	@bash scripts/load_seed_data_local.sh $(LOAD_ARGS)
@@ -118,20 +166,15 @@ load-cloud:
 build:
 	DOCKER_BUILDKIT=1 $(DC) build $(BUILD_FLAG)
 
-run:
+setup:
 	$(DC) up -d $(PULL_FLAG)
-
-run-full:
-	$(DC) --profile search up -d $(PULL_FLAG)
-
-run-observability:
-	$(DC) up -d $(PULL_FLAG) otel-collector prometheus loki grafana tempo
-
-setup: run
 	@echo "✓ Core services running"
 
-setup-full: run-full search-bootstrap
+setup-full: setup search-bootstrap
 	@echo "✓ All services running with search"
+
+setup-observability:
+	$(DC) up -d $(PULL_FLAG) otel-collector prometheus loki grafana tempo
 
 stop:
 	$(DC) stop
@@ -142,13 +185,10 @@ down:
 down-volumes:
 	$(DC) down --volumes
 
-restart: down run
+restart: down setup
 
 logs:
 	$(DC) logs -f
-
-logs-dump:
-	$(DC) logs --tail=500
 
 # ============================================================================
 # TESTING
@@ -162,11 +202,8 @@ test:
 	echo "FAIL: $$(grep -c '^--- FAIL' /tmp/test_output.txt)"; \
 	grep -q '^--- FAIL' /tmp/test_output.txt && exit 1 || exit 0
 
-GATEWAY_IP ?=
-BRUNO_URL_OVERRIDE := $(if $(GATEWAY_IP),--env-var "baseUrl=http://$(GATEWAY_IP)",)
-
 test-bruno:
-	mkdir -p tests/mrfood-api/reports
+	@mkdir -p tests/mrfood-api/reports
 	@rc=0; \
 	(cd tests/mrfood-api/collections/users && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/users-junit.xml --reporter-json ../../reports/users-report.json) || rc=1; \
 	(cd tests/mrfood-api/collections/restaurants && npx --yes @usebruno/cli@latest run -r --env development --tests-only $(BRUNO_URL_OVERRIDE) --reporter-junit ../../reports/restaurants-junit.xml --reporter-json ../../reports/restaurants-report.json) || rc=1; \
@@ -193,43 +230,14 @@ clean-all:
 # ============================================================================
 
 search-bootstrap:
-	@echo "Waiting for Elasticsearch..."
 	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
 	@echo "✔ Elasticsearch ready"
-	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
-		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
-		-H 'Content-Type: application/json' \
-		-d @services/cdc/mappings/restaurants.json || true); \
-	if [ "$$HTTP_CODE" = "400" ]; then \
-		echo "✔ Index already exists"; \
-	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
-		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
-	else \
-		echo "✔ Index created"; \
-	fi
 	@bash services/cdc/register-connectors.sh
 	@bash services/cdc/seed_elasticsearch.sh
 
 search-seed:
-	@echo "Waiting for Elasticsearch..."
-	@for i in $$(seq 1 30); do \
-		if curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=10s" > /dev/null 2>&1; then \
-			echo "✔ Elasticsearch ready"; break; \
-		fi; \
-		echo "[$$i/30] not yet..."; sleep 5; \
-		if [ $$i -eq 30 ]; then echo "❌ Elasticsearch did not become ready"; exit 1; fi; \
-	done
-	@HTTP_CODE=$$(curl -sS -o /tmp/es-response.json -w "%{http_code}" \
-		-X PUT "http://localhost:$(CDC_ELASTIC_PORT)/$(ELASTICSEARCH_INDEX)" \
-		-H 'Content-Type: application/json' \
-		-d @services/cdc/mappings/restaurants.json || true); \
-	if [ "$$HTTP_CODE" = "400" ]; then \
-		echo "✔ Index already exists"; \
-	elif [ "$$HTTP_CODE" != "200" ] && [ "$$HTTP_CODE" != "201" ]; then \
-		echo "❌ Index creation failed (HTTP $$HTTP_CODE)"; cat /tmp/es-response.json; exit 1; \
-	else \
-		echo "✔ Index created"; \
-	fi
+	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=120s" > /dev/null
+	@echo "✔ Elasticsearch ready"
 	@bash services/cdc/seed_elasticsearch.sh
 
 search-logs:
@@ -242,20 +250,6 @@ search-clean:
 # ============================================================================
 # STRESS TESTS (k6)
 # ============================================================================
-# Usage:
-#   make stress-smoke BASE_URL=http://localhost:8080/api
-#   make stress BASE_URL=http://34.x.x.x/api VUS=50 DURATION=5m
-#   make stress-search BASE_URL=http://localhost:8080/api
-
-BASE_URL  ?= http://localhost:8080/api
-VUS       ?= 20
-DURATION  ?= 2m
-
-K6_ENV := -e BASE_URL=$(BASE_URL) \
-           -e STRESS_EMAIL=$(STRESS_EMAIL) \
-           -e STRESS_PASSWORD=$(STRESS_PASSWORD)
-
-STRESS_DIR := tests/stress
 
 stress-smoke:
 	k6 run $(K6_ENV) $(STRESS_DIR)/smoke.js
