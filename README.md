@@ -11,7 +11,7 @@ Requires Docker and Docker Compose.
 **1. Create the env file:**
 
 ```bash
-make create_env
+make create-env
 # Edit services/.env — set JWT secrets and any other required values
 ```
 
@@ -49,18 +49,19 @@ make setup-full  # includes Elasticsearch + Kafka + CDC
 
 ### Commands
 
-| Command           | What it does                             |
-| ----------------- | ---------------------------------------- |
-| `make setup`      | Build and start core services            |
-| `make setup-full` | Build and start with Elasticsearch + CDC |
-| `make load-local` | Seed local databases with CSV data       |
-| `make restart`    | Restart all services                     |
-| `make stop`       | Stop services (keep containers)          |
-| `make down`       | Stop and remove containers               |
-| `make logs`       | Tail all service logs                    |
-| `make test`       | Run Go unit tests                        |
-| `make test-bruno` | Run Bruno API tests                      |
-| `make clean`      | Remove containers, images, and volumes   |
+| Command              | What it does                              |
+| -------------------- | ----------------------------------------- |
+| `make setup`         | Start core services                       |
+| `make setup-full`    | Start with Elasticsearch + Kafka + CDC    |
+| `make build`         | Build service images                      |
+| `make load-local`    | Seed local databases with CSV data        |
+| `make restart`       | Restart all services                      |
+| `make stop`          | Stop services (keep containers)           |
+| `make down`          | Stop and remove containers                |
+| `make logs`          | Tail all service logs                     |
+| `make test`          | Run Go unit tests                         |
+| `make test-bruno`    | Run Bruno API tests                       |
+| `make clean`         | Remove containers, images, and volumes    |
 
 Run `make help` for the full list.
 
