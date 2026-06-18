@@ -162,21 +162,6 @@ Dashboards provisioned automatically: **MrFood Overview** and **Traces**.
 
 ---
 
-## Local Development
-
-```bash
-make setup        # start all core services (Docker Compose)
-make setup-full   # start with search / CDC
-make generate-csv # generate seed data
-make load-local   # seed local containers
-make test         # run tests
-make logs         # view logs
-```
-
-See `Makefile` for the full list of commands.
-
----
-
 ## CI / CD Summary
 
 | Workflow           | File                       | Trigger                                    | What it does                                     |
