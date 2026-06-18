@@ -23,16 +23,7 @@ helm version
 docker version
 ```
 
-Secrets must exist in `secrets.env` (gitignored) before the first run. Copy the template and fill in the values:
-
-```bash
-cp secrets.env.tmpl secrets.env
-# then edit secrets.env with real values
-```
-
-| Variable           | Description                  |
-| ------------------ | ---------------------------- |
-| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_...` or `sk_test_...`) |
+All secrets live in `services/.env` (gitignored). Create it with `make create-env` and fill in the values — including `STRIPE_SECRET_KEY` (`sk_live_...` or `sk_test_...`).
 
 > **GitHub Actions:** add the same variables as repository secrets under **Settings → Secrets and variables → Actions**.
 

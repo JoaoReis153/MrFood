@@ -9,4 +9,3 @@ terraform/terraform.tfvars
 data/*
 scripts/processed_data/*
 *.zip
-secrets.env

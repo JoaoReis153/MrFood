@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
-source "${SCRIPT_DIR}/../secrets.env"
+source "${SCRIPT_DIR}/../services/.env"
 NAMESPACE="${K8S_NAMESPACE}"
 CHART_DIR="$SCRIPT_DIR/helm/mrfood-service"
 GATEWAY_CHART_DIR="$SCRIPT_DIR/helm/kong"

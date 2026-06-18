@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${REPO_ROOT}"
 source gcp.env
-source secrets.env
+source services/.env
 export TF_VAR_project_id="${GCP_PROJECT_ID}"
 
 # ---------------------------------------------------------------------------
