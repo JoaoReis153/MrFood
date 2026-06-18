@@ -1,12 +1,6 @@
-# restaurant Microservice
+# Gateway
 
-## Quick Start
-
-```bash
-make build
-make docker-build
-make docker-up
-```
+Kong API gateway. Routes all external traffic to internal gRPC services.
 
 ## Endpoints
 Users
@@ -34,10 +28,13 @@ Reservations
 Notifications
  - GET /notifications - Get user notifications and discounts
 
-## Development
+## Config
+
+Kong routes are defined in `services/gateway/kong/kong.yml`. After updating, patch the live ConfigMap:
 
 ```bash
-go run cmd/main.go
-make test
-make lint
+kubectl delete configmap kong-config -n mrfood --ignore-not-found
+kubectl create configmap kong-config -n mrfood \
+  --from-file=kong.yml=services/gateway/kong/kong.yml
+kubectl rollout restart deployment/gateway -n mrfood
 ```

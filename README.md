@@ -55,6 +55,7 @@ make setup-full  # includes Elasticsearch + Kafka + CDC
 | `make setup-full`    | Start with Elasticsearch + Kafka + CDC    |
 | `make build`         | Build service images                      |
 | `make load-local`    | Seed local databases with CSV data        |
+| `make load-cloud`    | Load CSV into Cloud SQL via GCS           |
 | `make restart`       | Restart all services                      |
 | `make stop`          | Stop services (keep containers)           |
 | `make down`          | Stop and remove containers                |

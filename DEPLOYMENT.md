@@ -103,12 +103,14 @@ make destroy
 
 ## Seed Data
 
-Run once on a fresh database:
+| Command | What it does |
+| ------- | ------------ |
+| `make seed` | Full seed: truncate + reimport all CSVs into Cloud SQL. Safe to re-run. |
+| `make seed LOAD_ARGS=--dry-run` | Preview without executing |
+| `make load-cloud` | Load pre-processed CSVs via GCS — skips schema bootstrap, useful for re-seeding data only |
+| `make load-cloud LOAD_ARGS=--dry-run` | Preview cloud load |
 
-```bash
-make seed                        # truncates seed tables then re-imports — safe to re-run
-./scripts/seed.sh --dry-run      # preview without executing
-```
+CSVs are generated locally with `make generate-csv` and uploaded to `${GCS_SEED_BUCKET}` before import.
 
 | CSV file                                                      | Destination                                         |
 | ------------------------------------------------------------- | --------------------------------------------------- |
@@ -116,7 +118,7 @@ make seed                        # truncates seed tables then re-imports — saf
 | `scripts/processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
 | `scripts/processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`                    |
 
-> **Note:** The import uses PostgreSQL `COPY FROM` internally and will fail on duplicate primary keys. This is intentional — it prevents accidental re-seeding of a live database.
+> **Note:** The import uses PostgreSQL `COPY FROM` internally and will fail on duplicate primary keys — prevents accidental re-seeding of a live database.
 
 ---
 
