@@ -37,7 +37,7 @@ CSV_FULL     ?=
 LOAD_ARGS    ?=
 
 GATEWAY_IP ?=
-BASE_URL   ?= http://localhost:8080/api
+BASE_URL   ?= http://localhost:8000
 VUS        ?= 20
 DURATION   ?= 2m
 
@@ -123,7 +123,7 @@ deploy:
 	@bash scripts/deploy.sh
 
 seed:
-	@bash scripts/seed.sh
+	@bash scripts/seed.sh $(LOAD_ARGS)
 
 destroy:
 	@bash scripts/destroy.sh
