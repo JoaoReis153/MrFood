@@ -230,13 +230,13 @@ clean-all:
 # ============================================================================
 
 search-bootstrap:
-	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
+	@curl -fsS "http://localhost:$(ELASTICSEARCH_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
 	@echo "✔ Elasticsearch ready"
 	@bash services/cdc/register-connectors.sh
 	@bash services/cdc/seed_elasticsearch.sh
 
 search-seed:
-	@curl -fsS "http://localhost:$(CDC_ELASTIC_PORT)/_cluster/health?wait_for_status=yellow&timeout=120s" > /dev/null
+	@curl -fsS "http://localhost:$(ELASTICSEARCH_PORT)/_cluster/health?wait_for_status=yellow&timeout=120s" > /dev/null
 	@echo "✔ Elasticsearch ready"
 	@bash services/cdc/seed_elasticsearch.sh
 
