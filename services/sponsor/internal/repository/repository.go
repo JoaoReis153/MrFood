@@ -90,6 +90,9 @@ func (r *Repository) Sponsor(ctx context.Context, request *models.Sponsorship) (
 		&tierTemp,
 		&sponsorship.Until,
 	)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("select sponsorship: %w", err)
+	}
 
 	sponsorship.ID = idTemp
 	sponsorship.Tier = int(tierTemp)
