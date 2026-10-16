@@ -233,14 +233,26 @@ clean-all:
 # ============================================================================
 
 search-bootstrap:
-	@curl -fsS "http://localhost:$(ELASTICSEARCH_PORT)/_cluster/health?wait_for_status=yellow&timeout=60s" > /dev/null
-	@echo "✔ Elasticsearch ready"
+	@echo "Waiting for Elasticsearch..."
+	@for i in $$(seq 1 30); do \
+		if curl -fsS "http://localhost:$(ELASTICSEARCH_PORT)/_cluster/health?wait_for_status=yellow&timeout=10s" > /dev/null 2>&1; then \
+			echo "✔ Elasticsearch ready"; break; \
+		fi; \
+		echo "[$$i/30] not yet..."; sleep 5; \
+		if [ $$i -eq 30 ]; then echo "❌ Elasticsearch did not become ready"; exit 1; fi; \
+	done
 	@bash services/cdc/register-connectors.sh
 	@bash services/cdc/seed_elasticsearch.sh
 
 search-seed:
-	@curl -fsS "http://localhost:$(ELASTICSEARCH_PORT)/_cluster/health?wait_for_status=yellow&timeout=120s" > /dev/null
-	@echo "✔ Elasticsearch ready"
+	@echo "Waiting for Elasticsearch..."
+	@for i in $$(seq 1 30); do \
+		if curl -fsS "http://localhost:$(ELASTICSEARCH_PORT)/_cluster/health?wait_for_status=yellow&timeout=10s" > /dev/null 2>&1; then \
+			echo "✔ Elasticsearch ready"; break; \
+		fi; \
+		echo "[$$i/30] not yet..."; sleep 5; \
+		if [ $$i -eq 30 ]; then echo "❌ Elasticsearch did not become ready"; exit 1; fi; \
+	done
 	@bash services/cdc/seed_elasticsearch.sh
 
 search-logs:
