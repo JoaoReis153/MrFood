@@ -25,7 +25,7 @@ For the JWT secret, generate one or use the hardcoded dev value already in `serv
 openssl rand -base64 32
 ```
 
-Set `APP_JWT_ACCESS_TOKEN_SECRET` and `APP_JWT_REFRESH_TOKEN_SECRET` in `services/.env` to the same value as `secret` in `services/gateway/kong/kong.yml`.
+Set `APP_JWT_ACCESS_TOKEN_SECRET` in `services/.env` to the same value as `secret` in `services/gateway/kong/kong.yml`.
 
 ### 2. Start services
 
