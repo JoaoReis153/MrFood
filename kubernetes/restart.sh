@@ -60,7 +60,7 @@ for values_file in "${value_files[@]}"; do
   fi
   if [[ "$service" == "payment" ]]; then
     if [[ -z "${STRIPE_SECRET_KEY:-}" ]]; then
-      echo "Error: STRIPE_SECRET_KEY is not set. Add it to gcp.env before deploying."
+      echo "Error: STRIPE_SECRET_KEY is not set. Add it to services/.env before deploying."
       exit 1
     fi
     extra_args+=(--set "env.secrets.STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}")
