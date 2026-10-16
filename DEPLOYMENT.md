@@ -29,22 +29,15 @@ All secrets live in `services/.env` (gitignored). Create it with `make create-en
 
 ---
 
-DB passwords must exist in `terraform/terraform.tfvars` (gitignored) before the first run:
+### Database credentials
 
-```hcl
-# terraform/terraform.tfvars
-service_databases = {
-  restaurant = { db_name = "mrfood_restaurant", db_user = "mrfood_restaurant_user", db_password = "REPLACE_ME" }
-  booking    = { db_name = "mrfood_booking",    db_user = "mrfood_booking_user",    db_password = "REPLACE_ME" }
-  review     = { db_name = "mrfood_review",     db_user = "mrfood_review_user",     db_password = "REPLACE_ME" }
-  payment    = { db_name = "mrfood_payment",    db_user = "mrfood_payment_user",    db_password = "REPLACE_ME" }
-  sponsor    = { db_name = "mrfood_sponsor",    db_user = "mrfood_sponsor_user",    db_password = "REPLACE_ME" }
-}
-```
+Per-service Cloud SQL databases and users are defined by `service_databases` in `terraform/variables.tf`. The defaults work out of the box, so no `terraform.tfvars` is required.
 
-> **Note:** `auth` has no Cloud SQL database — user storage is handled entirely by Keycloak.
+The same credentials are set in `kubernetes/values/<service>.yaml` (for example `RESTAURANT_POSTGRES_PASSWORD`). If you change a password in Terraform, change it in the matching values file too, or the service will fail to connect.
 
-> **Changing the GCP project?** Edit one line in **`gcp.env`** at the repo root — all scripts, CI workflows, and Helm deploys read from it automatically.
+### Configuration
+
+`gcp.env` at the repo root holds the infrastructure settings: project ID, region, zone, GKE cluster, namespace, Cloud SQL instance, seed bucket, and Artifact Registry. Scripts, CI workflows, and Helm deploys read from it. To change the GCP project, edit `GCP_PROJECT_ID` there.
 
 ---
 
