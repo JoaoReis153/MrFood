@@ -71,7 +71,7 @@ jobs:
           done
 
       - name: Start services
-        run: make build run
+        run: make build setup
 
       - name: Wait for API gateway
         run: |

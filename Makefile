@@ -52,7 +52,7 @@ K6_ENV             := -e BASE_URL=$(BASE_URL) \
     deploy seed destroy undeploy \
     create-env generate-csv load-local load-cloud \
     build setup setup-full setup-observability \
-    stop down down-volumes restart logs \
+    stop down down-volumes restart logs logs-dump \
     test test-bruno \
     clean clean-all \
     search-bootstrap search-seed search-logs search-clean \
@@ -189,6 +189,9 @@ restart: down setup
 
 logs:
 	$(DC) logs -f
+
+logs-dump:
+	$(DC) logs --tail=500
 
 # ============================================================================
 # TESTING
