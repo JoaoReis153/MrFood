@@ -12,8 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${REPO_ROOT}/gcp.env"
 
-INSTANCE="mrfood-pg"
-BUCKET="mrfood-cloudsql-schema-bootstrap-${GCP_PROJECT_ID}"
+INSTANCE="${CLOUDSQL_INSTANCE}"
+BUCKET="${GCS_SEED_BUCKET}"
 DRY_RUN=false
 
 for arg in "$@"; do

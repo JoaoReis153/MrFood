@@ -66,7 +66,7 @@ Main environment variables:
 
 - Server: `APP_SERVER_PORT`, `APP_LOG_LEVEL`
 - Keycloak: `KEYCLOAK_BASE_URL`, `KEYCLOAK_REALM`, `KEYCLOAK_CLIENT_ID`, `KEYCLOAK_CLIENT_SECRET`, `KEYCLOAK_ADMIN_USER`, `KEYCLOAK_ADMIN_PASS`
-- JWT: `APP_JWT_SECRET`
+- JWT: `APP_JWT_ACCESS_TOKEN_SECRET`
 - Notification: `NOTIFICATION_GRPC_ADDR`
 
 Defaults and validation are defined in `config/config.go`.

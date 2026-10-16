@@ -3,8 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../gcp.env"
-source "${SCRIPT_DIR}/../secrets.env"
-NAMESPACE="mrfood"
+source "${SCRIPT_DIR}/../services/.env"
+NAMESPACE="${K8S_NAMESPACE}"
 CHART_DIR="$SCRIPT_DIR/helm/mrfood-service"
 GATEWAY_CHART_DIR="$SCRIPT_DIR/helm/kong"
 VALUES_DIR="$SCRIPT_DIR/values"
@@ -60,7 +60,7 @@ for values_file in "${value_files[@]}"; do
   fi
   if [[ "$service" == "payment" ]]; then
     if [[ -z "${STRIPE_SECRET_KEY:-}" ]]; then
-      echo "Error: STRIPE_SECRET_KEY is not set. Add it to gcp.env before deploying."
+      echo "Error: STRIPE_SECRET_KEY is not set. Add it to services/.env before deploying."
       exit 1
     fi
     extra_args+=(--set "env.secrets.STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}")

@@ -23,37 +23,21 @@ helm version
 docker version
 ```
 
-Secrets must exist in `secrets.env` (gitignored) before the first run. Copy the template and fill in the values:
-
-```bash
-cp secrets.env.tmpl secrets.env
-# then edit secrets.env with real values
-```
-
-| Variable           | Description                  |
-| ------------------ | ---------------------------- |
-| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_...` or `sk_test_...`) |
+All secrets live in `services/.env` (gitignored). Create it with `make create-env` and fill in the values — including `STRIPE_SECRET_KEY` (`sk_live_...` or `sk_test_...`).
 
 > **GitHub Actions:** add the same variables as repository secrets under **Settings → Secrets and variables → Actions**.
 
 ---
 
-DB passwords must exist in `terraform/terraform.tfvars` (gitignored) before the first run:
+### Database credentials
 
-```hcl
-# terraform/terraform.tfvars
-service_databases = {
-  restaurant = { db_name = "mrfood_restaurant", db_user = "mrfood_restaurant_user", db_password = "REPLACE_ME" }
-  booking    = { db_name = "mrfood_booking",    db_user = "mrfood_booking_user",    db_password = "REPLACE_ME" }
-  review     = { db_name = "mrfood_review",     db_user = "mrfood_review_user",     db_password = "REPLACE_ME" }
-  payment    = { db_name = "mrfood_payment",    db_user = "mrfood_payment_user",    db_password = "REPLACE_ME" }
-  sponsor    = { db_name = "mrfood_sponsor",    db_user = "mrfood_sponsor_user",    db_password = "REPLACE_ME" }
-}
-```
+Per-service Cloud SQL databases and users are defined by `service_databases` in `terraform/variables.tf`. The defaults work out of the box, so no `terraform.tfvars` is required.
 
-> **Note:** `auth` has no Cloud SQL database — user storage is handled entirely by Keycloak.
+The same credentials are set in `kubernetes/values/<service>.yaml` (for example `RESTAURANT_POSTGRES_PASSWORD`). If you change a password in Terraform, change it in the matching values file too, or the service will fail to connect.
 
-> **Changing the GCP project?** Edit one line in **`gcp.env`** at the repo root — all scripts, CI workflows, and Helm deploys read from it automatically.
+### Configuration
+
+`gcp.env` at the repo root holds the infrastructure settings: project ID, region, zone, GKE cluster, namespace, Cloud SQL instance, seed bucket, and Artifact Registry. Scripts, CI workflows, and Helm deploys read from it. To change the GCP project, edit `GCP_PROJECT_ID` there.
 
 ---
 
@@ -103,12 +87,14 @@ make destroy
 
 ## Seed Data
 
-Run once on a fresh database:
+| Command | What it does |
+| ------- | ------------ |
+| `make seed` | Full seed: truncate + reimport all CSVs into Cloud SQL. Safe to re-run. |
+| `make seed LOAD_ARGS=--dry-run` | Preview without executing |
+| `make load-cloud` | Load pre-processed CSVs via GCS — skips schema bootstrap, useful for re-seeding data only |
+| `make load-cloud LOAD_ARGS=--dry-run` | Preview cloud load |
 
-```bash
-make seed                        # truncates seed tables then re-imports — safe to re-run
-./scripts/seed.sh --dry-run      # preview without executing
-```
+CSVs are generated locally with `make generate-csv` and uploaded to `${GCS_SEED_BUCKET}` before import.
 
 | CSV file                                                      | Destination                                         |
 | ------------------------------------------------------------- | --------------------------------------------------- |
@@ -116,7 +102,7 @@ make seed                        # truncates seed tables then re-imports — saf
 | `scripts/processed_data/restaurant/restaurant_categories.csv` | Cloud SQL `mrfood_restaurant.restaurant_categories` |
 | `scripts/processed_data/review/review.csv`                    | Cloud SQL `mrfood_review.review`                    |
 
-> **Note:** The import uses PostgreSQL `COPY FROM` internally and will fail on duplicate primary keys. This is intentional — it prevents accidental re-seeding of a live database.
+> **Note:** The import uses PostgreSQL `COPY FROM` internally and will fail on duplicate primary keys — prevents accidental re-seeding of a live database.
 
 ---
 
@@ -159,21 +145,6 @@ kubectl get svc grafana -n mrfood
 ```
 
 Dashboards provisioned automatically: **MrFood Overview** and **Traces**.
-
----
-
-## Local Development
-
-```bash
-make setup        # start all core services (Docker Compose)
-make setup-full   # start with search / CDC
-make generate-csv # generate seed data
-make load-local   # seed local containers
-make test         # run tests
-make logs         # view logs
-```
-
-See `Makefile` for the full list of commands.
 
 ---
 

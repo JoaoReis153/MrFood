@@ -221,7 +221,7 @@ func TestSponsor_Success(t *testing.T) {
 			// simulate no existing sponsorship
 			return &fakeRow{
 				scanFn: func(dest ...any) error {
-					return errors.New("no rows")
+					return pgx.ErrNoRows
 				},
 			}
 		},
