@@ -53,8 +53,15 @@ curl -X POST http://localhost:8000/auth/login \
 
 Other endpoints need the returned access token as `Authorization: Bearer <token>`.
 
-Other local ports: Keycloak admin console `8080`, Grafana `3000`, Prometheus `9090`, Elasticsearch `9200` (with `setup-full`).
+Once the services are up, these web UIs are available locally:
 
+| Service | URL | Login |
+| ------- | --- | ----- |
+| Keycloak admin console | http://localhost:8080 | `admin` / `admin` |
+| Grafana | http://localhost:3000 | `admin` / `admin` |
+| Prometheus | http://localhost:9090 | none |
+
+The gateway itself (`http://localhost:8000`) has no UI. It only serves the API routes.
 ### 3. Seed data (optional)
 
 The app runs without seed data — databases start empty. To populate with realistic restaurant data:

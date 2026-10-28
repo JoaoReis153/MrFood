@@ -27,7 +27,8 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASS:-admin}
       KC_DB: dev-mem          # in-memory H2 — swap for postgres in production
       KC_HTTP_PORT: 8080
-      KC_HOSTNAME: "http://keycloak:8080"   # pins the iss claim; must match Kong consumer key
+      KC_HOSTNAME: "http://localhost:8080"   # URL browsers are redirected to
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"   # internal callers (auth service) can still use http://keycloak:8080
       KC_TRACING_ENABLED: "true"
       KC_TRACING_ENDPOINT: "http://otel-collector:4317"
       KC_TRACING_SAMPLER_TYPE: "always_on"
