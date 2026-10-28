@@ -34,24 +34,8 @@ jobs:
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
         run: |
-          cat > services/.env <<EOF
-          APP_JWT_ACCESS_TOKEN_SECRET=CY4dmpNgo4POxd2nkl/lJIPCqgeqzsM6If4l3Z/XOZE=
-          AUTH_POSTGRES_PASSWORD=mrfood_auth_secret
-          AUTH_REDIS_PASS=
-          KEYCLOAK_CLIENT_SECRET=mrfood-auth-client-secret
-          KEYCLOAK_ADMIN_PASS=admin
-          BOOKING_POSTGRES_PASSWORD=bookingsecret
-          SMTP_USER=mrfood.api@gmail.com
-          SMTP_PASSWORD=wpbp rgwe hplj smzy
-          SMTP_FROM=mrfood.api@gmail.com
-          PAYMENT_POSTGRES_PASSWORD=paymentsecret
-          RESTAURANT_POSTGRES_PASSWORD=restaurantsecret
-          REVIEW_POSTGRES_PASSWORD=reviewsecret
-          ELASTICSEARCH_USERNAME=
-          ELASTICSEARCH_PASSWORD=
-          SPONSOR_POSTGRES_PASSWORD=sponsorsecret
-          STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
-          EOF
+          make create-env
+          sed -i "s|^STRIPE_SECRET_KEY=.*|STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}|" services/.env
 
       - name: Go mod tidy (all services)
         run: |
