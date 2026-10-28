@@ -200,12 +200,14 @@ logs-dump:
 # ============================================================================
 
 test:
-	go test -v -race $(TEST_PACKAGES) 2>&1 | tee /tmp/test_output.txt; \
-	echo ""; \
-	echo "━━━ Results ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
-	echo "PASS: $$(grep -c '^--- PASS' /tmp/test_output.txt)"; \
-	echo "FAIL: $$(grep -c '^--- FAIL' /tmp/test_output.txt)"; \
-	grep -q '^--- FAIL' /tmp/test_output.txt && exit 1 || exit 0
+	@bash -o pipefail -c ' \
+		out=$$(mktemp); trap "rm -f $$out" EXIT; \
+		go test -v -race $(TEST_PACKAGES) 2>&1 | tee $$out; rc=$$?; \
+		echo ""; \
+		echo "━━━ Results ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"; \
+		echo "PASS: $$(grep -c "^--- PASS" $$out)"; \
+		echo "FAIL: $$(grep -c "^--- FAIL" $$out)"; \
+		exit $$rc'
 
 test-bruno:
 	@mkdir -p tests/mrfood-api/reports
