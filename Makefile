@@ -170,7 +170,9 @@ setup:
 	$(DC) up -d $(PULL_FLAG)
 	@echo "✓ Core services running"
 
-setup-full: setup search-bootstrap
+setup-full:
+	$(DC) --profile search up -d $(PULL_FLAG)
+	@$(MAKE) --no-print-directory search-bootstrap
 	@echo "✓ All services running with search"
 
 setup-observability:
