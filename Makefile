@@ -25,9 +25,11 @@ PYTHON := $(if $(wildcard scripts/.venv/bin/python),scripts/.venv/bin/python,pyt
 IS_PODMAN  := $(shell docker --version 2>/dev/null | grep -i podman)
 PULL_FLAG  :=
 BUILD_FLAG :=
+WAIT_FLAG  :=
 ifeq ($(IS_PODMAN),)
     PULL_FLAG  := --pull=missing
     BUILD_FLAG := --parallel
+    WAIT_FLAG  := --wait
 endif
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
@@ -51,7 +53,7 @@ K6_ENV             := -e BASE_URL=$(BASE_URL) \
 .PHONY: help \
     deploy seed destroy undeploy \
     create-env generate-csv load-local load-cloud \
-    build setup setup-full setup-observability \
+    build setup setup-full setup-observability wait-gateway \
     stop down down-volumes restart logs logs-dump \
     test test-bruno \
     clean clean-all \
@@ -167,16 +169,28 @@ build:
 	DOCKER_BUILDKIT=1 $(DC) build $(BUILD_FLAG)
 
 setup:
-	$(DC) up -d $(PULL_FLAG)
+	$(DC) up -d $(PULL_FLAG) $(WAIT_FLAG)
+	@$(MAKE) --no-print-directory wait-gateway
 	@echo "✓ Core services running"
 
 setup-full:
-	$(DC) --profile search up -d $(PULL_FLAG)
+	$(DC) --profile search up -d $(PULL_FLAG) $(WAIT_FLAG)
+	@$(MAKE) --no-print-directory wait-gateway
 	@$(MAKE) --no-print-directory search-bootstrap
 	@echo "✓ All services running with search"
 
 setup-observability:
 	$(DC) up -d $(PULL_FLAG) otel-collector prometheus loki grafana tempo
+
+wait-gateway:
+	@echo "Waiting for API gateway..."
+	@for i in $$(seq 1 60); do \
+		if [ "$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/auth/ping/1)" = "200" ]; then \
+			echo "✔ API gateway ready"; exit 0; \
+		fi; \
+		echo "[$$i/60] not yet..."; sleep 5; \
+	done; \
+	echo "❌ API gateway did not become ready"; exit 1
 
 stop:
 	$(DC) stop
