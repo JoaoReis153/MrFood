@@ -4,7 +4,7 @@ x-common: &common
     
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.103.0
     container_name: otel-collector
     <<: *common
     volumes:
