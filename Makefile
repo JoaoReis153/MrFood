@@ -140,7 +140,7 @@ create-env:
 		echo "services/.env already exists."; \
 	else \
 		cp services/env.tmpl services/.env; \
-		echo "Created services/.env — fill in secret values before running."; \
+		echo "Created services/.env with local defaults — edit it to change secrets."; \
 	fi
 
 # ============================================================================

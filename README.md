@@ -1,6 +1,6 @@
 # MrFood
 
-Food delivery platform — Go microservices, gRPC, Kong gateway, Kubernetes on GCP.
+Restaurant discovery and booking platform — Go microservices, gRPC, Kong gateway, Kubernetes on GCP.
 
 **Services:** auth · restaurant · booking · review · payment · sponsor · notification · search  
 **Infrastructure:** Keycloak (auth), Elasticsearch + Kafka + CDC (search), Redis (notifications), PostgreSQL per service  
@@ -10,22 +10,19 @@ Food delivery platform — Go microservices, gRPC, Kong gateway, Kubernetes on G
 
 ## Local Development
 
-Requires Docker and Docker Compose.
+Requires Docker and Docker Compose. Optional: Python 3 (seed data), Node.js (`make test-bruno`) and Go (`make test`).
 
 ### 1. Configure secrets
 
 ```bash
 make create-env
-# Edit services/.env — fill in passwords and the JWT secret
 ```
 
-For the JWT secret, generate one or use the hardcoded dev value already in `services/gateway/kong/kong.yml`:
+This creates `services/.env` from `services/env.tmpl`, pre-filled with local-development defaults, so no edits are needed to run locally. `SMTP_*` and `STRIPE_*` are empty: set them only to test email or payments.
 
-```bash
-openssl rand -base64 32
-```
+`APP_JWT_ACCESS_TOKEN_SECRET` must match the `secret` in `services/gateway/kong/kong.yml`, and `KEYCLOAK_CLIENT_SECRET` must match `services/keycloak/realm-import.json`. The defaults already do. To use your own JWT secret, generate one with `openssl rand -base64 32` and put it in **both** `services/.env` and `kong.yml`.
 
-Set `APP_JWT_ACCESS_TOKEN_SECRET` in `services/.env` to the same value as `secret` in `services/gateway/kong/kong.yml`.
+> `scripts/deploy.sh` also reads `services/.env`. Replace the defaults with real secrets before deploying to GCP.
 
 ### 2. Start services
 
@@ -35,6 +32,28 @@ make setup-full  # + Elasticsearch, Kafka, CDC
 ```
 
 API is available at **`http://localhost:8000`** once running.
+
+Check that it is up:
+
+```bash
+curl http://localhost:8000/auth/ping/1
+```
+
+Then register and log in (endpoints are described in [`docs/mrfoodapi.yaml`](docs/mrfoodapi.yaml)):
+
+```bash
+curl -X POST http://localhost:8000/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"demo","email":"demo@example.com","password":"StrongPassword123"}'
+
+curl -X POST http://localhost:8000/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"demo@example.com","password":"StrongPassword123"}'
+```
+
+Other endpoints need the returned access token as `Authorization: Bearer <token>`.
+
+Other local ports: Keycloak admin console `8080`, Grafana `3000`, Prometheus `9090`, Elasticsearch `9200` (with `setup-full`).
 
 ### 3. Seed data (optional)
 
