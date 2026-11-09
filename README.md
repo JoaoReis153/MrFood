@@ -12,8 +12,6 @@ Food delivery platform — Go microservices, gRPC, Kong gateway, Kubernetes on G
 
 ![MrFood architecture](docs/mrfood.svg)
 
-<!-- Export docs/mrfood.excalidraw as SVG to docs/mrfood.svg (Embed scene on) -->
-
 - **Observability:** every service sends OTLP traces/logs/metrics → OTel Collector → Tempo · Loki · Prometheus → Grafana.
 - **Data stores:** each service owns its own PostgreSQL (restaurant, booking, review, sponsor, payment). Auth keeps users in Keycloak. Notification uses Redis for rate limiting.
 
