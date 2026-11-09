@@ -62,6 +62,7 @@ Once the services are up, these web UIs are available locally:
 | Prometheus | http://localhost:9090 | none |
 
 The gateway itself (`http://localhost:8000`) has no UI. It only serves the API routes.
+
 ### 3. Seed data (optional)
 
 The app runs without seed data — databases start empty. To populate with realistic restaurant data:
