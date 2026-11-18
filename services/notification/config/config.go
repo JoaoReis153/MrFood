@@ -79,23 +79,32 @@ func Load(_ context.Context) (*Config, error) {
 	if cfg.Server.Port == 0 {
 		return nil, fmt.Errorf("config: NOTIFICATION_SERVER_PORT is required")
 	}
-	if cfg.SMTP.User == "" {
-		return nil, fmt.Errorf("config: SMTP_USER is required")
-	}
-	if cfg.SMTP.Password == "" {
-		return nil, fmt.Errorf("config: SMTP_PASSWORD is required")
-	}
-	if cfg.SMTP.From == "" {
-		return nil, fmt.Errorf("config: SMTP_FROM is required")
+	if cfg.SMTP.Enabled() {
+		if cfg.SMTP.User == "" {
+			return nil, fmt.Errorf("config: SMTP_USER is required when SMTP is configured")
+		}
+		if cfg.SMTP.Password == "" {
+			return nil, fmt.Errorf("config: SMTP_PASSWORD is required when SMTP is configured")
+		}
+		if cfg.SMTP.From == "" {
+			return nil, fmt.Errorf("config: SMTP_FROM is required when SMTP is configured")
+		}
+	} else {
+		slog.Warn("SMTP not configured: emails will be logged instead of sent")
 	}
 
 	slog.Info("config loaded",
 		slog.String("port", fmt.Sprintf("%d", cfg.Server.Port)),
 		slog.String("log_level", cfg.Log.Level),
 		slog.String("redis", fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port)),
+		slog.Bool("smtp_enabled", cfg.SMTP.Enabled()),
 	)
 
 	return cfg, nil
+}
+
+func (c SMTPConfig) Enabled() bool {
+	return c.User != "" || c.Password != "" || c.From != ""
 }
 
 func overrideWithEnv(cfg *Config) {
