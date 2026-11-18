@@ -307,7 +307,9 @@ func TestGenerateRequestHash(t *testing.T) {
 }
 
 func TestNewUsesDemoPaymentWithoutStripe(t *testing.T) {
-	s := New(nil, &mockNotificationClient{}, &config.Config{})
+	cfg := &config.Config{}
+	cfg.Stripe.DemoMode = true
+	s := New(nil, &mockNotificationClient{}, cfg)
 	if s.createIntent == nil {
 		t.Fatal("expected demo payment intent func")
 	}
@@ -342,11 +344,25 @@ func TestDemoPaymentIntentIDs(t *testing.T) {
 	}
 }
 
-func TestNewUsesStripeWhenConfigured(t *testing.T) {
-	cfg := &config.Config{}
-	cfg.Stripe.SecretKey = "sk_test_x"
-	s := New(nil, &mockNotificationClient{}, cfg)
-	if s.createIntent != nil {
-		t.Fatal("expected real Stripe client when key is set")
+func TestNewUsesStripeUnlessDemoWithoutKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		demoMode bool
+	}{
+		{name: "key set", key: "sk_test_x"},
+		{name: "key set with demo mode", key: "sk_test_x", demoMode: true},
+		{name: "no key without demo mode"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{}
+			cfg.Stripe.SecretKey = tt.key
+			cfg.Stripe.DemoMode = tt.demoMode
+			s := New(nil, &mockNotificationClient{}, cfg)
+			if s.createIntent != nil {
+				t.Fatal("expected real Stripe client")
+			}
+		})
 	}
 }

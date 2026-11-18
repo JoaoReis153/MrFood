@@ -47,6 +47,7 @@ type NotificationConfig struct {
 type StripeConfig struct {
 	SecretKey     string `yaml:"stripe_key"`
 	WebhookSecret string `yaml:"webhook_secret"`
+	DemoMode      bool   `yaml:"demo_mode"`
 }
 
 type Config struct {
@@ -102,6 +103,10 @@ func Load(_ context.Context) (*Config, error) {
 		return nil, fmt.Errorf("config: %w", err)
 	}
 
+	if cfg.Stripe.SecretKey == "" && !cfg.Stripe.DemoMode {
+		return nil, fmt.Errorf("config: STRIPE_SECRET_KEY is required (set PAYMENT_DEMO_MODE=true to log payments instead)")
+	}
+
 	slog.Info("config loaded",
 		slog.String("server", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)),
 		slog.String("db", fmt.Sprintf("%s:%d/%s", cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)),
@@ -130,6 +135,7 @@ func overrideWithEnv(cfg *Config) {
 
 	cfg.Stripe.SecretKey = getEnvAny(cfg.Stripe.SecretKey, "STRIPE_SECRET_KEY")
 	cfg.Stripe.WebhookSecret = getEnvAny(cfg.Stripe.WebhookSecret, "STRIPE_WEBHOOK_SECRET")
+	cfg.Stripe.DemoMode, _ = strconv.ParseBool(os.Getenv("PAYMENT_DEMO_MODE"))
 
 	cfg.Notification.GRPCAddr = getEnvAny(cfg.Notification.GRPCAddr, "NOTIFICATION_GRPC_ADDR")
 }

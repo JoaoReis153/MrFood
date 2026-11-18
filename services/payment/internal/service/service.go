@@ -61,7 +61,7 @@ type Service struct {
 
 func New(repo *repository.Repository, client pb.PaymentToNotificationServiceClient, cfg *config.Config) *Service {
 	s := &Service{repo: repo, client: client}
-	if cfg.Stripe.SecretKey == "" {
+	if cfg.Stripe.SecretKey == "" && cfg.Stripe.DemoMode {
 		slog.Warn("Stripe not configured: payments will be logged instead of charged")
 		s.createIntent = demoPaymentIntent
 		return s
