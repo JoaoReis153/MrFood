@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
+	"MrFood/services/payment/config"
 	pb "MrFood/services/payment/internal/api/grpc/pb"
 	models "MrFood/services/payment/pkg"
 
@@ -301,5 +303,50 @@ func TestGenerateRequestHash(t *testing.T) {
 
 	if hash1 != hash2 {
 		t.Fatalf("expected equal hashes, got %s and %s", hash1, hash2)
+	}
+}
+
+func TestNewUsesDemoPaymentWithoutStripe(t *testing.T) {
+	s := New(nil, &mockNotificationClient{}, &config.Config{})
+	if s.createIntent == nil {
+		t.Fatal("expected demo payment intent func")
+	}
+	s.repo = &mockRepo{}
+
+	r := &models.Receipt{Amount: 1000, IdempotencyKey: "abc", PaymentDescription: "test"}
+	if _, err := s.CreateReceipt(context.Background(), r); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.HasPrefix(r.PaymentIntentID, "pi_demo_") {
+		t.Fatalf("expected demo payment intent id, got %q", r.PaymentIntentID)
+	}
+	if r.PaymentStatus != string(stripe.PaymentIntentStatusSucceeded) {
+		t.Fatalf("expected succeeded status, got %q", r.PaymentStatus)
+	}
+}
+
+func TestDemoPaymentIntentIDs(t *testing.T) {
+	newParams := func(key string) *stripe.PaymentIntentParams {
+		p := &stripe.PaymentIntentParams{Amount: stripe.Int64(100)}
+		p.SetIdempotencyKey(key)
+		return p
+	}
+	a1, _ := demoPaymentIntent(newParams("a"))
+	a2, _ := demoPaymentIntent(newParams("a"))
+	b, _ := demoPaymentIntent(newParams("b"))
+	if a1.ID != a2.ID {
+		t.Fatalf("same idempotency key gave different ids: %s, %s", a1.ID, a2.ID)
+	}
+	if a1.ID == b.ID {
+		t.Fatalf("different idempotency keys gave same id: %s", a1.ID)
+	}
+}
+
+func TestNewUsesStripeWhenConfigured(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Stripe.SecretKey = "sk_test_x"
+	s := New(nil, &mockNotificationClient{}, cfg)
+	if s.createIntent != nil {
+		t.Fatal("expected real Stripe client when key is set")
 	}
 }

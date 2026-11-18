@@ -88,7 +88,7 @@ func Load(_ context.Context) (*Config, error) {
 			HealthCheckPeriod: 1 * time.Minute,
 		},
 		Stripe: StripeConfig{
-			SecretKey:     "key",
+			SecretKey:     "",
 			WebhookSecret: "",
 		},
 		Notification: NotificationConfig{
