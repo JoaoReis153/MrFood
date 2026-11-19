@@ -195,7 +195,7 @@ func TestClose(t *testing.T) {
 }
 
 func TestNewInitializesSMTPMailer(t *testing.T) {
-	s := New(&fakeRedisClient{}, SMTPConfig{}, RateLimitConfig{})
+	s := New(&fakeRedisClient{}, SMTPConfig{User: "u", Password: "p", From: "f@example.com"}, RateLimitConfig{})
 	if s == nil {
 		t.Fatal("expected non-nil service")
 	}
@@ -204,6 +204,16 @@ func TestNewInitializesSMTPMailer(t *testing.T) {
 	}
 	if _, ok := s.mailer.(*SMTPMailer); !ok {
 		t.Fatalf("expected SMTPMailer, got %T", s.mailer)
+	}
+}
+
+func TestNewUsesLogMailerWithoutSMTP(t *testing.T) {
+	s := New(&fakeRedisClient{}, SMTPConfig{}, RateLimitConfig{})
+	if _, ok := s.mailer.(logMailer); !ok {
+		t.Fatalf("expected logMailer, got %T", s.mailer)
+	}
+	if err := s.mailer.Send("a@example.com", "subject", "body"); err != nil {
+		t.Fatalf("logMailer.Send returned error: %v", err)
 	}
 }
 

@@ -77,8 +77,6 @@ type notificationClient struct {
 	conn grpc.ClientConnInterface
 }
 
-const notificationSendRegistrationEmailMethod = "/notification.AuthToNotificationService/SendRegistrationEmail"
-
 func (c *notificationClient) SendRegistrationEmail(ctx context.Context, email, username string) error {
 	notifyCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
@@ -91,7 +89,7 @@ func (c *notificationClient) SendRegistrationEmail(ctx context.Context, email, u
 	resp := new(pb.SendRegistrationEmailResponse)
 	return c.conn.Invoke(
 		notifyCtx,
-		notificationSendRegistrationEmailMethod,
+		pb.AuthToNotificationService_SendRegistrationEmail_FullMethodName,
 		req,
 		resp,
 	)

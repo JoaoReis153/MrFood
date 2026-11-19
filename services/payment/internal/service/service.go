@@ -51,14 +51,37 @@ type paymentRepository interface {
 	GetReceiptsByUser(ctx context.Context, user_id int64) ([]*models.Receipt, error)
 }
 
+type paymentIntentFunc func(*stripe.PaymentIntentParams) (*stripe.PaymentIntent, error)
+
 type Service struct {
-	repo   paymentRepository
-	client pb.PaymentToNotificationServiceClient
+	repo         paymentRepository
+	client       pb.PaymentToNotificationServiceClient
+	createIntent paymentIntentFunc
 }
 
 func New(repo *repository.Repository, client pb.PaymentToNotificationServiceClient, cfg *config.Config) *Service {
+	s := &Service{repo: repo, client: client}
+	if cfg.Stripe.SecretKey == "" && cfg.Stripe.DemoMode {
+		slog.Warn("Stripe not configured: payments will be logged instead of charged")
+		s.createIntent = demoPaymentIntent
+		return s
+	}
 	stripe.Key = cfg.Stripe.SecretKey
-	return &Service{repo: repo, client: client}
+	return s
+}
+
+func demoPaymentIntent(params *stripe.PaymentIntentParams) (*stripe.PaymentIntent, error) {
+	key := ""
+	if params.IdempotencyKey != nil {
+		key = *params.IdempotencyKey
+	}
+	sum := sha256.Sum256([]byte(key))
+	pi := &stripe.PaymentIntent{
+		ID:     "pi_demo_" + hex.EncodeToString(sum[:8]),
+		Status: stripe.PaymentIntentStatusSucceeded,
+	}
+	slog.Info("Stripe not configured, payment not charged", "payment_intent_id", pi.ID, "amount", stripe.Int64Value(params.Amount))
+	return pi, nil
 }
 
 func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Receipt) (int32, error) {
@@ -84,7 +107,12 @@ func (s *Service) CreateReceipt(ctx context.Context, receipt_request *models.Rec
 
 	params.SetIdempotencyKey(receipt_request.IdempotencyKey)
 
-	pi, err := createPaymentIntent(params)
+	create := createPaymentIntent
+	if s.createIntent != nil {
+		create = s.createIntent
+	}
+
+	pi, err := create(params)
 	if err != nil {
 		slog.Error("failed to create stripe payment intent", "error", err)
 		return 0, err

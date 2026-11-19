@@ -5,6 +5,7 @@ import (
 	models "MrFood/services/notification/pkg"
 	"context"
 	"fmt"
+	"log/slog"
 	"net/smtp"
 	"strings"
 	"time"
@@ -50,7 +51,18 @@ func New(redis RedisClient, smtpCfg SMTPConfig, rateLimit RateLimitConfig) *Serv
 	if redis == nil {
 		panic("nil redis client")
 	}
-	return &Service{redis: redis, mailer: NewSMTPMailer(smtpCfg), rateLimit: rateLimit}
+	var mailer Mailer = NewSMTPMailer(smtpCfg)
+	if smtpCfg.User == "" && smtpCfg.Password == "" && smtpCfg.From == "" {
+		mailer = logMailer{}
+	}
+	return &Service{redis: redis, mailer: mailer, rateLimit: rateLimit}
+}
+
+type logMailer struct{}
+
+func (logMailer) Send(to, subject, _ string) error {
+	slog.Info("SMTP not configured, email not sent", "to", to, "subject", subject)
+	return nil
 }
 
 func NewSMTPMailer(cfg SMTPConfig) *SMTPMailer {
